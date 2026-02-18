@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+        xmlns="http://www.w3.org/2000/svg"
+        version="1.1"
+        width="100%"
+        height="100%"
+        viewBox="0 0 1200 800"
+        role="img"
+        aria-labelledby="title desc"
+>
+    <title id="title">Magnificent Wolf Howling at Night (Scalable Vector Graphic)</title>
+    <desc id="desc">A detailed, stylized SVG illustration of a majestic wolf howling on a rocky ridge under a glowing moon, with layered fur strokes, gradients, and subtle lighting effects.</desc>
+
+    <!-- =============== DEFINITIONS =============== -->
+    <defs>
+        <!-- Background sky gradient -->
+        <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0a1026"/>
+            <stop offset="55%" stop-color="#0e1a3d"/>
+            <stop offset="100%" stop-color="#0b132b"/>
+        </linearGradient>
+
+        <!-- Moon gradient and halo -->
+        <radialGradient id="moonGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fffdf4"/>
+            <stop offset="70%" stop-color="#f1e9c6"/>
+            <stop offset="100%" stop-color="#dccf92"/>
+        </radialGradient>
+
+        <!-- Soft outer glow -->
+        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="18" result="blur"/>
+            <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+
+        <!-- Generic drop shadow -->
+        <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="shadow"/>
+            <feOffset dy="4" dx="0" result="offset"/>
+            <feColorMatrix in="offset" type="matrix" values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0.45 0" result="shadowColor"/>
+            <feMerge>
+                <feMergeNode in="shadowColor"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+
+        <!-- Fur sheen gradient -->
+        <linearGradient id="furGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#cdd3da"/>
+            <stop offset="50%" stop-color="#9aa2ac"/>
+            <stop offset="100%" stop-color="#424a55"/>
+        </linearGradient>
+
+        <!-- Dark fur gradient for shadows -->
+        <linearGradient id="furShadow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#222831"/>
+            <stop offset="100%" stop-color="#0f1217"/>
+        </linearGradient>
+
+        <!-- Eye glow -->
+        <radialGradient id="eyeGrad" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stop-color="#ffd45a"/>
+            <stop offset="60%" stop-color="#c7961a"/>
+            <stop offset="100%" stop-color="#6b4b00"/>
+        </radialGradient>
+
+        <!-- Rock gradient -->
+        <linearGradient id="rockGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#606a77"/>
+            <stop offset="100%" stop-color="#2d3440"/>
+        </linearGradient>
+
+        <!-- Star glow -->
+        <filter id="starGlow" x="-300%" y="-300%" width="600%" height="600%">
+            <feGaussianBlur stdDeviation="1.2"/>
+        </filter>
+
+        <!-- Stroke styles -->
+        <style><![CDATA[
+        .fur-stroke { stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+        .fur-light { stroke: #e6edf3; }
+        .fur-mid   { stroke: #b7c0ca; }
+        .fur-dark  { stroke: #6a737d; }
+        .fur-deep  { stroke: #2a3036; }
+        ]]></style>
+    </defs>
+
+    <!-- =============== BACKGROUND =============== -->
+    <rect x="0" y="0" width="1200" height="800" fill="url(#bgGrad)"/>
+
+    <!-- Subtle distant mountains silhouette -->
+    <g opacity="0.35" filter="url(#softGlow)">
+        <path d="M0,560 C180,520 260,520 420,560 C540,590 690,560 760,540 C880,505 960,520 1200,560 L1200,800 L0,800 Z" fill="#0c1431"/>
+        <path d="M0,600 C200,560 360,590 520,600 C720,610 880,560 1200,600 L1200,800 L0,800 Z" fill="#0b1a3a" opacity="0.8"/>
+    </g>
+
+    <!-- Stars -->
+    <g opacity="0.85">
+        <circle cx="200" cy="90" r="1.8" fill="#ffffff" filter="url(#starGlow)"/>
+        <circle cx="320" cy="140" r="1.6" fill="#ffffff" filter="url(#starGlow)"/>
+        <circle cx="540" cy="60" r="1.5" fill="#ffffff" filter="url(#starGlow)"/>
+        <circle cx="880" cy="110" r="1.7" fill="#ffffff" filter="url(#starGlow)"/>
+        <circle cx="1040" cy="70" r="1.3" fill="#ffffff" filter="url(#starGlow)"/>
+        <circle cx="930" cy="180" r="1.2" fill="#ffffff" filter="url(#starGlow)"/>
+        <circle cx="650" cy="160" r="1.1" fill="#ffffff" filter="url(#starGlow)"/>
+    </g>
+
+    <!-- Moon -->
+    <g transform="translate(880,170)">
+        <circle r="90" fill="url(#moonGrad)" filter="url(#softGlow)"/>
+        <!-- Moon craters -->
+        <g opacity="0.35">
+            <ellipse rx="16" ry="12" cx="-20" cy="-10" fill="#bfb899"/>
+            <ellipse rx="9" ry="7" cx="22" cy="8" fill="#c8bf9e"/>
+            <ellipse rx="6" ry="5" cx="-40" cy="15" fill="#d2c9a9"/>
+        </g>
+    </g>
+
+    <!-- Foreground ridge -->
+    <g transform="translate(0,40)" filter="url(#dropShadow)">
+        <path d="M0,720 C180,650 250,640 380,680 C520,725 640,680 720,660 C880,620 1040,655 1200,700 L1200,800 L0,800 Z" fill="url(#rockGrad)"/>
+        <!-- Rock facets -->
+        <path d="M260,700 L320,660 L400,690 L340,720 Z" fill="#3a4250" opacity="0.8"/>
+        <path d="M700,670 L760,640 L820,660 L770,690 Z" fill="#3a4250" opacity="0.8"/>
+    </g>
+
+    <!-- =============== WOLF =============== -->
+    <g id="wolf" transform="translate(420,220) scale(1.05)">
+        <!-- Body silhouette -->
+        <path id="wolfBase" fill="url(#furShadow)" filter="url(#dropShadow)"
+              d="M 130 420
+         C 160 380, 210 350, 260 340
+         C 300 333, 350 330, 380 320
+         C 420 305, 450 270, 470 240
+         C 495 205, 520 170, 540 140
+         C 550 125, 560 110, 590 100
+         C 620 90, 640 85, 655 88
+         C 640 98, 630 110, 622 128
+         C 617 140, 610 160, 622 172
+         C 642 192, 675 186, 695 176
+         C 706 170, 715 162, 726 152
+         C 734 162, 742 180, 742 198
+         C 742 230, 726 263, 704 280
+         C 690 291, 675 300, 650 310
+         C 618 323, 572 338, 534 345
+         C 492 352, 462 354, 428 357
+         C 392 360, 354 366, 322 382
+         C 288 398, 260 424, 240 456
+         C 222 484, 214 516, 214 544
+         C 188 536, 164 518, 148 498
+         C 126 470, 120 442, 130 420 Z"/>
+
+        <!-- Chest and neck highlights -->
+        <path fill="url(#furGrad)" opacity="0.9"
+              d="M 250 460 C 270 430, 300 408, 334 392
+         C 372 374, 414 364, 454 360
+         C 496 356, 544 344, 584 328
+         C 602 320, 624 308, 640 296
+         C 626 314, 612 334, 596 350
+         C 562 384, 522 408, 472 424
+         C 430 437, 384 444, 348 454
+         C 316 462, 286 474, 262 490
+         C 254 472, 252 468, 250 460 Z"/>
+
+        <!-- Ear (near) -->
+        <path fill="#cfd6de" stroke="#2c3137" stroke-width="2"
+              d="M640 150 C658 128, 680 114, 706 108 C704 132, 696 156, 680 174 C668 162, 656 156, 640 150 Z"/>
+
+        <!-- Ear (far) -->
+        <path fill="#aeb6bf" stroke="#242a31" stroke-width="2" opacity="0.85"
+              d="M620 150 C636 126, 652 116, 672 112 C670 132, 662 152, 648 166 C636 160, 628 156, 620 150 Z"/>
+
+        <!-- Snout top highlight -->
+        <path fill="#cbd2da" opacity="0.85"
+              d="M600 190 C626 176, 654 170, 682 172 C670 186, 656 196, 640 204 C624 212, 610 212, 600 210 Z"/>
+
+        <!-- Eye socket shadow -->
+        <path fill="#21262d" opacity="0.9"
+              d="M604 208 C626 198, 650 196, 672 198 C660 210, 648 220, 630 226 C616 230, 606 226, 604 220 Z"/>
+
+        <!-- Eye -->
+        <g transform="translate(630,214)">
+            <ellipse rx="10" ry="7" fill="#0a0c0f"/>
+            <ellipse rx="7" ry="5" fill="url(#eyeGrad)"/>
+            <circle r="2" cx="-2" cy="-1" fill="#fff"/>
+        </g>
+
+        <!-- Nose -->
+        <g transform="translate(700,196)">
+            <path d="M0,0 C10,-4 24,-4 34,0 C28,8 12,12 2,8 Z" fill="#121519"/>
+            <ellipse rx="16" ry="6" cx="14" cy="4" fill="#20262c" opacity="0.8"/>
+        </g>
+
+        <!-- Mouth and teeth -->
+        <path d="M 626 232 C 642 234, 660 232, 676 226 C 686 224, 694 222, 704 216"
+              fill="none" stroke="#0f1318" stroke-width="3"/>
+        <path d="M 648 234 L 648 242 C 652 246, 658 246, 662 242 L 662 234"
+              fill="#f9f9f9" stroke="#cfd6de" stroke-width="1"/>
+
+        <!-- Shoulder rim light -->
+        <path d="M 300 380 C 332 366, 368 358, 404 354 C 446 350, 486 342, 522 330"
+              fill="none" stroke="#e9eef3" stroke-width="4" opacity="0.6" class="fur-stroke"/>
+
+        <!-- Layered fur strokes (hand-placed for flow) -->
+        <g opacity="0.9">
+            <path class="fur-stroke fur-mid" stroke-width="3" fill="none"
+                  d="M242 492 C260 474, 286 462, 316 454"/>
+            <path class="fur-stroke fur-mid" stroke-width="3" fill="none"
+                  d="M256 508 C282 488, 318 474, 354 468"/>
+            <path class="fur-stroke fur-light" stroke-width="2.2" fill="none"
+                  d="M272 524 C300 502, 338 490, 376 484"/>
+            <path class="fur-stroke fur-dark" stroke-width="2.6" fill="none"
+                  d="M286 540 C316 516, 356 504, 396 498"/>
+            <path class="fur-stroke fur-deep" stroke-width="2.8" fill="none"
+                  d="M300 556 C332 532, 372 520, 412 514"/>
+            <path class="fur-stroke fur-light" stroke-width="2.2" fill="none"
+                  d="M318 568 C352 546, 394 534, 438 528"/>
+
+            <!-- Neck & mane -->
+            <path class="fur-stroke fur-mid" stroke-width="2.4" fill="none"
+                  d="M520 328 C496 352, 472 368, 440 382"/>
+            <path class="fur-stroke fur-light" stroke-width="2" fill="none"
+                  d="M538 320 C514 348, 486 370, 454 386"/>
+            <path class="fur-stroke fur-dark" stroke-width="2.6" fill="none"
+                  d="M556 314 C528 346, 498 372, 464 390"/>
+            <path class="fur-stroke fur-mid" stroke-width="2.2" fill="none"
+                  d="M574 306 C544 340, 510 370, 474 392"/>
+
+            <!-- Snout fur -->
+            <path class="fur-stroke fur-light" stroke-width="1.8" fill="none"
+                  d="M596 206 C608 202, 620 198, 634 198"/>
+            <path class="fur-stroke fur-mid" stroke-width="1.8" fill="none"
+                  d="M592 218 C608 214, 624 210, 642 208"/>
+            <path class="fur-stroke fur-dark" stroke-width="1.8" fill="none"
+                  d="M588 230 C606 226, 622 222, 640 220"/>
+
+            <!-- Brow detail -->
+            <path class="fur-stroke fur-deep" stroke-width="2.2" fill="none"
+                  d="M610 212 C624 206, 640 204, 656 204"/>
+        </g>
+
+        <!-- Back rim light -->
+        <path d="M 468 240 C 486 218, 510 196, 540 180"
+              fill="none" stroke="#e6edf3" stroke-width="3" opacity="0.55" class="fur-stroke"/>
+
+        <!-- Subtle mottled highlights along back -->
+        <g opacity="0.25">
+            <ellipse cx="500" cy="260" rx="8" ry="4" fill="#cfd6de"/>
+            <ellipse cx="520" cy="250" rx="6" ry="3" fill="#cfd6de"/>
+            <ellipse cx="540" cy="240" rx="5" ry="3" fill="#cfd6de"/>
+        </g>
+    </g>
+
+    <!-- Foreground grass silhouettes for depth -->
+    <g opacity="0.7">
+        <path d="M60,770 C70,740 84,722 90,700 M98,770 C106,742 118,724 130,706 M142,770 C150,742 162,722 174,708"
+              stroke="#1b2130" stroke-width="4" class="fur-stroke" fill="none"/>
+        <path d="M980,770 C988,742 998,724 1010,708 M1020,770 C1030,744 1042,726 1054,712"
+              stroke="#1b2130" stroke-width="4" class="fur-stroke" fill="none"/>
+    </g>
+
+    <!-- Signature / credit area (tiny, non-intrusive) -->
+    <text x="16" y="784" font-family="'Segoe UI', Roboto, Arial, sans-serif" font-size="12" fill="#95a2b3" opacity="0.7">
+        SVG Wolf • tweak colors by editing gradients: bgGrad, furGrad, furShadow, eyeGrad
+    </text>
+</svg>

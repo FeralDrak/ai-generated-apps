@@ -1,0 +1,91 @@
+.app {
+  font-family: 'Segoe UI', Verdana, sans-serif;
+  text-align: center;
+  background: radial-gradient(ellipse at center, #101020 60%, #000 100%);
+  min-height: 100vh;
+  color: white;
+}
+
+.systeme-solaire {
+  position: relative;
+  width: 500px;
+  height: 500px;
+  margin: 2rem auto 1rem auto;
+  background: linear-gradient(to bottom, rgba(100,100,180,0.08), rgba(0,0,0,0.18));
+  border-radius: 50%;
+  box-shadow: 0 0 100px #222;
+  overflow: hidden;
+}
+
+.planete {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: 0 0 18px 2px rgba(255,255,255,0.1);
+  cursor: pointer;
+  transition: transform 0.1s;
+  border: 2px solid #2228;
+}
+
+.planete:hover {
+  transform: scale(1.1);
+  z-index: 3;
+  box-shadow: 0 0 28px 8px #fff4, 0 0 60px #fff2;
+}
+
+.soleil {
+  z-index: 2;
+  border: 3px solid #ffd70066;
+}
+
+.orbite {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px dashed #6988cc40;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.fiche-astre {
+  position: fixed;
+  right: 20px;
+  top: 30px;
+  background: rgba(25,35,65,0.95);
+  color: #fff;
+  padding: 1.5em 2em 2em 2em;
+  border-radius: 18px;
+  box-shadow: 0 0 20px #142860aa;
+  min-width: 260px;
+  max-width: 330px;
+  z-index: 10;
+  animation: fadeIn 0.3s;
+  text-align: left;
+}
+.close-btn {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  background: #251;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 1.2em;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.close-btn:hover {
+  background: #c42d00;
+  opacity: 1;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-16px);}
+  to { opacity: 1; transform: none;}
+}
+
+footer {
+  margin-top: 40px;
+  font-size: 0.92em;
+  color: #9aa;
+}

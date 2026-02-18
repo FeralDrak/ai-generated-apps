@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Loup en SVG</title>
+</head>
+<body>
+
+<svg
+        width="200"
+height="200"
+viewBox="0 0 200 200"
+xmlns="http://www.w3.org/2000/svg"
+aria-labelledby="title"
+role="img">
+
+<title id="title">Loup stylisé</title>
+
+<!-- Contour du crâne et des oreilles -->
+<path d="
+      M 50,70                     <!-- base de l'oreille gauche -->
+      L 30,30                     <!-- pointe de l'oreille gauche -->
+      L 70,20                     <!-- haut du front gauche -->
+      L 130,20                    <!-- haut du front droit -->
+      L 150,70                    <!-- base de l'oreille droite -->
+      C 150,90 140,110 120,120    <!-- joue droite (courbe) -->
+      C 115,130 105,130 100,140   <!-- museau (courbe) -->
+      C 95,130 85,130 80,120      <!-- joue gauche (courbe) -->
+      C 60,110 50,90 50,70        <!-- retour à la base de l'oreille gauche -->
+      Z"
+      fill="#555"                  <!-- couleur du corps (gris moyen) -->
+stroke="#000"
+stroke-width="2"/>
+
+<!-- Les yeux (blanc + pupille) -->
+<circle cx="70"  cy="45" r="5" fill="white"/>
+<circle cx="70"  cy="45" r="2" fill="black"/>
+<circle cx="120" cy="45" r="5" fill="white"/>
+<circle cx="120" cy="45" r="2" fill="black"/>
+
+<!-- Le nez -->
+<polygon points="98,132 102,132 100,136" fill="black"/>
+
+<!-- Une petite bouche (facultatif) -->
+<path d="M 95,138 Q 100,144 105,138" stroke="black" fill="none" stroke-width="1"/>
+</svg>
+
+</body>
+</html>

@@ -1,0 +1,118 @@
+.probability-card {
+    background-color: #ffffff;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin: 0.8rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribute space */
+    min-height: 220px; /* Ensure cards have a similar height */
+}
+
+.probability-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(40, 116, 252, 0.2); /* Ombre bleue au survol */
+}
+
+.card-rank {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #1976D2; /* Bleu Euromillions */
+    margin-bottom: 1rem;
+    background-color: #e3f2fd; /* Fond bleu très clair */
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    display: inline-block; /* Pour que le fond s'adapte au texte */
+}
+
+.card-matches {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.card-matches .label {
+    font-size: 0.9em;
+    color: #666;
+    margin-left: 0.2em;
+}
+
+.card-matches .match-numbers,
+.card-matches .match-stars {
+    display: inline-block; /* Empêche la coupure juste avant 'numéros' ou 'étoiles' */
+    white-space: nowrap; /* Garde le nombre et le label ensemble */
+}
+
+.card-matches .plus {
+    margin: 0 0.5rem;
+    font-weight: bold;
+    color: #FFC107; /* Jaune étoile */
+}
+
+.match-stars {
+    color: #FFC107; /* Jaune étoile */
+    font-weight: bold;
+}
+
+.match-stars .label {
+    color: #c79100; /* Un peu plus foncé pour le label étoile */
+}
+
+
+.card-probability {
+    margin-bottom: 1.5rem; /* Increased margin */
+}
+
+.odds-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #777;
+    margin-bottom: 0.3rem;
+}
+
+.odds-value {
+    font-size: 1.8rem; /* Make the odds number prominent */
+    font-weight: bold;
+    color: #D32F2F; /* Rouge pour attirer l'attention sur les faibles chances */
+    display: block;
+    line-height: 1.2; /* Ensure it doesn't take too much vertical space */
+}
+
+
+/* Optional visual bar styles */
+.card-visual-bar-container {
+    height: 8px;
+    background-color: #eee;
+    border-radius: 4px;
+    margin-top: auto; /* Pousse la barre vers le bas si la carte s'agrandit */
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+.card-visual-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #FFC107 0%, #F57C00 100%); /* Dégradé jaune/orange */
+    border-radius: 4px;
+    transition: width 0.5s ease-out; /* Animation douce */
+}
+
+
+.card-info {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: auto; /* Pousse cette info vers le bas */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .probability-card {
+        min-height: 200px; /* Slightly smaller cards on smaller screens */
+    }
+    .odds-value {
+        font-size: 1.5rem;
+    }
+}

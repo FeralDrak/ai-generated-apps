@@ -1,0 +1,206 @@
+/* App.css */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #0a0e17;
+  color: #d4e4ff;
+  overflow-x: hidden;
+}
+
+.idle-game {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #1a3b5d;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  background: linear-gradient(90deg, #4dabff, #62f8ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 15px rgba(77, 171, 255, 0.3);
+}
+
+.game-stats {
+  display: flex;
+  gap: 20px;
+  background: rgba(13, 26, 45, 0.8);
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.resource-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(18, 36, 61, 0.5);
+  border-radius: 10px;
+}
+
+.resource {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background: rgba(26, 59, 93, 0.6);
+  border-radius: 5px;
+  font-size: 1.1rem;
+}
+
+.resource .icon {
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  border-radius: 50%;
+}
+
+.icon.energy { background: radial-gradient(circle, #ffde00, #ff8c00); }
+.icon.minerals { background: radial-gradient(circle, #c0c0c0, #808080); }
+.icon.crystals { background: radial-gradient(circle, #9c27b0, #693399); }
+.icon.dark-matter { background: radial-gradient(circle, #4a0080, #000); }
+.icon.artifacts { background: radial-gradient(circle, #ff5722, #ff9800); }
+.icon.void-energy { background: radial-gradient(circle, #00bcd4, #3f51b5); }
+
+.resource .value {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.resource .label {
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+.game-modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.module {
+  background: linear-gradient(145deg, rgba(18, 36, 61, 0.8), rgba(10, 20, 35, 0.9));
+  border: 1px solid #1a3b5d;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease;
+}
+
+.module:hover {
+  transform: translateY(-5px);
+}
+
+.module h2 {
+  margin-top: 0;
+  color: #62f8ff;
+  font-size: 1.5rem;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2a5b93;
+}
+
+.module-content, .fleet-status, .launch-control {
+  margin-top: 15px;
+}
+
+.building, .technology, .probe, .unit, .dimension {
+  background: rgba(13, 26, 45, 0.6);
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border-left: 3px solid #62f8ff;
+}
+
+.technology.researched {
+  border-left-color: #9c27b0;
+  opacity: 0.7;
+}
+
+.available button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.starship {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  background: rgba(26, 59, 93, 0.6);
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.ship-icon {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.ship-icon.kepler { background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="30" stroke="%234dabff" stroke-width="3" fill="none"/><line x1="30" y1="50" x2="70" y2="50" stroke="%234dabff" stroke-width="2"/><line x1="50" y1="30" x2="50" y2="70" stroke="%234dabff" stroke-width="2"/></svg>'); }
+.ship-icon.ark { background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M 20 50 L 50 20 L 80 50 L 50 80 Z" stroke="%23ff5722" stroke-width="3" fill="none"/></svg>'); }
+.ship-icon.hawking { background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="35" stroke="%239c27b0" stroke-width="4" fill="none"/><circle cx="50" cy="50" r="20" stroke="%239c27b0" stroke-width="2" fill="none"/></svg>'); }
+
+button {
+  background: linear-gradient(135deg, #1e5799, #2989d8);
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+  margin-top: 10px;
+}
+
+button:hover {
+  background: linear-gradient(135deg, #2989d8, #1e5799);
+  transform: scale(1.05);
+}
+
+.unit-icon {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+  display: inline-block;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.unit-icon.engineer { background: radial-gradient(circle, #4dabff, #1e5799); }
+.unit-icon.scientist { background: radial-gradient(circle, #ff5722, #b03000); }
+.unit-icon.android { background: radial-gradient(circle, #9e9e9e, #616161); }
+
+.dimension-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.dimension {
+  flex: 1;
+  min-width: 250px;
+  background: rgba(13, 26, 45, 0.7);
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 3px solid #9c27b0;
+}
+
+.void-energy {
+  color: #00bcd4;
+  font-weight: bold;
+  font-size: 1.1rem;
+}

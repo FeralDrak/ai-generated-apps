@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 Pachinko Dungeon</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #gameCanvas {
+            border: 4px solid #e94560;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.3), inset 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        #sidebar {
+            width: 250px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .panel h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            color: #00d9ff;
+            font-weight: bold;
+        }
+
+        .health-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+
+        .upgrade-list {
+            font-size: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .upgrade-item {
+            padding: 5px;
+            margin: 3px 0;
+            background: rgba(233, 69, 96, 0.2);
+            border-radius: 5px;
+            border-left: 3px solid #e94560;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        .menu {
+            text-align: center;
+            color: white;
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        .menu h1 {
+            font-size: 48px;
+            color: #e94560;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+            margin-bottom: 20px;
+        }
+
+        .menu h2 {
+            font-size: 32px;
+            color: #00d9ff;
+            margin-bottom: 20px;
+        }
+
+        .menu p {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: white;
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(233, 69, 96, 0.6);
+        }
+
+        .upgrade-choices {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .upgrade-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 25px;
+            width: 180px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upgrade-card:hover {
+            transform: translateY(-10px);
+            border-color: #e94560;
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+        }
+
+        .upgrade-card .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upgrade-card .name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .upgrade-card .desc {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #launchIndicator {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            color: #00d9ff;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .controls-info {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div id="gameContainer">
+    <div style="position: relative;">
+        <canvas id="gameCanvas" width="600" height="800"></canvas>
+        <div id="launchIndicator">🎯 Cliquez en haut pour lancer</div>
+    </div>
+
+    <div id="sidebar">
+        <div class="panel">
+            <h3>🏰 Donjon</h3>
+            <div class="stat">
+                <span>Étage</span>
+                <span class="stat-value" id="floorDisplay">1</span>
+            </div>
+            <div class="stat">
+                <span>Or</span>
+                <span class="stat-value" id="goldDisplay">0 💰</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>❤️ Santé</h3>
+            <div class="health-bar">
+                <div class="health-fill" id="healthFill" style="width: 100%"></div>
+            </div>
+            <div class="stat">
+                <span id="healthText">100 / 100</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>🎱 Billes</h3>
+            <div class="stat">
+                <span>Disponibles</span>
+                <span class="stat-value" id="ballsDisplay">5</span>
+            </div>
+            <div class="stat">
+                <span>Dégâts</span>
+                <span class="stat-value" id="damageDisplay">10</span>
+            </div>
+            <div class="stat">
+                <span>Taille</span>
+                <span class="stat-value" id="sizeDisplay">8</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>⚡ Upgrades</h3>
+            <div class="upgrade-list" id="upgradeList">
+                <div style="color: #666; font-style: italic;">Aucun upgrade</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>📖 Contrôles</h3>
+            <div class="controls-info">
+                <p>🖱️ <strong>Clic</strong> : Lancer une bille</p>
+                <p>⌨️ <strong>R</strong> : Recommencer</p>
+                <p>⌨️ <strong>Espace</strong> : Accélérer</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <div class="menu" id="mainMenu">
+            <h1>🎰 PACHINKO DUNGEON</h1>
+            <p>
+                Lancez des billes pour détruire les monstres du donjon !<br>
+                Chaque bille rebondit sur les pegs et inflige des dégâts aux ennemis touchés.<br>
+                Collectez de l'or, obtenez des upgrades, et descendez le plus profondément possible !
+            </p>
+            <button class="btn btn-primary" onclick="game.start()">⚔️ JOUER</button>
+        </div>
+
+        <div class="menu hidden" id="upgradeMenu">
+            <h2>🎁 Choisissez un Upgrade !</h2>
+            <p>Étage complété ! Sélectionnez votre amélioration :</p>
+            <div class="upgrade-choices" id="upgradeChoices"></div>
+        </div>
+
+        <div class="menu hidden" id="gameOverMenu">
+            <h1>💀 GAME OVER</h1>
+            <p id="gameOverStats"></p>
+            <button class="btn btn-primary" onclick="game.restart()">🔄 Recommencer</button>
+        </div>
+
+        <div class="menu hidden" id="victoryMenu">
+            <h1>🏆 VICTOIRE !</h1>
+            <p id="victoryStats"></p>
+            <button class="btn btn-primary" onclick="game.restart()">🔄 Rejouer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================
+    // GAME CONSTANTS & CONFIGURATION
+    // ============================================
+    const CANVAS_WIDTH = 600;
+    const CANVAS_HEIGHT = 800;
+    const GRAVITY = 0.35;
+    const FRICTION = 0.98;
+    const BOUNCE_DAMPING = 0.7;
+    const LAUNCH_ZONE_HEIGHT = 50;
+
+    // ============================================
+    // UPGRADE DEFINITIONS
+    // ============================================
+    const UPGRADES = [
+        { id: 'balls', name: '+1 Bille', icon: '🎱', desc: 'Une bille supplémentaire par tour', effect: (p) => p.maxBalls++ },
+        { id: 'damage', name: '+5 Dégâts', icon: '⚔️', desc: 'Augmente les dégâts de base', effect: (p) => p.baseDamage += 5 },
+        { id: 'size', name: '+Taille', icon: '⭕', desc: 'Billes plus grosses', effect: (p) => p.ballSize += 2 },
+        { id: 'explosive', name: 'Explosif', icon: '💥', desc: 'Les billes explosent au contact', effect: (p) => p.explosive = true },
+        { id: 'piercing', name: 'Perforant', icon: '🎯', desc: 'Traverse les ennemis', effect: (p) => p.piercing = true },
+        { id: 'multiball', name: 'Multi-Ball', icon: '✨', desc: 'Chance de créer une copie', effect: (p) => p.multiballChance += 0.3 },
+        { id: 'fire', name: 'Feu', icon: '🔥', desc: 'Inflige des dégâts sur la durée', effect: (p) => p.fireDamage += 3 },
+        { id: 'bounce', name: 'Rebond+', icon: '🔄', desc: 'Plus de rebonds énergiques', effect: (p) => p.bounceBonus += 0.1 },
+        { id: 'vampire', name: 'Vampirisme', icon: '🧛', desc: 'Soigne en touchant les ennemis', effect: (p) => p.vampirism += 2 },
+        { id: 'crit', name: 'Critique', icon: '⚡', desc: '+15% chance de coup critique', effect: (p) => p.critChance += 0.15 },
+        { id: 'shield', name: 'Bouclier', icon: '🛡️', desc: '+20 PV max', effect: (p) => { p.maxHp += 20; p.hp += 20; } },
+        { id: 'regen', name: 'Régénération', icon: '💚', desc: 'Récupère des PV chaque étage', effect: (p) => p.regen += 5 },
+    ];
+
+    // ============================================
+    // ENEMY TYPES
+    // ============================================
+    const ENEMY_TYPES = {
+        slime: { name: 'Slime', icon: '🟢', hp: 30, damage: 5, color: '#4ade80', radius: 25 },
+        goblin: { name: 'Goblin', icon: '👺', hp: 50, damage: 10, color: '#f97316', radius: 28 },
+        skeleton: { name: 'Squelette', icon: '💀', hp: 70, damage: 15, color: '#d4d4d4', radius: 30 },
+        demon: { name: 'Démon', icon: '😈', hp: 100, damage: 20, color: '#dc2626', radius: 32 },
+        dragon: { name: 'Dragon', icon: '🐉', hp: 200, damage: 30, color: '#7c3aed', radius: 45, boss: true },
+        lich: { name: 'Liche', icon: '👻', hp: 300, damage: 40, color: '#06b6d4', radius: 50, boss: true },
+    };
+
+    // ============================================
+    // PARTICLE SYSTEM
+    // ============================================
+    class Particle {
+        constructor(x, y, color, velocity, life = 1, size = 3) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.vx = velocity.x;
+            this.vy = velocity.y;
+            this.life = life;
+            this.maxLife = life;
+            this.size = size;
+        }
+
+        update(dt) {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += GRAVITY * 0.3;
+            this.life -= dt;
+            return this.life > 0;
+        }
+
+        draw(ctx) {
+            const alpha = this.life / this.maxLife;
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * alpha, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // ============================================
+    // BALL CLASS
+    // ============================================
+    class Ball {
+        constructor(x, y, player) {
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 2;
+            this.vy = 2;
+            this.radius = player.ballSize;
+            this.player = player;
+            this.active = true;
+            this.hitEnemies = new Set();
+            this.trail = [];
+            this.bounces = 0;
+        }
+
+        update(dt, pegs, enemies, game) {
+            if (!this.active) return;
+
+            // Physics
+            this.vy += GRAVITY;
+            this.vx *= FRICTION;
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // Trail
+            this.trail.push({ x: this.x, y: this.y });
+            if (this.trail.length > 15) this.trail.shift();
+
+            // Wall collisions
+            if (this.x - this.radius < 0) {
+                this.x = this.radius;
+                this.vx = -this.vx * BOUNCE_DAMPING;
+            }
+            if (this.x + this.radius > CANVAS_WIDTH) {
+                this.x = CANVAS_WIDTH - this.radius;
+                this.vx = -this.vx * BOUNCE_DAMPING;
+            }
+
+            // Peg collisions
+            for (let peg of pegs) {
+                if (this.collidesWith(peg)) {
+                    this.bounceOff(peg);
+                    peg.hit(game);
+                    this.bounces++;
+                }
+            }
+
+            // Enemy collisions
+            for (let enemy of enemies) {
+                if (!enemy.dead && this.collidesWithEnemy(enemy)) {
+                    if (!this.hitEnemies.has(enemy) || this.player.piercing) {
+                        this.hitEnemy(enemy, game);
+                        if (!this.player.piercing) {
+                            this.hitEnemies.add(enemy);
+                        }
+                    }
+                }
+            }
+
+            // Multiball chance
+            if (this.bounces === 3 && Math.random() < this.player.multiballChance) {
+                game.spawnBall(this.x, this.y);
+                this.bounces = 100; // Prevent multiple spawns
+            }
+
+            // Out of bounds
+            if (this.y > CANVAS_HEIGHT + 50) {
+                this.active = false;
+            }
+        }
+
+        collidesWith(peg) {
+            const dx = this.x - peg.x;
+            const dy = this.y - peg.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            return dist < this.radius + peg.radius;
+        }
+
+        collidesWithEnemy(enemy) {
+            const dx = this.x - enemy.x;
+            const dy = this.y - enemy.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            return dist < this.radius + enemy.radius;
+        }
+
+        bounceOff(peg) {
+            const dx = this.x - peg.x;
+            const dy = this.y - peg.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Normalize
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            // Separate balls
+            const overlap = this.radius + peg.radius - dist;
+            this.x += nx * overlap;
+            this.y += ny * overlap;
+
+            // Reflect velocity
+            const dot = this.vx * nx + this.vy * ny;
+            const bounce = BOUNCE_DAMPING + this.player.bounceBonus;
+            this.vx = (this.vx - 2 * dot * nx) * bounce;
+            this.vy = (this.vy - 2 * dot * ny) * bounce;
+
+            // Add some randomness
+            this.vx += (Math.random() - 0.5) * 1;
+        }
+
+        hitEnemy(enemy, game) {
+            const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            let damage = this.player.baseDamage * (1 + speed * 0.1);
+
+            // Critical hit
+            if (Math.random() < this.player.critChance) {
+                damage *= 2;
+                game.spawnParticles(enemy.x, enemy.y, '#ffff00', 15);
+                game.addFloatingText(enemy.x, enemy.y - 30, 'CRIT!', '#ffff00');
+            }
+
+            enemy.takeDamage(damage, game);
+
+            // Fire damage
+            if (this.player.fireDamage > 0) {
+                enemy.burning = 3;
+                enemy.burnDamage = this.player.fireDamage;
+            }
+
+            // Explosive
+            if (this.player.explosive) {
+                game.spawnParticles(this.x, this.y, '#ff6600', 20);
+                for (let e of game.enemies) {
+                    if (e !== enemy && !e.dead) {
+                        const dx = e.x - this.x;
+                        const dy = e.y - this.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 80) {
+                            e.takeDamage(damage * 0.5, game);
+                        }
+                    }
+                }
+            }
+
+            // Vampirism
+            if (this.player.vampirism > 0) {
+                this.player.hp = Math.min(this.player.maxHp, this.player.hp + this.player.vampirism);
+            }
+
+            game.spawnParticles(enemy.x, enemy.y, enemy.color, 8);
+        }
+
+        draw(ctx) {
+            // Trail
+            for (let i = 0; i < this.trail.length; i++) {
+                const alpha = i / this.trail.length * 0.5;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = this.player.fireDamage > 0 ? '#ff6600' : '#00d9ff';
+                ctx.beginPath();
+                ctx.arc(this.trail[i].x, this.trail[i].y, this.radius * (i / this.trail.length), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // Ball
+            const gradient = ctx.createRadialGradient(
+                this.x - this.radius * 0.3, this.y - this.radius * 0.3, 0,
+                this.x, this.y, this.radius
+            );
+
+            if (this.player.fireDamage > 0) {
+                gradient.addColorStop(0, '#ffff00');
+                gradient.addColorStop(0.5, '#ff6600');
+                gradient.addColorStop(1, '#cc0000');
+            } else {
+                gradient.addColorStop(0, '#ffffff');
+                gradient.addColorStop(0.5, '#00d9ff');
+                gradient.addColorStop(1, '#0066cc');
+            }
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    // ============================================
+    // PEG CLASS
+    // ============================================
+    class Peg {
+        constructor(x, y, type = 'normal') {
+            this.x = x;
+            this.y = y;
+            this.type = type;
+            this.radius = 12;
+            this.hit_count = 0;
+            this.glowIntensity = 0;
+
+            switch(type) {
+                case 'gold': this.color = '#ffd700'; break;
+                case 'heal': this.color = '#4ade80'; break;
+                case 'multiplier': this.color = '#e94560'; break;
+                case 'damage': this.color = '#dc2626'; break;
+                default: this.color = '#6366f1';
+            }
+        }
+
+        hit(game) {
+            this.glowIntensity = 1;
+            this.hit_count++;
+
+            switch(this.type) {
+                case 'gold':
+                    game.player.gold += 5;
+                    game.addFloatingText(this.x, this.y, '+5 💰', '#ffd700');
+                    break;
+                case 'heal':
+                    game.player.hp = Math.min(game.player.maxHp, game.player.hp + 5);
+                    game.addFloatingText(this.x, this.y, '+5 ❤️', '#4ade80');
+                    break;
+                case 'multiplier':
+                    game.damageMultiplier = Math.min(5, game.damageMultiplier + 0.5);
+                    game.addFloatingText(this.x, this.y, 'x' + game.damageMultiplier.toFixed(1), '#e94560');
+                    break;
+                case 'damage':
+                    game.player.hp -= 3;
+                    game.addFloatingText(this.x, this.y, '-3 💔', '#dc2626');
+                    break;
+            }
+
+            game.spawnParticles(this.x, this.y, this.color, 5);
+        }
+
+        update() {
+            if (this.glowIntensity > 0) {
+                this.glowIntensity -= 0.05;
+            }
+        }
+
+        draw(ctx) {
+            // Glow effect
+            if (this.glowIntensity > 0) {
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 20 * this.glowIntensity;
+            }
+
+            const gradient = ctx.createRadialGradient(
+                this.x - this.radius * 0.3, this.y - this.radius * 0.3, 0,
+                this.x, this.y, this.radius
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(0.7, this.color);
+            gradient.addColorStop(1, this.darken(this.color));
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+        }
+
+        darken(color) {
+            return color + '88';
+        }
+    }
+
+    // ============================================
+    // ENEMY CLASS
+    // ============================================
+    class Enemy {
+        constructor(x, y, type, floor) {
+            const data = ENEMY_TYPES[type];
+            this.x = x;
+            this.y = y;
+            this.type = type;
+            this.name = data.name;
+            this.icon = data.icon;
+            this.maxHp = data.hp * (1 + floor * 0.2);
+            this.hp = this.maxHp;
+            this.damage = data.damage;
+            this.color = data.color;
+            this.radius = data.radius;
+            this.boss = data.boss || false;
+            this.dead = false;
+            this.shakeOffset = 0;
+            this.burning = 0;
+            this.burnDamage = 0;
+            this.pulsePhase = Math.random() * Math.PI * 2;
+        }
+
+        takeDamage(amount, game) {
+            this.hp -= amount * game.damageMultiplier;
+            this.shakeOffset = 10;
+
+            game.addFloatingText(
+                this.x + (Math.random() - 0.5) * 20,
+                this.y - 20,
+                Math.round(amount * game.damageMultiplier).toString(),
+                '#ff6b6b'
+            );
+
+            if (this.hp <= 0) {
+                this.dead = true;
+                game.player.gold += this.boss ? 50 : 10;
+                game.spawnParticles(this.x, this.y, this.color, 30);
+                game.addFloatingText(this.x, this.y, this.boss ? '+50 💰' : '+10 💰', '#ffd700');
+            }
+        }
+
+        update(game) {
+            if (this.dead) return;
+
+            // Shake effect
+            if (this.shakeOffset > 0) {
+                this.shakeOffset *= 0.8;
+            }
+
+            // Pulse animation
+            this.pulsePhase += 0.05;
+
+            // Burning effect
+            if (this.burning > 0) {
+                this.burning -= 0.016; // Roughly per frame
+                if (Math.random() < 0.1) {
+                    this.takeDamage(this.burnDamage, game);
+                    game.spawnParticles(this.x, this.y, '#ff6600', 3);
+                }
+            }
+        }
+
+        draw(ctx) {
+            if (this.dead) return;
+
+            const shake = (Math.random() - 0.5) * this.shakeOffset;
+            const pulse = 1 + Math.sin(this.pulsePhase) * 0.05;
+            const drawX = this.x + shake;
+            const drawY = this.y;
+            const drawRadius = this.radius * pulse;
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(drawX, drawY + drawRadius * 0.8, drawRadius * 0.8, drawRadius * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body
+            const gradient = ctx.createRadialGradient(
+                drawX - drawRadius * 0.3, drawY - drawRadius * 0.3, 0,
+                drawX, drawY, drawRadius
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(0.3, this.color);
+            gradient.addColorStop(1, this.darken(this.color));
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, drawRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Burning effect
+            if (this.burning > 0) {
+                ctx.strokeStyle = '#ff6600';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            // Boss crown
+            if (this.boss) {
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('👑', drawX, drawY - drawRadius - 10);
+            }
+
+            // Icon
+            ctx.font = `${drawRadius}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.icon, drawX, drawY);
+
+            // Health bar
+            const barWidth = drawRadius * 2;
+            const barHeight = 6;
+            const barY = drawY - drawRadius - 15;
+
+            ctx.fillStyle = '#333';
+            ctx.fillRect(drawX - barWidth/2, barY, barWidth, barHeight);
+
+            const hpPercent = this.hp / this.maxHp;
+            ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
+            ctx.fillRect(drawX - barWidth/2, barY, barWidth * hpPercent, barHeight);
+
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(drawX - barWidth/2, barY, barWidth, barHeight);
+        }
+
+        darken(color) {
+            // Simple darkening
+            return color;
+        }
+    }
+
+    // ============================================
+    // FLOATING TEXT
+    // ============================================
+    class FloatingText {
+        constructor(x, y, text, color) {
+            this.x = x;
+            this.y = y;
+            this.text = text;
+            this.color = color;
+            this.life = 1;
+            this.vy = -2;
+        }
+
+        update() {
+            this.y += this.vy;
+            this.life -= 0.02;
+            return this.life > 0;
+        }
+
+        draw(ctx) {
+            ctx.globalAlpha = this.life;
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = this.color;
+            ctx.fillText(this.text, this.x, this.y);
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // ============================================
+    // MAIN GAME CLASS
+    // ============================================
+    class Game {
+        constructor() {
+            this.canvas = document.getElementById('gameCanvas');
+            this.ctx = this.canvas.getContext('2d');
+
+            this.player = {
+                hp: 100,
+                maxHp: 100,
+                gold: 0,
+                maxBalls: 5,
+                balls: 5,
+                baseDamage: 10,
+                ballSize: 8,
+                explosive: false,
+                piercing: false,
+                multiballChance: 0,
+                fireDamage: 0,
+                bounceBonus: 0,
+                vampirism: 0,
+                critChance: 0.05,
+                regen: 0,
+                upgrades: []
+            };
+
+            this.floor = 1;
+            this.balls = [];
+            this.pegs = [];
+            this.enemies = [];
+            this.particles = [];
+            this.floatingTexts = [];
+            this.damageMultiplier = 1;
+
+            this.state = 'menu'; // menu, playing, upgrade, gameover, victory
+            this.lastTime = 0;
+            this.speedMultiplier = 1;
+
+            this.setupEventListeners();
+            this.gameLoop(0);
+        }
+
+        setupEventListeners() {
+            this.canvas.addEventListener('click', (e) => this.handleClick(e));
+            document.addEventListener('keydown', (e) => this.handleKey(e));
+            document.addEventListener('keyup', (e) => {
+                if (e.code === 'Space') this.speedMultiplier = 1;
+            });
+        }
+
+        handleClick(e) {
+            if (this.state !== 'playing') return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Only allow launching from top zone
+            if (y < LAUNCH_ZONE_HEIGHT && this.player.balls > 0 && this.balls.length === 0) {
+                this.launchBall(x);
+            }
+        }
+
+        handleKey(e) {
+            if (e.code === 'KeyR') {
+                this.restart();
+            }
+            if (e.code === 'Space') {
+                this.speedMultiplier = 3;
+            }
+        }
+
+        launchBall(x) {
+            if (this.player.balls <= 0) return;
+
+            this.player.balls--;
+            this.damageMultiplier = 1;
+
+            const ball = new Ball(x, 30, this.player);
+            this.balls.push(ball);
+
+            this.updateUI();
+        }
+
+        spawnBall(x, y) {
+            const ball = new Ball(x, y, this.player);
+            ball.vx = (Math.random() - 0.5) * 5;
+            ball.vy = Math.random() * 3;
+            this.balls.push(ball);
+        }
+
+        start() {
+            this.state = 'playing';
+            this.generateFloor();
+            this.hideAllMenus();
+            document.getElementById('overlay').classList.add('hidden');
+            this.updateUI();
+        }
+
+        restart() {
+            this.player = {
+                hp: 100,
+                maxHp: 100,
+                gold: 0,
+                maxBalls: 5,
+                balls: 5,
+                baseDamage: 10,
+                ballSize: 8,
+                explosive: false,
+                piercing: false,
+                multiballChance: 0,
+                fireDamage: 0,
+                bounceBonus: 0,
+                vampirism: 0,
+                critChance: 0.05,
+                regen: 0,
+                upgrades: []
+            };
+            this.floor = 1;
+            this.balls = [];
+            this.particles = [];
+            this.floatingTexts = [];
+
+            this.start();
+        }
+
+        generateFloor() {
+            this.pegs = [];
+            this.enemies = [];
+            this.balls = [];
+            this.player.balls = this.player.maxBalls;
+            this.damageMultiplier = 1;
+
+            // Generate pegs
+            const pegRows = 8;
+            const pegsPerRow = 10;
+            const startY = 120;
+            const rowHeight = 60;
+            const pegSpacing = CANVAS_WIDTH / (pegsPerRow + 1);
+
+            for (let row = 0; row < pegRows; row++) {
+                const offset = row % 2 === 0 ? 0 : pegSpacing / 2;
+                const numPegs = row % 2 === 0 ? pegsPerRow : pegsPerRow - 1;
+
+                for (let col = 0; col < numPegs; col++) {
+                    const x = pegSpacing + col * pegSpacing + offset;
+                    const y = startY + row * rowHeight;
+
+                    // Random peg type
+                    let type = 'normal';
+                    const rand = Math.random();
+                    if (rand < 0.08) type = 'gold';
+                    else if (rand < 0.12) type = 'heal';
+                    else if (rand < 0.15) type = 'multiplier';
+                    else if (rand < 0.18) type = 'damage';
+
+                    this.pegs.push(new Peg(x, y, type));
+                }
+            }
+
+            // Generate enemies
+            const isBossFloor = this.floor % 5 === 0;
+            const enemyCount = isBossFloor ? 1 : Math.min(3 + Math.floor(this.floor / 2), 6);
+
+            const enemyZone = {
+                top: 550,
+                bottom: 750,
+                left: 60,
+                right: CANVAS_WIDTH - 60
+            };
+
+            for (let i = 0; i < enemyCount; i++) {
+                let type;
+                if (isBossFloor) {
+                    type = this.floor >= 10 ? 'lich' : 'dragon';
+                } else {
+                    const types = ['slime'];
+                    if (this.floor >= 2) types.push('goblin');
+                    if (this.floor >= 4) types.push('skeleton');
+                    if (this.floor >= 7) types.push('demon');
+                    type = types[Math.floor(Math.random() * types.length)];
+                }
+
+                const x = enemyZone.left + Math.random() * (enemyZone.right - enemyZone.left);
+                const y = enemyZone.top + Math.random() * (enemyZone.bottom - enemyZone.top);
+
+                this.enemies.push(new Enemy(x, y, type, this.floor));
+            }
+
+            // Regen
+            if (this.player.regen > 0) {
+                this.player.hp = Math.min(this.player.maxHp, this.player.hp + this.player.regen);
+            }
+
+            this.updateUI();
+        }
+
+        showUpgradeMenu() {
+            this.state = 'upgrade';
+
+            // Pick 3 random upgrades
+            const available = [...UPGRADES].sort(() => Math.random() - 0.5).slice(0, 3);
+
+            const container = document.getElementById('upgradeChoices');
+            container.innerHTML = '';
+
+            for (let upgrade of available) {
+                const card = document.createElement('div');
+                card.className = 'upgrade-card';
+                card.innerHTML = `
+                        <div class="icon">${upgrade.icon}</div>
+                        <div class="name">${upgrade.name}</div>
+                        <div class="desc">${upgrade.desc}</div>
+                    `;
+                card.onclick = () => this.selectUpgrade(upgrade);
+                container.appendChild(card);
+            }
+
+            this.hideAllMenus();
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('upgradeMenu').classList.remove('hidden');
+        }
+
+        selectUpgrade(upgrade) {
+            upgrade.effect(this.player);
+            this.player.upgrades.push(upgrade.name);
+
+            this.floor++;
+            this.generateFloor();
+
+            this.hideAllMenus();
+            document.getElementById('overlay').classList.add('hidden');
+            this.state = 'playing';
+            this.updateUI();
+        }
+
+        showGameOver() {
+            this.state = 'gameover';
+            document.getElementById('gameOverStats').innerHTML = `
+                    Vous avez atteint l'étage <strong>${this.floor}</strong><br>
+                    Or collecté: <strong>${this.player.gold} 💰</strong><br>
+                    Upgrades obtenus: <strong>${this.player.upgrades.length}</strong>
+                `;
+
+            this.hideAllMenus();
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('gameOverMenu').classList.remove('hidden');
+        }
+
+        showVictory() {
+            this.state = 'victory';
+            document.getElementById('victoryStats').innerHTML = `
+                    Vous avez conquis le donjon !<br>
+                    Étage final: <strong>${this.floor}</strong><br>
+                    Or collecté: <strong>${this.player.gold} 💰</strong><br>
+                    Upgrades obtenus: <strong>${this.player.upgrades.length}</strong>
+                `;
+
+            this.hideAllMenus();
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('victoryMenu').classList.remove('hidden');
+        }
+
+        hideAllMenus() {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('upgradeMenu').classList.add('hidden');
+            document.getElementById('gameOverMenu').classList.add('hidden');
+            document.getElementById('victoryMenu').classList.add('hidden');
+        }
+
+        spawnParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 4;
+                this.particles.push(new Particle(
+                    x, y, color,
+                    { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
+                    0.5 + Math.random() * 0.5,
+                    2 + Math.random() * 3
+                ));
+            }
+        }
+
+        addFloatingText(x, y, text, color) {
+            this.floatingTexts.push(new FloatingText(x, y, text, color));
+        }
+
+        update(dt) {
+            if (this.state !== 'playing') return;
+
+            const effectiveDt = dt * this.speedMultiplier;
+
+            // Update balls
+            for (let ball of this.balls) {
+                ball.update(effectiveDt, this.pegs, this.enemies, this);
+            }
+            this.balls = this.balls.filter(b => b.active);
+
+            // Update pegs
+            for (let peg of this.pegs) {
+                peg.update();
+            }
+
+            // Update enemies
+            for (let enemy of this.enemies) {
+                enemy.update(this);
+            }
+
+            // Update particles
+            for (let particle of this.particles) {
+                particle.update(effectiveDt);
+            }
+            this.particles = this.particles.filter(p => p.life > 0);
+
+            // Update floating texts
+            for (let text of this.floatingTexts) {
+                text.update();
+            }
+            this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
+
+            // Check floor completion
+            if (this.enemies.every(e => e.dead)) {
+                if (this.floor >= 15) {
+                    this.showVictory();
+                } else {
+                    this.showUpgradeMenu();
+                }
+            }
+
+            // Check game over
+            if (this.player.hp <= 0) {
+                this.showGameOver();
+            }
+
+            // Check if turn is over (no balls and no balls left)
+            if (this.balls.length === 0 && this.player.balls <= 0) {
+                // Enemy turn - they attack
+                for (let enemy of this.enemies) {
+                    if (!enemy.dead) {
+                        this.player.hp -= enemy.damage;
+                        this.addFloatingText(300, 50, `-${enemy.damage} 💔`, '#ef4444');
+                    }
+                }
+
+                // Reset balls for next turn
+                this.player.balls = this.player.maxBalls;
+                this.damageMultiplier = 1;
+
+                this.updateUI();
+            }
+
+            this.updateUI();
+        }
+
+        draw() {
+            // Clear
+            this.ctx.fillStyle = '#0d0d1a';
+            this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            // Draw launch zone
+            this.ctx.fillStyle = 'rgba(0, 217, 255, 0.1)';
+            this.ctx.fillRect(0, 0, CANVAS_WIDTH, LAUNCH_ZONE_HEIGHT);
+            this.ctx.strokeStyle = '#00d9ff';
+            this.ctx.setLineDash([5, 5]);
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, LAUNCH_ZONE_HEIGHT);
+            this.ctx.lineTo(CANVAS_WIDTH, LAUNCH_ZONE_HEIGHT);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+
+            // Draw floor indicator
+            this.ctx.font = 'bold 24px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillStyle = '#e94560';
+            this.ctx.fillText(`⚔️ ÉTAGE ${this.floor} ⚔️`, CANVAS_WIDTH / 2, 30);
+
+            // Draw pegs
+            for (let peg of this.pegs) {
+                peg.draw(this.ctx);
+            }
+
+            // Draw enemies
+            for (let enemy of this.enemies) {
+                enemy.draw(this.ctx);
+            }
+
+            // Draw balls
+            for (let ball of this.balls) {
+                ball.draw(this.ctx);
+            }
+
+            // Draw particles
+            for (let particle of this.particles) {
+                particle.draw(this.ctx);
+            }
+
+            // Draw floating texts
+            for (let text of this.floatingTexts) {
+                text.draw(this.ctx);
+            }
+
+            // Draw multiplier
+            if (this.damageMultiplier > 1) {
+                this.ctx.font = 'bold 20px Arial';
+                this.ctx.textAlign = 'left';
+                this.ctx.fillStyle = '#e94560';
+                this.ctx.fillText(`Multiplicateur: x${this.damageMultiplier.toFixed(1)}`, 10, CANVAS_HEIGHT - 10);
+            }
+        }
+
+        updateUI() {
+            document.getElementById('floorDisplay').textContent = this.floor;
+            document.getElementById('goldDisplay').textContent = this.player.gold + ' 💰';
+            document.getElementById('healthFill').style.width = (this.player.hp / this.player.maxHp * 100) + '%';
+            document.getElementById('healthText').textContent = `${Math.max(0, Math.round(this.player.hp))} / ${this.player.maxHp}`;
+            document.getElementById('ballsDisplay').textContent = this.player.balls;
+            document.getElementById('damageDisplay').textContent = this.player.baseDamage;
+            document.getElementById('sizeDisplay').textContent = this.player.ballSize;
+
+            // Update upgrade list
+            const upgradeList = document.getElementById('upgradeList');
+            if (this.player.upgrades.length === 0) {
+                upgradeList.innerHTML = '<div style="color: #666; font-style: italic;">Aucun upgrade</div>';
+            } else {
+                upgradeList.innerHTML = this.player.upgrades.map(u =>
+                    `<div class="upgrade-item">${u}</div>`
+                ).join('');
+            }
+        }
+
+        gameLoop(timestamp) {
+            const dt = Math.min((timestamp - this.lastTime) / 1000, 0.1);
+            this.lastTime = timestamp;
+
+            this.update(dt);
+            this.draw();
+
+            requestAnimationFrame((t) => this.gameLoop(t));
+        }
+    }
+
+    // ============================================
+    // START GAME
+    // ============================================
+    const game = new Game();
+</script>
+</body>
+</html>

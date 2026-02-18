@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dungeon Pachinko - Roguelike</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #222 0, #050608 60%);
+            color: #f3f3f3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        #ui {
+            min-width: 260px;
+            max-width: 320px;
+            padding: 12px 16px;
+            background: rgba(10, 10, 15, 0.9);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        #subtitle {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 12px;
+        }
+
+        #stats {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        #messages {
+            font-size: 0.85rem;
+            margin-top: 6px;
+            min-height: 32px;
+            color: #e1ddff;
+        }
+
+        #legend {
+            font-size: 0.8rem;
+            margin-top: 10px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            color: #ccc;
+        }
+
+        #legend ul {
+            list-style: none;
+            margin-top: 4px;
+            padding-left: 0;
+        }
+
+        #legend li {
+            margin-bottom: 2px;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+
+        #gameWrapper {
+            position: relative;
+        }
+
+        #game {
+            background: radial-gradient(circle at top, #1a1b2a 0, #050610 60%);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.75);
+            display: block;
+        }
+
+        #upgradePanel {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, rgba(15,15,30,0.96) 0, rgba(0,0,0,0.96) 60%);
+            border-radius: 12px;
+        }
+
+        #upgradeContent {
+            background: rgba(10,10,20,0.95);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 14px;
+            width: 92%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.9);
+        }
+
+        #upgradeContent h2 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        #upgradeContent p {
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+
+        .upgradeBtn {
+            width: 100%;
+            text-align: left;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: linear-gradient(135deg, #282a3d, #1c1e30);
+            color: #f3f3f3;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: transform 0.06s ease, box-shadow 0.06s ease, border-color 0.06s ease;
+        }
+
+        .upgradeBtn span.title {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .upgradeBtn span.desc {
+            display: block;
+            font-size: 0.75rem;
+            color: #c0c0ff;
+        }
+
+        .upgradeBtn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+            border-color: rgba(177, 137, 255, 0.9);
+        }
+
+        #restartBtn {
+            margin-top: 10px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: linear-gradient(135deg, #313349, #232538);
+            color: #f3f3f3;
+            font-size: 0.82rem;
+            cursor: pointer;
+        }
+
+        #restartBtn:hover {
+            background: linear-gradient(135deg, #3d4060, #252742);
+        }
+
+        @media (max-width: 800px) {
+            #container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #ui {
+                order: -1;
+                width: 100%;
+                max-width: 480px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <div id="ui">
+        <h1>Dungeon Pachinko</h1>
+        <div id="subtitle">Roguelike de pachinko en HTML</div>
+        <div id="stats"></div>
+        <div id="messages"></div>
+        <button id="restartBtn" style="display:none;">Recommencer la partie</button>
+
+        <div id="legend">
+            <strong>Légende :</strong>
+            <ul>
+                <li><span class="dot" style="background:#888;"></span>Quille normale</li>
+                <li><span class="dot" style="background:#e74c3c;"></span>Ennemi (PV au-dessus)</li>
+                <li><span class="dot" style="background:#f1c40f;"></span>Or (+1 or)</li>
+                <li>Slots bas :
+                    <br>🟩 Soin | 🟥 Dégâts | 🟦 Bille +1 | 🟨 Or | ⬛ Neutre
+                </li>
+                <li style="margin-top:4px;">Cliquez dans le plateau pour lâcher une bille.<br>
+                    Détruisez tous les ennemis avant d'être à court de PV ou de billes.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="gameWrapper">
+        <canvas id="game" width="480" height="720"></canvas>
+
+        <div id="upgradePanel">
+            <div id="upgradeContent">
+                <h2>Étage nettoyé !</h2>
+                <p>Choisissez une amélioration pour la suite de votre descente.</p>
+                <button class="upgradeBtn" data-index="0">
+                    <span class="title"></span>
+                    <span class="desc"></span>
+                </button>
+                <button class="upgradeBtn" data-index="1">
+                    <span class="title"></span>
+                    <span class="desc"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ==========================
+        // Constantes et variables
+        // ==========================
+
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+
+        const statsEl = document.getElementById("stats");
+        const messagesEl = document.getElementById("messages");
+        const restartBtn = document.getElementById("restartBtn");
+
+        const upgradePanel = document.getElementById("upgradePanel");
+        const upgradeButtons = Array.from(
+            document.querySelectorAll(".upgradeBtn")
+        );
+
+        const W = canvas.width;
+        const H = canvas.height;
+
+        const CONFIG = {
+            gravity: 0.2,
+            friction: 0.999,
+            pegRadius: 8,
+            ballRadius: 7,
+            ballStartY: 80,
+            minLaunchX: 40,
+            maxLaunchX: W - 40,
+            enemyBaseHP: 3,
+            enemyHpPerFloor: 0.7,
+            maxEnemiesPerFloor: 12,
+            baseBallsPerFloor: 6,
+            basePlayerHP: 10,
+            enemyDamageFactor: 0.7, // dégâts = ceil(ennemis * facteur)
+            healOnSlot: 2,
+            damageOnSlot: 2
+        };
+
+        // États de jeu
+        let gameState = "playing"; // "playing" | "choosingUpgrade" | "gameOver"
+
+        // Entités
+        let pegs = [];      // Toutes les quilles
+        let enemies = [];   // Références vers les quilles ennemies
+        let slots = [];     // Slots en bas
+
+        let ball = null;    // Bille courante
+        let hasActiveBall = false;
+
+        // Progression
+        let floor = 1;
+        let gold = 0;
+
+        let maxHP = CONFIG.basePlayerHP;
+        let playerHP = maxHP;
+
+        let ballsPerFloor = CONFIG.baseBallsPerFloor;
+        let remainingBalls = ballsPerFloor;
+
+        let damagePerHit = 1;    // dégâts par collision avec un ennemi
+        let healPerNewFloor = 1; // soin automatique à chaque nouvel étage
+
+        // Interface
+        let currentMessage = "Cliquez dans le plateau pour lâcher une bille.";
+        let mouseX = W / 2;
+
+        // Pool d'améliorations
+        const UPGRADE_POOL = [
+            {
+                id: "moreBalls",
+                title: "+1 bille par étage",
+                desc: "Commencez chaque étage avec une bille supplémentaire.",
+                apply: function() {
+                    ballsPerFloor += 1;
+                }
+            },
+            {
+                id: "moreDamage",
+                title: "+1 dégâts par rebond",
+                desc: "Chaque collision avec un ennemi inflige 1 point de dégâts supplémentaire.",
+                apply: function() {
+                    damagePerHit += 1;
+                }
+            },
+            {
+                id: "maxHpUp",
+                title: "+2 PV max",
+                desc: "Augmente vos PV max de 2 et vous soigne de 2.",
+                apply: function() {
+                    maxHP += 2;
+                    playerHP = Math.min(playerHP + 2, maxHP);
+                }
+            },
+            {
+                id: "healOnFloor",
+                title: "+1 soin par étage",
+                desc: "À chaque nouvel étage, soignez-vous légèrement.",
+                apply: function() {
+                    healPerNewFloor += 1;
+                }
+            },
+            {
+                id: "enemyLessDamage",
+                title: "Ennemis moins dangereux",
+                desc: "Les attaques ennemies en fin de bille sont un peu moins violentes.",
+                apply: function() {
+                    CONFIG.enemyDamageFactor = Math.max(0.4, CONFIG.enemyDamageFactor - 0.1);
+                }
+            },
+            {
+                id: "riches",
+                title: "Plus d'or",
+                desc: "Les quilles d'or vous rapportent 1 pièce supplémentaire.",
+                apply: function() {
+                    goldBonusPerHit++;
+                }
+            }
+        ];
+
+        // Bonus d'or ajouté par l'upgrade "riches"
+        let goldBonusPerHit = 0;
+
+        // ==========================
+        // Outils
+        // ==========================
+
+        function randRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function randInt(min, maxInclusive) {
+            return Math.floor(Math.random() * (maxInclusive - min + 1)) + min;
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // ==========================
+        // Génération de niveau
+        // ==========================
+
+        function generateFloor() {
+            pegs = [];
+            enemies = [];
+            slots = [];
+
+            // Génération de la grille de quilles
+            const rows = 8;
+            const cols = 7;
+            const topOffset = 150;
+            const rowSpacing = 55;
+            const colSpacing = 55;
+
+            let pegId = 0;
+
+            for (let r = 0; r < rows; r++) {
+                const y = topOffset + r * rowSpacing + randRange(-4, 4);
+                const stagger = (r % 2 === 0) ? 0 : colSpacing / 2;
+                for (let c = 0; c < cols; c++) {
+                    let x = 60 + c * colSpacing + stagger;
+                    if (x < 40 || x > W - 40) continue;
+
+                    const peg = {
+                        id: pegId++,
+                        x: x + randRange(-3, 3),
+                        y: y,
+                        radius: CONFIG.pegRadius,
+                        type: "normal", // "normal" | "enemy" | "gold" | "dead"
+                        hp: 0,
+                        maxHp: 0
+                    };
+                    pegs.push(peg);
+                }
+            }
+
+            // Sélection aléatoire des ennemis
+            let maxEnemies = Math.min(CONFIG.maxEnemiesPerFloor, 4 + Math.floor(floor * 1.1));
+            maxEnemies = Math.min(maxEnemies, pegs.length);
+
+            const shuffledIndices = shuffle([...Array(pegs.length).keys()]);
+            for (let i = 0; i < maxEnemies; i++) {
+                const peg = pegs[shuffledIndices[i]];
+                peg.type = "enemy";
+                peg.maxHp = Math.round(CONFIG.enemyBaseHP + floor * CONFIG.enemyHpPerFloor);
+                peg.hp = peg.maxHp;
+                enemies.push(peg);
+            }
+
+            // Quelques quilles d'or
+            const goldCount = Math.min(5, 2 + Math.floor(floor / 2));
+            for (let i = maxEnemies; i < maxEnemies + goldCount && i < pegs.length; i++) {
+                const peg = pegs[shuffledIndices[i]];
+                if (peg.type === "normal") {
+                    peg.type = "gold";
+                }
+            }
+
+            // Slots en bas
+            const slotHeight = 40;
+            const slotY = H - slotHeight;
+            const slotCount = 5;
+            const slotWidth = W / slotCount;
+
+            const slotTypes = ["heal", "gold", "extraBall", "damage", "neutral"];
+
+            for (let i = 0; i < slotCount; i++) {
+                const type = slotTypes[i % slotTypes.length];
+                slots.push({
+                    x: i * slotWidth,
+                    y: slotY,
+                    w: slotWidth,
+                    h: slotHeight,
+                    type
+                });
+            }
+
+            // Remise à zéro des billes pour le nouvel étage
+            remainingBalls = ballsPerFloor;
+
+            // Soin automatique du joueur à chaque nouvel étage
+            playerHP = Math.min(playerHP + healPerNewFloor, maxHP);
+
+            currentMessage = "Étage " + floor + " : détruisez tous les ennemis.";
+            updateHUD();
+        }
+
+        // ==========================
+        // Gestion de la bille
+        // ==========================
+
+        function spawnBall(x) {
+            if (hasActiveBall || remainingBalls <= 0 || gameState !== "playing") return;
+            const clampedX = Math.max(CONFIG.minLaunchX, Math.min(CONFIG.maxLaunchX, x));
+
+            ball = {
+                x: clampedX,
+                y: CONFIG.ballStartY,
+                vx: randRange(-0.4, 0.4),
+                vy: 0,
+                radius: CONFIG.ballRadius,
+                slotResolved: false
+            };
+            hasActiveBall = true;
+            currentMessage = "La bille tombe... Surveillez vos PV !";
+            updateHUD();
+        }
+
+        // ==========================
+        // Effets des collisions
+        // ==========================
+
+        function onPegHit(peg) {
+            if (!ball) return;
+
+            if (peg.type === "enemy") {
+                peg.hp -= damagePerHit;
+                if (peg.hp <= 0) {
+                    peg.hp = 0;
+                    peg.type = "dead"; // on laisse un point visuel, mais gris
+                    const idx = enemies.indexOf(peg);
+                    if (idx !== -1) enemies.splice(idx, 1);
+                    if (enemies.length === 0) {
+                        currentMessage = "Tous les ennemis sont détruits ! Terminez la bille.";
+                    } else {
+                        currentMessage = "Ennemi touché ! Ennemis restants : " + enemies.length;
+                    }
+                } else {
+                    currentMessage = "Vous blessez un ennemi (PV restants : " + peg.hp + ").";
+                }
+            } else if (peg.type === "gold") {
+                gold += 1 + goldBonusPerHit;
+                peg.type = "normal";
+                currentMessage = "Vous gagnez de l'or ! Total : " + gold;
+            }
+        }
+
+        function handleSlotHit(slot) {
+            if (!slot) return;
+            switch (slot.type) {
+                case "heal":
+                    playerHP = Math.min(maxHP, playerHP + CONFIG.healOnSlot);
+                    currentMessage = "Slot de soin ! +" + CONFIG.healOnSlot + " PV.";
+                    break;
+                case "gold":
+                    gold += 5;
+                    currentMessage = "Slot d'or ! +5 or.";
+                    break;
+                case "extraBall":
+                    remainingBalls += 1;
+                    currentMessage = "Slot bille bonus ! +1 bille pour cet étage.";
+                    break;
+                case "damage":
+                    playerHP -= CONFIG.damageOnSlot;
+                    currentMessage = "Slot piégé ! -" + CONFIG.damageOnSlot + " PV.";
+                    break;
+                case "neutral":
+                    currentMessage = "Slot neutre. Rien ne se passe.";
+                    break;
+            }
+        }
+
+        function endOfBall() {
+            if (!hasActiveBall) return;
+
+            hasActiveBall = false;
+            ball = null;
+
+            // Ennemis ripostent si encore présents
+            if (enemies.length > 0) {
+                const dmg = Math.max(1, Math.ceil(enemies.length * CONFIG.enemyDamageFactor));
+                playerHP -= dmg;
+                currentMessage =
+                    "Les ennemis ripostent et vous infligent " + dmg + " dégâts.";
+            }
+
+            remainingBalls = Math.max(0, remainingBalls - 1);
+
+            // Vérifier l'état du joueur
+            if (playerHP <= 0) {
+                playerHP = 0;
+                gameOver(false);
+                return;
+            }
+
+            // Vérifier fin d'étage
+            if (enemies.length === 0) {
+                floorCleared();
+                return;
+            }
+
+            // Vérifier si plus de billes
+            if (remainingBalls <= 0) {
+                gameOver(false);
+                return;
+            }
+
+            currentMessage += " Il vous reste " + remainingBalls + " bille(s).";
+            updateHUD();
+        }
+
+        function floorCleared() {
+            gameState = "choosingUpgrade";
+            currentMessage = "Étage " + floor + " nettoyé ! Choisissez une amélioration.";
+            showUpgradeChoices();
+            updateHUD();
+        }
+
+        function gameOver(byClearingAll) {
+            gameState = "gameOver";
+            hasActiveBall = false;
+            ball = null;
+
+            if (byClearingAll) {
+                currentMessage = "Bravo ! Vous avez conquis le donjon.";
+            } else {
+                currentMessage = "Vous êtes vaincu à l'étage " + floor + ". Cliquez sur Recommencer.";
+            }
+            restartBtn.style.display = "inline-block";
+            updateHUD();
+        }
+
+        // ==========================
+        // Système d'améliorations
+        // ==========================
+
+        let currentUpgradeOptions = [];
+
+        function showUpgradeChoices() {
+            // Tirer 2 upgrades aléatoires
+            const indices = shuffle([...Array(UPGRADE_POOL.length).keys()]);
+            currentUpgradeOptions = [UPGRADE_POOL[indices[0]], UPGRADE_POOL[indices[1]]];
+
+            upgradeButtons.forEach((btn, i) => {
+                const upg = currentUpgradeOptions[i];
+                btn.querySelector(".title").textContent = upg.title;
+                btn.querySelector(".desc").textContent = upg.desc;
+            });
+
+            upgradePanel.style.display = "flex";
+        }
+
+        function chooseUpgrade(index) {
+            const choice = currentUpgradeOptions[index];
+            if (!choice) return;
+
+            // Appliquer l'upgrade
+            choice.apply();
+
+            // Passer à l'étage suivant
+            floor += 1;
+            upgradePanel.style.display = "none";
+            gameState = "playing";
+
+            generateFloor();
+        }
+
+        // ==========================
+        // Affichage
+        // ==========================
+
+        function drawBackground() {
+            // Légère lueur au centre
+            const grad = ctx.createRadialGradient(
+                W / 2, 120, 30,
+                W / 2, 200, 280
+            );
+            grad.addColorStop(0, "#22233b");
+            grad.addColorStop(1, "#050610");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        function drawPegs() {
+            for (const peg of pegs) {
+                if (peg.type === "dead") {
+                    ctx.fillStyle = "#555";
+                } else if (peg.type === "enemy") {
+                    ctx.fillStyle = "#e74c3c";
+                } else if (peg.type === "gold") {
+                    ctx.fillStyle = "#f1c40f";
+                } else {
+                    ctx.fillStyle = "#888";
+                }
+
+                ctx.beginPath();
+                ctx.arc(peg.x, peg.y, peg.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Afficher les PV au-dessus des ennemis vivants
+                if (peg.type === "enemy") {
+                    ctx.fillStyle = "#ffdddd";
+                    ctx.font = "10px system-ui";
+                    ctx.textAlign = "center";
+                    ctx.fillText(peg.hp, peg.x, peg.y - peg.radius - 4);
+                }
+            }
+        }
+
+        function drawSlots() {
+            ctx.font = "11px system-ui";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            for (const slot of slots) {
+                let color;
+                let label;
+                switch (slot.type) {
+                    case "heal":
+                        color = "#2ecc71";
+                        label = "+PV";
+                        break;
+                    case "gold":
+                        color = "#f1c40f";
+                        label = "+Or";
+                        break;
+                    case "extraBall":
+                        color = "#3498db";
+                        label = "+Bille";
+                        break;
+                    case "damage":
+                        color = "#e74c3c";
+                        label = "-PV";
+                        break;
+                    case "neutral":
+                    default:
+                        color = "#555";
+                        label = "…";
+                        break;
+                }
+
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.85;
+                ctx.fillRect(slot.x + 2, slot.y + 4, slot.w - 4, slot.h - 6);
+                ctx.globalAlpha = 1;
+
+                ctx.fillStyle = "#111";
+                ctx.fillText(label, slot.x + slot.w / 2, slot.y + slot.h / 2);
+            }
+        }
+
+        function drawBall() {
+            if (!ball) return;
+            ctx.fillStyle = "#ecf0f1";
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#bdc3c7";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        function drawAimIndicator() {
+            if (hasActiveBall || gameState !== "playing") return;
+
+            const clampedX = Math.max(CONFIG.minLaunchX, Math.min(CONFIG.maxLaunchX, mouseX));
+
+            // Ligne de guidage
+            ctx.strokeStyle = "rgba(255,255,255,0.35)";
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(clampedX, CONFIG.ballStartY - 15);
+            ctx.lineTo(clampedX, CONFIG.ballStartY + 10);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Fantôme de la bille
+            ctx.fillStyle = "rgba(236, 240, 241, 0.7)";
+            ctx.beginPath();
+            ctx.arc(clampedX, CONFIG.ballStartY, CONFIG.ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function updateHUD() {
+            statsEl.textContent =
+                "Étage : " + floor +
+                " | PV : " + playerHP + "/" + maxHP +
+                " | Billes : " + remainingBalls + "/" + ballsPerFloor +
+                " | Ennemis : " + enemies.length +
+                " | Or : " + gold;
+
+            messagesEl.textContent = currentMessage;
+        }
+
+        // ==========================
+        // Simulation physique
+        // ==========================
+
+        function updateBall() {
+            if (!ball) return;
+
+            // Gravité
+            ball.vy += CONFIG.gravity;
+
+            // Vitesse & friction
+            ball.vx *= CONFIG.friction;
+            ball.vy *= CONFIG.friction;
+
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+
+            // Collisions avec les murs
+            if (ball.x - ball.radius < 0) {
+                ball.x = ball.radius;
+                ball.vx = Math.abs(ball.vx) * 0.8;
+            } else if (ball.x + ball.radius > W) {
+                ball.x = W - ball.radius;
+                ball.vx = -Math.abs(ball.vx) * 0.8;
+            }
+
+            if (ball.y - ball.radius < 0) {
+                ball.y = ball.radius;
+                ball.vy = Math.abs(ball.vy) * 0.8;
+            }
+
+            // Collisions avec quilles
+            for (const peg of pegs) {
+                const dx = ball.x - peg.x;
+                const dy = ball.y - peg.y;
+                const dist = Math.hypot(dx, dy);
+                const minDist = ball.radius + peg.radius;
+                if (dist < minDist && dist > 0) {
+                    // Normalisation
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+
+                    // Correction de position pour sortir du chevauchement
+                    const overlap = minDist - dist;
+                    ball.x += nx * overlap;
+                    ball.y += ny * overlap;
+
+                    // Réflexion de la vitesse le long de la normale
+                    const dot = ball.vx * nx + ball.vy * ny;
+                    ball.vx -= 2 * dot * nx;
+                    ball.vy -= 2 * dot * ny;
+
+                    // Légère perte d'énergie
+                    ball.vx *= 0.98;
+                    ball.vy *= 0.98;
+
+                    // Effet de quille (dégâts, or, etc.)
+                    onPegHit(peg);
+                }
+            }
+
+            // Vérifier entrée dans la zone des slots
+            const slotZoneY = H - 80;
+            if (!ball.slotResolved && ball.y - ball.radius > slotZoneY) {
+                // Déterminer le slot sous la bille (s'il existe)
+                const s = slots.find(sl => ball.x >= sl.x && ball.x < sl.x + sl.w);
+                handleSlotHit(s);
+                ball.slotResolved = true;
+            }
+
+            // Si la bille sort de l'écran -> fin de bille
+            if (ball.y - ball.radius > H + 20) {
+                endOfBall();
+            }
+        }
+
+        // ==========================
+        // Boucle principale
+        // ==========================
+
+        function loop() {
+            requestAnimationFrame(loop);
+
+            drawBackground();
+            drawPegs();
+            drawSlots();
+
+            if (hasActiveBall && ball && gameState === "playing") {
+                updateBall();
+            }
+
+            drawBall();
+            drawAimIndicator();
+        }
+
+        // ==========================
+        // Gestion des entrées
+        // ==========================
+
+        canvas.addEventListener("mousemove", function(e) {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+        });
+
+        canvas.addEventListener("click", function(e) {
+            if (gameState !== "playing") return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            spawnBall(x);
+        });
+
+        restartBtn.addEventListener("click", function() {
+            // Reset complet de la partie
+            floor = 1;
+            gold = 0;
+            maxHP = CONFIG.basePlayerHP;
+            playerHP = maxHP;
+            ballsPerFloor = CONFIG.baseBallsPerFloor;
+            remainingBalls = ballsPerFloor;
+            damagePerHit = 1;
+            healPerNewFloor = 1;
+            goldBonusPerHit = 0;
+            gameState = "playing";
+            restartBtn.style.display = "none";
+            currentMessage = "Nouvelle partie. Cliquez pour lâcher une bille.";
+            generateFloor();
+            updateHUD();
+        });
+
+        upgradeButtons.forEach(btn => {
+            btn.addEventListener("click", function() {
+                const index = parseInt(btn.dataset.index, 10);
+                if (gameState === "choosingUpgrade") {
+                    chooseUpgrade(index);
+                }
+            });
+        });
+
+        // ==========================
+        // Initialisation
+        // ==========================
+
+        generateFloor();
+        updateHUD();
+        loop();
+    })();
+</script>
+</body>
+</html>

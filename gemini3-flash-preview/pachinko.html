@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pachy-Dungeon Roguelike</title>
+    <style>
+        body {
+            margin: 0;
+            background: #1a1a1a;
+            color: #eee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+        canvas {
+            background: #2c3e50;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            cursor: crosshair;
+            border-bottom: 5px solid #34495e;
+        }
+        #ui {
+            width: 800px;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: #34495e;
+        }
+        .stat { font-weight: bold; font-size: 1.2em; }
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+            display: none;
+            z-index: 10;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            background: #e67e22;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        button:hover { background: #d35400; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <div class="stat">❤ PV : <span id="player-hp">100</span></div>
+    <div class="stat">⚔ Etage : <span id="floor">1</span></div>
+    <div class="stat">💰 Or : <span id="gold">0</span></div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="overlay">
+    <h2 id="overlay-title">Victoire !</h2>
+    <p id="overlay-desc">Choisissez une amélioration :</p>
+    <div id="shop-actions"></div>
+    <button onclick="nextLevel()">Continuer</button>
+</div>
+
+<script>
+    /** @type {HTMLCanvasElement} */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = 800;
+    canvas.height = 600;
+
+    // Config Jeu
+    const G = 0.25; // Force de gravité
+    const BOUNCE = 0.7; // Coeff de rebond
+    let floor = 1;
+    let gold = 0;
+    let playerHp = 100;
+    let gameState = 'AIMING'; // AIMING, DROPPING, ENEMY_TURN, SHOP
+
+    let enemy = {
+        hp: 50,
+        maxHp: 50,
+        dmg: 10
+    };
+
+    let ball = {
+        x: 400, y: 30, vx: 0, vy: 0, r: 8, active: false, dmgPool: 0, critMult: 1
+    };
+
+    let pegs = [];
+
+    // --- Logique du jeu ---
+
+    function initLevel() {
+        pegs = [];
+        enemy.maxHp = 40 + (floor * 20);
+        enemy.hp = enemy.maxHp;
+        enemy.dmg = 5 + (floor * 3);
+
+        // Générer des pegs
+        for (let i = 0; i < 60; i++) {
+            createPeg();
+        }
+        gameState = 'AIMING';
+        updateUI();
+    }
+
+    function createPeg() {
+        let type = 'normal';
+        let r = Math.random();
+        if (r > 0.95) type = 'crit';
+        else if (r > 0.85) type = 'gold';
+        else if (r > 0.80) type = 'bomb';
+
+        const peg = {
+            x: 50 + Math.random() * (canvas.width - 100),
+            y: 150 + Math.random() * (canvas.height - 250),
+            r: 10,
+            type: type,
+            active: true
+        };
+
+        // Éviter trop de chevauchement simple
+        if (!pegs.some(p => Math.hypot(p.x - peg.x, p.y - peg.y) < 30)) {
+            pegs.push(peg);
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('player-hp').innerText = playerHp;
+        document.getElementById('floor').innerText = floor;
+        document.getElementById('gold').innerText = gold;
+    }
+
+    // --- Physique ---
+
+    function updatePhysics() {
+        if (!ball.active) return;
+
+        ball.vy += G;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        // Collisions murs
+        if (ball.x - ball.r < 0 || ball.x + ball.r > canvas.width) {
+            ball.vx *= -1;
+            ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+        }
+
+        // Collisions Pegs
+        pegs.forEach(peg => {
+            if (!peg.active) return;
+
+            let dx = ball.x - peg.x;
+            let dy = ball.y - peg.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist < ball.r + peg.r) {
+                // Calculer normale de collision
+                let nx = dx / dist;
+                let ny = dy / dist;
+
+                // Produit scalaire pour le rebond
+                let dot = ball.vx * nx + ball.vy * ny;
+                ball.vx = (ball.vx - 2 * dot * nx) * BOUNCE;
+                ball.vy = (ball.vy - 2 * dot * ny) * BOUNCE;
+
+                // Effets des pegs
+                handlePegHit(peg);
+
+                // Empêcher la bille de rester collée
+                ball.x = peg.x + nx * (ball.r + peg.r + 1);
+                ball.y = peg.y + ny * (ball.r + peg.r + 1);
+            }
+        });
+
+        // Sortie de l'écran bas
+        if (ball.y > canvas.height) {
+            endTurn();
+        }
+    }
+
+    function handlePegHit(peg) {
+        if (peg.type === 'bomb') {
+            // Explosion : active les pegs autour
+            pegs.forEach(p => {
+                if (p.active && Math.hypot(p.x - peg.x, p.y - peg.y) < 60) {
+                    p.active = false;
+                    ball.dmgPool += 2;
+                }
+            });
+        } else if (peg.type === 'crit') {
+            ball.critMult += 1;
+            peg.active = false;
+        } else if (peg.type === 'gold') {
+            gold += 5;
+            peg.active = false;
+            ball.dmgPool += 1;
+        } else {
+            ball.dmgPool += 1;
+            peg.active = false;
+        }
+    }
+
+    function endTurn() {
+        ball.active = false;
+        let totalDmg = ball.dmgPool * ball.critMult;
+        enemy.hp -= totalDmg;
+
+        if (enemy.hp <= 0) {
+            gameState = 'SHOP';
+            showShop();
+        } else {
+            // Tour de l'ennemi
+            playerHp -= enemy.dmg;
+            updateUI();
+            if (playerHp <= 0) {
+                alert("GAME OVER - Étage atteint : " + floor);
+                location.reload();
+            }
+            resetBall();
+            gameState = 'AIMING';
+        }
+    }
+
+    function resetBall() {
+        ball.x = 400;
+        ball.y = 30;
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.dmgPool = 0;
+        ball.critMult = 1;
+    }
+
+    function showShop() {
+        const overlay = document.getElementById('overlay');
+        const actions = document.getElementById('shop-actions');
+        overlay.style.display = 'block';
+        actions.innerHTML = '';
+
+        const upgrades = [
+            { name: "Soin (20 Or)", cost: 20, effect: () => { playerHp += 30; } },
+            { name: "Dégâts de base +5 (40 Or)", cost: 40, effect: () => { ball.dmgPool += 5; } }
+        ];
+
+        upgrades.forEach(u => {
+            let btn = document.createElement('button');
+            btn.innerText = u.name;
+            btn.onclick = () => {
+                if (gold >= u.cost) {
+                    gold -= u.cost;
+                    u.effect();
+                    updateUI();
+                    btn.disabled = true;
+                }
+            };
+            actions.appendChild(btn);
+        });
+    }
+
+    function nextLevel() {
+        floor++;
+        document.getElementById('overlay').style.display = 'none';
+        initLevel();
+    }
+
+    // --- Input & Loop ---
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (gameState !== 'AIMING') return;
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Angle vers la souris
+        const angle = Math.atan2(mouseY - ball.y, mouseX - ball.x);
+        const speed = 10;
+        ball.vx = Math.cos(angle) * speed;
+        ball.vy = Math.sin(angle) * speed;
+        ball.active = true;
+        gameState = 'DROPPING';
+    });
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Dessiner Ennemi
+        ctx.fillStyle = "#e74c3c";
+        let enemySize = 50 + (enemy.hp / enemy.maxHp) * 50;
+        ctx.fillRect(canvas.width - 120, 20, 100, 100);
+        ctx.fillStyle = "white";
+        ctx.fillText(`PV Ennemi: ${Math.max(0, enemy.hp)}`, canvas.width - 110, 140);
+
+        // Dessiner Pegs
+        pegs.forEach(peg => {
+            if (!peg.active) return;
+            ctx.beginPath();
+            ctx.arc(peg.x, peg.y, peg.r, 0, Math.PI * 2);
+
+            if (peg.type === 'crit') ctx.fillStyle = '#2ecc71';
+            else if (peg.type === 'gold') ctx.fillStyle = '#f1c40f';
+            else if (peg.type === 'bomb') ctx.fillStyle = '#e67e22';
+            else ctx.fillStyle = '#3498db';
+
+            ctx.fill();
+            ctx.closePath();
+        });
+
+        // Dessiner Bille
+        if (ball.active || gameState === 'AIMING') {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+            ctx.fillStyle = "white";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // Afficher dégâts en cours
+        if (gameState === 'DROPPING') {
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.fillText(`Dégâts: ${ball.dmgPool} x ${ball.critMult}`, 20, 50);
+        }
+
+        updatePhysics();
+        requestAnimationFrame(draw);
+    }
+
+    // Lancement
+    initLevel();
+    draw();
+</script>
+</body>
+</html>

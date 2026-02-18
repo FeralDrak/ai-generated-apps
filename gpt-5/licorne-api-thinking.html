@@ -1,0 +1,324 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="100%" height="100%" aria-label="Magnificent Unicorn">
+    <defs>
+        <!-- Sky -->
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1b1646"/>
+            <stop offset="45%" stop-color="#462e8d"/>
+            <stop offset="100%" stop-color="#ffb8d1"/>
+        </linearGradient>
+
+        <!-- Distant glow/sun -->
+        <radialGradient id="sunGrad" cx="75%" cy="20%" r="35%">
+            <stop offset="0%" stop-color="#ffe8b3" stop-opacity="0.9"/>
+            <stop offset="60%" stop-color="#ffd3a6" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#ffb8d1" stop-opacity="0"/>
+        </radialGradient>
+
+        <!-- Ground gradients -->
+        <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2bb673"/>
+            <stop offset="100%" stop-color="#0f8648"/>
+        </linearGradient>
+        <linearGradient id="hillGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#39c389"/>
+            <stop offset="100%" stop-color="#1a9b60"/>
+        </linearGradient>
+
+        <!-- Body and shading -->
+        <linearGradient id="bodyGrad" x1="0" y1="0" x2="0.2" y2="1">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="60%" stop-color="#f6f9ff"/>
+            <stop offset="100%" stop-color="#e7f0ff"/>
+        </linearGradient>
+        <linearGradient id="earPink" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffd6e6"/>
+            <stop offset="100%" stop-color="#ffb3cf"/>
+        </linearGradient>
+
+        <!-- Horn & hooves -->
+        <linearGradient id="hornGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fff7c4"/>
+            <stop offset="50%" stop-color="#f4d27a"/>
+            <stop offset="100%" stop-color="#e9b94e"/>
+        </linearGradient>
+        <linearGradient id="hoofGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f8e9a1"/>
+            <stop offset="100%" stop-color="#c9922c"/>
+        </linearGradient>
+
+        <!-- Mane & tail rainbow -->
+        <linearGradient id="rainbowGrad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1200" y2="0">
+            <stop offset="0%" stop-color="#ff007a"/>
+            <stop offset="15%" stop-color="#ff6a00"/>
+            <stop offset="30%" stop-color="#ffd400"/>
+            <stop offset="45%" stop-color="#00d37f"/>
+            <stop offset="60%" stop-color="#00aaff"/>
+            <stop offset="75%" stop-color="#5561ff"/>
+            <stop offset="90%" stop-color="#9a4dff"/>
+            <stop offset="100%" stop-color="#ff53d1"/>
+        </linearGradient>
+
+        <!-- Rainbow arc in sky -->
+        <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#ff007a"/>
+            <stop offset="17%" stop-color="#ff6a00"/>
+            <stop offset="34%" stop-color="#ffd400"/>
+            <stop offset="51%" stop-color="#00d37f"/>
+            <stop offset="68%" stop-color="#00aaff"/>
+            <stop offset="85%" stop-color="#5561ff"/>
+            <stop offset="100%" stop-color="#9a4dff"/>
+        </linearGradient>
+
+        <!-- Glows & shadows -->
+        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="6" result="blur"/>
+            <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.25"/>
+        </filter>
+        <filter id="sparkleGlow" x="-200%" y="-200%" width="400%" height="400%">
+            <feGaussianBlur stdDeviation="2" result="g"/>
+            <feMerge>
+                <feMergeNode in="g"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+
+        <!-- Reusable symbols -->
+        <symbol id="star" viewBox="-8 -8 16 16">
+            <path d="M0,-7 L1.4,-1.8 7,0 1.4,1.8 0,7 -1.4,1.8 -7,0 -1.4,-1.8Z" fill="white"/>
+        </symbol>
+        <symbol id="flower" viewBox="-12 -12 24 24">
+            <circle r="3" fill="#ffd400"/>
+            <circle r="6" cx="7" fill="#ff62b0" opacity="0.9"/>
+            <circle r="6" cx="-7" fill="#ff62b0" opacity="0.9"/>
+            <circle r="6" cy="7" fill="#ff62b0" opacity="0.9"/>
+            <circle r="6" cy="-7" fill="#ff62b0" opacity="0.9"/>
+        </symbol>
+
+        <style>
+            .twinkle { animation: twinkle 2.6s infinite ease-in-out; }
+            .twinkle2 { animation: twinkle 3.4s infinite ease-in-out 0.9s; }
+            .twinkle3 { animation: twinkle 1.9s infinite ease-in-out 0.4s; }
+            @keyframes twinkle {
+                0%, 100% { opacity: 0.15; transform: scale(0.8) rotate(0deg); }
+                50% { opacity: 1; transform: scale(1.15) rotate(8deg); }
+            }
+            .float { animation: float 6s ease-in-out infinite; }
+            @keyframes float {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-6px); }
+            }
+            .maneGlow { filter: url(#softGlow); }
+            .hornPulse { animation: horn 4s ease-in-out infinite; }
+            @keyframes horn { 0%,100% { filter: url(#softGlow); } 50% { filter: none; } }
+        </style>
+    </defs>
+
+    <!-- Background -->
+    <rect width="1200" height="800" fill="url(#skyGrad)"/>
+    <circle cx="920" cy="140" r="240" fill="url(#sunGrad)"/>
+
+    <!-- Rainbow arc in the sky -->
+    <path d="M-100,700 A700,700 0 0 1 1300,700" fill="none" stroke="url(#arcGrad)" stroke-width="30" opacity="0.35"/>
+
+    <!-- Soft clouds -->
+    <g opacity="0.85" fill="white">
+        <g transform="translate(150,140) scale(1.2)">
+            <circle cx="0" cy="30" r="40"/>
+            <circle cx="50" cy="20" r="50"/>
+            <circle cx="110" cy="30" r="40"/>
+            <circle cx="70" cy="50" r="45"/>
+        </g>
+        <g transform="translate(800,110)">
+            <circle cx="0" cy="40" r="45"/>
+            <circle cx="50" cy="25" r="60"/>
+            <circle cx="120" cy="35" r="50"/>
+            <circle cx="80" cy="55" r="48"/>
+        </g>
+    </g>
+
+    <!-- Ground -->
+    <rect y="600" width="1200" height="200" fill="url(#groundGrad)"/>
+    <path d="M0,640 C200,580 380,700 600,660 C820,620 1000,740 1200,680 L1200,800 L0,800 Z" fill="url(#hillGrad)"/>
+
+    <!-- Scattered flowers -->
+    <g opacity="0.85">
+        <use href="#flower" x="150" y="720"/>
+        <use href="#flower" x="220" y="690" transform="scale(1.2)"/>
+        <use href="#flower" x="350" y="730" transform="scale(0.9)"/>
+        <use href="#flower" x="520" y="700" transform="scale(1.1)"/>
+        <use href="#flower" x="780" y="710" transform="scale(1.0)"/>
+        <use href="#flower" x="980" y="720" transform="scale(1.2)"/>
+    </g>
+
+    <!-- Stars/Sparkles in the sky -->
+    <g fill="white" opacity="0.8">
+        <use href="#star" x="100" y="150" class="twinkle" filter="url(#sparkleGlow)"/>
+        <use href="#star" x="300" y="80" class="twinkle2" filter="url(#sparkleGlow)"/>
+        <use href="#star" x="520" y="160" class="twinkle3" filter="url(#sparkleGlow)"/>
+        <use href="#star" x="760" y="90" class="twinkle2" filter="url(#sparkleGlow)"/>
+        <use href="#star" x="1040" y="180" class="twinkle" filter="url(#sparkleGlow)"/>
+    </g>
+
+    <!-- Unicorn group -->
+    <g id="unicorn" transform="translate(120,40)" filter="url(#dropShadow)">
+
+        <!-- Ground shadow -->
+        <ellipse cx="580" cy="670" rx="210" ry="28" fill="#000000" opacity="0.2"/>
+
+        <!-- Tail (behind body) -->
+        <g class="maneGlow">
+            <path d="M380,560
+               C320,620 300,700 360,720
+               C420,740 520,680 540,640
+               C520,650 480,650 460,638
+               C450,632 440,620 438,610
+               C430,580 440,560 460,548
+               Z"
+                  fill="url(#rainbowGrad)" opacity="0.95"/>
+            <path d="M365,600 C340,640 340,690 385,705" fill="none" stroke="white" stroke-width="4" opacity="0.25"/>
+            <path d="M420,600 C380,650 430,700 500,670" fill="none" stroke="white" stroke-width="4" opacity="0.2"/>
+        </g>
+
+        <!-- Body -->
+        <path d="M480,520
+             C560,470 760,470 840,530
+             C885,565 885,625 830,650
+             C760,685 610,690 530,650
+             C500,635 470,590 480,520 Z"
+              fill="url(#bodyGrad)" stroke="#dfe8ff" stroke-width="3" />
+
+        <!-- Back leg (left) -->
+        <path d="M620,600
+             C600,640 600,690 610,730
+             L655,730
+             C660,700 658,670 660,640
+             C662,620 655,610 640,605
+             Z"
+              fill="url(#bodyGrad)" stroke="#dfe8ff" stroke-width="3"/>
+        <rect x="610" y="730" width="55" height="22" rx="6" fill="url(#hoofGrad)"/>
+
+        <!-- Back leg (right, behind) -->
+        <path d="M700,600
+             C680,645 678,690 688,730
+             L730,730
+             C735,700 734,670 736,640
+             C738,620 732,610 715,605
+             Z"
+              fill="#eef3ff" stroke="#dfe8ff" stroke-width="3" opacity="0.9"/>
+        <rect x="688" y="730" width="50" height="22" rx="6" fill="url(#hoofGrad)"/>
+
+        <!-- Front leg (left) -->
+        <path d="M790,590
+             C780,630 778,675 783,724
+             L825,724
+             C830,690 828,655 830,620
+             C831,605 820,595 805,590 Z"
+              fill="url(#bodyGrad)" stroke="#dfe8ff" stroke-width="3"/>
+        <rect x="783" y="724" width="52" height="22" rx="6" fill="url(#hoofGrad)"/>
+
+        <!-- Front leg (right, behind) -->
+        <path d="M850,585
+             C838,628 836,672 840,718
+             L878,718
+             C882,690 882,655 884,620
+             C885,605 874,595 860,590 Z"
+              fill="#eef3ff" stroke="#dfe8ff" stroke-width="3" opacity="0.92"/>
+        <rect x="840" y="718" width="46" height="22" rx="6" fill="url(#hoofGrad)"/>
+
+        <!-- Neck base -->
+        <path d="M790,515
+             C830,470 870,430 900,380
+             C905,370 910,360 915,355
+             C900,370 890,400 880,440
+             C875,460 860,500 835,520 Z"
+              fill="url(#bodyGrad)" stroke="#dfe8ff" stroke-width="3"/>
+
+        <!-- Mane (behind head/neck) -->
+        <g class="maneGlow">
+            <path d="M880,430
+               C840,450 810,490 795,540
+               C780,585 770,610 785,630
+               C800,650 840,640 860,610
+               C875,590 884,560 900,540
+               C925,510 955,490 975,465
+               C990,444 990,420 980,400
+               C970,380 955,370 940,368
+               C925,366 905,402 880,430 Z"
+                  fill="url(#rainbowGrad)" opacity="0.97"/>
+            <path d="M820,580 C835,560 870,535 900,520" stroke="white" stroke-width="4" opacity="0.25" fill="none"/>
+            <path d="M845,610 C870,580 920,555 960,520" stroke="white" stroke-width="3" opacity="0.2" fill="none"/>
+        </g>
+
+        <!-- Head -->
+        <g class="float">
+            <!-- Head shapes -->
+            <ellipse cx="940" cy="360" rx="72" ry="64" fill="url(#bodyGrad)" stroke="#dfe8ff" stroke-width="3"/>
+            <!-- Muzzle -->
+            <ellipse cx="980" cy="395" rx="48" ry="36" fill="#fff5f8" stroke="#f3d4e3" stroke-width="2"/>
+            <!-- Nose -->
+            <circle cx="1005" cy="400" r="4" fill="#8b5a5a"/>
+            <!-- Smile -->
+            <path d="M980,408 C990,415 1004,415 1010,406" stroke="#a77c7c" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+            <!-- Ear -->
+            <path d="M945,268 L970,236 L968,280 Z" fill="url(#earPink)" stroke="#e7aecd" stroke-width="2"/>
+            <path d="M944,270 L960,252 L959,279 Z" fill="#fff" opacity="0.7"/>
+
+            <!-- Horn -->
+            <path d="M960,244 L990,158 L975,254 Z" fill="url(#hornGrad)" stroke="#e3c16a" stroke-width="2" class="hornPulse"/>
+            <!-- Horn stripes -->
+            <path d="M962,238 L982,183" stroke="#e7d99a" stroke-width="3" opacity="0.8"/>
+            <path d="M968,225 L987,175" stroke="#e7d99a" stroke-width="3" opacity="0.7"/>
+
+            <!-- Forelock -->
+            <path d="M900,335
+               C915,310 940,290 960,292
+               C975,294 988,305 986,320
+               C984,338 970,352 952,359
+               C935,365 913,362 900,352 Z"
+                  fill="url(#rainbowGrad)" class="maneGlow"/>
+
+            <!-- Eye -->
+            <ellipse cx="938" cy="366" rx="11" ry="13" fill="#1a1a1a"/>
+            <circle cx="941" cy="362" r="4" fill="#ffffff"/>
+            <path d="M918,352 C930,346 945,346 956,352" stroke="#8a89a9" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- Cheek blush -->
+            <circle cx="956" cy="395" r="10" fill="#ffc6d9" opacity="0.6"/>
+        </g>
+
+        <!-- Shoulder mane highlight (front) -->
+        <path d="M840,520
+             C860,500 900,480 920,470
+             C935,463 950,470 955,482
+             C962,500 950,520 930,530
+             C900,545 860,550 842,545 Z"
+              fill="url(#rainbowGrad)" opacity="0.9" class="maneGlow"/>
+
+        <!-- Body highlights -->
+        <path d="M520,530 C590,500 740,500 820,540" stroke="white" stroke-width="6" opacity="0.15" fill="none" stroke-linecap="round"/>
+        <path d="M520,610 C600,640 730,645 820,620" stroke="white" stroke-width="6" opacity="0.12" fill="none" stroke-linecap="round"/>
+
+        <!-- Sparkles around the horn -->
+        <g fill="white" filter="url(#sparkleGlow)">
+            <use href="#star" x="995" y="150" class="twinkle" />
+            <use href="#star" x="1030" y="190" class="twinkle2" />
+            <use href="#star" x="960" y="180" class="twinkle3" />
+            <circle cx="980" cy="210" r="3" opacity="0.9"/>
+            <circle cx="1010" cy="160" r="2.5" opacity="0.9"/>
+            <circle cx="940" cy="200" r="2" opacity="0.9"/>
+        </g>
+    </g>
+
+    <!-- Foreground sparkles -->
+    <g fill="white" opacity="0.7" filter="url(#sparkleGlow)">
+        <use href="#star" x="260" y="620" class="twinkle"/>
+        <use href="#star" x="1040" y="640" class="twinkle2"/>
+    </g>
+</svg>

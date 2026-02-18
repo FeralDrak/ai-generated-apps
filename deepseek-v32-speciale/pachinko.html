@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Pachinko Roguelike</title>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            background: #112;
+            border: 1px solid #fff;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // États du jeu
+    const GameState = { TITLE: 0, BATTLE: 1, RELIC_SELECT: 2, GAME_OVER: 3 };
+    const BattleState = { AIMING: 0, BALL_MOVING: 1, ENEMY_TURN: 2, BATTLE_END: 3 };
+
+    // Couleurs
+    const COLORS = {
+        peg: { normal: 'yellow', crit: 'red', bomb: 'black' },
+        ball: 'white',
+        launcher: 'gray',
+        enemy: 'green',
+        enemyHealthBg: 'red',
+        text: 'white',
+        background: '#112',
+        ui: 'white'
+    };
+
+    // --------------------------------------------------------------
+    // Classe Peg (cheville)
+    class Peg {
+        constructor(x, y, type = 'normal') {
+            this.x = x;
+            this.y = y;
+            this.radius = 5;
+            this.type = type;
+            this.active = true;
+        }
+        draw() {
+            if (!this.active) return;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = COLORS.peg[this.type];
+            ctx.fill();
+        }
+    }
+
+    // --------------------------------------------------------------
+    // Classe Ball (bille)
+    class Ball {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.vx = 0;
+            this.vy = 0;
+            this.radius = 8;
+            this.active = false;
+        }
+        launch(vx, vy) {
+            this.vx = vx;
+            this.vy = vy;
+            this.active = true;
+        }
+        update(pegs, enemies, player) {
+            if (!this.active) return;
+            const subSteps = 2;
+            const g = 0.2;         // gravité par frame
+            const restitution = 0.8;
+            for (let s = 0; s < subSteps; s++) {
+                this.vy += g / subSteps;
+                this.x += this.vx / subSteps;
+                this.y += this.vy / subSteps;
+
+                // Collisions avec les bords
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.vx = -this.vx * restitution;
+                }
+                if (this.x + this.radius > W) {
+                    this.x = W - this.radius;
+                    this.vx = -this.vx * restitution;
+                }
+                if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.vy = -this.vy * restitution;
+                }
+                if (this.y > H) {
+                    this.active = false;
+                    break;
+                }
+
+                // Collisions avec les chevilles
+                let collisionIterations = 0;
+                while (collisionIterations++ < 5) {
+                    let collidedPeg = null;
+                    let minOverlap = Infinity;
+                    let nx, ny;
+                    for (let i = 0; i < pegs.length; i++) {
+                        const peg = pegs[i];
+                        if (!peg.active) continue;
+                        const dx = this.x - peg.x;
+                        const dy = this.y - peg.y;
+                        const dist = Math.hypot(dx, dy);
+                        const overlap = this.radius + peg.radius - dist;
+                        if (overlap > 0 && overlap < minOverlap) {
+                            minOverlap = overlap;
+                            collidedPeg = peg;
+                            nx = dx / dist;
+                            ny = dy / dist;
+                        }
+                    }
+                    if (!collidedPeg) break;
+
+                    // Appliquer les dégâts
+                    this.onPegHit(collidedPeg, enemies, player);
+
+                    if (player.pierce) {
+                        // Percée : pas de rebond, la cheville est désactivée
+                        collidedPeg.active = false;
+                    } else {
+                        // Résoudre le chevauchement
+                        this.x += nx * minOverlap;
+                        this.y += ny * minOverlap;
+                        // Rebond
+                        const dot = this.vx * nx + this.vy * ny;
+                        this.vx = this.vx - 2 * dot * nx;
+                        this.vy = this.vy - 2 * dot * ny;
+                        collidedPeg.active = false;
+                    }
+                }
+            }
+        }
+        onPegHit(peg, enemies, player) {
+            let damage = player.attack;
+            if (peg.type === 'crit') {
+                damage *= 2;
+            } else if (peg.type === 'bomb') {
+                if (player.bombBoost) damage *= player.bombBoost;
+                enemies.forEach(enemy => {
+                    if (enemy.alive) {
+                        enemy.hp -= damage;
+                        if (enemy.hp <= 0) enemy.alive = false;
+                    }
+                });
+            } else {
+                // cheville normale
+                if (player.critChance && Math.random() < player.critChance) {
+                    damage *= 2;
+                }
+            }
+            // Pour les types non‑bombe, on touche un ennemi aléatoire
+            if (peg.type !== 'bomb') {
+                const aliveEnemies = enemies.filter(e => e.alive);
+                if (aliveEnemies.length > 0) {
+                    const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+                    target.hp -= damage;
+                    if (target.hp <= 0) target.alive = false;
+                }
+            }
+            // Vampire
+            if (player.vampire) {
+                player.hp = Math.min(player.hp + 1, player.maxHp);
+            }
+        }
+        draw() {
+            if (!this.active) return;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = COLORS.ball;
+            ctx.fill();
+        }
+    }
+
+    // --------------------------------------------------------------
+    // Classe Enemy
+    class Enemy {
+        constructor(x, y, hp, attack) {
+            this.x = x;
+            this.y = y;
+            this.width = 60;
+            this.height = 40;
+            this.maxHp = hp;
+            this.hp = hp;
+            this.attack = attack;
+            this.alive = true;
+        }
+        draw() {
+            if (!this.alive) return;
+            // Corps
+            ctx.fillStyle = COLORS.enemy;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            // Barre de vie (fond)
+            ctx.fillStyle = 'darkred';
+            ctx.fillRect(this.x, this.y - 10, this.width, 5);
+            // Vie actuelle
+            const healthWidth = (this.hp / this.maxHp) * this.width;
+            ctx.fillStyle = COLORS.enemyHealthBg;
+            ctx.fillRect(this.x, this.y - 10, healthWidth, 5);
+        }
+    }
+
+    // --------------------------------------------------------------
+    // Classe Relic
+    class Relic {
+        constructor(name, description, effect) {
+            this.name = name;
+            this.description = description;
+            this.effect = effect;
+        }
+    }
+
+    // Pool de reliques
+    const relicPool = [
+        new Relic('Attack +1', 'Increase attack by 1', player => { player.attack += 1; }),
+        new Relic('Max HP +10', 'Increase max HP by 10 and heal 10', player => {
+            player.maxHp += 10;
+            player.hp += 10;
+            if (player.hp > player.maxHp) player.hp = player.maxHp;
+        }),
+        new Relic('Vampire', 'Heal 1 HP each time you hit a peg', player => { player.vampire = true; }),
+        new Relic('Piercing', 'Ball passes through pegs without bouncing', player => { player.pierce = true; }),
+        new Relic('Multiball', 'Launch 2 balls at once', player => { player.multiball = true; }),
+        new Relic('Critical Chance', '10% chance to deal double damage on normal pegs', player => { player.critChance = 0.1; }),
+        new Relic('Bomb Expert', 'Bomb pegs damage increased by 50%', player => { player.bombBoost = 1.5; }),
+        new Relic('Health Potion', 'Heal 20 HP', player => { player.hp = Math.min(player.hp + 20, player.maxHp); })
+    ];
+
+    // --------------------------------------------------------------
+    // Classe Game (contrôle principal)
+    class Game {
+        constructor() {
+            this.state = GameState.TITLE;
+            this.floor = 1;
+            this.player = {
+                maxHp: 50,
+                hp: 50,
+                attack: 5,
+                relics: [],
+                pierce: false,
+                vampire: false,
+                multiball: false,
+                critChance: 0,
+                bombBoost: 1,
+            };
+            this.battle = null;
+            this.relicChoices = [];
+        }
+        start() {
+            this.state = GameState.BATTLE;
+            this.startBattle();
+        }
+        startBattle() {
+            this.battle = new Battle(this, this.floor);
+        }
+        battleEnded(victory) {
+            if (victory) {
+                this.state = GameState.RELIC_SELECT;
+                this.generateRelicChoices();
+            } else {
+                this.state = GameState.GAME_OVER;
+            }
+        }
+        generateRelicChoices() {
+            const shuffled = relicPool.sort(() => 0.5 - Math.random());
+            this.relicChoices = shuffled.slice(0, 3);
+        }
+        selectRelic(index) {
+            const relic = this.relicChoices[index];
+            relic.effect(this.player);
+            this.player.relics.push(relic);
+            this.floor++;
+            this.state = GameState.BATTLE;
+            this.startBattle();
+        }
+        restart() {
+            this.state = GameState.TITLE;
+            this.floor = 1;
+            this.player = {
+                maxHp: 50,
+                hp: 50,
+                attack: 5,
+                relics: [],
+                pierce: false,
+                vampire: false,
+                multiball: false,
+                critChance: 0,
+                bombBoost: 1,
+            };
+            this.battle = null;
+            this.relicChoices = [];
+        }
+    }
+
+    // --------------------------------------------------------------
+    // Classe Battle (combat)
+    class Battle {
+        constructor(game, floor) {
+            this.game = game;
+            this.floor = floor;
+            this.state = BattleState.AIMING;
+            this.launcher = { x: W / 2, y: 50 };
+            this.balls = [];
+            this.pegs = this.generatePegs();
+            this.enemies = this.generateEnemies();
+            this.aimLine = { start: this.launcher, end: this.launcher };
+            this.mouseDown = false;
+            this.launchPowerFactor = 0.2;
+            this.gravity = 0.2;
+            this.restitution = 0.8;
+            this.enemyTurnDelay = 1000; // ms
+            this.enemyTurnTimer = 0;
+        }
+        generatePegs() {
+            const pegs = [];
+            const cols = 12;
+            const rows = 10;
+            const startX = 100;
+            const startY = 100;
+            const spacing = 40;
+            for (let row = 0; row < rows; row++) {
+                const offset = (row % 2) * (spacing / 2);
+                for (let col = 0; col < cols; col++) {
+                    if (Math.random() < 0.3) continue; // 30% manquants
+                    const x = startX + col * spacing + offset;
+                    const y = startY + row * spacing;
+                    let r = Math.random();
+                    let type = 'normal';
+                    if (r < 0.1) type = 'crit';
+                    else if (r < 0.15) type = 'bomb';
+                    pegs.push(new Peg(x, y, type));
+                }
+            }
+            return pegs;
+        }
+        generateEnemies() {
+            const enemies = [];
+            const count = 1 + Math.floor(Math.random() * 2) + Math.min(Math.floor(this.floor / 3), 2);
+            const startX = 150;
+            const spacing = 200;
+            const y = H - 100;
+            const baseHp = 10 + this.floor * 5;
+            const baseAttack = 2 + this.floor * 2;
+            for (let i = 0; i < count; i++) {
+                const x = startX + i * spacing;
+                enemies.push(new Enemy(x, y, baseHp, baseAttack));
+            }
+            return enemies;
+        }
+        onMouseDown(e) {
+            if (this.state === BattleState.AIMING) {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                this.aimLine.start = { ...this.launcher };
+                this.aimLine.end = { x: mx, y: my };
+                this.mouseDown = true;
+            }
+        }
+        onMouseMove(e) {
+            if (this.mouseDown && this.state === BattleState.AIMING) {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                this.aimLine.end = { x: mx, y: my };
+            }
+        }
+        onMouseUp(e) {
+            if (this.mouseDown && this.state === BattleState.AIMING) {
+                this.mouseDown = false;
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                const dx = this.launcher.x - mx;
+                const dy = this.launcher.y - my;
+                let vx = dx * this.launchPowerFactor;
+                let vy = dy * this.launchPowerFactor;
+                const maxSpeed = 20;
+                const speed = Math.hypot(vx, vy);
+                if (speed > maxSpeed) {
+                    vx = vx * maxSpeed / speed;
+                    vy = vy * maxSpeed / speed;
+                }
+                this.launchBall(vx, vy);
+                this.state = BattleState.BALL_MOVING;
+            }
+        }
+        launchBall(baseVx, baseVy) {
+            this.balls = [];
+            const player = this.game.player;
+            const numBalls = player.multiball ? 2 : 1;
+            if (numBalls === 1) {
+                const ball = new Ball(this.launcher.x, this.launcher.y);
+                ball.launch(baseVx, baseVy);
+                this.balls.push(ball);
+            } else {
+                const angle = Math.atan2(baseVy, baseVx);
+                const speed = Math.hypot(baseVx, baseVy);
+                const spread = Math.PI / 18; // 10 degrés
+                for (let i = 0; i < 2; i++) {
+                    const ang = angle + (i === 0 ? -spread : spread);
+                    const vx = Math.cos(ang) * speed;
+                    const vy = Math.sin(ang) * speed;
+                    const ball = new Ball(this.launcher.x, this.launcher.y);
+                    ball.launch(vx, vy);
+                    this.balls.push(ball);
+                }
+            }
+        }
+        update() {
+            switch (this.state) {
+                case BattleState.BALL_MOVING:
+                    this.balls.forEach(ball => {
+                        if (ball.active) {
+                            ball.update(this.pegs, this.enemies, this.game.player);
+                        }
+                    });
+                    if (this.balls.every(ball => !ball.active)) {
+                        if (this.enemies.every(e => !e.alive)) {
+                            this.game.battleEnded(true);
+                        } else {
+                            this.state = BattleState.ENEMY_TURN;
+                            this.enemyTurnTimer = performance.now() + this.enemyTurnDelay;
+                        }
+                    }
+                    break;
+                case BattleState.ENEMY_TURN:
+                    if (performance.now() > this.enemyTurnTimer) {
+                        let totalDamage = 0;
+                        this.enemies.forEach(enemy => {
+                            if (enemy.alive) totalDamage += enemy.attack;
+                        });
+                        this.game.player.hp -= totalDamage;
+                        if (this.game.player.hp <= 0) {
+                            this.game.player.hp = 0;
+                            this.game.battleEnded(false);
+                            return;
+                        }
+                        if (this.enemies.every(e => !e.alive)) {
+                            this.game.battleEnded(true);
+                        } else {
+                            this.startNewTurn();
+                        }
+                    }
+                    break;
+            }
+        }
+        startNewTurn() {
+            this.state = BattleState.AIMING;
+            this.balls = [];
+            this.mouseDown = false;
+            // les chevilles déjà détruites restent telles quelles
+        }
+        draw() {
+            ctx.fillStyle = COLORS.background;
+            ctx.fillRect(0, 0, W, H);
+
+            this.pegs.forEach(peg => peg.draw());
+            this.enemies.forEach(enemy => enemy.draw());
+            this.balls.forEach(ball => ball.draw());
+
+            if (this.state === BattleState.AIMING && this.mouseDown) {
+                ctx.beginPath();
+                ctx.moveTo(this.aimLine.start.x, this.aimLine.start.y);
+                ctx.lineTo(this.aimLine.end.x, this.aimLine.end.y);
+                ctx.strokeStyle = COLORS.ui;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = COLORS.text;
+            ctx.font = '16px Arial';
+            ctx.fillText(`Floor: ${this.floor}`, 10, 20);
+            ctx.fillText(`HP: ${this.game.player.hp}/${this.game.player.maxHp}`, 10, 40);
+            ctx.fillText(`Attack: ${this.game.player.attack}`, 10, 60);
+
+            if (this.state === BattleState.ENEMY_TURN) {
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Enemy Turn!', W / 2, H / 2);
+                ctx.textAlign = 'left';
+            }
+        }
+    }
+
+    // --------------------------------------------------------------
+    // Instanciation du jeu et gestion des entrées
+    const game = new Game();
+
+    canvas.addEventListener('mousedown', e => {
+        if (game.state === GameState.BATTLE && game.battle) {
+            game.battle.onMouseDown(e);
+        }
+    });
+    canvas.addEventListener('mousemove', e => {
+        if (game.state === GameState.BATTLE && game.battle) {
+            game.battle.onMouseMove(e);
+        }
+    });
+    canvas.addEventListener('mouseup', e => {
+        if (game.state === GameState.BATTLE && game.battle) {
+            game.battle.onMouseUp(e);
+        }
+    });
+    canvas.addEventListener('click', e => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        switch (game.state) {
+            case GameState.TITLE:
+                game.start();
+                break;
+            case GameState.RELIC_SELECT:
+                const boxWidth = 180, boxHeight = 120;
+                const positions = [
+                    { x: 200, y: 250 },
+                    { x: 400, y: 250 },
+                    { x: 600, y: 250 }
+                ];
+                for (let i = 0; i < positions.length; i++) {
+                    const pos = positions[i];
+                    if (mx >= pos.x && mx <= pos.x + boxWidth && my >= pos.y && my <= pos.y + boxHeight) {
+                        game.selectRelic(i);
+                        break;
+                    }
+                }
+                break;
+            case GameState.GAME_OVER:
+                game.restart();
+                break;
+        }
+    });
+
+    // --------------------------------------------------------------
+    // Fonctions d'affichage des écrans
+    function drawTitle() {
+        ctx.fillStyle = COLORS.background;
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = COLORS.text;
+        ctx.font = '48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Pachinko Roguelike', W / 2, H / 2 - 50);
+        ctx.font = '24px Arial';
+        ctx.fillText('Click to Start', W / 2, H / 2 + 20);
+        ctx.textAlign = 'left';
+    }
+
+    function wrapText(text, maxWidth) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = words[0];
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const width = ctx.measureText(currentLine + ' ' + word).width;
+            if (width < maxWidth) {
+                currentLine += ' ' + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        return lines;
+    }
+
+    function drawRelicSelect() {
+        ctx.fillStyle = COLORS.background;
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = COLORS.text;
+        ctx.font = '36px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Choose a Relic', W / 2, 100);
+
+        const boxWidth = 180, boxHeight = 120;
+        const startX = (W - (3 * boxWidth + 2 * 40)) / 2;
+        const y = 250;
+
+        for (let i = 0; i < game.relicChoices.length; i++) {
+            const relic = game.relicChoices[i];
+            const x = startX + i * (boxWidth + 40);
+            ctx.strokeStyle = COLORS.ui;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, boxWidth, boxHeight);
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(x, y, boxWidth, boxHeight);
+            ctx.fillStyle = COLORS.text;
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(relic.name, x + boxWidth / 2, y + 30);
+            ctx.font = '14px Arial';
+            const lines = wrapText(relic.description, boxWidth - 10);
+            lines.forEach((line, idx) => {
+                ctx.fillText(line, x + boxWidth / 2, y + 70 + idx * 18);
+            });
+        }
+        ctx.textAlign = 'left';
+    }
+
+    function drawGameOver() {
+        ctx.fillStyle = COLORS.background;
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = COLORS.text;
+        ctx.font = '48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Game Over', W / 2, H / 2 - 50);
+        ctx.font = '24px Arial';
+        ctx.fillText(`Reached Floor ${game.floor}`, W / 2, H / 2);
+        ctx.fillText('Click to Restart', W / 2, H / 2 + 50);
+        ctx.textAlign = 'left';
+    }
+
+    // --------------------------------------------------------------
+    // Boucle de jeu
+    function update() {
+        if (game.state === GameState.BATTLE && game.battle) {
+            game.battle.update();
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        switch (game.state) {
+            case GameState.TITLE: drawTitle(); break;
+            case GameState.BATTLE: if (game.battle) game.battle.draw(); break;
+            case GameState.RELIC_SELECT: drawRelicSelect(); break;
+            case GameState.GAME_OVER: drawGameOver(); break;
+        }
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+</script>
+</body>
+</html>

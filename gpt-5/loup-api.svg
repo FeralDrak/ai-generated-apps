@@ -1,0 +1,42 @@
+<svg width="320" height="320" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-labelledby="title desc" role="img"> <title id="title">Loup stylisé</title> <desc id="desc">Tête de loup stylisée en SVG, géométrique et symétrique.</desc> <!-- Fond optionnel (désactive-le si tu veux un fond transparent) --> <!-- <rect x="0" y="0" width="512" height="512" fill="#ffffff"/> --> <!-- Groupe du loup --> <g stroke="none" stroke-linejoin="round">
+
+    <!-- Face de base -->
+    <polygon fill="#6f7781" points="
+  256,120
+  200,160
+  170,220
+  200,300
+  256,340
+  312,300
+  342,220
+  312,160
+"/>
+
+    <!-- Oreilles (extérieures) -->
+    <polygon fill="#606774" points="200,160 160,70 240,120"/>
+    <polygon fill="#606774" points="312,160 352,70 272,120"/>
+
+    <!-- Oreilles (intérieures) -->
+    <polygon fill="#b9c1cd" points="202,158 176,90 236,122"/>
+    <polygon fill="#b9c1cd" points="310,158 336,90 276,122"/>
+
+    <!-- Masques clairs des joues -->
+    <polygon fill="#aeb7c3" points="256,170 218,190 198,230 212,268 256,248"/>
+    <polygon fill="#aeb7c3" points="256,170 294,190 314,230 300,268 256,248"/>
+
+    <!-- Mufle (partie claire) -->
+    <polygon fill="#d7dee8" points="256,220 232,245 240,272 256,292 272,272 280,245"/>
+
+    <!-- Nez -->
+    <polygon fill="#2b2f36" points="256,292 240,302 272,302"/>
+
+    <!-- Ombres latérales (léger contraste) -->
+    <polygon fill="#5e6670" opacity="0.6" points="200,160 170,220 200,300 220,268 206,230 226,198"/>
+    <polygon fill="#5e6670" opacity="0.6" points="312,160 342,220 312,300 292,268 306,230 286,198"/>
+
+    <!-- Yeux -->
+    <circle cx="232" cy="206" r="7" fill="#d3ad3a"/>
+    <circle cx="280" cy="206" r="7" fill="#d3ad3a"/>
+    <circle cx="233.5" cy="207" r="3" fill="#111111"/>
+    <circle cx="278.5" cy="207" r="3" fill="#111111"/>
+</g> </svg>

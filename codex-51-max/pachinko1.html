@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pachinko Rogue</title>
+    <style>
+        :root {
+            --bg: #0d0f1a;
+            --panel: #11182b;
+            --accent: #7cf0c8;
+            --text: #e4f1ff;
+            --muted: #98aac0;
+            --danger: #ff6b6b;
+            --gold: #ffce67;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Inter", system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at 20% 20%, #16234a, #0d0f1a 40%),
+            radial-gradient(circle at 80% 0%, #1c2a52, transparent 35%),
+            var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        header {
+            padding: 24px;
+            text-align: center;
+        }
+        h1 {
+            margin: 0 0 8px;
+            letter-spacing: 0.04em;
+        }
+        header p {
+            margin: 0;
+            color: var(--muted);
+        }
+        main {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 16px;
+            padding: 0 16px 32px;
+        }
+        @media (max-width: 960px) {
+            main { grid-template-columns: 1fr; }
+            #board-wrap { order: -1; }
+        }
+        .panel {
+            background: var(--panel);
+            border: 1px solid #1e2b4d;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .stat {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stat span:first-child { color: var(--muted); }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        button {
+            background: linear-gradient(135deg, #1d2b52, #203666);
+            color: var(--text);
+            border: 1px solid #2b3f72;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+        .accent { color: var(--accent); }
+        .gold { color: var(--gold); }
+        .danger { color: var(--danger); }
+        #board-wrap { position: relative; }
+        #board {
+            width: 100%;
+            max-width: 760px;
+            background: radial-gradient(circle at 50% 20%, rgba(124, 240, 200, 0.12), #0d111f 60%);
+            border: 2px solid #1f2b46;
+            border-radius: 14px;
+            display: block;
+            margin: 0 auto;
+        }
+        .log {
+            max-height: 260px;
+            overflow: auto;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 12px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .upgrade-picker {
+            display: grid;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .upgrade-card {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #2b3f72;
+            background: linear-gradient(135deg, rgba(124, 240, 200, 0.08), rgba(124, 240, 200, 0.02));
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        .upgrade-card:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+        .bar {
+            background: #0b1020;
+            border-radius: 999px;
+            border: 1px solid #263356;
+            overflow: hidden;
+            height: 12px;
+            position: relative;
+        }
+        .bar .fill {
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            background: linear-gradient(90deg, #ff8c8c, #ff5f6d);
+            border-radius: 999px;
+            width: 50%;
+            transition: width 0.18s ease;
+        }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid #2b3f72;
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Pachinko Rogue</h1>
+    <p>Pachinko tactique avec progression roguelike, génération de planches et améliorations persistantes.</p>
+</header>
+<main>
+    <section class="panel">
+        <h2>État du run</h2>
+        <div class="pill">Palier <span id="floor">1</span></div>
+        <div class="stat-grid">
+            <div class="stat"><span>Vie</span><span id="hp"></span></div>
+            <div class="stat"><span>Dégâts</span><span id="attack"></span></div>
+            <div class="stat"><span>Or</span><span id="gold"></span></div>
+            <div class="stat"><span>Éclats</span><span id="shards"></span></div>
+        </div>
+        <div class="bar" style="margin-top:10px"><div id="hp-fill" class="fill"></div></div>
+        <div class="btn-row">
+            <button id="new-run">Nouvelle partie</button>
+            <button id="drop" disabled>Lancer une bille</button>
+            <button id="next" disabled>Passer au palier suivant</button>
+            <button id="reset-meta">Réinitialiser la méta</button>
+        </div>
+        <div style="margin-top:10px; color: var(--muted); font-size: 14px;">Bonus méta actifs : <span id="meta-info"></span></div>
+        <div id="upgrade" class="upgrade-picker"></div>
+    </section>
+    <section id="board-wrap" class="panel">
+        <h2>Plateau</h2>
+        <canvas id="board" width="700" height="630" aria-label="Plateau de pachinko"></canvas>
+        <div style="margin-top:12px; font-size:14px; color:var(--muted);">
+            Chaque bille applique vos dégâts en touchant un ennemi. Battez-les tous pour choisir une amélioration et monter de palier.
+        </div>
+    </section>
+    <section class="panel" style="grid-column: 1 / -1;">
+        <h3>Journal</h3>
+        <div id="log" class="log"></div>
+    </section>
+</main>
+<script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+
+    const boardCols = 11;
+    const boardRows = 18;
+    const cellSize = Math.min(canvas.width / boardCols, canvas.height / (boardRows + 2));
+    const enemiesRow = boardRows - 1;
+
+    const metaKey = 'pachinko-rogue-meta';
+    const baseMeta = { shards: 0, corePower: 0, vitality: 0 };
+
+    const upgrades = [
+        { name: '+3 dégâts', desc: 'La bille inflige davantage de dégâts par collision.', apply: s => s.attack += 3 },
+        { name: '+15 PV max', desc: 'Augmente la réserve de vie et soigne immédiatement 10 PV.', apply: s => { s.maxHp += 15; s.hp = Math.min(s.maxHp, s.hp + 10); } },
+        { name: 'Bille perçante', desc: 'La bille traverse un ennemi par lancer (ajoute un rebond supplémentaire).', apply: s => s.pierce += 1 },
+        { name: 'Chute contrôlée', desc: 'Ajoute un léger drift horizontal (+1/-1) aléatoire à chaque pas.', apply: s => s.drift += 0.1 },
+        { name: 'Précision', desc: "Réduit l'aléatoire du rebond sur les chevilles.", apply: s => s.stability += 0.1 },
+        { name: 'Orbe volatile', desc: '20% de chances de critique à 150% de dégâts.', apply: s => s.crit += 0.2 },
+        { name: 'Mécènes', desc: 'Gagne 2 or supplémentaire par ennemi vaincu.', apply: s => s.goldBonus += 2 },
+        { name: 'Siphon', desc: 'Soigne 2 PV en détruisant un ennemi.', apply: s => s.leech += 2 },
+    ];
+
+    let meta = loadMeta();
+
+    const state = {
+        floor: 1,
+        hp: 50,
+        maxHp: 50,
+        attack: 6,
+        gold: 0,
+        shards: 0,
+        pierce: 0,
+        drift: 0,
+        stability: 0,
+        crit: 0,
+        goldBonus: 0,
+        leech: 0,
+        pegs: [],
+        enemies: [],
+        ball: null,
+        dropping: false,
+        runActive: false,
+        recentHits: [],
+    };
+
+    function loadMeta() {
+        try {
+            return { ...baseMeta, ...(JSON.parse(localStorage.getItem(metaKey)) || {}) };
+        } catch (e) {
+            return { ...baseMeta };
+        }
+    }
+
+    function saveMeta() {
+        localStorage.setItem(metaKey, JSON.stringify(meta));
+    }
+
+    function log(msg) {
+        const logEl = document.getElementById('log');
+        const entry = document.createElement('div');
+        entry.textContent = msg;
+        logEl.prepend(entry);
+    }
+
+    function updateStats() {
+        document.getElementById('floor').textContent = state.floor;
+        document.getElementById('hp').textContent = `${state.hp} / ${state.maxHp}`;
+        document.getElementById('attack').textContent = state.attack;
+        document.getElementById('gold').textContent = state.gold;
+        document.getElementById('shards').textContent = meta.shards + state.shards;
+        const fill = document.getElementById('hp-fill');
+        fill.style.width = `${Math.max(0, Math.min(1, state.hp / state.maxHp)) * 100}%`;
+        document.getElementById('meta-info').textContent = `Puissance +${meta.corePower}, Vitalité +${meta.vitality}`;
+    }
+
+    function startRun() {
+        Object.assign(state, {
+            floor: 1,
+            hp: 55 + meta.vitality * 5,
+            maxHp: 55 + meta.vitality * 5,
+            attack: 6 + meta.corePower,
+            gold: 0,
+            shards: 0,
+            pierce: 0,
+            drift: 0,
+            stability: 0,
+            crit: 0,
+            goldBonus: 0,
+            leech: 0,
+            pegs: [],
+            enemies: [],
+            ball: null,
+            dropping: false,
+            runActive: true,
+            recentHits: [],
+        });
+        document.getElementById('drop').disabled = false;
+        document.getElementById('next').disabled = true;
+        document.getElementById('upgrade').innerHTML = '';
+        log('Nouveau run lancé. Descendez pour atteindre le noyau.');
+        createFloor();
+        updateStats();
+    }
+
+    function resetMeta() {
+        meta = { ...baseMeta };
+        saveMeta();
+        log('Progression méta réinitialisée.');
+        updateStats();
+    }
+
+    function createFloor() {
+        state.pegs = generatePegs();
+        state.enemies = generateEnemies(state.floor);
+        state.recentHits = [];
+        drawBoard();
+    }
+
+    function generatePegs() {
+        const pegs = [];
+        for (let y = 2; y < boardRows - 2; y++) {
+            const offset = y % 2 === 0 ? 0.5 : 0;
+            const density = 0.6;
+            for (let x = 1; x < boardCols - 1; x++) {
+                if (Math.random() < density) {
+                    pegs.push({ x: x + offset, y: y + Math.random() * 0.3 });
+                }
+            }
+        }
+        return pegs;
+    }
+
+    function generateEnemies(floor) {
+        const enemies = [];
+        const count = 3 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < count; i++) {
+            const col = Math.floor((i + 0.5) * (boardCols / count));
+            const hp = Math.round((10 + floor * 4) * (0.8 + Math.random() * 0.6));
+            enemies.push({ id: crypto.randomUUID(), col, hp, maxHp: hp });
+        }
+        return enemies;
+    }
+
+    function drawBoard() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(cellSize * 0.5, cellSize * 0.5);
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        for (let x = 0; x <= boardCols; x++) {
+            ctx.beginPath();
+            ctx.moveTo(x * cellSize, 0);
+            ctx.lineTo(x * cellSize, boardRows * cellSize);
+            ctx.stroke();
+        }
+
+        for (const peg of state.pegs) {
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(124, 240, 200, 0.9)';
+            ctx.shadowColor = 'rgba(124, 240, 200, 0.4)';
+            ctx.shadowBlur = 8;
+            ctx.arc(peg.x * cellSize, peg.y * cellSize, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        state.enemies.forEach((enemy) => {
+            const x = enemy.col * cellSize;
+            const y = enemiesRow * cellSize + cellSize * 0.2;
+            const w = cellSize * 0.8;
+            const h = cellSize * 0.7;
+            ctx.fillStyle = '#2c3656';
+            ctx.strokeStyle = '#32406b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(x - w / 2, y, w, h, 8);
+            ctx.fill();
+            ctx.stroke();
+            const ratio = enemy.hp / enemy.maxHp;
+            ctx.fillStyle = '#ff6b6b';
+            ctx.fillRect(x - w / 2 + 4, y + h / 2, (w - 8) * ratio, 8);
+            ctx.fillStyle = '#e4f1ff';
+            ctx.font = '12px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText(`HP ${enemy.hp}`, x, y + h / 2 - 4);
+        });
+
+        state.recentHits.forEach(hit => {
+            ctx.fillStyle = 'rgba(255, 206, 103, 0.9)';
+            ctx.font = 'bold 14px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText(hit.text, hit.x, hit.y);
+        });
+
+        if (state.ball) {
+            ctx.beginPath();
+            ctx.fillStyle = '#7cf0c8';
+            ctx.shadowColor = 'rgba(124, 240, 200, 0.6)';
+            ctx.shadowBlur = 12;
+            ctx.arc(state.ball.x * cellSize, state.ball.y * cellSize, 8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    function dropBall() {
+        if (!state.runActive || state.dropping) return;
+        state.ball = { x: Math.floor(boardCols / 2), y: 0, dx: 0, pierceLeft: 1 + state.pierce };
+        state.dropping = true;
+        log('Bille lancée.');
+        animateBall();
+    }
+
+    function animateBall() {
+        if (!state.ball) return;
+        stepBall();
+        drawBoard();
+        if (state.dropping) requestAnimationFrame(animateBall);
+    }
+
+    function stepBall() {
+        if (!state.ball) return;
+        const ball = state.ball;
+        const drift = (Math.random() < Math.abs(state.drift)) ? Math.sign(Math.random() - 0.5) : 0;
+        ball.dx = clamp(ball.dx + drift, -1, 1);
+
+        const nextY = ball.y + 0.4;
+        let nextX = ball.x + ball.dx * 0.4;
+
+        const pegHit = state.pegs.find(p => distance(p.x, p.y, ball.x, nextY) < 0.4);
+        if (pegHit) {
+            const bias = Math.random() < (0.5 + state.stability * 0.3) ? 1 : -1;
+            ball.dx = clamp(ball.dx + bias, -1.2, 1.2);
+            nextX = ball.x + ball.dx;
+        }
+
+        ball.x = clamp(nextX, 0, boardCols - 1);
+        ball.y = nextY;
+
+        if (ball.y >= enemiesRow - 0.2) {
+            const target = findEnemyByColumn(ball.x);
+            resolveHit(target);
+            if (target) {
+                ball.pierceLeft -= 1;
+                if (ball.pierceLeft <= 0) {
+                    finishBall();
+                    return;
+                } else {
+                    ball.y -= 1;
+                }
+            } else {
+                finishBall();
+                return;
+            }
+        }
+
+        if (ball.y > boardRows + 1) finishBall();
+    }
+
+    function resolveHit(target) {
+        if (!target) return;
+        const isCrit = Math.random() < state.crit;
+        const dmg = Math.round(state.attack * (isCrit ? 1.5 : 1));
+        target.hp -= dmg;
+        state.recentHits.push({ x: target.col * cellSize, y: enemiesRow * cellSize, text: isCrit ? `CRIT ${dmg}` : `-${dmg}` });
+        setTimeout(() => state.recentHits.shift(), 500);
+        log(`Vous touchez un ennemi pour ${dmg} dégâts${isCrit ? ' (critique)' : ''}.`);
+        if (target.hp <= 0) {
+            const goldGain = 6 + state.goldBonus;
+            state.gold += goldGain;
+            const shardGain = Math.random() < 0.35 ? 1 : 0;
+            state.shards += shardGain;
+            state.hp = Math.min(state.maxHp, state.hp + state.leech);
+            log(`Ennemi détruit (+${goldGain} or${shardGain ? ', +1 éclat' : ''}).`);
+            state.enemies = state.enemies.filter(e => e.id !== target.id);
+            if (state.enemies.length === 0) {
+                state.dropping = false;
+                state.ball = null;
+                victory();
+            }
+        }
+        updateStats();
+    }
+
+    function finishBall() {
+        state.dropping = false;
+        state.ball = null;
+        drawBoard();
+        if (state.enemies.length > 0) {
+            state.hp = Math.max(0, state.hp - 3);
+            log('La bille disparaît. Vous perdez 3 PV en recul stratégique.');
+            if (state.hp <= 0) {
+                gameOver();
+                return;
+            }
+        }
+        updateStats();
+    }
+
+    function victory() {
+        document.getElementById('drop').disabled = true;
+        document.getElementById('next').disabled = false;
+        offerUpgrades();
+        log(`Palier ${state.floor} nettoyé ! Choisissez une amélioration.`);
+    }
+
+    function gameOver() {
+        state.runActive = false;
+        document.getElementById('drop').disabled = true;
+        document.getElementById('next').disabled = true;
+        log("Votre run s'achève. Convertissez votre butin en progression méta.");
+        meta.shards += state.shards;
+        saveMeta();
+    }
+
+    function findEnemyByColumn(x) {
+        let closest = null;
+        let smallest = Infinity;
+        for (const enemy of state.enemies) {
+            const d = Math.abs(enemy.col - x);
+            if (d < smallest) { smallest = d; closest = enemy; }
+        }
+        return smallest <= 1 ? closest : null;
+    }
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function distance(x1, y1, x2, y2) { return Math.hypot(x1 - x2, y1 - y2); }
+
+    function offerUpgrades() {
+        const wrap = document.getElementById('upgrade');
+        wrap.innerHTML = '';
+        const picks = randomSample(upgrades, 3);
+        picks.forEach(up => {
+            const card = document.createElement('div');
+            card.className = 'upgrade-card';
+            card.innerHTML = `<strong>${up.name}</strong><br><span style="color:var(--muted)">${up.desc}</span>`;
+            card.onclick = () => {
+                up.apply(state);
+                wrap.innerHTML = '';
+                log(`Amélioration choisie : ${up.name}.`);
+                updateStats();
+            };
+            wrap.appendChild(card);
+        });
+    }
+
+    function randomSample(arr, n) {
+        const copy = [...arr];
+        const out = [];
+        while (out.length < n && copy.length) {
+            const idx = Math.floor(Math.random() * copy.length);
+            out.push(copy.splice(idx, 1)[0]);
+        }
+        return out;
+    }
+
+    function nextFloor() {
+        state.floor += 1;
+        state.hp = Math.min(state.maxHp, state.hp + 8);
+        document.getElementById('drop').disabled = false;
+        document.getElementById('next').disabled = true;
+        state.shards += 1;
+        createFloor();
+        log(`Palier ${state.floor} : difficulté accrue, nouvelles chevilles.`);
+        updateStats();
+    }
+
+    function spendMeta() {
+        if (meta.shards <= 0) return;
+        const choice = prompt('Dépenser 3 éclats pour +1 Puissance ou +5 PV max ? (puissance/pv)');
+        if (!choice) return;
+        if (choice.toLowerCase().startsWith('p') && meta.shards >= 3) {
+            meta.shards -= 3;
+            meta.corePower += 1;
+        } else if (choice.toLowerCase().startsWith('p')) {
+            alert("Pas assez d'éclats.");
+        } else if (choice.toLowerCase().startsWith('v') && meta.shards >= 3) {
+            meta.shards -= 3;
+            meta.vitality += 1;
+        }
+        saveMeta();
+        updateStats();
+    }
+
+    document.getElementById('new-run').onclick = startRun;
+    document.getElementById('drop').onclick = dropBall;
+    document.getElementById('next').onclick = nextFloor;
+    document.getElementById('reset-meta').onclick = () => { if (confirm('Réinitialiser la progression méta ?')) resetMeta(); };
+    document.getElementById('shards').onclick = spendMeta;
+
+    createFloor();
+    updateStats();
+    log('Choisissez "Nouvelle partie" pour commencer.');
+</script>
+</body>
+</html>

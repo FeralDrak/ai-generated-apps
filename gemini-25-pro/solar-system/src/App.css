@@ -1,0 +1,36 @@
+/* src/App.css */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #000010; /* Fond spatial sombre */
+  color: #fff;
+  overflow: hidden; /* Empêche les barres de défilement */
+}
+
+.App {
+  width: 100vw;
+  height: 100vh;
+  position: relative; /* Pour positionner le InfoPanel par-dessus */
+}
+
+/* Style de base pour le Canvas s'il en a besoin */
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Style simple pour le chargement */
+.loading-fallback {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.5em;
+  color: #ccc;
+}

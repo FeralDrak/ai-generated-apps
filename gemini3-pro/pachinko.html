@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pachinko Rogue</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 500px;
+            height: 800px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            background: #222;
+            border: 2px solid #444;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Overlay Styles */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.6);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .enemy_bar-container {
+            width: 80%;
+            height: 20px;
+            background: #333;
+            margin: 0 auto;
+            border: 2px solid white;
+            position: relative;
+        }
+        .enemy_bar-fill {
+            height: 100%;
+            background: #e74c3c;
+            width: 100%;
+            transition: width 0.3s;
+        }
+
+        /* Screens (Start, Shop, GameOver) */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { color: #f1c40f; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        p { font-size: 1.2em; margin-bottom: 20px; text-align: center; max-width: 80%; }
+
+        button {
+            background: #3498db;
+            border: none;
+            padding: 15px 30px;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: transform 0.1s, background 0.2s;
+            margin: 5px;
+        }
+        button:hover { background: #2980b9; transform: scale(1.05); }
+
+        .upgrade-card {
+            background: #34495e;
+            padding: 15px;
+            margin: 10px;
+            border: 1px solid #7f8c8d;
+            width: 200px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .upgrade-card:hover { background: #2c3e50; border-color: #f1c40f; }
+
+        #damage-floater {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            color: yellow;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+
+        .bucket-text {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.8em;
+            color: white;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Rendering Canvas -->
+    <canvas id="world"></canvas>
+
+    <!-- In-Game UI -->
+    <div id="ui-layer" class="ui-layer hidden">
+        <div style="display: flex; justify-content: space-between;">
+            <div class="stat-box" style="color:#e74c3c">Ennemi: Niv <span id="lvl-display">1</span></div>
+            <div class="stat-box" style="color:#2ecc71">HP Joueur: <span id="hp-display">100</span></div>
+        </div>
+
+        <div style="margin-top: 10px; text-align: center;">
+            <div class="enemy_bar-container">
+                <div id="enemy-hp-bar" class="enemy_bar-fill"></div>
+                <span id="enemy-hp-text" style="position: absolute; width: 100%; text-align: center; top:0; line-height: 20px; text-shadow: 1px 1px 2px black;"></span>
+            </div>
+        </div>
+
+        <div style="flex-grow: 1; position: relative;">
+            <!-- Zone de dommage courant -->
+            <div style="position: absolute; bottom: 100px; width: 100%; text-align: center;">
+                <span style="font-size: 2em; font-weight: bold; color: #f1c40f;">
+                    DMG: <span id="current-dmg">0</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="bucket-text">
+            <span>x0.5</span><span>x1.0</span><span>x2.0</span><span>x1.0</span><span>x0.5</span>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen">
+        <h1>Pachinko Rogue</h1>
+        <p>Viser. Tirer. Survivre.</p>
+        <p style="font-size: 0.9em; color: #aaa;">Cliquez pour lancer la bille.<br>Touchez des clous pour accumuler des dégâts.</p>
+        <button onclick="game.startGame()">JOUER</button>
+    </div>
+
+    <!-- Shop Screen -->
+    <div id="shop-screen" class="screen hidden">
+        <h1>Victoire !</h1>
+        <p>Choisissez une amélioration :</p>
+        <div id="upgrade-container" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="screen hidden">
+        <h1 style="color: #c0392b">MORT</h1>
+        <p>Niveau atteint : <span id="final-level">1</span></p>
+        <button onclick="game.restartGame()">REJOUER</button>
+    </div>
+
+    <div id="damage-floater">0</div>
+</div>
+
+<script>
+    // --- CONFIGURATION ---
+    const CONFIG = {
+        width: 500,
+        height: 800,
+        pegSize: 8,
+        ballSize: 10,
+        gravity: 1.2
+    };
+
+    // --- MOTEUR PHYSIQUE (MATTER.JS) ---
+    const Engine = Matter.Engine,
+        Render = Matter.Render,
+        Runner = Matter.Runner,
+        Bodies = Matter.Bodies,
+        Composite = Matter.Composite,
+        Events = Matter.Events,
+        Vector = Matter.Vector,
+        Body = Matter.Body;
+
+    // --- LOGIQUE DU JEU ---
+    class Game {
+        constructor() {
+            this.engine = null;
+            this.render = null;
+            this.runner = null;
+            this.canvas = document.getElementById('world');
+
+            // Game State
+            this.state = 'START'; // START, AIMING, FIRED, SHOP, GAMEOVER
+            this.level = 1;
+            this.playerHP = 100;
+            this.maxPlayerHP = 100;
+            this.enemyHP = 0;
+            this.maxEnemyHP = 0;
+
+            // Shot calculation
+            this.currentDamage = 0;
+            this.damageMultiplier = 1;
+            this.ball = null;
+
+            // Stats / Upgrades
+            this.baseDamage = 10;
+            this.pegsHit = []; // IDs of pegs hit this turn
+
+            this.initPhysics();
+            this.bindEvents();
+        }
+
+        initPhysics() {
+            this.engine = Engine.create();
+            this.engine.world.gravity.y = CONFIG.gravity; // Normal gravity
+
+            this.render = Render.create({
+                canvas: this.canvas,
+                engine: this.engine,
+                options: {
+                    width: CONFIG.width,
+                    height: CONFIG.height,
+                    wireframes: false,
+                    background: 'transparent'
+                }
+            });
+
+            Render.run(this.render);
+            this.runner = Runner.create();
+            Runner.run(this.runner, this.engine);
+
+            // Collision Handling
+            Events.on(this.engine, 'collisionStart', (event) => this.handleCollisions(event));
+        }
+
+        startGame() {
+            this.level = 1;
+            this.playerHP = 100;
+            this.maxPlayerHP = 100;
+            this.baseDamage = 10;
+            this.startLevel();
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('ui-layer').classList.remove('hidden');
+        }
+
+        startLevel() {
+            this.resetBoard();
+            this.generatePegs();
+            this.createBuckets();
+
+            // Enemy setup
+            this.maxEnemyHP = 100 + (this.level * 50);
+            this.enemyHP = this.maxEnemyHP;
+
+            this.updateUI();
+            this.state = 'AIMING';
+        }
+
+        resetBoard() {
+            Composite.clear(this.engine.world);
+            // Create Walls
+            const wallOpts = { isStatic: true, render: { fillStyle: '#444' } };
+            Composite.add(this.engine.world, [
+                Bodies.rectangle(CONFIG.width/2, -50, CONFIG.width, 100, wallOpts), // Top
+                Bodies.rectangle(-25, CONFIG.height/2, 50, CONFIG.height, wallOpts), // Left
+                Bodies.rectangle(CONFIG.width+25, CONFIG.height/2, 50, CONFIG.height, wallOpts) // Right
+            ]);
+        }
+
+        generatePegs() {
+            const rows = 10;
+            const cols = 9;
+            const startY = 150;
+            const spacingX = 50;
+            const spacingY = 50;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+
+                    // Offset every other row
+                    let x = (c * spacingX) + (spacingX / 2) + 25;
+                    if (r % 2 === 0) x += spacingX / 2;
+                    if (x > CONFIG.width - 25) continue;
+
+                    let y = startY + (r * spacingY);
+
+                    // Randomize Peg Type
+                    let type = 'NORMAL';
+                    let color = '#ffffff';
+                    let radius = CONFIG.pegSize;
+                    const rng = Math.random();
+
+                    if (rng > 0.85) { type = 'CRIT'; color = '#e74c3c'; } // 15% chance
+                    else if (rng > 0.95) { type = 'HEAL'; color = '#2ecc71'; } // 5% chance (overlap fix: rare)
+
+                    const peg = Bodies.circle(x, y, radius, {
+                        isStatic: true,
+                        label: 'PEG',
+                        plugin: { type: type, isActive: true },
+                        render: { fillStyle: color }
+                    });
+
+                    // Adds elasticity
+                    peg.restitution = 0.8;
+
+                    Composite.add(this.engine.world, peg);
+                }
+            }
+        }
+
+        createBuckets() {
+            const bucketCount = 5;
+            const width = CONFIG.width / bucketCount;
+            const height = 60;
+            const y = CONFIG.height - 30;
+
+            // Multipliers: 0.5, 1, 2, 1, 0.5
+            const mults = [0.5, 1, 2, 1, 0.5];
+
+            for(let i=0; i<bucketCount; i++) {
+                let x = (i * width) + (width/2);
+
+                // The Sensor (Trigger)
+                const sensor = Bodies.rectangle(x, y, width - 10, 20, {
+                    isStatic: true,
+                    isSensor: true,
+                    label: 'BUCKET',
+                    plugin: { multiplier: mults[i] },
+                    render: { fillStyle: 'rgba(255,255,255,0.1)' }
+                });
+                Composite.add(this.engine.world, sensor);
+
+                // The Dividers
+                if(i < bucketCount){
+                    const divider = Bodies.rectangle((i+1)*width, y, 4, 60, {
+                        isStatic: true,
+                        render: { fillStyle: '#666' }
+                    });
+                    Composite.add(this.engine.world, divider);
+                }
+            }
+            // Bottom kill floor
+            Composite.add(this.engine.world, Bodies.rectangle(CONFIG.width/2, CONFIG.height + 50, CONFIG.width*2, 100, {
+                isStatic: true,
+                label: 'FLOOR',
+                isSensor: true
+            }));
+        }
+
+        fireBall(targetX, targetY) {
+            if (this.state !== 'AIMING') return;
+
+            this.state = 'FIRED';
+            this.currentDamage = 0;
+            this.damageMultiplier = 1;
+            this.pegsHit = []; // Reset hit pegs list
+            this.updateUI();
+
+            // Revert any previously hit pegs to active for visuals if needed (handled in resetLogic usually)
+
+            const startX = CONFIG.width / 2;
+            const startY = 30;
+
+            this.ball = Bodies.circle(startX, startY, CONFIG.ballSize, {
+                restitution: 0.7,
+                label: 'BALL',
+                frictionAir: 0.0,
+                render: { fillStyle: '#3498db' }
+            });
+
+            // Calculate vector
+            let forceVector = Vector.sub({x: targetX, y: targetY}, {x: startX, y: startY});
+            forceVector = Vector.normalise(forceVector);
+            forceVector = Vector.mult(forceVector, 0.06); // Shoot power
+
+            Composite.add(this.engine.world, this.ball);
+            Body.applyForce(this.ball, this.ball.position, forceVector);
+        }
+
+        handleCollisions(event) {
+            const pairs = event.pairs;
+
+            for (let i = 0; i < pairs.length; i++) {
+                const bodyA = pairs[i].bodyA;
+                const bodyB = pairs[i].bodyB;
+
+                // Identify Ball and Other
+                let ball, other;
+                if (bodyA.label === 'BALL') { ball = bodyA; other = bodyB; }
+                else if (bodyB.label === 'BALL') { ball = bodyB; other = bodyA; }
+                else continue;
+
+                if (other.label === 'PEG') {
+                    if (other.plugin.isActive) {
+                        this.hitPeg(other);
+                    }
+                } else if (other.label === 'BUCKET') {
+                    this.finishTurn(other.plugin.multiplier);
+                } else if (other.label === 'FLOOR') {
+                    // Just in case it misses buckets
+                    this.finishTurn(0.5);
+                }
+            }
+        }
+
+        hitPeg(pegBody) {
+            // Prevent hitting same peg twice slightly frame dependent, but using logic:
+            pegBody.plugin.isActive = false;
+
+            // Visual feedback: make it dark
+            pegBody.render.fillStyle = '#333';
+
+            // Logic
+            const type = pegBody.plugin.type;
+            if (type === 'NORMAL') {
+                this.currentDamage += 10;
+            } else if (type === 'CRIT') {
+                this.damageMultiplier *= 1.5; // Stackable crit
+                this.currentDamage += 10;
+            } else if (type === 'HEAL') {
+                this.playerHP = Math.min(this.playerHP + 5, this.maxPlayerHP);
+                this.currentDamage += 5;
+            }
+
+            this.updateUI();
+        }
+
+        finishTurn(bucketMult) {
+            if (this.state !== 'FIRED') return; // Prevent double triggering
+
+            // Remove Ball
+            Composite.remove(this.engine.world, this.ball);
+            this.ball = null;
+
+            // Calculate Final Damage
+            let totalDmg = Math.floor((this.baseDamage + this.currentDamage) * this.damageMultiplier * bucketMult);
+
+            // Show Floater
+            this.showFloater(totalDmg);
+
+            // Apply Damage to Enemy
+            this.enemyHP -= totalDmg;
+            if (this.enemyHP < 0) this.enemyHP = 0;
+
+            this.updateUI();
+
+            this.state = 'RESOLVING';
+
+            setTimeout(() => {
+                if (this.enemyHP <= 0) {
+                    this.levelComplete();
+                } else {
+                    this.enemyTurn();
+                }
+            }, 1000);
+        }
+
+        enemyTurn() {
+            // Enemy Attacks
+            const enemyDmg = Math.floor(10 + (this.level * 2));
+            this.playerHP -= enemyDmg;
+
+            // Shake effect (simple CSS toggle if we wanted, currently just Logic)
+
+            this.updateUI();
+
+            if (this.playerHP <= 0) {
+                this.gameOver();
+            } else {
+                this.resetPegsForNextTurn();
+                this.state = 'AIMING';
+            }
+        }
+
+        resetPegsForNextTurn() {
+            // In some pachinko roguelikes, pegs stay gone. Here, we respawn them
+            // Or we could keep them gone. Let's respawn them for simplicity of infinite play.
+            // For "Roguelike" feel: usually they stay gone until a "Refresh" peg is hit.
+            // Let's simple Reset all for this demo to ensure board isn't empty.
+
+            const bodies = Composite.allBodies(this.engine.world);
+            bodies.forEach(b => {
+                if (b.label === 'PEG') {
+                    b.plugin.isActive = true;
+                    // Reset Color
+                    if (b.plugin.type === 'NORMAL') b.render.fillStyle = '#ffffff';
+                    if (b.plugin.type === 'CRIT') b.render.fillStyle = '#e74c3c';
+                    if (b.plugin.type === 'HEAL') b.render.fillStyle = '#2ecc71';
+                }
+            });
+        }
+
+        levelComplete() {
+            document.getElementById('shop-screen').classList.remove('hidden');
+            document.getElementById('ui-layer').classList.add('hidden');
+            this.state = 'SHOP';
+            this.generateUpgrades();
+        }
+
+        generateUpgrades() {
+            const container = document.getElementById('upgrade-container');
+            container.innerHTML = '';
+
+            const upgrades = [
+                { name: "Bille Lourde", desc: "+15 À vos dégâts de base", action: () => this.baseDamage += 15 },
+                { name: "Soin Complet", desc: "Restaure tous vos PV", action: () => this.playerHP = this.maxPlayerHP },
+                { name: "Entrainement", desc: "+20 PV Max", action: () => { this.maxPlayerHP += 20; this.playerHP += 20; } }
+            ];
+
+            // Pick 3 or show these.
+            upgrades.forEach(up => {
+                const div = document.createElement('div');
+                div.className = 'upgrade-card';
+                div.innerHTML = `<h3>${up.name}</h3><p style="font-size:0.8em">${up.desc}</p>`;
+                div.onclick = () => {
+                    up.action();
+                    this.nextLevel();
+                };
+                container.appendChild(div);
+            });
+        }
+
+        nextLevel() {
+            this.level++;
+            document.getElementById('shop-screen').classList.add('hidden');
+            document.getElementById('ui-layer').classList.remove('hidden');
+            this.startLevel();
+        }
+
+        gameOver() {
+            this.state = 'GAMEOVER';
+            document.getElementById('final-level').innerText = this.level;
+            document.getElementById('gameover-screen').classList.remove('hidden');
+            document.getElementById('ui-layer').classList.add('hidden');
+        }
+
+        restartGame() {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            this.startGame();
+        }
+
+        updateUI() {
+            document.getElementById('lvl-display').innerText = this.level;
+            document.getElementById('hp-display').innerText = this.playerHP + '/' + this.maxPlayerHP;
+
+            let enemyPct = (this.enemyHP / this.maxEnemyHP) * 100;
+            document.getElementById('enemy-hp-bar').style.width = enemyPct + '%';
+            document.getElementById('enemy-hp-text').innerText = this.enemyHP + ' / ' + this.maxEnemyHP;
+
+            // Live calc estimation
+            let dispDmg = Math.floor((this.baseDamage + this.currentDamage) * this.damageMultiplier);
+            document.getElementById('current-dmg').innerText = dispDmg;
+        }
+
+        bindEvents() {
+            // Click to shoot
+            this.canvas.addEventListener('mousedown', (e) => {
+                if (this.state !== 'AIMING') return;
+
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (this.canvas.width / rect.width); // Scale correction
+                const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+
+                this.fireBall(x, y);
+            });
+
+            // Visual Aim Line
+            Events.on(this.render, 'afterRender', () => {
+                if (this.state === 'AIMING') {
+                    // We can't easily get mouse pos in Matter loop without tracking it.
+                    // For simplicity in this demo, we skip the aim line or implement a global mouse tracker.
+                    // Keeping it simple: No aim line, just click to shoot towards click.
+                }
+            });
+        }
+
+        showFloater(dmg) {
+            const el = document.getElementById('damage-floater');
+            el.innerText = "-" + dmg;
+            el.style.opacity = 1;
+            el.style.transform = "translate(-50%, -150%) scale(1.2)";
+
+            setTimeout(() => {
+                el.style.opacity = 0;
+                el.style.transform = "translate(-50%, -50%) scale(1)";
+            }, 1000);
+        }
+    }
+
+    // --- INITIALISATION ---
+    const game = new Game();
+
+    // Helper for button restarts
+    window.game = game;
+
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+.fortune-wheel-container {
+    position: relative;
+    /* display: flex; */ /* Peut-être retirer flex si ce n'est pas nécessaire pour l'alignement interne maintenant */
+    display: grid; /* Ou utiliser grid pour centrer facilement */
+    place-items: center; /* Centre le contenu (roue, bouton) horizontalement et verticalement */
+    margin: 20px auto;
+    /* width et aspectRatio sont définis inline */
+    /* height sera déterminé par width et aspectRatio */
+}
+
+.wheel-pointer {
+    position: absolute;
+    /* Ajustez 'top' basé sur la taille relative ou utilisez transform pour le positionnement */
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80%); /* Ajustez translateY pour le décalage vers le haut */
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top-width: 20px;
+    border-top-style: solid;
+    z-index: 10;
+}
+
+
+.wheel {
+    /* Le .wheel prendra la taille de son conteneur grid */
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    /* La rotation est appliquée via style inline */
+    /* La transition est appliquée via style inline */
+}
+
+/* Assurez-vous que le SVG remplit bien le conteneur .wheel */
+.wheel svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+
+.spin-button {
+    /* Positionner le bouton sous la roue via grid ou absolute */
+    /* Si on utilise grid sur le container: */
+    grid-row: 2; /* Place le bouton sur la ligne suivante (implicite) */
+    margin-top: 20px; /* Espace entre roue et bouton */
+    /* Si on utilise position: absolute (plus complexe) : */
+    /* position: absolute; */
+    /* bottom: -50px; */ /* Ajuster */
+    /* left: 50%; */
+    /* transform: translateX(-50%); */
+
+    padding: 10px 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    z-index: 5; /* Au cas où */
+}
+
+.spin-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.winner-display {
+    grid-row: 3; /* Sous le bouton */
+    margin-top: 15px;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-align: center;
+    padding: 8px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}

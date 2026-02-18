@@ -1,0 +1,32 @@
+.app-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    color: #fff; /* Texte blanc sur fond dégradé */
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, #0D47A1 0%, #1976D2 50%, #42A5F5 100%); /* Dégradé bleu */
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.app-header p {
+    margin-top: 0.5rem;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .app-header h1 {
+        font-size: 1.8rem;
+    }
+    .app-header p {
+        font-size: 1rem;
+    }
+}

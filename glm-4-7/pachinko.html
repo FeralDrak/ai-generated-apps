@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Pachinko Rogue</title>
+    <!-- Import de Matter.js pour la physique -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            border: 2px solid #333;
+        }
+
+        /* Interface Utilisateur (Overlay) */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            text-shadow: 2px 2px 0 #000;
+            font-size: 16px;
+        }
+
+        .hud-center {
+            text-align: center;
+            opacity: 0.8;
+            font-size: 12px;
+        }
+
+        /* Écrans de Menu / Modals */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1 {
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            margin-bottom: 20px;
+            font-size: 32px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        button {
+            background: #222;
+            color: #fff;
+            border: 2px solid #0ff;
+            padding: 15px 30px;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 15px #0ff;
+        }
+
+        /* Cartes d'amélioration */
+        .cards-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background: #222;
+            border: 2px solid #f0f;
+            padding: 20px;
+            width: 200px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            background: #303030;
+            box-shadow: 0 0 10px #f0f;
+        }
+
+        .card h3 {
+            color: #f0f;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 10px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+
+        #level-indicator {
+            color: #ff0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Canvas ajouté par Matter.js -->
+
+    <!-- HUD (Affichage tête haute) -->
+    <div id="hud" class="ui-layer hidden">
+        <div class="hud-top">
+            <div>NIVEAU: <span id="level-display">1</span></div>
+            <div>ENEMIS: <span id="enemy-display">0</span></div>
+            <div>SCORE: <span id="score-display">0</span></div>
+        </div>
+        <div class="hud-center">
+            BILLES RESTANTES: <span id="balls-display" style="color:#0ff; font-size:20px;">10</span>
+        </div>
+        <div style="text-align: right; font-size: 10px; color: #666;">
+            Souris pour viser • Clic pour tirer
+        </div>
+    </div>
+
+    <!-- Écran Titre -->
+    <div id="start-screen" class="modal">
+        <h1>NEON PACHINKO<br>ROGUE</h1>
+        <p style="font-size: 10px; color: #aaa; max-width: 400px; text-align: center; line-height: 1.6;">
+            Détruisez tous les clous ROUGES pour avancer.<br>
+            Gagnez des points avec les clous BLEUS.<br>
+            Choisissez des améliorations pour survivre.
+        </p>
+        <button id="btn-start">JOUER</button>
+    </div>
+
+    <!-- Écran Shop -->
+    <div id="shop-screen" class="modal hidden">
+        <h1>NIVEAU TERMINÉ!</h1>
+        <p style="color: #ff0; margin-bottom: 20px;">Choisissez une amélioration:</p>
+        <div class="cards-container" id="cards-container">
+            <!-- Les cartes seront générées en JS -->
+        </div>
+    </div>
+
+    <!-- Écran Game Over -->
+    <div id="gameover-screen" class="modal hidden">
+        <h1 style="color: #f00;">GAME OVER</h1>
+        <p>Score Final: <span id="final-score">0</span></p>
+        <p>Niveau Atteint: <span id="final-level">0</span></p>
+        <button id="btn-restart">REJOUER</button>
+    </div>
+</div>
+
+<script>
+    /**
+     * ARCHITECTURE DU JEU
+     * 1. Setup Matter.js (Moteur Physique)
+     * 2. Gestion des États (Menu, Play, Shop)
+     * 3. Logique du Jeu (Tir, Collisions, Score)
+     * 4. Système Roguelite (Upgrades)
+     * 5. Rendu & Effets Visuels
+     */
+
+// --- MODULE MATTER.JS ---
+    const Engine = Matter.Engine,
+        Render = Matter.Render,
+        Runner = Matter.Runner,
+        Bodies = Matter.Bodies,
+        Composite = Matter.Composite,
+        Events = Matter.Events,
+        Vector = Matter.Vector,
+        Body = Matter.Body;
+
+    // --- CONFIGURATION ---
+    const CONFIG = {
+        width: 600,
+        height: 800,
+        ballSize: 8,
+        pegSize: 10,
+        colors: {
+            ball: '#0ff',
+            pegBlue: '#2196F3',
+            pegRed: '#F44336',
+            pegGreen: '#4CAF50',
+            wall: '#333'
+        }
+    };
+
+    // --- VARIABLES GLOBALES ---
+    let engine, render, runner;
+    let canvas, ctx;
+    let gameState = 'START'; // START, PLAY, SHOP, GAMEOVER, LEVEL_TRANSITION
+    let score = 0;
+    let level = 1;
+    let ballsRemaining = 10;
+    let pegsRemaining = 0;
+    let mouseX = 0, mouseY = 0;
+    let particles = [];
+    let texts = [];
+
+    // Stats actuelles du joueur (modifiables par les upgrades)
+    let playerStats = {
+        ballBounciness: 0.7,
+        ballSizeMult: 1,
+        extraBallsPerShot: 0,
+        scoreMult: 1,
+        explosive: false
+    };
+
+    // --- AUDIO SYSTEM (Simple Synth) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'hit') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400 + Math.random() * 200, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'enemy') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(50, now + 0.2);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'shoot') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'win') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.setValueAtTime(554, now + 0.1);
+            osc.frequency.setValueAtTime(659, now + 0.2);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.6);
+            osc.start(now);
+            osc.stop(now + 0.6);
+        }
+    }
+
+    // --- INITIALISATION ---
+    function init() {
+        // Création du moteur
+        engine = Engine.create();
+
+        // Création du renderer
+        render = Render.create({
+            element: document.getElementById('game-container'),
+            engine: engine,
+            options: {
+                width: CONFIG.width,
+                height: CONFIG.height,
+                wireframes: false, // Important pour les couleurs
+                background: '#111'
+            }
+        });
+
+        canvas = render.canvas;
+        ctx = canvas.getContext('2d');
+
+        // Gestionnaires d'événements
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener('mousedown', handleInput);
+
+        // Boucle de rendu custom pour les effets (particules, ligne de visée)
+        Events.on(render, 'afterRender', renderOverlay);
+
+        // Collision handling
+        Events.on(engine, 'collisionStart', handleCollisions);
+
+        // Nettoyage des balles qui tombent
+        Events.on(engine, 'beforeUpdate', () => {
+            const bodies = Composite.allBodies(engine.world);
+            bodies.forEach(body => {
+                if (body.label === 'ball' && body.position.y > CONFIG.height + 50) {
+                    Composite.remove(engine.world, body);
+                }
+            });
+        });
+
+        Render.run(render);
+        runner = Runner.create();
+        Runner.run(runner, engine);
+
+        // Boutons UI
+        document.getElementById('btn-start').addEventListener('click', startGame);
+        document.getElementById('btn-restart').addEventListener('click', startGame);
+
+        // Boucle d'animation pour les particules (indépendante du moteur physique)
+        requestAnimationFrame(updateParticles);
+    }
+
+    // --- LOGIQUE DE JEU ---
+
+    function startGame() {
+        score = 0;
+        level = 1;
+        ballsRemaining = 10;
+        playerStats = {
+            ballBounciness: 0.7,
+            ballSizeMult: 1,
+            extraBallsPerShot: 0,
+            scoreMult: 1,
+            explosive: false
+        };
+
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('gameover-screen').classList.add('hidden');
+        document.getElementById('hud').classList.remove('hidden');
+
+        startLevel();
+    }
+
+    function startLevel() {
+        gameState = 'PLAY';
+        Composite.clear(engine.world, false); // Garder les murs si on voulait, ici on clear tout sauf static
+        Engine.clear(engine);
+
+        // Recréer les murs
+        createWalls();
+
+        // Générer les pegs
+        generateLevel(level);
+
+        updateHUD();
+    }
+
+    function createWalls() {
+        const wallOptions = { isStatic: true, render: { fillStyle: CONFIG.colors.wall } };
+        const ground = Bodies.rectangle(CONFIG.width/2, CONFIG.height + 30, CONFIG.width, 60, wallOptions);
+        const leftWall = Bodies.rectangle(-30, CONFIG.height/2, 60, CONFIG.height * 2, wallOptions);
+        const rightWall = Bodies.rectangle(CONFIG.width + 30, CONFIG.height/2, 60, CONFIG.height * 2, wallOptions);
+
+        Composite.add(engine.world, [ground, leftWall, rightWall]);
+    }
+
+    function generateLevel(lvl) {
+        pegsRemaining = 0;
+
+        // Augmentation de la difficulté : plus de lignes et plus d'ennemis
+        const rows = 8 + Math.min(lvl, 8);
+        const cols = 9;
+        const startY = 150;
+        const spacingX = CONFIG.width / (cols + 1);
+        const spacingY = 45;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                // Décalage impair pour faire des triangles
+                const offset = (r % 2 === 0) ? 0 : spacingX / 2;
+                const x = (c * spacingX) + spacingX + offset;
+                const y = startY + (r * spacingY);
+
+                // Probabilité d'avoir un ennemi augmente avec le niveau
+                const isEnemy = Math.random() < Math.min(0.1 + (lvl * 0.05), 0.5);
+                const isEmpty = Math.random() < 0.1; // Quelques trous
+
+                if (!isEmpty) {
+                    let type = 'blue';
+                    let color = CONFIG.colors.pegBlue;
+                    let points = 10;
+
+                    if (isEnemy) {
+                        type = 'enemy';
+                        color = CONFIG.colors.pegRed;
+                        pegsRemaining++;
+                    } else if (Math.random() < 0.05) {
+                        type = 'bonus';
+                        color = CONFIG.colors.pegGreen;
+                        points = 50;
+                    }
+
+                    const peg = Bodies.circle(x, y, CONFIG.pegSize, {
+                        isStatic: true,
+                        label: 'peg',
+                        render: { fillStyle: color },
+                        plugin: {
+                            type: type,
+                            points: points,
+                            maxHealth: isEnemy ? 3 : 1,
+                            health: isEnemy ? 3 : 1
+                        }
+                    });
+                    Composite.add(engine.world, peg);
+                }
+            }
+        }
+
+        if (pegsRemaining === 0) {
+            // Fallback si pas d'ennemis générés (rare)
+            pegsRemaining = 1;
+            const forceEnemy = Bodies.circle(CONFIG.width/2, CONFIG.height/2, 15, {
+                isStatic: true, label: 'peg', render: { fillStyle: CONFIG.colors.pegRed },
+                plugin: { type: 'enemy', points: 100, health: 5 }
+            });
+            Composite.add(engine.world, forceEnemy);
+        }
+    }
+
+    function handleInput(e) {
+        if (gameState !== 'PLAY' || ballsRemaining <= 0) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        // Position de tir (fixe en haut au centre)
+        const spawnX = CONFIG.width / 2;
+        const spawnY = 30;
+
+        // Calcul du vecteur force
+        const forceMagnitude = 0.025; // Puissance du tir
+        const dx = clickX - spawnX;
+        const dy = clickY - spawnY;
+        const angle = Math.atan2(dy, dx);
+
+        // Limiter l'angle de tir (ne pas tirer vers le bas ou trop à plat)
+        if (Math.abs(angle) > Math.PI / 1.5) return;
+
+        const force = {
+            x: Math.cos(angle) * forceMagnitude * 15, // 15 est un facteur arbitraire pour Matter.Body.applyForce
+            y: Math.sin(angle) * forceMagnitude * 15
+        };
+
+        shootBall(spawnX, spawnY, force);
+
+        // Multi-ball upgrade
+        for(let i=0; i<playerStats.extraBallsPerShot; i++) {
+            setTimeout(() => {
+                shootBall(spawnX, spawnY, {
+                    x: force.x + (Math.random() - 0.5) * 0.005,
+                    y: force.y + (Math.random() - 0.5) * 0.005
+                });
+            }, i * 100);
+        }
+
+        ballsRemaining--;
+        updateHUD();
+        playSound('shoot');
+    }
+
+    function shootBall(x, y, force) {
+        const size = CONFIG.ballSize * playerStats.ballSizeMult;
+        const ball = Bodies.circle(x, y, size, {
+            restitution: playerStats.ballBounciness,
+            friction: 0.001,
+            label: 'ball',
+            render: { fillStyle: playerStats.explosive ? '#ff0' : CONFIG.colors.ball }
+        });
+
+        Composite.add(engine.world, ball);
+        Body.applyForce(ball, ball.position, force);
+    }
+
+    function handleCollisions(event) {
+        const pairs = event.pairs;
+
+        pairs.forEach(pair => {
+            const bodyA = pair.bodyA;
+            const bodyB = pair.bodyB;
+
+            // Identifier la balle et le peg
+            let ball = null;
+            let peg = null;
+
+            if (bodyA.label === 'ball' && bodyB.label === 'peg') { ball = bodyA; peg = bodyB; }
+            else if (bodyB.label === 'ball' && bodyA.label === 'peg') { ball = bodyB; peg = bodyA; }
+
+            if (ball && peg) {
+                const pegData = peg.plugin;
+
+                // Effets visuels et sons
+                createExplosion(peg.position.x, peg.position.y, peg.render.fillStyle, 5);
+
+                if (pegData.type === 'enemy') {
+                    playSound('enemy');
+                    pegData.health--;
+
+                    // Faire clignoter le peg (visuel simplifié par la couleur)
+                    peg.render.fillStyle = '#fff';
+                    setTimeout(() => { if(peg.world) peg.render.fillStyle = CONFIG.colors.pegRed; }, 100);
+
+                    if (pegData.health <= 0) {
+                        // Ennemi détruit
+                        createExplosion(peg.position.x, peg.position.y, '#f00', 15);
+                        createFloatingText(peg.position.x, peg.position.y, "DESTROYED!", "#fff");
+                        Composite.remove(engine.world, peg);
+                        pegsRemaining--;
+                        score += 100 * playerStats.scoreMult;
+
+                        // Explosive upgrade effect
+                        if (playerStats.explosive) {
+                            applyExplosion(peg.position, 100, 10);
+                        }
+                    }
+                } else {
+                    // Peg normal
+                    playSound('hit');
+                    const gainedScore = pegData.points * playerStats.scoreMult;
+                    score += gainedScore;
+                    createFloatingText(peg.position.x, peg.position.y, gainedScore, "#fff");
+
+                    if (pegData.type === 'bonus') {
+                        // Effet bonus (ex: +1 balle)
+                        ballsRemaining++;
+                        createFloatingText(peg.position.x, peg.position.y - 20, "+1 BALLE", "#0f0");
+                    }
+                }
+
+                updateHUD();
+                checkLevelEnd();
+            }
+        });
+    }
+
+    function applyExplosion(position, force, radius) {
+        const bodies = Composite.allBodies(engine.world);
+        bodies.forEach(body => {
+            if (body.label === 'peg' && body.plugin.type === 'enemy') {
+                const dist = Vector.magnitude(Vector.sub(body.position, position));
+                if (dist < radius) {
+                    // Dégâts de zone
+                    body.plugin.health -= 2;
+                    if(body.plugin.health <= 0) {
+                        createExplosion(body.position.x, body.position.y, '#f00', 10);
+                        Composite.remove(engine.world, body);
+                        pegsRemaining--;
+                        score += 100 * playerStats.scoreMult;
+                    }
+                }
+            }
+        });
+    }
+
+    function checkLevelEnd() {
+        if (pegsRemaining <= 0 && gameState === 'PLAY') {
+            setTimeout(() => {
+                playSound('win');
+                openShop();
+            }, 1000);
+        } else if (ballsRemaining <= 0 && gameState === 'PLAY') {
+            // Vérifier s'il reste des balles en jeu
+            const balls = Composite.allBodies(engine.world).filter(b => b.label === 'ball');
+            if (balls.length === 0) {
+                setTimeout(() => {
+                    gameOver();
+                }, 1000);
+            }
+        }
+    }
+
+    // --- SYSTÈME ROGUELITE (SHOP) ---
+
+    const UPGRADES = [
+        {
+            id: 'balls', name: "Réserve de munitions", desc: "+5 Billes pour le niveau suivant.",
+            apply: () => { ballsRemaining += 5; }
+        },
+        {
+            id: 'bounce', name: "Caoutchouc Super", desc: "Les billes rebondissent plus fort.",
+            apply: () => { playerStats.ballBounciness = Math.min(playerStats.ballBounciness + 0.1, 1.2); }
+        },
+        {
+            id: 'size', name: "Boules de Bowling", desc: "Les billes sont plus grosses (plus facile de toucher).",
+            apply: () => { playerStats.ballSizeMult += 0.3; }
+        },
+        {
+            id: 'multi', name: "Tir Éclaté", desc: "Tirez 1 balle supplémentaire à chaque coup.",
+            apply: () => { playerStats.extraBallsPerShot += 1; }
+        },
+        {
+            id: 'score', name: "Contrat Juteux", desc: "Points multipliés par 1.5x.",
+            apply: () => { playerStats.scoreMult *= 1.5; }
+        },
+        {
+            id: 'boom', name: "Tête Nucléaire", desc: "Détruire un ennemi détruit ses voisins.",
+            apply: () => { playerStats.explosive = true; }
+        }
+    ];
+
+    function openShop() {
+        gameState = 'SHOP';
+        document.getElementById('shop-screen').classList.remove('hidden');
+
+        const container = document.getElementById('cards-container');
+        container.innerHTML = '';
+
+        // Piocher 3 upgrades aléatoires
+        const choices = [];
+        const tempUpgrades = [...UPGRADES];
+        for(let i=0; i<3; i++) {
+            if(tempUpgrades.length === 0) break;
+            const idx = Math.floor(Math.random() * tempUpgrades.length);
+            choices.push(tempUpgrades[idx]);
+            tempUpgrades.splice(idx, 1);
+        }
+
+        choices.forEach(upg => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<h3>${upg.name}</h3><p>${upg.desc}</p>`;
+            card.onclick = () => {
+                upg.apply();
+                level++;
+                document.getElementById('shop-screen').classList.add('hidden');
+                startLevel();
+            };
+            container.appendChild(card);
+        });
+    }
+
+    function gameOver() {
+        gameState = 'GAMEOVER';
+        document.getElementById('final-score').innerText = Math.floor(score);
+        document.getElementById('final-level').innerText = level;
+        document.getElementById('gameover-screen').classList.remove('hidden');
+    }
+
+    // --- RENDU ET EFFETS ---
+
+    function updateHUD() {
+        document.getElementById('score-display').innerText = Math.floor(score);
+        document.getElementById('balls-display').innerText = ballsRemaining;
+        document.getElementById('level-display').innerText = level;
+        document.getElementById('enemy-display').innerText = pegsRemaining;
+    }
+
+    function renderOverlay() {
+        if (gameState !== 'PLAY') return;
+
+        // Ligne de visée
+        ctx.beginPath();
+        ctx.moveTo(CONFIG.width / 2, 30);
+        ctx.lineTo(mouseX, mouseY);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Particules
+        particles.forEach((p, index) => {
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Textes flottants
+        texts.forEach((t, index) => {
+            ctx.globalAlpha = t.life;
+            ctx.fillStyle = t.color;
+            ctx.font = '12px "Press Start 2P"';
+            ctx.fillText(t.text, t.x, t.y);
+        });
+
+        ctx.globalAlpha = 1;
+    }
+
+    function createExplosion(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 5,
+                vy: (Math.random() - 0.5) * 5,
+                life: 1.0,
+                color: color,
+                size: Math.random() * 3
+            });
+        }
+    }
+
+    function createFloatingText(x, y, text, color) {
+        texts.push({
+            x: x, y: y,
+            text: text,
+            color: color,
+            life: 1.0,
+            vy: -0.5
+        });
+    }
+
+    function updateParticles() {
+        // Update particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.03;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        // Update texts
+        for (let i = texts.length - 1; i >= 0; i--) {
+            let t = texts[i];
+            t.y += t.vy;
+            t.life -= 0.015;
+            if (t.life <= 0) texts.splice(i, 1);
+        }
+
+        requestAnimationFrame(updateParticles);
+    }
+
+    // Démarrage
+    init();
+
+</script>
+</body>
+</html>

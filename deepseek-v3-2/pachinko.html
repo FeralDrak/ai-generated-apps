@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pachinko Roguelike</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a2a, #1a1a40);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a5b1c2;
+            margin-bottom: 20px;
+        }
+
+        #gameArea {
+            display: flex;
+            width: 100%;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        #gameCanvasContainer {
+            flex: 3;
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(0, 150, 255, 0.2);
+            border: 1px solid rgba(100, 100, 255, 0.2);
+        }
+
+        #statsPanel {
+            flex: 1;
+            background: rgba(20, 20, 60, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 1px solid rgba(100, 100, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+
+        canvas {
+            display: block;
+            background: radial-gradient(circle at center, #0c2461 0%, #1a1a40 70%, #0a0a2a 100%);
+        }
+
+        .panel-title {
+            font-size: 1.4rem;
+            color: #48dbfb;
+            border-bottom: 2px solid #48dbfb;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            color: #a5b1c2;
+        }
+
+        .stat-value {
+            color: #feca57;
+            font-weight: bold;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(135deg, #48dbfb, #0abde3);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(72, 219, 251, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(72, 219, 251, 0.5);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            background: linear-gradient(135deg, #555, #777);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #upgradesPanel {
+            width: 100%;
+            background: rgba(20, 20, 60, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(100, 100, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .upgrades-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .upgrade-card {
+            background: rgba(30, 30, 70, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .upgrade-card:hover {
+            border-color: #48dbfb;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(72, 219, 251, 0.2);
+        }
+
+        .upgrade-card.unlocked {
+            border-color: #feca57;
+        }
+
+        .upgrade-title {
+            font-size: 1.2rem;
+            color: #ff9ff3;
+            margin-bottom: 8px;
+        }
+
+        .upgrade-desc {
+            color: #a5b1c2;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .upgrade-cost {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .cost {
+            color: #feca57;
+            font-weight: bold;
+        }
+
+        #eventLog {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #a5b1c2;
+            font-size: 0.9rem;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.new {
+            color: #feca57;
+            animation: pulse 1s;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        #zoneIndicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: #ff9ff3;
+            border: 1px solid #ff9ff3;
+            z-index: 10;
+        }
+
+        #ballCounter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: #48dbfb;
+            border: 1px solid #48dbfb;
+            z-index: 10;
+        }
+
+        #launchPower {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 10;
+        }
+
+        #launchPowerBar {
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            transition: width 0.1s;
+        }
+
+        #launchPowerText {
+            position: absolute;
+            bottom: 125px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-weight: bold;
+            text-shadow: 0 0 5px black;
+            z-index: 10;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a40, #0a0a2a);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid #48dbfb;
+            box-shadow: 0 0 30px rgba(72, 219, 251, 0.5);
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            color: #48dbfb;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .card-choices {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .card-choice {
+            background: rgba(30, 30, 70, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .card-choice:hover {
+            border-color: #feca57;
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            color: #ff9ff3;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .card-desc {
+            color: #a5b1c2;
+        }
+
+        #gameOverModal .modal-content {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+        }
+
+        #victoryModal .modal-content {
+            border-color: #feca57;
+            box-shadow: 0 0 30px rgba(254, 202, 87, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            #gameArea {
+                flex-direction: column;
+            }
+
+            #gameCanvasContainer, #statsPanel {
+                width: 100%;
+            }
+
+            .upgrades-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="gameContainer">
+    <header>
+        <h1>PACHINKO ROGUELIKE</h1>
+        <div class="subtitle">Combinez la physique du pachinko avec la progression roguelike</div>
+    </header>
+
+    <div id="gameArea">
+        <div id="gameCanvasContainer">
+            <div id="zoneIndicator">Zone 1 - Étage 1</div>
+            <div id="ballCounter">Billes: 5</div>
+            <div id="launchPowerText">Puissance de lancement: 50%</div>
+            <div id="launchPower">
+                <div id="launchPowerBar"></div>
+            </div>
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+        </div>
+
+        <div id="statsPanel">
+            <div class="panel-title">STATISTIQUES</div>
+
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="scoreValue">0</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Or:</span>
+                <span class="stat-value" id="goldValue">100</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Gemmes:</span>
+                <span class="stat-value" id="gemsValue">5</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Billes restantes:</span>
+                <span class="stat-value" id="ballsValue">5</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Étage:</span>
+                <span class="stat-value" id="floorValue">1/9</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Puissance de bille:</span>
+                <span class="stat-value" id="ballPowerValue">1.0x</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Multiplicateur d'or:</span>
+                <span class="stat-value" id="goldMultiplierValue">1.0x</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-label">Chance de gemme:</span>
+                <span class="stat-value" id="gemChanceValue">5%</span>
+            </div>
+
+            <div class="panel-title" style="margin-top: 20px;">CONTRÔLES</div>
+            <div style="color: #a5b1c2; font-size: 0.9rem; line-height: 1.4;">
+                <p><strong>ESPACE</strong> : Charger/Relâcher la bille</p>
+                <p><strong>Flèches Gauche/Droite</strong> : Ajuster l'angle</p>
+                <p><strong>R</strong> : Recommencer l'étage</p>
+                <p><strong>M</strong> : Afficher les améliorations</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button id="launchBtn">LANCER LA BILLE (ESPACE)</button>
+        <button id="upgradeBtn">AMÉLIORATIONS (M)</button>
+        <button id="restartBtn">RECOMMENCER L'ÉTAGE (R)</button>
+        <button id="nextFloorBtn" disabled>ÉTAGE SUIVANT</button>
+    </div>
+
+    <div id="upgradesPanel" style="display: none;">
+        <div class="panel-title">AMÉLIORATIONS PERMANENTES</div>
+        <div class="upgrades-grid" id="upgradesGrid">
+            <!-- Les améliorations seront ajoutées dynamiquement -->
+        </div>
+    </div>
+
+    <div id="eventLog">
+        <div class="panel-title">JOURNAL DES ÉVÉNEMENTS</div>
+        <div id="logEntries">
+            <div class="log-entry new">Bienvenue dans Pachinko Roguelike!</div>
+            <div class="log-entry">Étage 1 généré. Lancez votre première bille!</div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour les événements entre les étages -->
+<div id="eventModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">CHOIX D'ÉVÉNEMENT</div>
+        <p style="color: #a5b1c2; margin-bottom: 20px; text-align: center;">Choisissez une carte pour modifier votre prochaine partie</p>
+        <div class="card-choices" id="cardChoices">
+            <!-- Les cartes seront ajoutées dynamiquement -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal de game over -->
+<div id="gameOverModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">GAME OVER</div>
+        <p style="color: #a5b1c2; margin-bottom: 20px; text-align: center;">Vous avez perdu toutes vos billes!</p>
+        <p style="color: #feca57; font-size: 1.5rem; text-align: center; margin-bottom: 20px;">Score final: <span id="finalScore">0</span></p>
+        <p style="color: #a5b1c2; margin-bottom: 30px; text-align: center;">Vos améliorations permanentes sont conservées pour votre prochaine tentative!</p>
+        <div style="text-align: center;">
+            <button id="restartGameBtn">NOUVELLE PARTIE</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de victoire -->
+<div id="victoryModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">VICTOIRE!</div>
+        <p style="color: #a5b1c2; margin-bottom: 20px; text-align: center;">Vous avez vaincu le boss final et terminé le jeu!</p>
+        <p style="color: #feca57; font-size: 1.5rem; text-align: center; margin-bottom: 20px;">Score final: <span id="victoryScore">0</span></p>
+        <p style="color: #a5b1c2; margin-bottom: 30px; text-align: center;">Félicitations! Vous pouvez recommencer avec toutes vos améliorations permanentes.</p>
+        <div style="text-align: center;">
+            <button id="victoryRestartBtn">NOUVELLE PARTIE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variables du jeu
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gameState = {
+        // État du jeu
+        isRunning: true,
+        currentFloor: 1,
+        maxFloors: 9,
+        currentZone: 1,
+        balls: 5,
+        score: 0,
+        gold: 100,
+        gems: 5,
+
+        // Statistiques améliorables
+        ballPower: 1.0,
+        goldMultiplier: 1.0,
+        gemChance: 0.05,
+
+        // État de la bille
+        ball: null,
+        isCharging: false,
+        chargePower: 0,
+        chargeDirection: 1,
+        launchAngle: Math.PI / 4, // 45 degrés
+
+        // Objets du niveau
+        pins: [],
+        bumpers: [],
+        enemies: [],
+        collectibles: [],
+        boss: null,
+
+        // Contrôles
+        keys: {},
+
+        // Améliorations permanentes
+        upgrades: [
+            { id: 1, name: "Bille Renforcée", description: "Augmente la puissance des billes de 0.2", cost: 50, level: 0, maxLevel: 5, effect: "ballPower" },
+            { id: 2, name: "Chercheur d'Or", description: "Augmente l'or obtenu de 20%", cost: 100, level: 0, maxLevel: 3, effect: "goldMultiplier" },
+            { id: 3, name: "Détecteur de Gemmes", description: "Augmente la chance de trouver des gemmes de 3%", cost: 150, level: 0, maxLevel: 5, effect: "gemChance" },
+            { id: 4, name: "Réserve de Billes", description: "Ajoute 2 billes au départ", cost: 200, level: 0, maxLevel: 3, effect: "extraBalls" },
+            { id: 5, name: "Bille Explosive", description: "Les billes explosent au contact des ennemis", cost: 300, level: 0, maxLevel: 1, effect: "explosiveBall" },
+            { id: 6, name: "Aimant à Or", description: "Attire automatiquement l'or", cost: 250, level: 0, maxLevel: 1, effect: "goldMagnet" }
+        ],
+
+        // Événements entre les étages
+        events: [],
+
+        // Journal
+        logEntries: []
+    };
+
+    // Classes du jeu
+    class Ball {
+        constructor(x, y, power = 1.0) {
+            this.x = x;
+            this.y = y;
+            this.radius = 10;
+            this.vx = 0;
+            this.vy = 0;
+            this.power = power;
+            this.isLaunched = false;
+            this.color = this.getColor();
+            this.trail = [];
+            this.trailLength = 5;
+        }
+
+        getColor() {
+            // Couleur basée sur la puissance
+            if (this.power < 1.5) return '#48dbfb'; // Bleu
+            if (this.power < 2.5) return '#feca57'; // Jaune
+            return '#ff6b6b'; // Rouge
+        }
+
+        update() {
+            if (!this.isLaunched) return;
+
+            // Ajouter la position actuelle à la traînée
+            this.trail.push({x: this.x, y: this.y});
+            if (this.trail.length > this.trailLength) {
+                this.trail.shift();
+            }
+
+            // Appliquer la gravité
+            this.vy += 0.2;
+
+            // Appliquer la friction
+            this.vx *= 0.99;
+            this.vy *= 0.99;
+
+            // Mettre à jour la position
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // Collisions avec les bords
+            if (this.x - this.radius < 0) {
+                this.x = this.radius;
+                this.vx = Math.abs(this.vx) * 0.8;
+            }
+            if (this.x + this.radius > canvas.width) {
+                this.x = canvas.width - this.radius;
+                this.vx = -Math.abs(this.vx) * 0.8;
+            }
+            if (this.y - this.radius < 0) {
+                this.y = this.radius;
+                this.vy = Math.abs(this.vy) * 0.8;
+            }
+
+            // Si la bille sort en bas
+            if (this.y > canvas.height + 50) {
+                this.isLaunched = false;
+                gameState.balls--;
+                updateUI();
+
+                // Vérifier si le jeu est terminé
+                if (gameState.balls <= 0) {
+                    gameOver();
+                } else {
+                    addLog("Bille perdue! Billes restantes: " + gameState.balls);
+                }
+            }
+        }
+
+        draw() {
+            // Dessiner la traînée
+            for (let i = 0; i < this.trail.length; i++) {
+                const point = this.trail[i];
+                const alpha = i / this.trail.length * 0.7;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, this.radius * (i/this.trail.length), 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(72, 219, 251, ${alpha})`;
+                ctx.fill();
+            }
+
+            // Dessiner la bille
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+
+            // Effet de brillance
+            const gradient = ctx.createRadialGradient(
+                this.x - this.radius/3, this.y - this.radius/3, 1,
+                this.x, this.y, this.radius
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(0.3, this.color);
+            gradient.addColorStop(1, '#000000');
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Bordure
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        launch(power, angle) {
+            this.vx = Math.cos(angle) * power * 10 * this.power;
+            this.vy = -Math.sin(angle) * power * 10 * this.power;
+            this.isLaunched = true;
+        }
+    }
+
+    class Pin {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 8;
+            this.color = '#a5b1c2';
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+
+            // Effet de brillance
+            ctx.beginPath();
+            ctx.arc(this.x - this.radius/3, this.y - this.radius/3, this.radius/2, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+        }
+    }
+
+    class Bumper {
+        constructor(x, y, radius) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.color = '#ff9ff3';
+            this.pulse = 0;
+            this.pulseDirection = 1;
+        }
+
+        update() {
+            this.pulse += 0.05 * this.pulseDirection;
+            if (this.pulse > 1 || this.pulse < 0) {
+                this.pulseDirection *= -1;
+            }
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius + this.pulse * 3, 0, Math.PI * 2);
+
+            const gradient = ctx.createRadialGradient(
+                this.x, this.y, this.radius/2,
+                this.x, this.y, this.radius + this.pulse * 3
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(0.7, this.color);
+            gradient.addColorStop(1, 'rgba(255, 159, 243, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+    }
+
+    class Enemy {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.type = type; // 1: normal, 2: rapide, 3: résistant
+            this.radius = type === 3 ? 20 : type === 2 ? 12 : 15;
+            this.health = type === 3 ? 3 : type === 2 ? 1 : 2;
+            this.maxHealth = this.health;
+            this.color = type === 3 ? '#ff6b6b' : type === 2 ? '#feca57' : '#ff9ff3';
+            this.speed = type === 2 ? 2 : 0.5;
+            this.direction = Math.random() > 0.5 ? 1 : -1;
+        }
+
+        update() {
+            // Déplacement horizontal
+            this.x += this.speed * this.direction;
+
+            // Rebond sur les bords
+            if (this.x - this.radius < 50 || this.x + this.radius > canvas.width - 50) {
+                this.direction *= -1;
+            }
+        }
+
+        draw() {
+            // Corps
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+
+            // Yeux
+            ctx.beginPath();
+            ctx.arc(this.x - this.radius/3, this.y - this.radius/4, this.radius/4, 0, Math.PI * 2);
+            ctx.arc(this.x + this.radius/3, this.y - this.radius/4, this.radius/4, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            // Pupilles
+            ctx.beginPath();
+            ctx.arc(this.x - this.radius/3, this.y - this.radius/4, this.radius/8, 0, Math.PI * 2);
+            ctx.arc(this.x + this.radius/3, this.y - this.radius/4, this.radius/8, 0, Math.PI * 2);
+            ctx.fillStyle = '#000000';
+            ctx.fill();
+
+            // Barre de vie
+            if (this.health < this.maxHealth) {
+                const barWidth = this.radius * 2;
+                const barHeight = 4;
+                const healthPercent = this.health / this.maxHealth;
+
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(this.x - barWidth/2, this.y - this.radius - 10, barWidth, barHeight);
+
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(this.x - barWidth/2, this.y - this.radius - 10, barWidth * healthPercent, barHeight);
+            }
+        }
+
+        takeDamage(damage) {
+            this.health -= damage;
+            return this.health <= 0;
+        }
+    }
+
+    class Collectible {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.type = type; // 'gold', 'gem', 'health'
+            this.radius = type === 'gem' ? 8 : 6;
+            this.color = type === 'gold' ? '#feca57' : type === 'gem' ? '#48dbfb' : '#ff6b6b';
+            this.value = type === 'gold' ? 10 : type === 'gem' ? 1 : 1;
+            this.collected = false;
+            this.floatOffset = Math.random() * Math.PI * 2;
+            this.floatTime = 0;
+        }
+
+        update() {
+            this.floatTime += 0.05;
+            this.y += Math.sin(this.floatTime + this.floatOffset) * 0.5;
+        }
+
+        draw() {
+            if (this.collected) return;
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+
+            if (this.type === 'gem') {
+                // Gemme à facettes
+                ctx.fillStyle = this.color;
+                ctx.fill();
+
+                // Reflets
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y - this.radius);
+                ctx.lineTo(this.x - this.radius/2, this.y);
+                ctx.lineTo(this.x, this.y + this.radius);
+                ctx.lineTo(this.x + this.radius/2, this.y);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fill();
+            } else {
+                // Pièce ou coeur
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.radius
+                );
+                gradient.addColorStop(0, '#ffffff');
+                gradient.addColorStop(0.7, this.color);
+                gradient.addColorStop(1, '#000000');
+
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Symbole
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                if (this.type === 'gold') {
+                    ctx.fillText('$', this.x, this.y);
+                } else if (this.type === 'health') {
+                    ctx.fillText('♥', this.x, this.y);
+                }
+            }
+        }
+    }
+
+    class Boss {
+        constructor() {
+            this.x = canvas.width / 2;
+            this.y = 100;
+            this.radius = 40;
+            this.health = 10;
+            this.maxHealth = 10;
+            this.color = '#ff6b6b';
+            this.phase = 1;
+            this.attackTimer = 0;
+            this.projectiles = [];
+        }
+
+        update() {
+            this.attackTimer++;
+
+            // Attaques selon la phase
+            if (this.attackTimer > 60) {
+                this.attackTimer = 0;
+
+                if (this.phase === 1) {
+                    // Attaque simple : projectiles vers le bas
+                    for (let i = 0; i < 3; i++) {
+                        this.projectiles.push({
+                            x: this.x + (i-1) * 30,
+                            y: this.y + this.radius,
+                            vx: 0,
+                            vy: 3
+                        });
+                    }
+                } else if (this.phase === 2) {
+                    // Attaque en éventail
+                    for (let i = 0; i < 5; i++) {
+                        const angle = Math.PI/2 + (i-2) * 0.3;
+                        this.projectiles.push({
+                            x: this.x,
+                            y: this.y + this.radius,
+                            vx: Math.cos(angle) * 3,
+                            vy: Math.sin(angle) * 3
+                        });
+                    }
+                }
+            }
+
+            // Mettre à jour les projectiles
+            for (let i = this.projectiles.length - 1; i >= 0; i--) {
+                const p = this.projectiles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Supprimer les projectiles hors écran
+                if (p.y > canvas.height || p.x < 0 || p.x > canvas.width) {
+                    this.projectiles.splice(i, 1);
+                }
+            }
+
+            // Changer de phase à mi-vie
+            if (this.health <= this.maxHealth / 2 && this.phase === 1) {
+                this.phase = 2;
+                this.color = '#ff9ff3';
+                this.radius = 35;
+            }
+        }
+
+        draw() {
+            // Corps du boss
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+
+            const gradient = ctx.createRadialGradient(
+                this.x, this.y, this.radius/3,
+                this.x, this.y, this.radius
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(0.5, this.color);
+            gradient.addColorStop(1, '#8b0000');
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Yeux menaçants
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(this.x - 15, this.y - 10, 8, 0, Math.PI * 2);
+            ctx.arc(this.x + 15, this.y - 10, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(this.x - 15, this.y - 10, 4, 0, Math.PI * 2);
+            ctx.arc(this.x + 15, this.y - 10, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Barre de vie
+            const barWidth = 200;
+            const barHeight = 20;
+            const healthPercent = this.health / this.maxHealth;
+
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(canvas.width/2 - barWidth/2, 30, barWidth, barHeight);
+
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(canvas.width/2 - barWidth/2, 30, barWidth * healthPercent, barHeight);
+
+            // Texte "BOSS"
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('BOSS - Phase ' + this.phase, canvas.width/2, 25);
+
+            // Dessiner les projectiles
+            ctx.fillStyle = '#ff0000';
+            for (const p of this.projectiles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        takeDamage(damage) {
+            this.health -= damage;
+            return this.health <= 0;
+        }
+    }
+
+    // Fonctions du jeu
+    function initGame() {
+        gameState.ball = new Ball(canvas.width / 2, canvas.height - 50, gameState.ballPower);
+        generateLevel();
+        updateUI();
+
+        // Récupérer les améliorations du localStorage
+        const savedUpgrades = localStorage.getItem('pachinkoUpgrades');
+        if (savedUpgrades) {
+            const parsed = JSON.parse(savedUpgrades);
+            gameState.upgrades.forEach((upgrade, index) => {
+                if (parsed[index]) {
+                    upgrade.level = parsed[index].level;
+                }
+            });
+            applyUpgrades();
+        }
+
+        // Récupérer le high score
+        const highScore = localStorage.getItem('pachinkoHighScore');
+        if (highScore) {
+            addLog("Votre meilleur score: " + highScore);
+        }
+    }
+
+    function generateLevel() {
+        // Réinitialiser les objets du niveau
+        gameState.pins = [];
+        gameState.bumpers = [];
+        gameState.enemies = [];
+        gameState.collectibles = [];
+        gameState.boss = null;
+
+        // Générer des clous de manière procédurale
+        const pinRows = 8 + Math.floor(gameState.currentFloor / 3) * 2;
+        const pinCols = 12;
+        const pinSpacingX = canvas.width / (pinCols + 1);
+        const pinSpacingY = (canvas.height - 200) / (pinRows + 1);
+
+        for (let row = 0; row < pinRows; row++) {
+            // Décalage alterné pour un motif de pachinko
+            const offset = row % 2 === 0 ? pinSpacingX / 2 : 0;
+
+            for (let col = 0; col < pinCols; col++) {
+                // Probabilité de générer un clou (plus élevée dans les étages supérieurs)
+                if (Math.random() < 0.7 + gameState.currentFloor * 0.03) {
+                    const x = offset + col * pinSpacingX + pinSpacingX/2;
+                    const y = 100 + row * pinSpacingY + pinSpacingY/2;
+                    gameState.pins.push(new Pin(x, y));
+                }
+            }
+        }
+
+        // Générer des bumpers
+        const bumperCount = 3 + Math.floor(gameState.currentFloor / 2);
+        for (let i = 0; i < bumperCount; i++) {
+            const x = 100 + Math.random() * (canvas.width - 200);
+            const y = 150 + Math.random() * (canvas.height - 300);
+            const radius = 20 + Math.random() * 15;
+            gameState.bumpers.push(new Bumper(x, y, radius));
+        }
+
+        // Générer des ennemis (à partir de l'étage 2)
+        if (gameState.currentFloor >= 2) {
+            const enemyCount = Math.min(2 + Math.floor(gameState.currentFloor / 2), 6);
+            for (let i = 0; i < enemyCount; i++) {
+                const x = 100 + Math.random() * (canvas.width - 200);
+                const y = 150 + Math.random() * (canvas.height - 300);
+                const type = Math.random() < 0.1 ? 3 : Math.random() < 0.3 ? 2 : 1;
+                gameState.enemies.push(new Enemy(x, y, type));
+            }
+        }
+
+        // Générer des collectibles
+        const collectibleCount = 5 + Math.floor(gameState.currentFloor * 1.5);
+        for (let i = 0; i < collectibleCount; i++) {
+            const x = 50 + Math.random() * (canvas.width - 100);
+            const y = 100 + Math.random() * (canvas.height - 200);
+            let type;
+            const rand = Math.random();
+
+            if (rand < 0.7) type = 'gold';
+            else if (rand < 0.9) type = 'gem';
+            else type = 'health';
+
+            gameState.collectibles.push(new Collectible(x, y, type));
+        }
+
+        // Ajouter un boss tous les 3 étages
+        if (gameState.currentFloor % 3 === 0) {
+            gameState.boss = new Boss();
+        }
+
+        // Mettre à jour l'indicateur de zone/étage
+        gameState.currentZone = Math.floor((gameState.currentFloor - 1) / 3) + 1;
+        document.getElementById('zoneIndicator').textContent =
+            `Zone ${gameState.currentZone} - Étage ${gameState.currentFloor}`;
+    }
+
+    function update() {
+        if (!gameState.isRunning) return;
+
+        // Mettre à jour la bille
+        if (gameState.ball) {
+            gameState.ball.update();
+
+            // Vérifier les collisions
+            checkCollisions();
+        }
+
+        // Mettre à jour les bumpers
+        gameState.bumpers.forEach(bumper => bumper.update());
+
+        // Mettre à jour les ennemis
+        gameState.enemies.forEach(enemy => enemy.update());
+
+        // Mettre à jour les collectibles
+        gameState.collectibles.forEach(collectible => collectible.update());
+
+        // Mettre à jour le boss
+        if (gameState.boss) {
+            gameState.boss.update();
+
+            // Vérifier les collisions avec les projectiles du boss
+            if (gameState.ball && gameState.ball.isLaunched) {
+                for (let i = gameState.boss.projectiles.length - 1; i >= 0; i--) {
+                    const p = gameState.boss.projectiles[i];
+                    const dx = p.x - gameState.ball.x;
+                    const dy = p.y - gameState.ball.y;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+
+                    if (distance < gameState.ball.radius + 5) {
+                        // Collision avec un projectile
+                        gameState.boss.projectiles.splice(i, 1);
+                        gameState.ball.vx += dx * 0.5;
+                        gameState.ball.vy += dy * 0.5;
+                        addLog("Projectile esquivé!");
+                    }
+                }
+            }
+        }
+
+        // Mettre à jour la puissance de lancement
+        if (gameState.isCharging) {
+            gameState.chargePower += 0.02 * gameState.chargeDirection;
+            if (gameState.chargePower >= 1) {
+                gameState.chargePower = 1;
+                gameState.chargeDirection = -1;
+            } else if (gameState.chargePower <= 0.1) {
+                gameState.chargePower = 0.1;
+                gameState.chargeDirection = 1;
+            }
+
+            document.getElementById('launchPowerBar').style.width = (gameState.chargePower * 100) + '%';
+            document.getElementById('launchPowerText').textContent =
+                `Puissance de lancement: ${Math.round(gameState.chargePower * 100)}%`;
+        }
+
+        // Vérifier si l'étage est terminé (plus d'ennemis ni de collectibles)
+        if (gameState.enemies.length === 0 && gameState.collectibles.length === 0) {
+            if (!gameState.boss || gameState.boss.health <= 0) {
+                document.getElementById('nextFloorBtn').disabled = false;
+
+                // Si c'est la première fois qu'on termine cet étage
+                if (gameState.currentFloor === Math.floor((gameState.currentFloor - 1) / 3) * 3 + 3) {
+                    // Boss battu
+                    addLog(`Boss de la zone ${gameState.currentZone} vaincu! Bonus de 100 or et 5 gemmes!`);
+                    gameState.gold += 100;
+                    gameState.gems += 5;
+                    updateUI();
+                }
+            }
+        }
+    }
+
+    function checkCollisions() {
+        if (!gameState.ball || !gameState.ball.isLaunched) return;
+
+        // Collision avec les clous
+        for (const pin of gameState.pins) {
+            const dx = pin.x - gameState.ball.x;
+            const dy = pin.y - gameState.ball.y;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+
+            if (distance < gameState.ball.radius + pin.radius) {
+                // Réaction de collision
+                const angle = Math.atan2(dy, dx);
+                const speed = Math.sqrt(gameState.ball.vx*gameState.ball.vx + gameState.ball.vy*gameState.ball.vy);
+
+                gameState.ball.vx = Math.cos(angle) * speed * 0.8;
+                gameState.ball.vy = Math.sin(angle) * speed * 0.8;
+
+                // Déplacer la bille pour éviter qu'elle reste coincée
+                const overlap = gameState.ball.radius + pin.radius - distance;
+                gameState.ball.x -= Math.cos(angle) * overlap;
+                gameState.ball.y -= Math.sin(angle) * overlap;
+
+                // Effet sonore visuel (changement de couleur temporaire)
+                pin.color = '#ffffff';
+                setTimeout(() => pin.color = '#a5b1c2', 100);
+            }
+        }
+
+        // Collision avec les bumpers
+        for (const bumper of gameState.bumpers) {
+            const dx = bumper.x - gameState.ball.x;
+            const dy = bumper.y - gameState.ball.y;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+
+            if (distance < gameState.ball.radius + bumper.radius) {
+                // Rebond puissant
+                const angle = Math.atan2(dy, dx);
+                const speed = Math.sqrt(gameState.ball.vx*gameState.ball.vx + gameState.ball.vy*gameState.ball.vy);
+
+                gameState.ball.vx = -Math.cos(angle) * speed * 1.2;
+                gameState.ball.vy = -Math.sin(angle) * speed * 1.2;
+
+                // Score
+                gameState.score += 10;
+                updateUI();
+
+                // Effet de pulsation
+                bumper.pulseDirection = 1;
+                bumper.pulse = 0;
+            }
+        }
+
+        // Collision avec les ennemis
+        for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+            const enemy = gameState.enemies[i];
+            const dx = enemy.x - gameState.ball.x;
+            const dy = enemy.y - gameState.ball.y;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+
+            if (distance < gameState.ball.radius + enemy.radius) {
+                // Infliger des dégâts
+                const killed = enemy.takeDamage(1);
+
+                // Rebond
+                const angle = Math.atan2(dy, dx);
+                const speed = Math.sqrt(gameState.ball.vx*gameState.ball.vx + gameState.ball.vy*gameState.ball.vy);
+
+                gameState.ball.vx = Math.cos(angle) * speed * 0.9;
+                gameState.ball.vy = Math.sin(angle) * speed * 0.9;
+
+                if (killed) {
+                    // Ennemi vaincu
+                    gameState.enemies.splice(i, 1);
+                    gameState.score += enemy.type === 3 ? 50 : enemy.type === 2 ? 30 : 20;
+                    gameState.gold += enemy.type === 3 ? 25 : enemy.type === 2 ? 15 : 10;
+
+                    // Chance de laisser tomber une gemme
+                    if (Math.random() < gameState.gemChance) {
+                        gameState.gems += 1;
+                        addLog("Gemme trouvée!");
+                    }
+
+                    addLog(`${enemy.type === 3 ? "Ennemi résistant" : enemy.type === 2 ? "Ennemi rapide" : "Ennemi normal"} vaincu!`);
+                    updateUI();
+                }
+            }
+        }
+
+        // Collision avec les collectibles
+        for (let i = gameState.collectibles.length - 1; i >= 0; i--) {
+            const collectible = gameState.collectibles[i];
+            if (collectible.collected) continue;
+
+            const dx = collectible.x - gameState.ball.x;
+            const dy = collectible.y - gameState.ball.y;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+
+            if (distance < gameState.ball.radius + collectible.radius) {
+                collectible.collected = true;
+
+                if (collectible.type === 'gold') {
+                    gameState.gold += collectible.value * gameState.goldMultiplier;
+                    addLog(`+${collectible.value * gameState.goldMultiplier} or!`);
+                } else if (collectible.type === 'gem') {
+                    gameState.gems += collectible.value;
+                    addLog(`+${collectible.value} gemme!`);
+                } else if (collectible.type === 'health') {
+                    gameState.balls += collectible.value;
+                    addLog(`+${collectible.value} bille!`);
+                }
+
+                gameState.score += collectible.type === 'gem' ? 50 : collectible.type === 'gold' ? 10 : 25;
+                gameState.collectibles.splice(i, 1);
+                updateUI();
+            }
+        }
+
+        // Collision avec le boss
+        if (gameState.boss && gameState.boss.health > 0) {
+            const dx = gameState.boss.x - gameState.ball.x;
+            const dy = gameState.boss.y - gameState.ball.y;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+
+            if (distance < gameState.ball.radius + gameState.boss.radius) {
+                // Infliger des dégâts au boss
+                const killed = gameState.boss.takeDamage(1);
+
+                // Rebond
+                const angle = Math.atan2(dy, dx);
+                const speed = Math.sqrt(gameState.ball.vx*gameState.ball.vx + gameState.ball.vy*gameState.ball.vy);
+
+                gameState.ball.vx = Math.cos(angle) * speed * 0.8;
+                gameState.ball.vy = Math.sin(angle) * speed * 0.8;
+
+                gameState.score += 100;
+                updateUI();
+
+                if (killed) {
+                    // Boss vaincu
+                    addLog("BOSS VAINCU! Bonus de 500 points!");
+                    gameState.score += 500;
+                    gameState.gold += 200;
+                    gameState.gems += 10;
+                    updateUI();
+
+                    // Supprimer le boss
+                    gameState.boss = null;
+                }
+            }
+        }
+    }
+
+    function draw() {
+        // Effacer le canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Dessiner un dégradé de fond
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#0a0a2a');
+        gradient.addColorStop(1, '#1a1a40');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Dessiner des étoiles en arrière-plan
+        drawStars();
+
+        // Dessiner les objets du niveau
+        gameState.pins.forEach(pin => pin.draw());
+        gameState.bumpers.forEach(bumper => bumper.draw());
+        gameState.enemies.forEach(enemy => enemy.draw());
+        gameState.collectibles.forEach(collectible => collectible.draw());
+
+        // Dessiner le boss
+        if (gameState.boss) {
+            gameState.boss.draw();
+        }
+
+        // Dessiner la bille
+        if (gameState.ball) {
+            gameState.ball.draw();
+        }
+
+        // Dessiner le lanceur
+        drawLauncher();
+
+        // Dessiner le séparateur de zone en bas
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.fillRect(0, canvas.height - 60, canvas.width, 2);
+
+        // Indicateur de zone
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Zone ${gameState.currentZone} - Étage ${gameState.currentFloor}`, canvas.width/2, canvas.height - 40);
+    }
+
+    function drawStars() {
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 50; i++) {
+            const x = (i * 37) % canvas.width;
+            const y = (i * 23) % canvas.height;
+            const size = Math.sin(Date.now() / 1000 + i) * 0.5 + 1;
+
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function drawLauncher() {
+        const launcherX = canvas.width / 2;
+        const launcherY = canvas.height - 50;
+        const launcherLength = 40;
+
+        // Dessiner la base du lanceur
+        ctx.fillStyle = '#666666';
+        ctx.fillRect(launcherX - 20, launcherY - 10, 40, 20);
+
+        // Dessiner le bras du lanceur
+        ctx.save();
+        ctx.translate(launcherX, launcherY);
+        ctx.rotate(-gameState.launchAngle);
+
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(0, -5, launcherLength, 10);
+
+        ctx.fillStyle = '#aaaaaa';
+        ctx.fillRect(launcherLength - 10, -8, 10, 16);
+
+        ctx.restore();
+
+        // Dessiner la bille sur le lanceur si elle n'est pas lancée
+        if (gameState.ball && !gameState.ball.isLaunched) {
+            gameState.ball.x = launcherX + Math.cos(gameState.launchAngle) * launcherLength;
+            gameState.ball.y = launcherY - Math.sin(gameState.launchAngle) * launcherLength;
+        }
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function launchBall() {
+        if (!gameState.ball || gameState.ball.isLaunched || gameState.isCharging) return;
+
+        gameState.isCharging = true;
+        gameState.chargePower = 0.5;
+        gameState.chargeDirection = 1;
+
+        addLog("Chargement du lancement...");
+    }
+
+    function releaseBall() {
+        if (!gameState.ball || gameState.ball.isLaunched || !gameState.isCharging) return;
+
+        gameState.isCharging = false;
+        gameState.ball.launch(gameState.chargePower, gameState.launchAngle);
+        addLog(`Bille lancée avec ${Math.round(gameState.chargePower * 100)}% de puissance!`);
+
+        // Réinitialiser l'indicateur de puissance
+        document.getElementById('launchPowerBar').style.width = '50%';
+        document.getElementById('launchPowerText').textContent = 'Puissance de lancement: 50%';
+    }
+
+    function nextFloor() {
+        gameState.currentFloor++;
+
+        if (gameState.currentFloor > gameState.maxFloors) {
+            victory();
+            return;
+        }
+
+        // Réinitialiser les billes avec un bonus
+        gameState.balls = 5 + Math.floor(gameState.currentFloor / 3);
+
+        // Générer un nouvel étage
+        generateLevel();
+
+        // Réinitialiser la bille
+        gameState.ball = new Ball(canvas.width / 2, canvas.height - 50, gameState.ballPower);
+
+        // Désactiver le bouton "Étage suivant"
+        document.getElementById('nextFloorBtn').disabled = true;
+
+        // Ajouter un log
+        addLog(`Étage ${gameState.currentFloor} atteint! Vous avez maintenant ${gameState.balls} billes.`);
+
+        updateUI();
+
+        // Afficher un événement aléatoire tous les 2 étages
+        if (gameState.currentFloor % 2 === 1 && gameState.currentFloor > 1) {
+            showEventModal();
+        }
+    }
+
+    function showEventModal() {
+        // Générer 3 cartes d'événement aléatoires
+        const events = [
+            {
+                title: "Billes supplémentaires",
+                description: "Obtenez 3 billes supplémentaires pour le prochain étage",
+                effect: () => { gameState.balls += 3; addLog("Vous obtenez 3 billes supplémentaires!"); }
+            },
+            {
+                title: "Puissance accrue",
+                description: "Vos billes sont 50% plus puissantes pour le prochain étage",
+                effect: () => { gameState.ballPower *= 1.5; addLog("Vos billes sont 50% plus puissantes!"); }
+            },
+            {
+                title: "Bonus d'or",
+                description: "Obtenez 50 or supplémentaire",
+                effect: () => { gameState.gold += 50; addLog("Vous obtenez 50 or supplémentaire!"); }
+            },
+            {
+                title: "Malédiction des clous",
+                description: "Les clous sont 20% plus gros pour le prochain étage",
+                effect: () => {
+                    gameState.pins.forEach(pin => pin.radius *= 1.2);
+                    addLog("Les clous sont plus gros! Faites attention!");
+                }
+            },
+            {
+                title: "Gemme mystérieuse",
+                description: "Obtenez 2 gemmes",
+                effect: () => { gameState.gems += 2; addLog("Vous obtenez 2 gemmes mystérieuses!"); }
+            },
+            {
+                title: "Boule de feu",
+                description: "Vos billes enflamment les ennemis, leur infligeant des dégâts supplémentaires",
+                effect: () => {
+                    // Effet temporaire - sera appliqué dans checkCollisions
+                    addLog("Vos billes s'enflamment! Dégâts supplémentaires aux ennemis!");
+                }
+            }
+        ];
+
+        // Choisir 3 événements aléatoires
+        const selectedEvents = [];
+        while (selectedEvents.length < 3) {
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            if (!selectedEvents.includes(randomEvent)) {
+                selectedEvents.push(randomEvent);
+            }
+        }
+
+        // Afficher les cartes
+        const cardChoices = document.getElementById('cardChoices');
+        cardChoices.innerHTML = '';
+
+        selectedEvents.forEach((event, index) => {
+            const card = document.createElement('div');
+            card.className = 'card-choice';
+            card.innerHTML = `
+                    <div class="card-title">${event.title}</div>
+                    <div class="card-desc">${event.description}</div>
+                `;
+
+            card.addEventListener('click', () => {
+                event.effect();
+                document.getElementById('eventModal').style.display = 'none';
+                updateUI();
+            });
+
+            cardChoices.appendChild(card);
+        });
+
+        document.getElementById('eventModal').style.display = 'flex';
+    }
+
+    function gameOver() {
+        gameState.isRunning = false;
+
+        // Sauvegarder le high score
+        const highScore = localStorage.getItem('pachinkoHighScore') || 0;
+        if (gameState.score > highScore) {
+            localStorage.setItem('pachinkoHighScore', gameState.score);
+            addLog("Nouveau record! Score: " + gameState.score);
+        }
+
+        document.getElementById('finalScore').textContent = gameState.score;
+        document.getElementById('gameOverModal').style.display = 'flex';
+    }
+
+    function victory() {
+        gameState.isRunning = false;
+
+        // Sauvegarder le high score
+        const highScore = localStorage.getItem('pachinkoHighScore') || 0;
+        if (gameState.score > highScore) {
+            localStorage.setItem('pachinkoHighScore', gameState.score);
+        }
+
+        // Bonus de victoire
+        gameState.score += 1000;
+        gameState.gold += 500;
+        gameState.gems += 50;
+
+        document.getElementById('victoryScore').textContent = gameState.score;
+        document.getElementById('victoryModal').style.display = 'flex';
+    }
+
+    function restartGame() {
+        // Réinitialiser l'état du jeu (conserver les améliorations)
+        gameState.isRunning = true;
+        gameState.currentFloor = 1;
+        gameState.balls = 5;
+        gameState.score = 0;
+        gameState.gold = 100;
+        gameState.gems = 5;
+
+        // Appliquer les améliorations permanentes
+        applyUpgrades();
+
+        // Réinitialiser le niveau
+        initGame();
+
+        // Fermer les modals
+        document.getElementById('gameOverModal').style.display = 'none';
+        document.getElementById('victoryModal').style.display = 'none';
+
+        addLog("Nouvelle partie commencée!");
+    }
+
+    function restartFloor() {
+        if (!gameState.isRunning) return;
+
+        // Réinitialiser la bille
+        gameState.ball = new Ball(canvas.width / 2, canvas.height - 50, gameState.ballPower);
+
+        // Réinitialiser les ennemis et collectibles (garder la disposition)
+        gameState.enemies.forEach(enemy => {
+            enemy.health = enemy.maxHealth;
+        });
+
+        gameState.collectibles.forEach(collectible => {
+            collectible.collected = false;
+        });
+
+        addLog("Étage recommencé!");
+    }
+
+    function updateUI() {
+        document.getElementById('scoreValue').textContent = gameState.score;
+        document.getElementById('goldValue').textContent = Math.floor(gameState.gold);
+        document.getElementById('gemsValue').textContent = gameState.gems;
+        document.getElementById('ballsValue').textContent = gameState.balls;
+        document.getElementById('floorValue').textContent = `${gameState.currentFloor}/${gameState.maxFloors}`;
+        document.getElementById('ballPowerValue').textContent = gameState.ballPower.toFixed(1) + 'x';
+        document.getElementById('goldMultiplierValue').textContent = gameState.goldMultiplier.toFixed(1) + 'x';
+        document.getElementById('gemChanceValue').textContent = Math.round(gameState.gemChance * 100) + '%';
+
+        // Mettre à jour le compteur de billes dans le canvas
+        document.getElementById('ballCounter').textContent = `Billes: ${gameState.balls}`;
+    }
+
+    function addLog(message) {
+        const logEntries = document.getElementById('logEntries');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry new';
+        entry.textContent = message;
+
+        logEntries.appendChild(entry);
+
+        // Limiter à 10 entrées
+        while (logEntries.children.length > 10) {
+            logEntries.removeChild(logEntries.firstChild);
+        }
+
+        // Faire défiler vers le bas
+        logEntries.scrollTop = logEntries.scrollHeight;
+
+        // Retirer la classe 'new' après un certain temps
+        setTimeout(() => {
+            entry.classList.remove('new');
+        }, 3000);
+    }
+
+    function showUpgrades() {
+        const upgradesPanel = document.getElementById('upgradesPanel');
+        const upgradesGrid = document.getElementById('upgradesGrid');
+
+        if (upgradesPanel.style.display === 'none' || upgradesPanel.style.display === '') {
+            // Afficher les améliorations
+            upgradesPanel.style.display = 'block';
+
+            // Générer les cartes d'amélioration
+            upgradesGrid.innerHTML = '';
+
+            gameState.upgrades.forEach(upgrade => {
+                const card = document.createElement('div');
+                card.className = `upgrade-card ${upgrade.level > 0 ? 'unlocked' : ''}`;
+                card.innerHTML = `
+                        <div class="upgrade-title">${upgrade.name} Niv. ${upgrade.level}/${upgrade.maxLevel}</div>
+                        <div class="upgrade-desc">${upgrade.description}</div>
+                        <div class="upgrade-cost">
+                            <span class="cost">Coût: ${upgrade.cost} or</span>
+                            <button class="buy-btn" ${upgrade.level >= upgrade.maxLevel || gameState.gold < upgrade.cost ? 'disabled' : ''}>
+                                ${upgrade.level >= upgrade.maxLevel ? 'MAX' : 'Acheter'}
+                            </button>
+                        </div>
+                    `;
+
+                const buyBtn = card.querySelector('.buy-btn');
+                if (buyBtn && !buyBtn.disabled) {
+                    buyBtn.addEventListener('click', () => {
+                        buyUpgrade(upgrade);
+                    });
+                }
+
+                upgradesGrid.appendChild(card);
+            });
+        } else {
+            upgradesPanel.style.display = 'none';
+        }
+    }
+
+    function buyUpgrade(upgrade) {
+        if (upgrade.level >= upgrade.maxLevel || gameState.gold < upgrade.cost) {
+            return;
+        }
+
+        // Déduire le coût
+        gameState.gold -= upgrade.cost;
+
+        // Augmenter le niveau
+        upgrade.level++;
+
+        // Appliquer l'effet
+        applyUpgrade(upgrade);
+
+        // Sauvegarder les améliorations
+        saveUpgrades();
+
+        // Mettre à jour l'interface
+        updateUI();
+        showUpgrades(); // Re-générer l'affichage
+
+        addLog(`Amélioration achetée: ${upgrade.name} Niv. ${upgrade.level}`);
+    }
+
+    function applyUpgrade(upgrade) {
+        switch(upgrade.effect) {
+            case 'ballPower':
+                gameState.ballPower = 1.0 + upgrade.level * 0.2;
+                break;
+            case 'goldMultiplier':
+                gameState.goldMultiplier = 1.0 + upgrade.level * 0.2;
+                break;
+            case 'gemChance':
+                gameState.gemChance = 0.05 + upgrade.level * 0.03;
+                break;
+            case 'extraBalls':
+                // Appliqué au début de chaque partie
+                break;
+            case 'explosiveBall':
+                // Effet spécial appliqué dans checkCollisions
+                break;
+            case 'goldMagnet':
+                // Effet spécial appliqué dans checkCollisions
+                break;
+        }
+    }
+
+    function applyUpgrades() {
+        // Appliquer toutes les améliorations achetées
+        gameState.upgrades.forEach(upgrade => {
+            for (let i = 0; i < upgrade.level; i++) {
+                applyUpgrade(upgrade);
+            }
+        });
+
+        // Appliquer les billes supplémentaires
+        const extraBallsUpgrade = gameState.upgrades.find(u => u.effect === 'extraBalls');
+        if (extraBallsUpgrade) {
+            gameState.balls += extraBallsUpgrade.level * 2;
+        }
+    }
+
+    function saveUpgrades() {
+        // Sauvegarder les améliorations dans le localStorage
+        const upgradesData = gameState.upgrades.map(upgrade => ({
+            id: upgrade.id,
+            level: upgrade.level
+        }));
+        localStorage.setItem('pachinkoUpgrades', JSON.stringify(upgradesData));
+    }
+
+    // Gestion des événements
+    document.addEventListener('keydown', (e) => {
+        gameState.keys[e.key] = true;
+
+        if (e.key === ' ') {
+            e.preventDefault();
+            if (!gameState.ball.isLaunched) {
+                if (gameState.isCharging) {
+                    releaseBall();
+                } else {
+                    launchBall();
+                }
+            }
+        }
+
+        if (e.key === 'r' || e.key === 'R') {
+            restartFloor();
+        }
+
+        if (e.key === 'm' || e.key === 'M') {
+            showUpgrades();
+        }
+
+        // Ajuster l'angle avec les flèches
+        if (e.key === 'ArrowLeft') {
+            gameState.launchAngle = Math.min(gameState.launchAngle + 0.1, Math.PI * 0.9);
+        }
+        if (e.key === 'ArrowRight') {
+            gameState.launchAngle = Math.max(gameState.launchAngle - 0.1, Math.PI * 0.1);
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        gameState.keys[e.key] = false;
+
+        if (e.key === ' ' && gameState.isCharging) {
+            releaseBall();
+        }
+    });
+
+    // Gestion des boutons
+    document.getElementById('launchBtn').addEventListener('click', () => {
+        if (!gameState.ball.isLaunched) {
+            if (gameState.isCharging) {
+                releaseBall();
+            } else {
+                launchBall();
+            }
+        }
+    });
+
+    document.getElementById('upgradeBtn').addEventListener('click', showUpgrades);
+    document.getElementById('restartBtn').addEventListener('click', restartFloor);
+    document.getElementById('nextFloorBtn').addEventListener('click', nextFloor);
+    document.getElementById('restartGameBtn').addEventListener('click', restartGame);
+    document.getElementById('victoryRestartBtn').addEventListener('click', restartGame);
+
+    // Initialisation du jeu
+    initGame();
+    gameLoop();
+</script>
+</body>
+</html>
