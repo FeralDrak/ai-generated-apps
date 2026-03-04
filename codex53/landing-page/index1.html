@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LingoLeap — Learn Languages Faster</title>
+    <style>
+        :root {
+            --bg: #0b1020;
+            --card: #121a32;
+            --muted: #9fb0d0;
+            --text: #f4f7ff;
+            --brand: #6e8bff;
+            --brand-2: #48d9b6;
+            --accent: #ffd166;
+            --danger: #ff6b6b;
+            --border: rgba(255, 255, 255, 0.12);
+            --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            color: var(--text);
+            background:
+                    radial-gradient(1300px 700px at 10% -10%, rgba(110,139,255,0.25), transparent 60%),
+                    radial-gradient(900px 600px at 90% 0%, rgba(72,217,182,0.20), transparent 65%),
+                    var(--bg);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            width: min(1120px, 92vw);
+            margin: 0 auto;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            backdrop-filter: blur(10px);
+            background: rgba(11, 16, 32, 0.65);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 10;
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.9rem 0;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: .6rem;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .logo-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--brand), var(--brand-2));
+            color: white;
+            font-weight: 900;
+            box-shadow: 0 8px 22px rgba(72, 217, 182, 0.35);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.1rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color .2s ease;
+        }
+
+        .nav-links a:hover { color: var(--text); }
+
+        .btn {
+            border: none;
+            border-radius: 14px;
+            padding: .8rem 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(1px); }
+
+        .btn-primary {
+            color: #0b1020;
+            background: linear-gradient(135deg, #9cb0ff, var(--brand-2));
+            box-shadow: 0 12px 26px rgba(72, 217, 182, 0.35);
+        }
+
+        .btn-outline {
+            color: var(--text);
+            background: transparent;
+            border: 1px solid var(--border);
+        }
+
+        .hero {
+            padding: 5rem 0 3rem;
+            display: grid;
+            grid-template-columns: 1.05fr .95fr;
+            align-items: center;
+            gap: 2.2rem;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            color: #d8e1ff;
+            border: 1px solid rgba(156, 176, 255, .4);
+            background: rgba(110, 139, 255, 0.12);
+            border-radius: 999px;
+            padding: .35rem .8rem;
+            font-size: .88rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            line-height: 1.08;
+            letter-spacing: -0.02em;
+        }
+
+        .gradient {
+            background: linear-gradient(135deg, #dce5ff 0%, #9cb0ff 45%, #48d9b6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin-top: 1rem;
+            max-width: 58ch;
+            font-size: 1.05rem;
+        }
+
+        .hero-actions {
+            margin-top: 1.6rem;
+            display: flex;
+            gap: .8rem;
+            flex-wrap: wrap;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .8rem;
+            margin-top: 1.8rem;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: .9rem;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: .2rem;
+        }
+
+        .device {
+            position: relative;
+            max-width: 420px;
+            margin-inline: auto;
+            border-radius: 28px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: linear-gradient(165deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            padding: 1rem;
+            box-shadow: var(--shadow);
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1rem;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: .6rem;
+        }
+
+        .xp {
+            background: rgba(72, 217, 182, 0.16);
+            color: #84f7dc;
+            border: 1px solid rgba(72, 217, 182, 0.35);
+            border-radius: 999px;
+            padding: .2rem .7rem;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+
+        .lesson {
+            margin-top: .9rem;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: .9rem;
+        }
+
+        .question {
+            font-size: .98rem;
+            margin-bottom: .75rem;
+        }
+
+        .choices {
+            display: grid;
+            gap: .55rem;
+        }
+
+        .choice {
+            border: 1px solid var(--border);
+            background: #111934;
+            color: var(--text);
+            border-radius: 12px;
+            padding: .65rem .7rem;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color .2s ease, transform .12s ease, background .2s ease;
+            font-weight: 600;
+        }
+
+        .choice:hover { transform: translateY(-1px); border-color: rgba(156,176,255,.55); }
+        .choice.correct { border-color: rgba(72,217,182,.7); background: rgba(72,217,182,.17); }
+        .choice.wrong { border-color: rgba(255,107,107,.7); background: rgba(255,107,107,.13); }
+
+        .feedback {
+            min-height: 1.2rem;
+            margin-top: .55rem;
+            font-size: .9rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .sections {
+            padding: 1rem 0 4.4rem;
+            display: grid;
+            gap: 2.4rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .9rem;
+        }
+
+        .feature {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1rem;
+        }
+
+        .feature h3 { margin: .2rem 0 .45rem; }
+        .feature p { margin: 0; color: var(--muted); }
+
+        .cta {
+            text-align: center;
+            background: linear-gradient(180deg, rgba(156,176,255,.13), rgba(72,217,182,.08));
+            border: 1px solid rgba(156,176,255,0.24);
+            border-radius: 24px;
+            padding: 2rem 1rem;
+        }
+
+        .cta p { color: var(--muted); margin: .6rem auto 1.1rem; max-width: 65ch; }
+
+        footer {
+            color: #8596bc;
+            text-align: center;
+            padding: 1.8rem 0 2.2rem;
+            font-size: .9rem;
+        }
+
+        @media (max-width: 920px) {
+            .hero { grid-template-columns: 1fr; padding-top: 3.4rem; }
+            .features { grid-template-columns: 1fr 1fr; }
+            .device { max-width: 100%; }
+        }
+
+        @media (max-width: 640px) {
+            .features { grid-template-columns: 1fr; }
+            .stats { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="container nav">
+        <a href="#" class="logo" aria-label="LingoLeap home">
+            <span class="logo-badge">L</span>
+            <span>LingoLeap</span>
+        </a>
+        <nav class="nav-links" aria-label="Main navigation">
+            <a href="#features">Features</a>
+            <a href="#method">Method</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#">Resources</a>
+        </nav>
+        <a class="btn btn-outline" href="#cta">Try for free</a>
+    </div>
+</header>
+
+<main class="container">
+    <section class="hero" id="method">
+        <div>
+            <span class="pill">🚀 Built for daily progress, not boredom</span>
+            <h1>Learn languages with the <span class="gradient">speed of a game</span> and the depth of a coach.</h1>
+            <p class="subtitle">LingoLeap helps you speak faster than traditional apps with adaptive lessons, real speaking feedback, and cinematic mini-stories that make new vocabulary stick.</p>
+            <div class="hero-actions">
+                <a class="btn btn-primary" href="#cta">Start learning now</a>
+                <a class="btn btn-outline" href="#features">See features</a>
+            </div>
+            <div class="stats" aria-label="key metrics">
+                <div class="stat"><strong>12 min/day</strong><span>average daily lesson</span></div>
+                <div class="stat"><strong>2.4x faster</strong><span>than passive methods</span></div>
+                <div class="stat"><strong>35+ languages</strong><span>from A1 to C1</span></div>
+            </div>
+        </div>
+
+        <aside class="device" aria-label="Interactive lesson preview">
+            <div class="card">
+                <div class="row">
+                    <strong>Spanish · Travel Basics</strong>
+                    <span class="xp">+25 XP</span>
+                </div>
+                <div class="lesson">
+                    <div class="question">How do you say <em>"I need a train ticket"</em>?</div>
+                    <div class="choices" id="choices"></div>
+                    <div class="feedback" id="feedback" aria-live="polite"></div>
+                </div>
+            </div>
+        </aside>
+    </section>
+
+    <section class="sections" id="features">
+        <div class="features">
+            <article class="feature">
+                <h3>🎯 Adaptive path</h3>
+                <p>Your lessons instantly adjust to mistakes and strengths, so every minute feels useful and motivating.</p>
+            </article>
+            <article class="feature">
+                <h3>🗣️ Pronunciation coach</h3>
+                <p>Get real-time speaking feedback with stress and intonation scoring for natural, confident speech.</p>
+            </article>
+            <article class="feature">
+                <h3>🎬 Story mode</h3>
+                <p>Learn through fun role-play episodes that mimic real situations: travel, work, dating, and more.</p>
+            </article>
+        </div>
+
+        <section class="cta" id="cta">
+            <h2>Ready to beat your old learning apps?</h2>
+            <p>Try LingoLeap free for 14 days. No credit card required. Build a streak you actually want to keep.</p>
+            <a href="#" class="btn btn-primary" id="pricing">Create my free account</a>
+        </section>
+    </section>
+</main>
+
+<footer>
+    © <span id="year"></span> LingoLeap. Learn with joy. Speak with confidence.
+</footer>
+
+<script>
+    const choices = [
+        { text: 'Necesito un billete de tren.', correct: true },
+        { text: 'Quiero una mesa para dos.', correct: false },
+        { text: 'Tengo una maleta azul.', correct: false }
+    ];
+
+    const choicesEl = document.getElementById('choices');
+    const feedbackEl = document.getElementById('feedback');
+
+    const resetChoices = () => {
+        choicesEl.innerHTML = '';
+        feedbackEl.textContent = '';
+
+        choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice';
+            btn.type = 'button';
+            btn.textContent = choice.text;
+
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.choice').forEach(el => {
+                    el.disabled = true;
+                    if (el.textContent === choices[0].text) el.classList.add('correct');
+                });
+
+                if (choice.correct) {
+                    btn.classList.add('correct');
+                    feedbackEl.textContent = 'Perfect! +25 XP. You are ready for the station.';
+                    feedbackEl.style.color = '#84f7dc';
+                } else {
+                    btn.classList.add('wrong');
+                    feedbackEl.textContent = 'Almost! The right answer is highlighted above.';
+                    feedbackEl.style.color = '#ffb2b2';
+                }
+
+                setTimeout(resetChoices, 1900);
+            });
+
+            choicesEl.appendChild(btn);
+        });
+    };
+
+    resetChoices();
+    document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
