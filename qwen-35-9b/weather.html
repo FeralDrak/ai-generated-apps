@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Weather Cards</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e24;
+            --text-main: #ffffff;
+            --accent-sun: #ffd700;
+            --accent-rain: #4da6ff;
+            --accent-snow: #f0f8ff;
+            --accent-wind: #9d8bf4;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+
+        header {
+            padding: 2rem;
+            text-align: center;
+            max-width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        p.subtitle {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 0 1rem;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            background-color: #333;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        button:hover, button.active {
+            background-color: #444;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        /* Grid Layout */
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            width: 95%;
+            max-width: 1200px;
+        }
+
+        /* Card Base Styles */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: filter 0.3s ease;
+        }
+
+        .card-label {
+            position: absolute;
+            bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 10;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        /* --- SUN ANIMATIONS --- */
+        .sun-card { background-color: linear-gradient(to bottom, #3a5c30, #1e1e24); border-bottom: 4px solid var(--accent-sun); }
+
+        .sun-orb {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            background: var(--accent-sun);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--accent-sun);
+        }
+
+        .sun-rays {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: spin 10s linear infinite;
+        }
+
+        .glint {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px white;
+            animation: glintMove 3s ease-in-out infinite alternate;
+        }
+
+        /* --- RAIN ANIMATIONS --- */
+        .rain-card { background-color: #2a3b4c; border-bottom: 4px solid var(--accent-rain); }
+
+        .cloud {
+            position: absolute;
+            background: rgba(255,255,255,0.2);
+            width: 100px;
+            height: 40px;
+            border-radius: 50px;
+            top: 20%;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: inherit;
+            border-radius: 50%;
+        }
+
+        .cloud::before { width: 40px; height: 40px; top: -20px; left: 15px; }
+        .cloud::after { width: 30px; height: 30px; top: -15px; right: 15px; }
+
+        .rain-drop {
+            position: absolute;
+            background-color: rgba(173, 216, 230, 0.8);
+            width: 3px;
+            height: 10px;
+            border-radius: 0 50% 50% 50%;
+            animation: fall linear infinite;
+        }
+
+        /* --- SNOW ANIMATIONS --- */
+        .snow-card { background-color: #e6f2ff; background-image: radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px); background-size: 20px 20px; }
+
+        .snowflake {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: snowFall linear infinite;
+        }
+
+        /* --- WIND ANIMATIONS --- */
+        .wind-card { background-color: #4a5b6d; border-bottom: 4px solid var(--accent-wind); }
+
+        .wind-cloud {
+            position: absolute;
+            background: white;
+            width: 80px;
+            height: 30px;
+            border-radius: 20px;
+            opacity: 0.7;
+            box-shadow: -5px 0 10px rgba(255,255,255,0.3);
+        }
+
+        /* CSS Shapes for wind clouds */
+        .wind-cloud::before { content:''; position: absolute; height: 40px; width: 40px; background: inherit; border-radius: 50%; left: -20px; top: -10px;}
+        .wind-cloud::after { content:''; position: absolute; height: 30px; width: 30px; background: inherit; border-radius: 50%; right: -10px; top: -5px;}
+
+        .wind-line {
+            position: absolute;
+            height: 2px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 2px;
+            box-shadow: 0 0 4px white;
+        }
+
+        /* --- ANIMATION KEYFRAMES --- */
+
+        @keyframes spin {
+            0% { transform: translateX(-50%) rotate(0deg); }
+            100% { transform: translateX(-50%) rotate(360deg); }
+        }
+
+        @keyframes glintMove {
+            0% { top: 20%; left: 30%; opacity: 0; }
+            40% { opacity: 1; }
+            100% { top: 60%; left: 70%; opacity: 0; }
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-20px) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(350px) translateX(20px); opacity: 0; }
+        }
+
+        @keyframes snowFall {
+            0% { transform: translateY(-20px) translateX(0); opacity: 0; }
+            10% { opacity: 0.9; }
+            100% { transform: translateY(350px) translateX(-40px); opacity: 0.3; }
+        }
+
+        @keyframes windFlow {
+            0% { transform: translateX(-120%); }
+            100% { transform: translateX(200%); }
+        }
+
+        @keyframes cloudDrift {
+            0% { transform: translateX(-120%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* Utility Classes for JS toggling */
+        .card.hidden { display: none; }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Weather Dashboard</h1>
+    <p class="subtitle">Dark Mode | Interactive Animation Demo</p>
+</header>
+
+<!-- Controls -->
+<div class="controls">
+    <button onclick="toggleView('all')" id="btn-all" class="active">Show All</button>
+    <button onclick="toggleView('sun')" id="btn-sun">☀️ Sun</button>
+    <button onclick="toggleView('rain')" id="btn-rain">🌧️ Rain</button>
+    <button onclick="toggleView('snow')" id="btn-snow">❄️ Snow</button>
+    <button onclick="toggleView('wind')" id="btn-wind">💨 Wind</button>
+</div>
+
+<!-- Grid Container -->
+<div class="weather-grid">
+
+    <!-- SUN CARD -->
+    <div class="card sun-card" id="sun-card">
+        <div class="sun-orb"></div>
+        <div class="sun-rays"></div>
+        <div class="glint" style="animation-delay: 0s;"></div>
+        <div class="glint" style="animation-delay: 1.5s; width: 6px; height: 6px;"></div>
+        <span class="card-label">Sunny</span>
+    </div>
+
+    <!-- RAIN CARD -->
+    <div class="card rain-card" id="rain-card">
+        <!-- Cloud generated by JS for randomness -->
+        <div class="cloud"></div>
+        <!-- Raindrops generated by JS -->
+        <span class="card-label">Rainy</span>
+    </div>
+
+    <!-- SNOW CARD -->
+    <div class="card snow-card" id="snow-card">
+        <!-- Snowflakes generated by JS -->
+        <span class="card-label">Snowing</span>
+    </div>
+
+    <!-- WIND CARD -->
+    <div class="card wind-card" id="wind-card">
+        <!-- Clouds and Lines generated by JS -->
+        <span class="card-label">Windy</span>
+    </div>
+</div>
+
+<script>
+    // --- LOGIC TO GENERATE PARTICLES (RAIN/SNOW/WIND) ---
+
+    function generateRain() {
+        const container = document.getElementById('rain-card');
+        const dropCount = 25;
+
+        for(let i = 0; i < dropCount; i++) {
+            let drop = document.createElement('div');
+            drop.className = 'rain-drop';
+
+            // Randomize starting position
+            drop.style.left = Math.random() * 100 + '%';
+
+            // Randomize animation duration (speed)
+            const duration = 0.5 + Math.random();
+            drop.style.animationDuration = duration + 's';
+
+            // Add to container
+            container.appendChild(drop);
+        }
+    }
+
+    function generateSnow() {
+        const container = document.getElementById('snow-card');
+        const flakeCount = 40;
+
+        for(let i = 0; i < flakeCount; i++) {
+            let flake = document.createElement('div');
+            flake.className = 'snowflake';
+
+            // Vary size
+            let size = (Math.random() * 5) + 3;
+            flake.style.width = size + 'px';
+            flake.style.height = size + 'px';
+
+            // Randomize delay and position
+            flake.style.left = Math.random() * 100 + '%';
+            flake.style.animationDelay = Math.random() * 5 + 's';
+            flake.style.animationDuration = (3 + Math.random()) + 's';
+
+            container.appendChild(flake);
+        }
+    }
+
+    function generateWind() {
+        const container = document.getElementById('wind-card');
+
+        // Add moving clouds
+        for(let i=0; i<3; i++) {
+            let cloud = document.createElement('div');
+            cloud.className = 'wind-cloud';
+
+            // Randomize sizes and speeds
+            cloud.style.width = (Math.random() * 60 + 60) + 'px';
+            cloud.style.top = Math.random() * 100 + '%';
+            cloud.style.animationName = 'cloudDrift';
+            cloud.style.animationDuration = (4 + Math.random()) + 's';
+            cloud.style.animationDelay = Math.random() * -5 + 's'; // start midway
+
+            container.appendChild(cloud);
+        }
+
+        // Add wind lines
+        for(let i=0; i<8; i++) {
+            let line = document.createElement('div');
+            line.className = 'wind-line';
+
+            line.style.height = Math.random() * 2 + 'px';
+            line.style.width = (Math.random() * 40) + 'px';
+            line.style.top = Math.random() * 100 + '%';
+            line.style.left = '-10%'; // Start offscreen left
+
+            // Wind lines move fast horizontally, but we simulate via transform in animation?
+            // Let's use the container as a relative anchor and animate translateX inside.
+
+            // Actually, simpler to put them in container and animate translateX there or on element.
+            // Using CSS keyframes for flow is better. Let's add inline styles for JS specific randomization.
+            line.style.animation = `windFlow ${1 + Math.random()}s linear infinite`;
+
+            container.appendChild(line);
+        }
+    }
+
+    function generateCloud() {
+        const rainCard = document.getElementById('rain-card');
+
+        // Helper to add a cloud part
+        const createCloudPart = (type, top, left) => {
+            let el = document.createElement('div');
+            el.className = 'cloud';
+            el.style.top = top;
+            el.style.left = left;
+
+            // Random scale
+            const scale = 0.8 + Math.random() * 0.4;
+            el.style.transform = `scale(${scale})`;
+
+            return el;
+        }
+
+        rainCard.appendChild(createCloudPart('', '15%', '10%'));
+        rainCard.appendChild(createCloudPart('', '25%', '70%'));
+    }
+
+
+    // --- INITIALIZATION ---
+
+    document.addEventListener('DOMContentLoaded', () => {
+        generateRain();
+        generateSnow();
+        generateWind();
+        generateCloud();
+    });
+
+    // --- INTERACTION LOGIC ---
+
+    function toggleView(type) {
+        // Update buttons styles
+        const buttons = document.querySelectorAll('.controls button');
+        buttons.forEach(btn => btn.classList.remove('active'));
+
+        if(type !== 'all') {
+            document.getElementById(`btn-${type}`).classList.add('active');
+
+            // Hide others
+            ['sun', 'rain', 'snow', 'wind'].forEach(w => {
+                const card = document.getElementById(w + '-card');
+                if(w !== type) card.classList.add('hidden');
+            });
+        } else {
+            // Show all
+            ['sun', 'rain', 'snow', 'wind'].forEach(w => {
+                const card = document.getElementById(w + '-card');
+                card.classList.remove('hidden');
+            });
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorateur du Système Solaire - Édition Éducative</title>
+    <style>
+        :root {
+            --bg-color: #050510;
+            --panel-bg: rgba(10, 15, 30, 0.85);
+            --text-main: #e0e0e0;
+            --accent: #4da8da;
+            --accent-hover: #79c5ef;
+            --border-radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+
+        body, html { width: 100vw; height: 100vh; background-color: var(--bg-color); overflow: hidden; color: var(--text-main); }
+
+        canvas { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; cursor: grab; }
+        canvas:active { cursor: grabbing; }
+
+        /* Interface Utilisateur */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; justify-content: space-between; padding: 20px; }
+
+        .panel { background: var(--panel-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--border-radius); padding: 20px; pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: transform 0.3s ease, opacity 0.3s ease; }
+
+        /* Menu de gauche : Navigation */
+        #nav-panel { width: 250px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 40px); overflow-y: auto; }
+        #nav-panel h2 { font-size: 1.2rem; margin-bottom: 10px; color: var(--accent); text-align: center; text-transform: uppercase; letter-spacing: 2px;}
+        .nav-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; color: #fff; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between; }
+        .nav-btn:hover { background: rgba(77, 168, 218, 0.2); border-color: var(--accent); transform: translateX(5px); }
+        .color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+        /* Panneau de droite : Informations */
+        #info-panel { width: 350px; transform: translateX(400px); opacity: 0; display: flex; flex-direction: column; overflow-y: auto; max-height: calc(100vh - 40px); }
+        #info-panel.visible { transform: translateX(0); opacity: 1; }
+        .close-btn { align-self: flex-end; cursor: pointer; color: #aaa; font-size: 1.5rem; background: none; border: none; margin-bottom: -10px; }
+        .close-btn:hover { color: #fff; }
+        #info-title { font-size: 2rem; color: #fff; margin-bottom: 5px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        #info-subtitle { color: var(--accent); font-size: 0.9rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;}
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .info-stat { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; font-size: 0.85rem; }
+        .info-stat strong { display: block; color: var(--accent); margin-bottom: 3px; }
+        #info-desc { font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px; color: #ccc;}
+        #info-funfact { background: rgba(255, 215, 0, 0.1); border-left: 4px solid gold; padding: 15px; border-radius: 0 8px 8px 0; font-size: 0.9rem; line-height: 1.5; color: #fff; }
+        #info-funfact::before { content: "💡 Le Savais-tu ?"; display: block; font-weight: bold; color: gold; margin-bottom: 5px; }
+
+        /* Contrôles du haut (Temps) */
+        #time-controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; align-items: center; }
+        .ctrl-btn { background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.2); color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; transition: all 0.2s; backdrop-filter: blur(5px); }
+        .ctrl-btn:hover { background: var(--accent); border-color: var(--accent-hover); box-shadow: 0 0 15px var(--accent); }
+        #time-display { background: var(--panel-bg); padding: 10px 20px; border-radius: 20px; font-variant-numeric: tabular-nums; font-family: monospace; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.2); }
+
+        /* HUD Infos */
+        #hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: auto; }
+        .hint { font-size: 0.8rem; color: #888; text-align: center; margin-top: 5px; }
+
+        /* Scrollbar custom */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<canvas id="univers"></canvas>
+
+<div id="ui-layer">
+    <div id="nav-panel" class="panel">
+        <h2>Système Solaire</h2>
+        <div class="hint">Clique sur un astre</div>
+        <div id="nav-buttons-container"></div>
+    </div>
+
+    <div id="hud">
+        <div class="panel" style="padding: 10px 20px;">
+            Zoom: molette | Déplacer: clic + glisse
+        </div>
+    </div>
+
+    <div id="time-controls">
+        <button class="ctrl-btn" id="btn-slow" title="Ralentir">⏪</button>
+        <button class="ctrl-btn" id="btn-pause" title="Pause/Lecture">⏸</button>
+        <div id="time-display">Vitesse: x1.0</div>
+        <button class="ctrl-btn" id="btn-fast" title="Accélérer">⏩</button>
+        <button class="ctrl-btn" id="btn-reset" title="Réinitialiser la caméra">🌍</button>
+    </div>
+
+    <div id="info-panel" class="panel">
+        <button class="close-btn" onclick="closeInfoPanel()">×</button>
+        <h1 id="info-title">Nom de la planète</h1>
+        <div id="info-subtitle">Type stellaire</div>
+
+        <div class="info-grid">
+            <div class="info-stat"><strong>Diamètre</strong> <span id="stat-dia">0</span> km</div>
+            <div class="info-stat"><strong>Distance du Soleil</strong> <span id="stat-dist">0</span> M km</div>
+            <div class="info-stat"><strong>Année (Orbite)</strong> <span id="stat-orb">0</span></div>
+            <div class="info-stat"><strong>Jour (Rotation)</strong> <span id="stat-rot">0</span></div>
+            <div class="info-stat"><strong>Temp. moyenne</strong> <span id="stat-temp">0</span> °C</div>
+            <div class="info-stat"><strong>Lunes</strong> <span id="stat-moons">0</span></div>
+        </div>
+
+        <div id="info-desc">Description détaillée ici...</div>
+        <div id="info-funfact">Fait amusant ici...</div>
+    </div>
+</div>
+
+<script>
+    /**
+     * 1. BASE DE DONNÉES ÉDUCATIVE DU SYSTÈME SOLAIRE
+     * Distances et tailles simplifiées pour le rendu visuel Canvas,
+     * mais les vraies valeurs sont gardées pour l'interface utilisateur.
+     */
+    const DONNEES_ASTRES = [
+        {
+            id: "soleil", nom: "Le Soleil", type: "Étoile Naine Jaune", couleur: "#ffcc00", lueur: "#ff6600",
+            rayonVisuel: 50, distanceVisuelle: 0, vitesseOrbitale: 0,
+            vraiesStats: { diametre: "1 392 700", distance: "0", orbite: "Gala. 230M ans", rotation: "27 jours", temp: "5 500", lunes: "0" },
+            desc: "Le Soleil est l'étoile au centre de notre système solaire. C'est une sphère presque parfaite de plasma chaud, générant un champ magnétique par un processus de dynamo. Il représente 99,86 % de la masse totale du Système solaire.",
+            fait: "Dans environ 5 milliards d'années, le Soleil deviendra une géante rouge, englobant probablement Mercure, Vénus et peut-être la Terre."
+        },
+        {
+            id: "mercure", nom: "Mercure", type: "Planète Tellurique", couleur: "#aaaaaa", lueur: "#555555",
+            rayonVisuel: 4, distanceVisuelle: 80, vitesseOrbitale: 0.04,
+            vraiesStats: { diametre: "4 879", distance: "57,9", orbite: "88 jours", rotation: "59 jours", temp: "167", lunes: "0" },
+            desc: "Mercure est la planète la plus proche du Soleil et la plus petite du Système solaire. Elle ne possède presque pas d'atmosphère pour retenir la chaleur, ce qui entraîne des variations de température extrêmes entre le jour et la nuit.",
+            fait: "Malgré sa proximité avec le Soleil, on a trouvé de la glace d'eau au fond de profonds cratères aux pôles de Mercure, là où la lumière du soleil n'arrive jamais."
+        },
+        {
+            id: "venus", nom: "Vénus", type: "Planète Tellurique", couleur: "#e3bb76", lueur: "#c18f32",
+            rayonVisuel: 8, distanceVisuelle: 120, vitesseOrbitale: 0.015,
+            vraiesStats: { diametre: "12 104", distance: "108,2", orbite: "225 jours", rotation: "243 jours", temp: "464", lunes: "0" },
+            desc: "Vénus est souvent appelée la planète sœur de la Terre en raison de sa taille similaire. Cependant, elle possède une atmosphère toxique composée de dioxyde de carbone et de nuages d'acide sulfurique, créant un puissant effet de serre.",
+            fait: "Vénus est la planète la plus chaude de notre système solaire. De plus, elle tourne sur elle-même à l'envers (rotation rétrograde) par rapport à la plupart des autres planètes."
+        },
+        {
+            id: "terre", nom: "La Terre", type: "Planète Tellurique", couleur: "#2b82c9", lueur: "#1e5b8e",
+            rayonVisuel: 8.5, distanceVisuelle: 170, vitesseOrbitale: 0.01,
+            lune: { nom: "Lune", rayon: 2, distance: 15, vitesse: 0.05, couleur: "#dddddd" },
+            vraiesStats: { diametre: "12 742", distance: "149,6", orbite: "365,25 jours", rotation: "24 heures", temp: "15", lunes: "1" },
+            desc: "Notre maison. La Terre est la seule planète de l'univers connue pour abriter la vie. Elle possède une atmosphère riche en azote et en oxygène, et 71 % de sa surface est recouverte d'eau liquide.",
+            fait: "Le bouclier magnétique invisible de la Terre (la magnétosphère) nous protège des rayonnements solaires mortels, créant au passage les magnifiques aurores boréales et australes."
+        },
+        {
+            id: "mars", nom: "Mars", type: "Planète Tellurique", couleur: "#c1440e", lueur: "#e77d11",
+            rayonVisuel: 5, distanceVisuelle: 230, vitesseOrbitale: 0.008,
+            vraiesStats: { diametre: "6 779", distance: "227,9", orbite: "687 jours", rotation: "24,6 heures", temp: "-65", lunes: "2" },
+            desc: "Mars, la Planète Rouge, doit sa couleur à l'oxyde de fer (rouille) présent à sa surface. Elle possède de grandes vallées, des déserts, des calottes glaciaires et le plus grand volcan du Système solaire, Olympus Mons.",
+            fait: "Mars abrite Valles Marineris, un système de canyons si vaste qu'il ferait passer le Grand Canyon terrestre pour une simple fissure. Il fait la longueur des États-Unis !"
+        },
+        {
+            id: "jupiter", nom: "Jupiter", type: "Géante Gazeuse", couleur: "#d39c7e", lueur: "#c88b3a",
+            rayonVisuel: 24, distanceVisuelle: 340, vitesseOrbitale: 0.002,
+            vraiesStats: { diametre: "139 820", distance: "778,5", orbite: "11,9 ans", rotation: "9,9 heures", temp: "-110", lunes: "95" },
+            desc: "Jupiter est de loin la plus grande planète du Système solaire, plus de deux fois plus massive que toutes les autres planètes réunies. C'est un monde de gaz tumultueux sans véritable surface solide.",
+            fait: "Jupiter possède la 'Grande Tache Rouge', une tempête anticyclonique gigantesque qui fait rage depuis au moins 400 ans et qui est assez grande pour engloutir la Terre."
+        },
+        {
+            id: "saturne", nom: "Saturne", type: "Géante Gazeuse", couleur: "#ead6b8", lueur: "#ceb8b8",
+            rayonVisuel: 20, distanceVisuelle: 460, vitesseOrbitale: 0.0009,
+            anneaux: { in: 24, out: 38, couleur: "rgba(234, 214, 184, 0.5)" },
+            vraiesStats: { diametre: "116 460", distance: "1 434", orbite: "29,5 ans", rotation: "10,7 heures", temp: "-140", lunes: "146" },
+            desc: "Célèbre pour son spectaculaire système d'anneaux composés de milliards de morceaux de glace et de roche, Saturne est la deuxième plus grande planète. Sa densité est si faible qu'elle flotterait dans une immense baignoire d'eau.",
+            fait: "Les vents sur Saturne peuvent atteindre une vitesse stupéfiante de 1 800 km/h, soit la vitesse de croisière du Concorde !"
+        },
+        {
+            id: "uranus", nom: "Uranus", type: "Géante de Glace", couleur: "#4b70dd", lueur: "#d5f3ff",
+            rayonVisuel: 14, distanceVisuelle: 570, vitesseOrbitale: 0.0004,
+            anneaux: { in: 18, out: 20, couleur: "rgba(213, 243, 255, 0.3)" },
+            vraiesStats: { diametre: "50 724", distance: "2 871", orbite: "84 ans", rotation: "17,2 heures", temp: "-195", lunes: "27" },
+            desc: "Uranus est unique car elle tourne sur le côté ; son axe de rotation est basculé à près de 90 degrés, probablement suite à une collision colossale dans son passé lointain.",
+            fait: "Sur Uranus, en raison de son inclinaison extrême, un pôle est baigné de lumière solaire pendant 42 ans d'affilée, puis plongé dans l'obscurité totale pour les 42 années suivantes."
+        },
+        {
+            id: "neptune", nom: "Neptune", type: "Géante de Glace", couleur: "#274687", lueur: "#4169e1",
+            rayonVisuel: 13, distanceVisuelle: 680, vitesseOrbitale: 0.0001,
+            vraiesStats: { diametre: "49 244", distance: "4 495", orbite: "165 ans", rotation: "16,1 heures", temp: "-200", lunes: "14" },
+            desc: "Neptune est la planète la plus éloignée du Soleil. C'est un monde sombre, froid et fouetté par des vents supersoniques, découvert par des calculs mathématiques avant même d'être observé au télescope.",
+            fait: "Il pleut littéralement des diamants au cœur de Neptune et d'Uranus, à cause des pressions extrêmes qui écrasent le carbone de l'atmosphère."
+        }
+    ];
+
+    /**
+     * 2. MOTEUR DU JEU / VARIABLES D'ÉTAT
+     */
+    const canvas = document.getElementById('univers');
+    const ctx = canvas.getContext('2d', { alpha: false }); // Opti perf
+
+    let width, height;
+
+    // État de la simulation
+    let timeScale = 1.0;
+    let globalTime = 0;
+    let isPaused = false;
+
+    // Caméra
+    let camera = { x: 0, y: 0, zoom: 1, targetZoom: 1 };
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let cameraStart = { x: 0, y: 0 };
+    let focusTarget = null; // Astre actuellement suivi
+
+    // Constellation d'étoiles en arrière-plan et astéroïdes
+    let stars = [];
+    let asteroids = [];
+
+    /**
+     * 3. INITIALISATION ET REDIMENSIONNEMENT
+     */
+    function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    function initEnvironment() {
+        // Générer 1000 étoiles statiques
+        for (let i = 0; i < 1000; i++) {
+            stars.push({
+                x: (Math.random() - 0.5) * 4000,
+                y: (Math.random() - 0.5) * 4000,
+                size: Math.random() * 1.5,
+                alpha: Math.random()
+            });
+        }
+        // Générer la ceinture d'astéroïdes (entre Mars et Jupiter)
+        for (let i = 0; i < 800; i++) {
+            let radius = 260 + Math.random() * 50;
+            let angle = Math.random() * Math.PI * 2;
+            asteroids.push({
+                dist: radius,
+                angle: angle,
+                speed: 0.004 + (Math.random() * 0.002),
+                size: Math.random() * 1.5,
+                color: `rgba(150, 150, 150, ${Math.random() * 0.8 + 0.2})`
+            });
+        }
+    }
+    initEnvironment();
+
+    /**
+     * 4. GESTION DES INTERFACES (DOM)
+     */
+    function buildNavMenu() {
+        const container = document.getElementById('nav-buttons-container');
+        DONNEES_ASTRES.forEach(astre => {
+            const btn = document.createElement('div');
+            btn.className = 'nav-btn';
+            btn.innerHTML = `<span>${astre.nom}</span> <span class="color-dot" style="background:${astre.couleur}; box-shadow: 0 0 5px ${astre.lueur}"></span>`;
+            btn.onclick = () => { focusOn(astre); };
+            container.appendChild(btn);
+        });
+    }
+    buildNavMenu();
+
+    function populateInfoPanel(astre) {
+        document.getElementById('info-title').innerText = astre.nom;
+        document.getElementById('info-title').style.color = astre.couleur;
+        document.getElementById('info-subtitle').innerText = astre.type;
+
+        document.getElementById('stat-dia').innerText = astre.vraiesStats.diametre;
+        document.getElementById('stat-dist').innerText = astre.vraiesStats.distance;
+        document.getElementById('stat-orb').innerText = astre.vraiesStats.orbite;
+        document.getElementById('stat-rot').innerText = astre.vraiesStats.rotation;
+        document.getElementById('stat-temp').innerText = astre.vraiesStats.temp;
+        document.getElementById('stat-moons').innerText = astre.vraiesStats.lunes;
+
+        document.getElementById('info-desc').innerText = astre.desc;
+        document.getElementById('info-funfact').innerText = astre.fait;
+
+        document.getElementById('info-panel').classList.add('visible');
+    }
+
+    function closeInfoPanel() {
+        document.getElementById('info-panel').classList.remove('visible');
+        focusTarget = null;
+    }
+
+    /**
+     * 5. GESTION DES ENTRÉES UTILISATEUR (Souris & Caméra)
+     */
+    canvas.addEventListener('mousedown', e => {
+        isDragging = true;
+        dragStart.x = e.clientX;
+        dragStart.y = e.clientY;
+        cameraStart.x = camera.x;
+        cameraStart.y = camera.y;
+        focusTarget = null; // Briser le focus si on drague manuellement
+    });
+
+    window.addEventListener('mouseup', () => isDragging = false);
+
+    window.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        // Déplacement inverse au zoom
+        camera.x = cameraStart.x + (e.clientX - dragStart.x) / camera.zoom;
+        camera.y = cameraStart.y + (e.clientY - dragStart.y) / camera.zoom;
+    });
+
+    canvas.addEventListener('wheel', e => {
+        // Logique de zoom fluide
+        e.preventDefault();
+        const zoomAmount = e.deltaY > 0 ? 0.9 : 1.1;
+        camera.targetZoom = camera.targetZoom * zoomAmount;
+        // Limites de zoom
+        camera.targetZoom = Math.max(0.2, Math.min(camera.targetZoom, 4.0));
+        focusTarget = null; // Briser le focus si on zoome
+    });
+
+    // Détection de clic sur les astres
+    canvas.addEventListener('click', e => {
+        // Si on a dragué, ce n'est pas un clic
+        if (Math.abs(e.clientX - dragStart.x) > 5 || Math.abs(e.clientY - dragStart.y) > 5) return;
+
+        // Coordonnées du clic par rapport au centre de l'univers, en tenant compte du zoom et du pan
+        const rect = canvas.getBoundingClientRect();
+        let mouseX = (e.clientX - rect.left - width/2) / camera.zoom - camera.x;
+        let mouseY = (e.clientY - rect.top - height/2) / camera.zoom - camera.y;
+
+        // Vérifier les collisions en partant de la planète la plus lointaine au Soleil
+        for (let i = DONNEES_ASTRES.length - 1; i >= 0; i--) {
+            let astre = DONNEES_ASTRES[i];
+            let angle = globalTime * astre.vitesseOrbitale;
+            let astreX = Math.cos(angle) * astre.distanceVisuelle;
+            let astreY = Math.sin(angle) * astre.distanceVisuelle;
+
+            let dist = Math.sqrt(Math.pow(mouseX - astreX, 2) + Math.pow(mouseY - astreY, 2));
+
+            // Marge de clic plus généreuse pour les petites planètes
+            if (dist <= Math.max(astre.rayonVisuel * 1.5, 15)) {
+                focusOn(astre);
+                return; // S'arrêter au premier trouvé
+            }
+        }
+        closeInfoPanel();
+    });
+
+    function focusOn(astre) {
+        focusTarget = astre;
+        populateInfoPanel(astre);
+        // Ajustement automatique du zoom selon la taille de l'astre
+        if (astre.id === "soleil") camera.targetZoom = 0.5;
+        else if (astre.distanceVisuelle > 300) camera.targetZoom = 1.0;
+        else camera.targetZoom = 1.5;
+    }
+
+    // Boutons de temps
+    document.getElementById('btn-slow').onclick = () => { timeScale = Math.max(-5, timeScale - 0.5); updateTimeDisplay(); };
+    document.getElementById('btn-fast').onclick = () => { timeScale = Math.min(5, timeScale + 0.5); updateTimeDisplay(); };
+    document.getElementById('btn-pause').onclick = () => { isPaused = !isPaused; document.getElementById('btn-pause').innerText = isPaused ? "▶️" : "⏸"; };
+    document.getElementById('btn-reset').onclick = () => { timeScale = 1.0; camera.targetZoom = 1; camera.x = 0; camera.y = 0; focusTarget = null; isPaused=false; updateTimeDisplay(); closeInfoPanel(); };
+
+    function updateTimeDisplay() {
+        document.getElementById('time-display').innerText = `Vitesse: x${timeScale.toFixed(1)}`;
+    }
+
+    /**
+     * 6. OUTILS DE RENDU GRAPHIQUE
+     */
+    function dessinerEtoileGlow(ctx, x, y, rayon, couleur, lueur) {
+        ctx.beginPath();
+        let grad = ctx.createRadialGradient(x, y, rayon * 0.2, x, y, rayon * 2);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.2, couleur);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.arc(x, y, rayon * 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function dessinerGlow(ctx, x, y, rayon, lueur) {
+        ctx.shadowBlur = rayon * 1.5;
+        ctx.shadowColor = lueur;
+    }
+
+    /**
+     * 7. BOUCLE DE RENDU PRINCIPALE
+     */
+    function animate() {
+        // 7.1 Mise à jour de la logique
+        if (!isPaused) {
+            globalTime += timeScale;
+        }
+
+        // Interpolation douce (lerp) pour le zoom
+        camera.zoom += (camera.targetZoom - camera.zoom) * 0.1;
+
+        // Si un astre est ciblé, la caméra le suit
+        if (focusTarget) {
+            let angle = globalTime * focusTarget.vitesseOrbitale;
+            let targetX = -Math.cos(angle) * focusTarget.distanceVisuelle;
+            let targetY = -Math.sin(angle) * focusTarget.distanceVisuelle;
+
+            // Interpolation douce pour le déplacement panoramique
+            camera.x += (targetX - camera.x) * 0.1;
+            camera.y += (targetY - camera.y) * 0.1;
+        }
+
+        // 7.2 Nettoyage et préparation du canvas
+        ctx.fillStyle = "var(--bg-color)";
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+
+        // Placer le système de coordonnées au centre de l'écran avec la caméra
+        ctx.translate(width / 2, height / 2);
+        ctx.scale(camera.zoom, camera.zoom);
+        ctx.translate(camera.x, camera.y);
+
+        // 7.3 Dessin du fond (Étoiles) avec un léger effet de parallaxe
+        ctx.fillStyle = "white";
+        stars.forEach(s => {
+            ctx.globalAlpha = s.alpha + Math.sin(globalTime * 0.05 + s.x) * 0.3; // Scintillement
+            ctx.beginPath();
+            // Légère parallaxe en fonction du mouvement de la caméra
+            ctx.arc(s.x - camera.x * 0.1, s.y - camera.y * 0.1, s.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+
+        // 7.4 Dessin des Orbites
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+        ctx.lineWidth = 1 / camera.zoom; // Garder la ligne fine malgré le zoom
+        DONNEES_ASTRES.forEach(astre => {
+            if (astre.distanceVisuelle > 0) {
+                ctx.beginPath();
+                ctx.arc(0, 0, astre.distanceVisuelle, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        });
+
+        // 7.5 Dessin de la Ceinture d'Astéroïdes
+        ctx.fillStyle = "rgba(180, 180, 180, 0.6)";
+        asteroids.forEach(ast => {
+            let aAngle = ast.angle + globalTime * ast.speed;
+            let x = Math.cos(aAngle) * ast.dist;
+            let y = Math.sin(aAngle) * ast.dist;
+            ctx.fillStyle = ast.color;
+            ctx.beginPath();
+            ctx.arc(x, y, ast.size, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        // 7.6 Dessin des Planètes et du Soleil
+        DONNEES_ASTRES.forEach(astre => {
+            let angle = globalTime * astre.vitesseOrbitale;
+            let x = Math.cos(angle) * astre.distanceVisuelle;
+            let y = Math.sin(angle) * astre.distanceVisuelle;
+
+            // Si c'est le soleil, effet spécial
+            if (astre.id === "soleil") {
+                dessinerEtoileGlow(ctx, x, y, astre.rayonVisuel, astre.couleur, astre.lueur);
+            }
+            else {
+                // Anneaux (Uranus, Saturne) dessinés SOUS la planète (moitié arrière)
+                if (astre.anneaux) {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    // Rotation pour l'inclinaison de l'anneau
+                    ctx.rotate(astre.id === "uranus" ? Math.PI/2 : Math.PI/6);
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, astre.anneaux.out, astre.anneaux.out * 0.3, 0, 0, Math.PI * 2);
+                    ctx.lineWidth = (astre.anneaux.out - astre.anneaux.in);
+                    ctx.strokeStyle = astre.anneaux.couleur;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Corps de la planète
+                ctx.beginPath();
+                dessinerGlow(ctx, x, y, astre.rayonVisuel, astre.lueur);
+                ctx.fillStyle = astre.couleur;
+                ctx.arc(x, y, astre.rayonVisuel, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0; // Reset ombre
+
+                // Ombrage 3D basique (simulation du soleil)
+                ctx.save();
+                ctx.translate(x, y);
+                // L'ombre tourne en fonction de l'angle orbital pour toujours fuir le soleil (0,0)
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.arc(0, 0, astre.rayonVisuel, -Math.PI/2, Math.PI/2);
+                ctx.fillStyle = "rgba(0,0,0,0.6)";
+                ctx.fill();
+                ctx.restore();
+
+                // Lune (pour la Terre)
+                if (astre.lune) {
+                    let luneAngle = globalTime * astre.lune.vitesse;
+                    let lX = x + Math.cos(luneAngle) * astre.lune.distance;
+                    let lY = y + Math.sin(luneAngle) * astre.lune.distance;
+
+                    // Orbite de la lune (visible en zoomant)
+                    if (camera.zoom > 0.8) {
+                        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+                        ctx.beginPath();
+                        ctx.arc(x, y, astre.lune.distance, 0, Math.PI*2);
+                        ctx.stroke();
+                    }
+
+                    ctx.fillStyle = astre.lune.couleur;
+                    ctx.beginPath();
+                    ctx.arc(lX, lY, astre.lune.rayon, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+
+            // Nom de la planète (texte)
+            if (camera.zoom > 0.4 || astre.id === "soleil" || astre.id === "jupiter" || astre.distanceVisuelle > 300) {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                ctx.font = `${Math.max(10, 14 / camera.zoom)}px Arial`;
+                ctx.fillText(astre.nom, x + astre.rayonVisuel + 5, y + 4);
+            }
+        });
+
+        ctx.restore();
+        requestAnimationFrame(animate);
+    }
+
+    // Lancer la magie
+    animate();
+</script>
+</body>
+</html>

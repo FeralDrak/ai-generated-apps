@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaLeap • Apprends des langues en sautant les obstacles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Playfair+Display:wght@700&amp;display=swap');
+
+        :root {
+            --primary: 134 76 255;
+        }
+
+        .tail-container {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+
+        .heading-font {
+            font-family: 'Playfair Display', sans-serif;
+        }
+
+        .hero-bg {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        }
+
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-12px) scale(1.03);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        }
+
+        .nav-link {
+            position: relative;
+        }
+
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background-color: rgb(167 139 250);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover:after {
+            width: 100%;
+        }
+
+        .streak {
+            animation: streakPulse 2s infinite;
+        }
+
+        @keyframes streakPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .phone-frame {
+            border: 12px solid #111827;
+            border-radius: 48px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+        }
+    </style>
+</head>
+<body class="tail-container text-gray-900 bg-white overflow-x-hidden">
+<!-- NAVBAR -->
+<nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <!-- Logo -->
+        <div class="flex items-center gap-x-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg">
+                🦋
+            </div>
+            <div>
+                <span class="heading-font text-3xl font-bold tracking-tighter text-violet-700">Lingua</span>
+                <span class="heading-font text-3xl font-bold tracking-tighter text-indigo-600">Leap</span>
+            </div>
+        </div>
+
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
+            <a href="#fonctionnalites" class="nav-link text-gray-700 hover:text-violet-700 transition-colors">Fonctionnalités</a>
+            <a href="#comment" class="nav-link text-gray-700 hover:text-violet-700 transition-colors">Comment ça marche</a>
+            <a href="#avis" class="nav-link text-gray-700 hover:text-violet-700 transition-colors">Avis</a>
+            <a href="#prix" class="nav-link text-gray-700 hover:text-violet-700 transition-colors">Prix</a>
+        </div>
+
+        <div class="hidden md:flex items-center gap-x-4">
+            <button onclick="showLoginModal()"
+                    class="px-6 py-2.5 text-sm font-semibold text-gray-700 hover:text-violet-700 transition-colors">
+                Se connecter
+            </button>
+            <button onclick="showSignupModal()"
+                    class="px-8 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-3xl transition-all shadow-md hover:shadow-xl">
+                Commencer gratuitement
+            </button>
+        </div>
+
+        <!-- Mobile Hamburger -->
+        <button id="mobile-menu-btn"
+                class="md:hidden w-11 h-11 flex items-center justify-center text-2xl text-gray-700">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+        <div class="px-6 py-8 flex flex-col gap-y-6 text-lg font-medium">
+            <a href="#fonctionnalites" onclick="toggleMobileMenu()" class="hover:text-violet-600">Fonctionnalités</a>
+            <a href="#comment" onclick="toggleMobileMenu()" class="hover:text-violet-600">Comment ça marche</a>
+            <a href="#avis" onclick="toggleMobileMenu()" class="hover:text-violet-600">Avis</a>
+            <a href="#prix" onclick="toggleMobileMenu()" class="hover:text-violet-600">Prix</a>
+            <div class="pt-6 border-t flex flex-col gap-y-4">
+                <button onclick="showLoginModal();toggleMobileMenu()"
+                        class="py-4 text-left text-gray-700">Se connecter</button>
+                <button onclick="showSignupModal();toggleMobileMenu()"
+                        class="py-4 bg-violet-600 text-white rounded-3xl font-semibold">Commencer gratuitement</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero-bg text-white">
+    <div class="max-w-7xl mx-auto px-6 pt-20 pb-24 md:pt-28 md:pb-32 grid md:grid-cols-2 gap-16 items-center">
+        <!-- Left Content -->
+        <div class="space-y-8">
+            <div class="inline-flex items-center gap-x-2 bg-white/20 backdrop-blur-md px-5 py-2 rounded-3xl text-sm font-medium">
+                <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                Nouvelle version IA 2026
+            </div>
+
+            <h1 class="heading-font text-6xl md:text-7xl leading-none font-bold tracking-tighter">
+                Apprends une langue.<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-violet-200">Saute les obstacles.</span>
+            </h1>
+
+            <p class="text-xl md:text-2xl text-white/90 max-w-lg">
+                L'app la plus addictive du monde. IA conversationnelle ultra-réaliste,
+                leçons de 5 minutes et streaks qui te motivent vraiment.
+            </p>
+
+            <div class="flex flex-wrap gap-4">
+                <button onclick="showSignupModal()"
+                        class="group flex items-center gap-x-3 bg-white text-violet-700 px-10 py-6 rounded-3xl font-semibold text-xl shadow-2xl hover:scale-105 transition-all">
+                    Commencer gratuitement
+                    <i class="fa-solid fa-arrow-right group-active:rotate-45 transition-transform"></i>
+                </button>
+
+                <button onclick="document.getElementById('demo-video').scrollIntoView({behavior:'smooth'})"
+                        class="flex items-center gap-x-3 border border-white/70 hover:border-white px-8 py-6 rounded-3xl font-medium transition-all">
+                    <i class="fa-solid fa-play"></i>
+                    Voir la démo
+                </button>
+            </div>
+
+            <div class="flex items-center gap-x-8 text-sm">
+                <div class="flex -space-x-4">
+                    <img src="https://picsum.photos/id/64/32/32" class="w-8 h-8 rounded-2xl ring-2 ring-white object-cover">
+                    <img src="https://picsum.photos/id/201/32/32" class="w-8 h-8 rounded-2xl ring-2 ring-white object-cover">
+                    <img src="https://picsum.photos/id/201/32/32" class="w-8 h-8 rounded-2xl ring-2 ring-white object-cover">
+                </div>
+                <div>
+                    <div class="text-emerald-300 font-medium">+2 847 391</div>
+                    <div class="text-white/70 text-xs">apprenants actifs aujourd’hui</div>
+                </div>
+            </div>
+
+            <!-- Trust badges -->
+            <div class="flex items-center gap-x-8 text-xs opacity-75">
+                <div class="flex items-center gap-x-1">
+                    <i class="fa-solid fa-star text-yellow-300"></i>
+                    <span class="font-medium">4.98/5</span>
+                </div>
+                <div>App Store</div>
+                <div>Play Store</div>
+                <div class="h-3 w-px bg-white/40"></div>
+                <div class="flex items-center gap-x-2">
+                    <span class="streak text-orange-300 text-2xl">🔥</span>
+                    <span class="font-medium">12 jours de streak</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Mockup -->
+        <div class="relative flex justify-center md:justify-end">
+            <div class="phone-frame bg-gray-900 w-full max-w-[280px] aspect-[9/19] relative">
+                <!-- App screen inside phone -->
+                <div class="absolute inset-0 bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-600 flex flex-col">
+                    <!-- Fake app header -->
+                    <div class="bg-black/30 h-12 flex items-center px-5 text-white text-xs">
+                        <div class="flex-1">🇫🇷 Français → 🇬🇧 Anglais</div>
+                        <div class="flex items-center gap-x-1">
+                            <div class="w-5 h-5 bg-white/30 rounded-xl flex items-center justify-center text-[10px]">👑</div>
+                        </div>
+                    </div>
+
+                    <!-- Fake lesson -->
+                    <div class="flex-1 flex items-center justify-center p-6">
+                        <div class="text-center text-white">
+                            <div class="text-6xl mb-8">🍎</div>
+                            <div class="text-2xl font-semibold mb-2">What is this?</div>
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div class="bg-white/20 py-4 rounded-2xl backdrop-blur">Une pomme</div>
+                                <div class="bg-white/20 py-4 rounded-2xl backdrop-blur">Un ordinateur</div>
+                                <div class="bg-white/20 py-4 rounded-2xl backdrop-blur">Une chaise</div>
+                                <div onclick="fakeCorrectAnswer(this)"
+                                     class="bg-emerald-400 py-4 rounded-2xl font-bold shadow-inner">Une pomme</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="h-2 bg-white/30 mx-6 rounded-3xl overflow-hidden mb-8">
+                        <div class="h-full w-3/4 bg-white rounded-r-3xl"></div>
+                    </div>
+                </div>
+
+                <!-- Heart streak badge -->
+                <div class="absolute -top-3 -right-3 bg-white text-orange-500 text-xs font-bold px-4 py-1 rounded-3xl shadow-xl flex items-center gap-x-1 streak">
+                    <i class="fa-solid fa-fire"></i>
+                    47
+                </div>
+            </div>
+
+            <!-- Floating badges -->
+            <div class="absolute -bottom-6 -left-6 bg-white text-gray-800 rounded-3xl shadow-2xl px-6 py-4 flex items-center gap-x-3 text-sm">
+                <div class="text-emerald-500">
+                    <i class="fa-solid fa-comment-dots text-2xl"></i>
+                </div>
+                <div>
+                    <div class="font-semibold text-xs text-gray-500">IA en direct</div>
+                    <div class="text-violet-600">"Salut ! Comment ça va aujourd’hui ?"</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="flex justify-center pb-12">
+        <div class="flex flex-col items-center text-white/60 text-xs tracking-widest">
+            <div class="mb-2">SCROLL</div>
+            <i class="fa-solid fa-chevron-down animate-bounce"></i>
+        </div>
+    </div>
+</header>
+
+<!-- STATS BAR -->
+<div class="bg-white py-6 border-b">
+    <div class="max-w-6xl mx-auto px-6 grid grid-cols-3 md:grid-cols-6 gap-y-8 text-center">
+        <div>
+            <div class="text-4xl font-semibold text-violet-600">42</div>
+            <div class="text-xs tracking-widest text-gray-500 mt-1">LANGUES</div>
+        </div>
+        <div>
+            <div class="text-4xl font-semibold text-violet-600">8.4M</div>
+            <div class="text-xs tracking-widest text-gray-500 mt-1">LEÇONS TERMINÉES</div>
+        </div>
+        <div>
+            <div class="text-4xl font-semibold text-violet-600">94%</div>
+            <div class="text-xs tracking-widest text-gray-500 mt-1">RETENTION</div>
+        </div>
+        <div>
+            <div class="text-4xl font-semibold text-violet-600">3.2s</div>
+            <div class="text-xs tracking-widest text-gray-500 mt-1">MOYENNE RÉPONSE IA</div>
+        </div>
+        <div>
+            <div class="text-4xl font-semibold text-violet-600">∞</div>
+            <div class="text-xs tracking-widest text-gray-500 mt-1">STREAKS POSSIBLES</div>
+        </div>
+        <div class="col-span-3 md:col-span-1 flex justify-center">
+            <div onclick="confettiBurst()"
+                 class="cursor-pointer bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold px-8 py-3 rounded-3xl flex items-center gap-x-2 hover:scale-110 transition">
+                <i class="fa-solid fa-trophy"></i>
+                REJOINS LE CLUB
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FONCTIONNALITÉS -->
+<section id="fonctionnalites" class="max-w-7xl mx-auto px-6 py-24">
+    <div class="text-center mb-16">
+        <div class="inline px-5 py-2 bg-violet-100 text-violet-700 rounded-3xl text-sm font-medium">POURQUOI LINGUALeap EST MEILLEUR</div>
+        <h2 class="heading-font text-5xl mt-4 tracking-tighter">Tout ce que Duolingo a… en mieux.</h2>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8">
+        <!-- Card 1 -->
+        <div class="card-hover bg-white border border-gray-100 rounded-3xl p-8">
+            <div class="w-12 h-12 bg-gradient-to-br from-pink-400 to-rose-500 rounded-2xl flex items-center justify-center text-white text-3xl mb-6">
+                🗣️
+            </div>
+            <h3 class="text-2xl font-semibold mb-3">IA Conversationnelle</h3>
+            <p class="text-gray-600 leading-relaxed">
+                Parle vraiment avec des natifs virtuels. L’IA corrige ta prononciation en temps réel et s’adapte à ton niveau.
+            </p>
+            <div class="mt-8 h-px bg-gray-100"></div>
+            <div class="pt-6 flex justify-between text-xs text-gray-400">
+                <div>VOIX HUMAINES</div>
+                <div class="text-emerald-500">99 % précis</div>
+            </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="card-hover bg-white border border-gray-100 rounded-3xl p-8 relative">
+            <div class="absolute -top-3 right-8 bg-orange-500 text-white text-[10px] font-bold px-4 py-1 rounded-3xl">NOUVEAUTÉ</div>
+            <div class="w-12 h-12 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-2xl flex items-center justify-center text-white text-3xl mb-6">
+                📖
+            </div>
+            <h3 class="text-2xl font-semibold mb-3">Histoires Immersives</h3>
+            <p class="text-gray-600 leading-relaxed">
+                Vis des aventures interactives dans le pays de ta langue cible. Chaque choix influence l’histoire et ton vocabulaire.
+            </p>
+            <div class="mt-12 text-[180px] leading-none font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-100 to-transparent">01</div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="card-hover bg-white border border-gray-100 rounded-3xl p-8">
+            <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-2xl flex items-center justify-center text-white text-3xl mb-6">
+                🔥
+            </div>
+            <h3 class="text-2xl font-semibold mb-3">Streaks &amp; Défis Quotidien</h3>
+            <p class="text-gray-600 leading-relaxed">
+                Des défis personnalisés. Perds ton streak ? Ton IA t’envoie un message motivant avec un cadeau surprise.
+            </p>
+            <div class="mt-8 flex gap-4">
+                <div class="flex-1 h-2 bg-orange-400 rounded-full"></div>
+                <div class="flex-1 h-2 bg-orange-400 rounded-full"></div>
+                <div class="flex-1 h-2 bg-orange-400 rounded-full"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- COMMENT ÇA MARCHE -->
+<section id="comment" class="bg-gray-50 py-24">
+    <div class="max-w-6xl mx-auto px-6">
+        <div class="grid md:grid-cols-2 gap-16 items-center">
+            <div>
+                <div class="text-violet-600 font-medium text-sm tracking-widest">3 ÉTAPES • 5 MINUTES PAR JOUR</div>
+                <h2 class="heading-font text-5xl mt-3 tracking-tighter leading-none">Apprends sans t’en rendre compte.</h2>
+
+                <div class="mt-12 space-y-10">
+                    <div class="flex gap-x-6">
+                        <div class="w-9 h-9 flex-shrink-0 bg-white shadow rounded-2xl flex items-center justify-center text-xl font-bold text-violet-600">1</div>
+                        <div>
+                            <div class="font-semibold text-lg">Choisis ta langue &amp; ton niveau</div>
+                            <div class="text-gray-600 mt-2">Du A1 au C2. Ou commence par « zéro ».</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-x-6">
+                        <div class="w-9 h-9 flex-shrink-0 bg-white shadow rounded-2xl flex items-center justify-center text-xl font-bold text-violet-600">2</div>
+                        <div>
+                            <div class="font-semibold text-lg">Fais tes leçons courtes</div>
+                            <div class="text-gray-600 mt-2">Grammaire, vocabulaire, prononciation — tout en s’amusant.</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-x-6">
+                        <div class="w-9 h-9 flex-shrink-0 bg-white shadow rounded-2xl flex items-center justify-center text-xl font-bold text-violet-600">3</div>
+                        <div>
+                            <div class="font-semibold text-lg">Parle avec l’IA tous les jours</div>
+                            <div class="text-gray-600 mt-2">Et regarde ton niveau exploser en quelques semaines.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video / Demo placeholder -->
+            <div id="demo-video" class="bg-gray-900 rounded-3xl aspect-video flex items-center justify-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-violet-600/60 to-transparent"></div>
+                <button onclick="playFakeVideo(this)"
+                        class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-violet-700 shadow-2xl hover:scale-110 transition">
+                    <i class="fa-solid fa-play text-4xl ml-1"></i>
+                </button>
+                <div class="absolute bottom-6 left-6 text-white text-sm">
+                    2:14 / 3:45
+                </div>
+                <div class="absolute top-6 right-6 bg-black/70 text-white text-[10px] px-3 py-1 rounded-3xl">DEMO</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AVIS -->
+<section id="avis" class="max-w-7xl mx-auto px-6 py-24">
+    <h2 class="text-center heading-font text-5xl tracking-tighter mb-12">Ils ont sauté le pas.</h2>
+
+    <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-white p-8 rounded-3xl border">
+            <div class="flex gap-x-1 text-amber-400 mb-6">
+                ★★★★☆
+            </div>
+            <p class="italic text-gray-600">
+                “J’ai appris l’espagnol en 8 semaines. L’IA me parle comme une vraie Madrilène. Incroyable !”
+            </p>
+            <div class="mt-8 flex items-center gap-x-3">
+                <img src="https://picsum.photos/id/64/48/48" class="w-10 h-10 rounded-2xl">
+                <div>
+                    <div class="font-medium">Sophie L.</div>
+                    <div class="text-xs text-gray-500">Paris • Espagnol</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-3xl border">
+            <div class="flex gap-x-1 text-amber-400 mb-6">
+                ★★★★★
+            </div>
+            <p class="italic text-gray-600">
+                “Le streak de 127 jours… je ne peux plus m’arrêter. Et j’arrive à tenir une conversation entière avec mon prof virtuel !”
+            </p>
+            <div class="mt-8 flex items-center gap-x-3">
+                <img src="https://picsum.photos/id/201/48/48" class="w-10 h-10 rounded-2xl">
+                <div>
+                    <div class="font-medium">Lucas M.</div>
+                    <div class="text-xs text-gray-500">Lyon • Japonais</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-3xl border">
+            <div class="flex gap-x-1 text-amber-400 mb-6">
+                ★★★★☆
+            </div>
+            <p class="italic text-gray-600">
+                “Enfin une app qui comprend mon accent français. Merci l’IA !”
+            </p>
+            <div class="mt-8 flex items-center gap-x-3">
+                <img src="https://picsum.photos/id/29/48/48" class="w-10 h-10 rounded-2xl">
+                <div>
+                    <div class="font-medium">Emma T.</div>
+                    <div class="text-xs text-gray-500">Marseille • Anglais</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PRICING -->
+<section id="prix" class="bg-gradient-to-b from-white to-violet-50 py-24">
+    <div class="max-w-5xl mx-auto px-6">
+        <div class="text-center mb-12">
+            <h2 class="heading-font text-5xl tracking-tighter">Choisis ton rythme.</h2>
+            <p class="mt-3 text-gray-600">Annule quand tu veux. 14 jours d’essai gratuit.</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <!-- Free -->
+            <div class="bg-white rounded-3xl p-8 border-2 border-transparent">
+                <div class="font-medium text-sm text-gray-500">GRATUIT</div>
+                <div class="text-5xl font-semibold mt-2">0 €</div>
+                <div class="text-xs text-gray-400 mt-1">pour toujours</div>
+
+                <ul class="mt-10 space-y-5 text-sm">
+                    <li class="flex items-start gap-x-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> 3 langues au choix</li>
+                    <li class="flex items-start gap-x-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Leçons basiques</li>
+                    <li class="flex items-start gap-x-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> IA 5 min/jour</li>
+                </ul>
+
+                <button onclick="showSignupModal()"
+                        class="mt-12 w-full py-6 bg-gray-100 hover:bg-gray-200 rounded-3xl font-semibold transition">
+                    Commencer gratuitement
+                </button>
+            </div>
+
+            <!-- Premium -->
+            <div class="bg-white rounded-3xl p-8 border-2 border-violet-600 relative scale-110 shadow-2xl z-10">
+                <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-xs font-bold px-6 py-1 rounded-3xl">LE PLUS POPULAIRE</div>
+
+                <div class="font-medium text-sm text-violet-600">PREMIUM</div>
+                <div class="flex items-baseline gap-x-2 mt-2">
+                    <span class="text-5xl font-semibold">9,99</span>
+                    <span class="text-xl text-gray-400">€</span>
+                    <span class="text-xs text-gray-400">/mois</span>
+                </div>
+
+                <ul class="mt-10 space-y-5 text-sm">
+                    <li class="flex items-start gap-x-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Toutes les langues</li>
+                    <li class="flex items-start gap-x-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> IA illimitée</li>
+                    <li class="flex items-start gap-x-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Histoires immersives</li>
+                    <li class="flex items-start gap-x-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Mode hors ligne</li>
+                    <li class="flex items-start gap-x-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Pas de pubs</li>
+                </ul>
+
+                <button onclick="fakeSubscribe()"
+                        class="mt-12 w-full py-6 bg-violet-600 hover:bg-violet-700 text-white rounded-3xl font-semibold transition shadow-lg">
+                    Choisir Premium
+                </button>
+            </div>
+
+            <!-- Famille -->
+            <div class="bg-white rounded-3xl p-8 border border-gray-200">
+                <div class="font-medium text-sm text-teal-600">FAMILLE</div>
+                <div class="flex items-baseline gap-x-2 mt-2">
+                    <span class="text-5xl font-semibold">14,99</span>
+                    <span class="text-xl text-gray-400">€</span>
+                    <span class="text-xs text-gray-400">/mois</span>
+                </div>
+
+                <div class="text-xs text-teal-500 font-medium mt-1">Jusqu’à 6 comptes</div>
+
+                <button onclick="showSignupModal()"
+                        class="mt-20 w-full py-6 border-2 border-teal-600 text-teal-600 hover:bg-teal-50 rounded-3xl font-semibold transition">
+                    Protéger toute la famille
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FINAL CTA -->
+<div class="bg-gradient-to-r from-violet-700 to-indigo-700 py-20 text-white">
+    <div class="max-w-2xl mx-auto text-center px-6">
+        <h2 class="heading-font text-5xl tracking-tighter">Prêt à sauter dans une nouvelle langue ?</h2>
+        <p class="mt-6 text-xl text-white/80">Rejoins 8 millions d’apprenants qui parlent déjà couramment grâce à LinguaLeap.</p>
+
+        <button onclick="showSignupModal()"
+                class="mt-10 px-16 py-7 bg-white text-violet-700 rounded-3xl text-2xl font-semibold shadow-2xl hover:shadow-inner transition-all active:scale-95">
+            Commencer maintenant — c’est gratuit
+        </button>
+
+        <div class="mt-8 text-xs opacity-60">Aucune carte bancaire requise • Annule en 1 clic</div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="bg-gray-900 text-white/70 py-20">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-5 gap-y-12">
+        <div>
+            <div class="flex items-center gap-x-3 text-white mb-6">
+                <div class="w-9 h-9 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-2xl flex items-center justify-center text-4xl">🦋</div>
+                <span class="heading-font text-3xl font-bold tracking-tighter">LinguaLeap</span>
+            </div>
+            <div class="text-xs leading-loose">
+                Made with ❤️<br>
+                pour les curieux du monde entier
+            </div>
+        </div>
+
+        <div>
+            <div class="font-medium text-white mb-6">Produit</div>
+            <div class="space-y-3 text-sm">
+                <div class="hover:text-white cursor-pointer">Fonctionnalités</div>
+                <div class="hover:text-white cursor-pointer">Tarifs</div>
+                <div class="hover:text-white cursor-pointer">Blog</div>
+            </div>
+        </div>
+
+        <div>
+            <div class="font-medium text-white mb-6">Entreprise</div>
+            <div class="space-y-3 text-sm">
+                <div class="hover:text-white cursor-pointer">À propos</div>
+                <div class="hover:text-white cursor-pointer">Carrières</div>
+                <div class="hover:text-white cursor-pointer">Presse</div>
+            </div>
+        </div>
+
+        <div>
+            <div class="font-medium text-white mb-6">Légal</div>
+            <div class="space-y-3 text-sm">
+                <div class="hover:text-white cursor-pointer">Confidentialité</div>
+                <div class="hover:text-white cursor-pointer">Conditions</div>
+            </div>
+        </div>
+
+        <div class="col-span-2 md:col-span-1">
+            <div class="flex gap-x-6 text-2xl justify-end">
+                <i class="fa-brands fa-x-twitter hover:text-white cursor-pointer"></i>
+                <i class="fa-brands fa-instagram hover:text-white cursor-pointer"></i>
+                <i class="fa-brands fa-tiktok hover:text-white cursor-pointer"></i>
+            </div>
+            <div class="text-[10px] mt-12 text-right">
+                © 2026 LinguaLeap SAS<br>
+                Tous droits réservés
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- SIGNUP MODAL -->
+<div id="signup-modal" onclick="if(event.target.id==='signup-modal')hideSignupModal()"
+     class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[999]">
+    <div onclick="event.stopImmediatePropagation()"
+         class="bg-white rounded-3xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="px-8 pt-8 pb-6 border-b flex justify-between items-center">
+            <div class="text-2xl font-semibold text-gray-800">Créer un compte gratuit</div>
+            <button onclick="hideSignupModal()" class="text-3xl leading-none text-gray-300 hover:text-gray-500">×</button>
+        </div>
+
+        <div class="p-8 space-y-6">
+            <div>
+                <div class="text-xs text-gray-500 mb-1">EMAIL</div>
+                <input type="email" value="thomas@exemple.fr"
+                       class="w-full border border-gray-300 focus:border-violet-500 rounded-2xl px-6 py-5 outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">PRÉNOM</div>
+                    <input type="text" value="Thomas"
+                           class="w-full border border-gray-300 focus:border-violet-500 rounded-2xl px-6 py-5 outline-none">
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">LANGUE CIBLE</div>
+                    <select class="w-full border border-gray-300 focus:border-violet-500 rounded-2xl px-6 py-5 outline-none">
+                        <option>Anglais</option>
+                        <option selected>Espagnol</option>
+                        <option>Italien</option>
+                        <option>Japonais</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="fakeSignup()"
+                    class="w-full py-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-lg rounded-3xl mt-4">
+                Créer mon compte gratuit
+            </button>
+
+            <div class="text-center text-xs text-gray-400">
+                En continuant, tu acceptes nos <span class="underline">conditions</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LOGIN MODAL (simple) -->
+<div id="login-modal" onclick="if(event.target.id==='login-modal')hideLoginModal()"
+     class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[999]">
+    <div onclick="event.stopImmediatePropagation()"
+         class="bg-white rounded-3xl max-w-sm w-full mx-4 p-8">
+        <div class="text-center">
+            <div class="text-4xl mb-4">🦋</div>
+            <div class="text-2xl font-semibold">Bienvenue de retour !</div>
+        </div>
+
+        <div class="mt-8">
+            <input type="email" placeholder="ton@email.com" value="marie@exemple.fr"
+                   class="w-full border border-gray-300 focus:border-violet-500 rounded-2xl px-6 py-5 outline-none">
+        </div>
+
+        <button onclick="hideLoginModal()"
+                class="mt-6 w-full py-6 bg-gray-900 text-white font-semibold rounded-3xl">
+            Se connecter
+        </button>
+
+        <div onclick="hideLoginModal()" class="text-center mt-8 text-sm text-violet-600 cursor-pointer">
+            Mot de passe oublié ?
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tailwind script already loaded
+    function initializeTailwind() {
+        // Nothing needed - Tailwind CDN works instantly
+    }
+
+    // Mobile menu
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobile-menu')
+        menu.classList.toggle('hidden')
+    }
+
+    document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu)
+
+    // Modals
+    function showSignupModal() {
+        document.getElementById('signup-modal').classList.remove('hidden')
+        document.getElementById('signup-modal').classList.add('flex')
+    }
+
+    function hideSignupModal() {
+        const modal = document.getElementById('signup-modal')
+        modal.classList.add('hidden')
+        modal.classList.remove('flex')
+    }
+
+    function showLoginModal() {
+        document.getElementById('login-modal').classList.remove('hidden')
+        document.getElementById('login-modal').classList.add('flex')
+    }
+
+    function hideLoginModal() {
+        const modal = document.getElementById('login-modal')
+        modal.classList.add('hidden')
+        modal.classList.remove('flex')
+    }
+
+    // Fake correct answer
+    function fakeCorrectAnswer(el) {
+        el.style.backgroundColor = '#10b981'
+        el.style.color = '#fff'
+        el.innerHTML = '✅ Correct !'
+
+        setTimeout(() => {
+            alert('🎉 Bravo ! Tu viens de gagner 25 XP et un nouveau streak 🔥')
+        }, 800)
+    }
+
+    // Fake video play
+    function playFakeVideo(btn) {
+        btn.innerHTML = `
+                <div class="w-6 h-6 border-4 border-violet-600 border-t-transparent animate-spin rounded-full"></div>
+            `
+        setTimeout(() => {
+            alert('📹 Vidéo démo : “Comment l’IA te parle en temps réel” (imagine une superbe vidéo ici)')
+            btn.innerHTML = `<i class="fa-solid fa-play text-4xl ml-1"></i>`
+        }, 1200)
+    }
+
+    // Fake subscribe
+    function fakeSubscribe() {
+        const notif = document.createElement('div')
+        notif.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:16px 32px;border-radius:9999px;font-weight:600;box-shadow:0 10px 15px -3px rgb(0 0 0 / 0.3);z-index:9999;'
+        notif.innerHTML = '✅ Abonnement Premium activé ! Bienvenue dans le club 🏆'
+        document.body.appendChild(notif)
+
+        setTimeout(() => {
+            notif.style.transition = 'all 0.6s cubic-bezier(0.4,0,1,1)'
+            notif.style.opacity = '0'
+            notif.style.transform = 'translate(-50%, 40px)'
+            setTimeout(() => notif.remove(), 600)
+        }, 2800)
+    }
+
+    // Fake signup success
+    function fakeSignup() {
+        hideSignupModal()
+        const congrats = document.createElement('div')
+        congrats.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:99999;color:white;text-align:center'
+        congrats.innerHTML = `
+                <div>
+                    <div class="text-8xl mb-6">🎉</div>
+                    <div class="text-4xl font-bold tracking-tighter">Bienvenue dans la famille LinguaLeap !</div>
+                    <div class="mt-6 text-xl opacity-80">Ton premier cours commence dans 3… 2… 1…</div>
+                    <div onclick="this.parentElement.remove()"
+                         class="mt-12 mx-auto text-sm border border-white/50 hover:border-white w-fit px-10 py-4 rounded-3xl cursor-pointer">
+                        COMMENCER MAINTENANT
+                    </div>
+                </div>
+            `
+        document.body.appendChild(congrats)
+    }
+
+    // Confetti burst
+    function confettiBurst() {
+        const colors = ['#a5b4fc', '#c084fc', '#67e8f9', '#f472b6']
+        for (let i = 0; i < 80; i++) {
+            const confetti = document.createElement('div')
+            confetti.textContent = ['🦋','⭐','🔥','🌍'][Math.floor(Math.random()*4)]
+            confetti.style.position = 'fixed'
+            confetti.style.left = Math.random() * 100 + 'vw'
+            confetti.style.top = '-20px'
+            confetti.style.fontSize = (15 + Math.random() * 25) + 'px'
+            confetti.style.zIndex = '99999'
+            confetti.style.transition = `all ${3 + Math.random() * 3}s cubic-bezier(0.22,1,0.24,1)`
+            document.body.appendChild(confetti)
+
+            const angle = Math.random() * 80 - 30
+            setTimeout(() => {
+                confetti.style.transform = `translateY(${window.innerHeight + 100}px) rotate(${angle * 8}deg)`
+                confetti.style.opacity = '0'
+            }, 10)
+
+            setTimeout(() => confetti.remove(), 6000)
+        }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.metaKey && e.key === 'k') {
+            e.preventDefault()
+            showSignupModal()
+        }
+    })
+
+    // Auto animate streak on load
+    setTimeout(() => {
+        const streakEls = document.querySelectorAll('.streak')
+        streakEls.forEach((el, i) => {
+            el.style.animationDelay = (i * 300) + 'ms'
+        })
+    }, 1800)
+
+    // Init
+    window.onload = function() {
+        initializeTailwind()
+        // Easter egg: press "L" three times
+        let konami = 0
+        document.addEventListener('keypress', (e) => {
+            if (e.key.toLowerCase() === 'l') konami++
+            if (konami >= 3) {
+                confettiBurst()
+                konami = 0
+            }
+        })
+
+        console.log('%c✅ LinguaLeap landing page chargée avec succès !', 'color:#a78bfa;font-family:monospace')
+    }
+</script>
+</body>
+</html>

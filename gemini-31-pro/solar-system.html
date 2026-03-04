@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système Solaire Dynamique & Éducatif</title>
+
+    <!-- Intégration de MathJax pour les formules mathématiques -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050608;
+            --text-color: #ffffff;
+            --panel-bg: rgba(20, 25, 35, 0.85);
+            --accent: #4fc3f7;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at center, #1b2735 0%, #050608 100%);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Système solaire & Orbites */
+        #universe {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .astro {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .astro:hover {
+            box-shadow: 0 0 15px 5px currentColor;
+            z-index: 100;
+        }
+
+        .astro-label {
+            position: absolute;
+            top: 110%;
+            font-size: 0.75rem;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 5px;
+            border-radius: 3px;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* Interface utilisateur */
+        header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            background: var(--panel-bg);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #29b6f6;
+        }
+
+        /* Panneau d'information (Modal) */
+        #info-modal {
+            position: absolute;
+            top: 50%;
+            right: -400px;
+            transform: translateY(-50%);
+            width: 350px;
+            max-height: 80vh;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 15px 0 0 15px;
+            padding: 25px;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+            transition: right 0.4s ease-in-out;
+            z-index: 20;
+            overflow-y: auto;
+        }
+
+        #info-modal.active {
+            right: 0;
+        }
+
+        #close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            color: white;
+            font-size: 1.2rem;
+            padding: 0;
+            margin: 0;
+        }
+
+        #close-btn:hover {
+            color: #ff5252;
+            background: transparent;
+        }
+
+        .planet-title {
+            font-size: 2rem;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        .planet-type {
+            color: #aaa;
+            font-style: italic;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .fact-box {
+            background: rgba(0,0,0,0.4);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .math-box {
+            background: rgba(79, 195, 247, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 10px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>L'Horlogerie Céleste</h1>
+    <p>Explorez les astres et leurs mécaniques orbitables.</p>
+</header>
+
+<div id="controls">
+    <button id="toggle-time">Mettre en Pause</button>
+    <label for="speed-slider">Vitesse :</label>
+    <input type="range" id="speed-slider" min="0.1" max="5" step="0.1" value="1">
+</div>
+
+<div id="universe">
+    <!-- Les astres et orbites seront générés ici par JS -->
+</div>
+
+<div id="info-modal">
+    <button id="close-btn">✖</button>
+    <h2 id="m-title" class="planet-title">Astre</h2>
+    <div id="m-type" class="planet-type">Type d'astre</div>
+    <p id="m-desc"></p>
+
+    <div class="fact-box">
+        <strong>Diamètre:</strong> <span id="m-size"></span> km<br>
+        <strong>Distance au Soleil:</strong> <span id="m-dist"></span> millions de km<br>
+    </div>
+
+    <div id="m-math" class="math-box">
+        <!-- La section éducative mathématique sera injectée ici -->
+    </div>
+</div>
+
+<script>
+    // Note: Les distances (distBase) et tailles (size) ne sont pas à l'échelle réelle (pour que tout soit visible à l'écran).
+    // Cependant, les vitesses relatives (speed) s'inspirent des lois de Kepler.
+    const celestialBodies = [
+        { id: 'soleil', name: "Soleil", type: "Étoile naine jaune", size: 60, distBase: 0, speed: 0, color: "#ffcc00", shadow: "0 0 40px #ffcc00",
+            desc: "Le cœur de notre système solaire. Il contient 99,8% de toute la masse du système.",
+            realSize: "1 392 700", realDist: "0",
+            mathInfo: "Le Soleil retient les planètes grâce à la gravité, définie par Newton :<br> \\( F = G \\frac{m_1 m_2}{r^2} \\)" },
+
+        { id: 'mercure', name: "Mercure", type: "Planète tellurique", size: 8, distBase: 12, speed: 4.1, color: "#a8a8a8", shadow: "none",
+            desc: "La planète la plus proche du Soleil. Sa surface est parsemée de cratères, semblable à notre Lune.",
+            realSize: "4 879", realDist: "58",
+            mathInfo: "Mercure ayant une forte excentricité, elle vérifie la 2ème loi de Kepler : elle va plus vite à son périhélie." },
+
+        { id: 'venus', name: "Vénus", type: "Planète tellurique", size: 14, distBase: 18, speed: 1.6, color: "#e0c080", shadow: "none",
+            desc: "La planète la plus chaude à cause d'un puissant effet de serre. Elle tourne sur elle-même à l'envers !",
+            realSize: "12 104", realDist: "108",
+            mathInfo: "Température moyenne extême $T \\approx 462^\\circ\\text{C}$ due à l'atmosphère riche en $CO_2$." },
+
+        { id: 'terre', name: "Terre", type: "Planète tellurique", size: 15, distBase: 25, speed: 1, color: "#4b9cd3", shadow: "inset -3px -3px 5px rgba(0,0,0,0.5)",
+            desc: "Notre maison, la seule planète connue abritant la vie et de l'eau liquide en surface.",
+            realSize: "12 742", realDist: "149.6",
+            mathInfo: "Sa force gravitationnelle à la surface est $g \\approx 9.81 \\text{ m/s}^2$." },
+
+        { id: 'mars', name: "Mars", type: "Planète tellurique", size: 10, distBase: 33, speed: 0.53, color: "#c1440e", shadow: "none",
+            desc: "La planète rouge. Elle abrite Olympus Mons, le plus grand volcan du système solaire.",
+            realSize: "6 779", realDist: "228",
+            mathInfo: "L'accélération de la pesanteur martienne est d'environ $3.71 \\text{ m/s}^2$." },
+
+        { id: 'jupiter', name: "Jupiter", type: "Géante gazeuse", size: 30, distBase: 45, speed: 0.08, color: "#c88b3a", shadow: "none",
+            desc: "La plus grande planète. Sa Grande Tache Rouge est une tempête géante active depuis des siècles.",
+            realSize: "139 820", realDist: "778",
+            mathInfo: "Masse énorme : $M_J \\approx 1.898 \\times 10^{27} \\text{ kg}$." },
+
+        { id: 'saturne', name: "Saturne", type: "Géante gazeuse", size: 26, distBase: 58, speed: 0.03, color: "#fadd9e", shadow: "none",
+            desc: "Célèbre pour ses anneaux spectaculaires composés de glace et de roche.",
+            realSize: "116 460", realDist: "1 429",
+            mathInfo: "La 3ème loi de Kepler lie sa période lente à son rayon :<br> \\( T^2 = \\frac{4\\pi^2}{GM} a^3 \\)" }
+    ];
+
+    const universe = document.getElementById('universe');
+    const modal = document.getElementById('info-modal');
+    let unpaused = true;
+    let globalTime = 0;
+    let animationFrame;
+    let speedMultiplier = 1;
+
+    // Génération du système
+    function initSystem() {
+        celestialBodies.forEach(body => {
+            // Orbite (sauf pour le Soleil)
+            if (body.distBase > 0) {
+                const orbit = document.createElement('div');
+                orbit.className = 'orbit';
+                orbit.style.width = `calc(${body.distBase * 2}vmin)`;
+                orbit.style.height = `calc(${body.distBase * 2}vmin)`;
+                universe.appendChild(orbit);
+            }
+
+            // Astre
+            const planet = document.createElement('div');
+            planet.className = 'astro';
+            planet.id = body.id;
+            planet.style.width = `${body.size}px`;
+            planet.style.height = `${body.size}px`;
+            planet.style.backgroundColor = body.color;
+            planet.style.boxShadow = body.shadow;
+            planet.style.color = body.color; // Pour le hover shadow color
+
+            const label = document.createElement('div');
+            label.className = 'astro-label';
+            label.innerText = body.name;
+            planet.appendChild(label);
+
+            // Interactions
+            planet.addEventListener('click', () => openModal(body));
+
+            universe.appendChild(planet);
+            body.element = planet;
+            body.currentAngle = Math.random() * Math.PI * 2; // Position de départ aléatoire
+        });
+    }
+
+    // Boucle d'animation globale
+    function animate() {
+        if (unpaused) {
+            globalTime += 0.005 * speedMultiplier;
+
+            celestialBodies.forEach(body => {
+                if (body.distBase > 0) {
+                    body.currentAngle += (0.005 * speedMultiplier * body.speed);
+                    // Calcul cartésien depuis les coordonnées polaires (vh/vw -> vmin pour rester circulaire)
+                    const x = Math.cos(body.currentAngle) * body.distBase;
+                    const y = Math.sin(body.currentAngle) * body.distBase;
+
+                    body.element.style.transform = `translate(calc(-50% + ${x}vmin), calc(-50% + ${y}vmin))`;
+                }
+            });
+        }
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    // Gestion de l'interface Modal
+    function openModal(body) {
+        document.getElementById('m-title').innerText = body.name;
+        document.getElementById('m-title').style.color = body.color;
+        document.getElementById('m-type').innerText = body.type;
+        document.getElementById('m-desc').innerText = body.desc;
+        document.getElementById('m-size').innerText = body.realSize;
+        document.getElementById('m-dist').innerText = body.realDist;
+        document.getElementById('m-math').innerHTML = "<strong>À retenir :</strong><br>" + body.mathInfo;
+
+        modal.classList.add('active');
+
+        // On met en pause automatiquement pour lire
+        if(unpaused) togglePause();
+
+        // Demande à MathJax de retraiter les équations fraîchement injectées
+        if (window.MathJax) {
+            MathJax.typesetPromise([document.getElementById('m-math')]);
+        }
+    }
+
+    document.getElementById('close-btn').addEventListener('click', () => {
+        modal.classList.remove('active');
+        if(!unpaused) togglePause(); // Relance si on ferme
+    });
+
+    // Contrôles
+    const btnTime = document.getElementById('toggle-time');
+    function togglePause() {
+        unpaused = !unpaused;
+        btnTime.innerText = unpaused ? "Mettre en Pause" : "Reprendre";
+        btnTime.style.background = unpaused ? "var(--accent)" : "#ffcc00";
+    }
+    btnTime.addEventListener('click', togglePause);
+
+    document.getElementById('speed-slider').addEventListener('input', (e) => {
+        speedMultiplier = parseFloat(e.target.value);
+    });
+
+    // Lancement
+    initSystem();
+    animate();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>🚀 NEO JUMP SHOOTER - Plateforme 2D Fun !</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0a001f;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #0ff;
+            overflow: hidden;
+        }
+        canvas {
+            border: 4px solid #0ff;
+            box-shadow: 0 0 30px #0ff;
+            image-rendering: pixelated;
+        }
+        #instructions {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 15px;
+            border: 2px solid #0ff;
+            border-radius: 8px;
+            font-size: 14px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+<canvas id="game" width="900" height="600"></canvas>
+<div id="instructions">
+    ← → ou A D : Déplacer<br>
+    ↑ ou W ou ESPACE : Sauter<br>
+    CTRL ou K : TIRER !<br>
+    <span style="color:#ff0">Tue les monstres • Ramasse les bonus • Amuse-toi !</span>
+</div>
+
+<script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // ====================== VARIABLES DU JEU ======================
+    let gameState = 'start'; // start / playing / over / win
+    let score = 0;
+    let highScore = localStorage.getItem('neoJumpHigh') || 0;
+
+    const gravity = 0.75;
+    const friction = 0.85;
+
+    let player = {
+        x: 120,
+        y: 300,
+        w: 34,
+        h: 44,
+        vx: 0,
+        vy: 0,
+        speed: 6,
+        jump: -16.5,
+        onGround: false,
+        facing: 1,
+        health: 5,
+        shootCooldown: 0,
+        color: '#00ffff'
+    };
+
+    let platforms = [
+        {x: 0, y: 550, w: 900, h: 50},           // sol principal
+        {x: 150, y: 420, w: 180, h: 18},
+        {x: 420, y: 340, w: 160, h: 18},
+        {x: 680, y: 280, w: 140, h: 18},
+        {x: 80, y: 220, w: 120, h: 18},
+        {x: 520, y: 150, w: 130, h: 18}
+    ];
+
+    let enemies = [
+        {x: 320, y: 380, w: 32, h: 40, vx: 1.8, health: 2, color: '#ff00aa', patrolMin: 250, patrolMax: 420},
+        {x: 550, y: 300, w: 32, h: 40, vx: -2.2, health: 2, color: '#ff00aa', patrolMin: 420, patrolMax: 620},
+        {x: 200, y: 180, w: 32, h: 40, vx: 1.5, health: 3, color: '#ff8800', patrolMin: 80, patrolMax: 280}
+    ];
+
+    let projectiles = [];
+    let particles = [];
+    let collectibles = [
+        {x: 220, y: 380, w: 22, h: 22, type: 'coin', value: 10},
+        {x: 480, y: 300, w: 22, h: 22, type: 'coin', value: 15},
+        {x: 720, y: 240, w: 22, h: 22, type: 'coin', value: 20},
+        {x: 140, y: 180, w: 22, h: 22, type: 'heart', value: 1}
+    ];
+
+    let keys = {};
+    let lastShot = 0;
+
+    // ====================== PARTICULES ======================
+    function createParticles(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8 - 2,
+                life: 25 + Math.random() * 15,
+                color: color
+            });
+        }
+    }
+
+    // ====================== COLLISIONS ======================
+    function rectCollision(a, b) {
+        return a.x < b.x + b.w &&
+            a.x + a.w > b.x &&
+            a.y < b.y + b.h &&
+            a.y + a.h > b.y;
+    }
+
+    // ====================== INPUT ======================
+    window.addEventListener('keydown', e => {
+        keys[e.key] = true;
+        if ((e.key === 'Enter' || e.key === ' ') && gameState !== 'playing') {
+            if (gameState === 'start' || gameState === 'over' || gameState === 'win') resetGame();
+        }
+    });
+    window.addEventListener('keyup', e => keys[e.key] = false);
+
+    // ====================== RESET ======================
+    function resetGame() {
+        player.x = 120;
+        player.y = 300;
+        player.vx = 0;
+        player.vy = 0;
+        player.health = 5;
+        score = 0;
+
+        enemies = [
+            {x: 320, y: 380, w: 32, h: 40, vx: 1.8, health: 2, color: '#ff00aa', patrolMin: 250, patrolMax: 420},
+            {x: 550, y: 300, w: 32, h: 40, vx: -2.2, health: 2, color: '#ff00aa', patrolMin: 420, patrolMax: 620},
+            {x: 200, y: 180, w: 32, h: 40, vx: 1.5, health: 3, color: '#ff8800', patrolMin: 80, patrolMax: 280}
+        ];
+
+        projectiles = [];
+        particles = [];
+        collectibles = [
+            {x: 220, y: 380, w: 22, h: 22, type: 'coin', value: 10},
+            {x: 480, y: 300, w: 22, h: 22, type: 'coin', value: 15},
+            {x: 720, y: 240, w: 22, h: 22, type: 'coin', value: 20},
+            {x: 140, y: 180, w: 22, h: 22, type: 'heart', value: 1}
+        ];
+
+        gameState = 'playing';
+    }
+
+    // ====================== BOUCLE PRINCIPALE ======================
+    function gameLoop() {
+        ctx.fillStyle = '#0a001f';
+        ctx.fillRect(0, 0, W, H);
+
+        // Fond étoilé
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 80; i++) {
+            let xx = (i * 37 + Date.now() / 30) % (W + 100) - 50;
+            ctx.globalAlpha = 0.4 + Math.sin(i) * 0.3;
+            ctx.fillRect(xx, 80 + i * 7 % 420, 1.5, 1.5);
+        }
+        ctx.globalAlpha = 1;
+
+        if (gameState === 'playing') {
+            // === JOUEUR ===
+            // Mouvement horizontal
+            let moving = false;
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                player.vx = -player.speed;
+                player.facing = -1;
+                moving = true;
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                player.vx = player.speed;
+                player.facing = 1;
+                moving = true;
+            }
+            if (!moving) player.vx *= friction;
+
+            // Saut
+            if ((keys['ArrowUp'] || keys['w'] || keys['W'] || keys[' ']) && player.onGround) {
+                player.vy = player.jump;
+                player.onGround = false;
+                createParticles(player.x + player.w/2, player.y + player.h, '#88ffff', 8);
+            }
+
+            // Physique
+            player.vy += gravity;
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // Collisions plateformes
+            player.onGround = false;
+            for (let p of platforms) {
+                if (rectCollision(player, p)) {
+                    // Atterrissage
+                    if (player.vy > 0 && player.y + player.h - player.vy <= p.y) {
+                        player.y = p.y - player.h;
+                        player.vy = 0;
+                        player.onGround = true;
+                    }
+                    // Plafond
+                    else if (player.vy < 0 && player.y - player.vy >= p.y + p.h) {
+                        player.y = p.y + p.h;
+                        player.vy = 0;
+                    }
+                    // Murs
+                    else if (player.vx > 0) player.x = p.x - player.w;
+                    else if (player.vx < 0) player.x = p.x + p.w;
+                }
+            }
+
+            // Limites écran
+            if (player.x < 0) player.x = 0;
+            if (player.x > W - player.w) player.x = W - player.w;
+            if (player.y > H) { player.health = 0; }
+
+            // === TIR ===
+            player.shootCooldown--;
+            if ((keys['Control'] || keys['k'] || keys['K']) && player.shootCooldown <= 0) {
+                projectiles.push({
+                    x: player.x + (player.facing > 0 ? player.w - 4 : 0),
+                    y: player.y + 18,
+                    vx: 14 * player.facing,
+                    w: 16,
+                    h: 6
+                });
+                createParticles(player.x + (player.facing > 0 ? player.w : 0), player.y + 18, '#ffff00', 6);
+                player.shootCooldown = 9;
+            }
+
+            // === ENNEMIS ===
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                e.x += e.vx;
+
+                // Patrouille
+                if (e.x < e.patrolMin || e.x > e.patrolMax - e.w) {
+                    e.vx *= -1;
+                }
+
+                // Gravité ennemis
+                e.vy = e.vy || 0;
+                e.vy += gravity * 0.6;
+                e.y += e.vy;
+
+                // Collision plateformes pour ennemis
+                let onPlat = false;
+                for (let p of platforms) {
+                    if (rectCollision(e, p) && e.vy > 0) {
+                        e.y = p.y - e.h;
+                        e.vy = 0;
+                        onPlat = true;
+                    }
+                }
+                if (!onPlat && Math.random() < 0.03) e.vx *= -1; // évite de tomber
+
+                // Collision joueur / ennemi
+                if (rectCollision(player, e)) {
+                    if (player.vy > 0 && player.y + player.h - player.vy < e.y + 8) {
+                        // Écrasement !
+                        createParticles(e.x + e.w/2, e.y + e.h, '#ff00ff', 18);
+                        enemies.splice(i, 1);
+                        score += 50;
+                        player.vy = -10;
+                    } else {
+                        // Contact latéral
+                        player.health--;
+                        createParticles(player.x + player.w/2, player.y + 20, '#ff0000', 12);
+                        player.vx = -player.vx * 3;
+                        player.vy = -8;
+                        if (player.health <= 0) gameState = 'over';
+                    }
+                }
+            }
+
+            // === PROJECTILES ===
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                let p = projectiles[i];
+                p.x += p.vx;
+
+                // Collision ennemis
+                let hit = false;
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    if (rectCollision(p, enemies[j])) {
+                        enemies[j].health--;
+                        createParticles(p.x, p.y + 3, '#ffff00', 10);
+                        if (enemies[j].health <= 0) {
+                            createParticles(enemies[j].x + 16, enemies[j].y + 20, '#ff00ff', 25);
+                            score += 100;
+                            enemies.splice(j, 1);
+                        }
+                        hit = true;
+                        break;
+                    }
+                }
+                if (hit || p.x < -50 || p.x > W + 50) {
+                    projectiles.splice(i, 1);
+                }
+            }
+
+            // === COLLECTIBLES ===
+            for (let i = collectibles.length - 1; i >= 0; i--) {
+                let c = collectibles[i];
+                if (rectCollision(player, c)) {
+                    if (c.type === 'heart') {
+                        player.health = Math.min(5, player.health + 1);
+                        createParticles(c.x + 11, c.y + 11, '#ff00ff', 20);
+                    } else {
+                        score += c.value;
+                        createParticles(c.x + 11, c.y + 11, '#ffff00', 15);
+                    }
+                    collectibles.splice(i, 1);
+                }
+            }
+
+            // === PARTICULES ===
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3;
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            // Victoire ?
+            if (enemies.length === 0 && collectibles.length === 0) {
+                gameState = 'win';
+            }
+        }
+
+        // ====================== DESSIN ======================
+        // Plateformes
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 4;
+        for (let p of platforms) {
+            ctx.fillStyle = '#003322';
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.strokeRect(p.x + 2, p.y + 2, p.w - 4, p.h - 4);
+        }
+
+        // Collectibles
+        for (let c of collectibles) {
+            if (c.type === 'coin') {
+                ctx.fillStyle = '#ffdd00';
+                ctx.beginPath();
+                ctx.arc(c.x + 11, c.y + 11 + Math.sin(Date.now()/120)*2, 11, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#ff8800';
+                ctx.font = 'bold 14px Courier';
+                ctx.fillText('★', c.x + 6, c.y + 17);
+            } else {
+                ctx.fillStyle = '#ff00ff';
+                ctx.fillRect(c.x, c.y, c.w, c.h);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText('♥', c.x + 4, c.y + 18);
+            }
+        }
+
+        // Projectiles
+        ctx.fillStyle = '#ffff00';
+        for (let p of projectiles) {
+            ctx.save();
+            ctx.translate(p.x + 8, p.y + 3);
+            ctx.rotate(Date.now() / 50);
+            ctx.fillRect(-8, -3, 16, 6);
+            ctx.restore();
+        }
+
+        // Ennemis (monstres mignons mais méchants)
+        for (let e of enemies) {
+            ctx.fillStyle = e.color;
+            ctx.fillRect(e.x, e.y, e.w, e.h);
+            // yeux
+            ctx.fillStyle = '#000';
+            ctx.fillRect(e.x + 8, e.y + 12, 6, 8);
+            ctx.fillRect(e.x + 20, e.y + 12, 6, 8);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(e.x + 9 + (e.vx > 0 ? 1 : -1), e.y + 14, 3, 3);
+            // dents
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(e.x + 12, e.y + 28, 8, 4);
+        }
+
+        // Joueur (super robot cool)
+        ctx.save();
+        ctx.translate(player.x + player.w/2, player.y + player.h/2);
+        ctx.scale(player.facing, 1);
+
+        // corps
+        ctx.fillStyle = player.color;
+        ctx.fillRect(-15, -18, 30, 32);
+        // casque
+        ctx.fillStyle = '#00aaff';
+        ctx.fillRect(-16, -22, 32, 12);
+        // viseur
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(8, -10, 12, 6);
+
+        ctx.restore();
+
+        // Particules
+        for (let p of particles) {
+            ctx.globalAlpha = p.life / 30;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, 4, 4);
+        }
+        ctx.globalAlpha = 1;
+
+        // UI
+        ctx.fillStyle = '#00ffff';
+        ctx.font = 'bold 28px Courier New';
+        ctx.fillText('NEO JUMP', 30, 48);
+
+        ctx.font = 'bold 22px Courier New';
+        ctx.fillText('SCORE ' + score.toString().padStart(6, '0'), 520, 48);
+        ctx.fillText('HI ' + highScore.toString().padStart(6, '0'), 720, 48);
+
+        // Vie
+        ctx.fillStyle = '#ff00ff';
+        for (let i = 0; i < player.health; i++) {
+            ctx.fillText('♥', 30 + i * 32, 88);
+        }
+
+        // Écrans spéciaux
+        if (gameState === 'start') {
+            ctx.fillStyle = 'rgba(0,0,0,0.75)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#00ffff';
+            ctx.font = 'bold 62px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('NEO JUMP', W/2, 180);
+            ctx.font = 'bold 32px Courier New';
+            ctx.fillText('SHOOTER 2D', W/2, 240);
+            ctx.font = '20px Courier New';
+            ctx.fillStyle = '#ffff00';
+            ctx.fillText('APPUYEZ SUR ENTRÉE POUR COMMENCER', W/2, 380);
+            ctx.fillStyle = '#00ff88';
+            ctx.fillText('Version ultra fun en 1 seul fichier !', W/2, 520);
+        }
+
+        if (gameState === 'over') {
+            ctx.fillStyle = 'rgba(255,0,0,0.8)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 72px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('GAME OVER', W/2, 260);
+            ctx.font = '28px Courier New';
+            ctx.fillText('Score final : ' + score, W/2, 340);
+            ctx.fillStyle = '#ffff00';
+            ctx.fillText('ENTRÉE pour rejouer', W/2, 440);
+        }
+
+        if (gameState === 'win') {
+            ctx.fillStyle = 'rgba(0,255,100,0.85)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 62px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('VICTOIRE !', W/2, 220);
+            ctx.font = 'bold 32px Courier New';
+            ctx.fillText('Tu as tout détruit !', W/2, 290);
+            ctx.fillText('Score : ' + score, W/2, 350);
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('neoJumpHigh', highScore);
+                ctx.fillStyle = '#ffff00';
+                ctx.fillText('NOUVEAU RECORD !', W/2, 410);
+            }
+            ctx.fillStyle = '#000';
+            ctx.fillText('ENTRÉE pour rejouer', W/2, 490);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ====================== LANCEMENT ======================
+    resetGame();
+    gameLoop();
+</script>
+</body>
+</html>

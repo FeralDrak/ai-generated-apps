@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaFlow - Apprenez à parler, pas juste traduire.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- VARIABLES & RESET --- */
+        :root {
+            --primary: #6C63FF; /* Violet moderne */
+            --primary-dark: #5a52d5;
+            --secondary: #FF6584; /* Coral dynamique */
+            --bg-light: #F9FAFB;
+            --text-dark: #1F2937;
+            --text-gray: #6B7280;
+            --white: #ffffff;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-dark);
+            background-color: var(--white);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- TYPOGRAPHIE --- */
+        h1, h2, h3 {
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        p {
+            color: var(--text-gray);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: var(--white);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding-top: 140px; /* Space for fixed nav */
+            padding-bottom: 80px;
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            background: radial-gradient(circle at top right, #eef2ff, transparent);
+        }
+
+        .hero-content {
+            flex: 1;
+        }
+
+        .badge {
+            background-color: #E0E7FF;
+            color: var(--primary-dark);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .hero-visual {
+            flex: 1;
+            position: relative;
+        }
+
+        /* Abstract representation of app usage */
+        .phone-mockup {
+            width: 280px;
+            height: 540px;
+            background: #fff;
+            border-radius: 40px;
+            box-shadow: var(--shadow-lg);
+            margin: 0 auto;
+            position: relative;
+            border: 8px solid #333;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-bubble {
+            padding: 15px;
+            margin: 10px;
+            border-radius: 18px;
+            max-width: 80%;
+            font-size: 0.9rem;
+            position: relative;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        .chat-bot {
+            background-color: var(--primary);
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-user {
+            background-color: #E0E7FF;
+            color: var(--text-dark);
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* --- FEATURES GRID --- */
+        .features {
+            padding: 80px 0;
+            background-color: var(--bg-light);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: var(--white);
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.3s;
+            border-top: 5px solid var(--primary);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            background: #EEF2FF;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* --- DIFFERENCE SECTION (Vs Others) --- */
+        .comparison {
+            padding: 80px 0;
+        }
+
+        .compare-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .compare-text {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .check-list li {
+            list-style: none;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+        }
+
+        .check-icon {
+            color: var(--secondary);
+            font-weight: bold;
+        }
+
+        .x-mark { color: #E5E7EB; text-decoration: line-through; opacity: 0.7;}
+
+        /* --- CTA FOOTER --- */
+        .cta-section {
+            background-color: var(--primary);
+            padding: 80px 0;
+            text-align: center;
+            color: white;
+        }
+
+        .cta-section h2 {
+            margin-bottom: 30px;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero { flex-direction: column-reverse; text-align: center; }
+            .hero-buttons { justify-content: center; }
+            .nav-links { display: none; } /* Simplified for demo */
+            h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+    <div class="container" style="display:flex; justify-content:space-between; width:100%;">
+        <a href="#" class="logo">
+            <svg width="32" height="32" viewBox="0 0 512 512" fill="var(--primary)">
+                <path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 44c69 0 126 57 126 126s-57 126-126 126S130 343 130 274 187 148 256 148zm190 35c0 11-9 20-20 20s-20-9-20-20 9-20 20-20 20 9 20 20zM166 267c0 11-9 20-20 20s-20-9-20-20 9-20 20-20 20 9 20 20zm84 83c69 0 126-57 126-126S322 142 253 142s-126 57-126 126 57 126 126 126z"/>
+            </svg>
+            LinguaFlow
+        </a>
+        <div class="nav-links">
+            <a href="#features">Fonctionnalités</a>
+            <a href="#comparison">Pourquoi nous ?</a>
+            <a href="#pricing">Tarifs</a>
+        </div>
+        <button onclick="document.getElementById('download').scrollIntoView({behavior: 'smooth'})" class="btn btn-primary">Essayer Gratuitement</button>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero container">
+    <div class="hero-content">
+        <span class="badge">🎓 Nouvelle génération d'IA</span>
+        <h1>Ne passez plus des heures à étudier,<br><br>parlez déjà la langue.</h1>
+        <p>Oubliez les listes de mots ennuyeuses. LinguaFlow utilise l'intelligence artificielle pour simuler des conversations réelles et adapter sa pédagogie à votre rythme.</p>
+        <div class="hero-buttons">
+            <button onclick="document.getElementById('download').scrollIntoView({behavior: 'smooth'})" class="btn btn-primary">Commencer maintenant</button>
+            <button class="btn" style="background:none; color:var(--primary); border: 2px solid var(--primary)">Voir la démo</button>
+        </div>
+    </div>
+
+    <div class="hero-visual">
+        <div class="phone-mockup">
+            <!-- UI Simulation via CSS -->
+            <div style="flex-grow:1; display:flex; flex-direction:column;">
+                <div style="padding:20px; background:#f3f4f6;">Bonjour ! Je suis Alex, votre assistant.</div>
+
+                <div class="chat-bubble chat-bot" style="animation-delay: 0s">
+                    👋 Bonjour ! Comment vas-tu aujourd'hui ? Dis-moi en trois mots ce que tu aimes faire.
+                </div>
+
+                <div class="chat-bubble chat-user" style="animation-delay: 1s">
+                    ⚽ Match de football, café, amis.
+                </div>
+
+                <div class="chat-bubble chat-bot" style="animation-delay: 2.5s;">
+                    Génial ! "Je joue au foot avec mes amis". Tu parles très bien. Je vais corriger une petite erreur ici 👇<br><span style="color:#d97706; font-size:0.8em">"Jeu" au lieu de "Match"</span>
+                </div>
+
+                <div class="chat-bubble chat-user" style="animation-delay: 4s;">
+                    D'accord !
+                </div>
+            </div>
+            <img src="https://via.placeholder.com/300x60/6C63FF/ffffff?text=LinguaFlow+Interface" alt="App UI" style="width:100%; height:100%; object-fit:cover;">
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features">
+    <div class="container">
+        <div class="section-header">
+            <h2>Pourquoi LinguaFlow ?</h2>
+            <p>La science derrière l'apprentissage, modernisée.</p>
+        </div>
+
+        <div class="features-grid">
+            <!-- Feature 1 -->
+            <div class="feature-card">
+                <div class="icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Zm6.984 8.074A12.94 12.94 0 0 0 16 11.46a3 3 0 0 0-5.962-.547 12.934 12.934 0 0 0-8.968 3.046A3 3 0 0 0 2 12a12.94 12.94 0 0 0 .547 5.962A3 3 0 0 0 7.968 21.01a12.934 12.934 0 0 0 8.968-3.047 3 3 0 0 0 5.962.547A12.94 12.94 0 0 0 21 17a3 3 0 0 0 0-5.98Zm0 0"></path>
+                    </svg>
+                </div>
+                <h3>IA Conversationnelle</h3>
+                <p>Ne parlez pas à des robots stupides, mais à une IA qui comprend le contexte, l'humour et vos erreurs réelles.</p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="feature-card">
+                <div class="icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14.7 6.3a1 1 0 0 0 0-1.4l1.6-1.6a1 1 0 0 0 1.4 0l3.7 3.7a1 1 0 0 0 0 1.4l-1.6 1.6a1 1 0 0 0 0 1.4l3.6 3.6a1 1 0 0 0 1.4 0l3.7-3.7a1 1 0 0 0 0-1.4l-1.6-1.6a1 1 0 0 0-1.4 0Z"></path>
+                        <circle cx="5.5" cy="8.5" r="3"></circle>
+                    </svg>
+                </div>
+                <h3>Personnalisation Totale</h3>
+                <p>L'IA analyse votre style et vos objectifs. Envie de cuisine ? On parle cuisine. Voyages ? On prépare l'hôtel.</p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="feature-card">
+                <div class="icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                </div>
+                <h3>Mode Hors Ligne</h3>
+                <p>L'intelligence artificielle n'a pas besoin d'être en permanence connectée à un serveur distant pour fonctionner.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Comparison Section -->
+<section id="comparison" class="comparison">
+    <div class="container">
+        <div class="compare-container">
+            <div class="compare-text">
+                <h2>Pourquoi ne pas rester là où tu es ?</h2>
+                <p style="margin-bottom: 30px;">La méthode traditionnelle a ses limites. Voici pourquoi des millions d'élèves changent de plateforme.</p>
+
+                <ul class="check-list">
+                    <li class="x-mark"><span class="check-icon">×</span> Des leçons répétitives qui ne progressent jamais</li>
+                    <li class="x-mark"><span class="check-icon">×</span> Une correction grammaticale stricte sans nuance culturelle</li>
+                    <li class="x-mark"><span class="check-icon">×</span> Impossible de parler à voix haute avec l'IA (sans abonnement)</li>
+                </ul>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <ul class="check-list">
+                    <li><span class="check-icon">✓</span> Conversation libre avec ton IA partenaire</li>
+                    <li><span class="check-icon">✓</span> Feedback culturel et linguistique subtil</li>
+                    <li><span class="check-icon">✓</span> Correction vocale en temps réel</li>
+                </ul>
+            </div>
+
+            <!-- Decorative Illustration -->
+            <div style="flex:1; height: 400px; background: #FFF1F2; border-radius: var(--radius); position:relative; overflow:hidden;">
+                <div style="position:absolute; bottom:-30px; left:-30px; width: 200px; height: 200px; background:#FFD7E5; opacity: 0.5; border-radius:50%;"></div>
+                <div style="position:absolute; top:20px; right:20px; width: 100%; height: 100%; background: linear-gradient(to top, #FFD7E5 0%, #fff 40%); border-radius: var(--radius); padding: 40px;">
+                    <div style="font-size: 4rem; font-weight:800; color:#FF6584;">+300%</div>
+                    <div style="color: var(--text-dark);">de mot à mémoire</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer CTA -->
+<section id="download" class="cta-section">
+    <div class="container">
+        <h2 style="font-size: 2.5rem; margin-bottom: 10px;">Prêt à changer de langue ?</h2>
+        <p style="color: rgba(255,255,255,0.8); max-width: 600px; margin: 0 auto 40px auto;">Télécharge LinguaFlow aujourd'hui et parle avec confiance dès ta première conversation.</p>
+        <a href="#" class="btn" style="background: white; color: var(--primary);">Télécharger sur iOS</a>
+        <a href="#" class="btn" style="background: white; color: var(--primary); margin-left: 10px;">Télécharger sur Android</a>
+    </div>
+</section>
+
+<!-- Footer Simple -->
+<footer style="padding: 40px 0; text-align: center; border-top: 1px solid #eee; font-size: 0.9rem; color: var(--text-gray);">
+    <p>&copy; 2023 LinguaFlow Inc. Tous droits réservés.</p>
+</footer>
+
+<!-- Simple Script for interaction -->
+<script>
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            if(targetId === '#') return;
+
+            const targetElement = document.querySelector(targetId);
+            if(targetElement){
+                targetElement.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
+    // Simple intersection observer for fade-in animations
+    const observerOptions = {
+        threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = "1";
+                entry.target.style.transform = "translateY(0)";
+            }
+        });
+    }, observerOptions);
+
+    // Apply animation styles to cards and text initially hidden
+    const cards = document.querySelectorAll('.feature-card');
+    const texts = document.querySelectorAll('h2, p');
+
+    cards.forEach(el => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(20px)";
+        el.style.transition = "all 0.6s ease-out";
+        observer.observe(el);
+    });
+
+    texts.forEach(el => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(20px)";
+        el.style.transition = "opacity 0.8s ease-out, transform 0.8s ease-out";
+        observer.observe(el);
+    });
+</script>
+</body>
+</html>

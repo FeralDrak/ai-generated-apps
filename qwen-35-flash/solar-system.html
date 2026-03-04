@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système Solaire Interactif</title>
+    <style>
+        :root {
+            --bg-color: #0b0d17;
+            --text-color: #ffffff;
+            --panel-bg: rgba(255, 255, 255, 0.1);
+            --accent: #4fc3f7;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; /* Empêche le scroll */
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Étoile de fond */
+        .stars {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                    radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
+                    radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
+                    radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+            z-index: -1;
+            opacity: 0.8;
+        }
+
+        /* Conteneur principal */
+        .universe {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        /* Le Soleil */
+        .sun {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #ffd700, #ff8c00);
+            border-radius: 50%;
+            box-shadow: 0 0 60px #ff8c00, 0 0 20px #ffd700 inset;
+            z-index: 10;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .sun:hover { transform: scale(1.1); }
+        .sun::after {
+            content: "Soleil";
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: white;
+            white-space: nowrap;
+        }
+
+        /* Les Orbites */
+        .orbit {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* Laisse passer les clics vers les planètes si besoin */
+        }
+
+        /* La planète elle-même */
+        .planet-container {
+            position: absolute;
+            top: 50%;
+            right: 0; /* Place la planète sur l'orbite circulaire */
+            transform-origin: 0% 50%;
+            /* On utilise ce conteneur juste pour tourner */
+        }
+
+        .planet {
+            position: absolute;
+            top: -10px; /* Centrer verticalement par rapport à la ligne d'orbite */
+            left: -10px; /* Centrer horizontalement par rapport au point de rotation */
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: inset -3px -3px 5px rgba(0,0,0,0.5);
+            transition: filter 0.3s;
+            pointer-events: auto;
+        }
+
+        .planet:hover {
+            filter: brightness(1.3);
+            box-shadow: 0 0 10px white;
+            z-index: 100;
+        }
+
+        /* Anneaux de Saturne (spécial) */
+        .ringed::before {
+            content: '';
+            position: absolute;
+            width: 160%;
+            height: 160%;
+            top: -30%;
+            left: -30%;
+            border: 2px solid rgba(194, 178, 128, 0.6);
+            border-radius: 50%;
+            transform: rotate(-15deg);
+            pointer-events: none;
+        }
+
+        /* Panneau de Contrôle */
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: var(--accent);
+            color: #000;
+        }
+
+        input[type=range] {
+            cursor: pointer;
+        }
+
+        /* Modal d'information */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #1a1d2d, #0b0d17);
+            border: 1px solid var(--accent);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 15px;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 0 30px rgba(79, 195, 247, 0.2);
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .info-card {
+            transform: translateY(0);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close-btn:hover { color: white; }
+
+        .info-title {
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: var(--accent);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-item h4 {
+            margin: 0;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+        .stat-item p {
+            margin: 5px 0 0 0;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .description {
+            line-height: 1.6;
+            font-size: 0.95em;
+            color: #ddd;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .universe { zoom: 0.6; transform-origin: center top; }
+            .controls { flex-direction: column; bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="stars"></div>
+
+<div class="universe" id="solar-system">
+    <!-- Le Soleil -->
+    <div class="sun" onclick="showInfo('Sun')"></div>
+
+    <!-- Les orbites et planètes seront générées ici par JS -->
+</div>
+
+<div class="controls">
+    <button id="playPauseBtn">Pause</button>
+    <label for="speedRange">Vitesse:</label>
+    <input type="range" id="speedRange" min="0" max="100" value="20">
+</div>
+
+<!-- Modal Infos -->
+<div class="modal-overlay" id="infoModal">
+    <div class="info-card">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2 class="info-title" id="modalTitle">Titre</h2>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h4>Type</h4>
+                <p id="modalType">-</p>
+            </div>
+            <div class="stat-item">
+                <h4>Diamètre</h4>
+                <p id="modalDiameter">-</p>
+            </div>
+            <div class="stat-item">
+                <h4>Distance du Soleil</h4>
+                <p id="modalDistance">-</p>
+            </div>
+            <div class="stat-item">
+                <h4>Année (Révolution)</h4>
+                <p id="modalYear">-</p>
+            </div>
+        </div>
+
+        <p class="description" id="modalDesc">Description...</p>
+    </div>
+</div>
+
+<script>
+    // --- DONNÉES DES ASTRES ---
+    // Les distances et tailles sont "stylisées" pour la visualisation, pas réalistes à l'échelle.
+    const solarData = {
+        'Sun': {
+            name: 'Le Soleil', type: 'Étoile', diameter: '1 392 700 km', distance: '-', year: 'N/A',
+            desc: 'L\'étoile au centre de notre système solaire. Elle est un ballon quasi-parfait de plasma chaud, ionisé et confiné par sa propre gravité.',
+            color: '#FFD700', shadow: 'inset -5px -5px 10px rgba(0,0,0,0.2)'
+        },
+        'Mercury': {
+            name: 'Mercure', type: 'Planète tellurique', diameter: '4 880 km', distance: '58 millions km', year: '88 jours',
+            desc: 'La plus petite planète du système solaire et la plus proche du Soleil. Sa surface est criblée de cratères, semblable à celle de la Lune.',
+            color: '#A5A5A5'
+        },
+        'Venus': {
+            name: 'Vénus', type: 'Planète tellurique', diameter: '12 104 km', distance: '108 millions km', year: '225 jours',
+            desc: 'Souvent appelée la "soeur jumelle" de la Terre par sa taille similaire. Son atmosphère dense piège la chaleur, la rendant la planète la plus chaude.',
+            color: '#E3BB76', shadow: 'inset -4px -4px 8px rgba(0,0,0,0.4)'
+        },
+        'Earth': {
+            name: 'La Terre', type: 'Planète tellurique', diameter: '12 742 km', distance: '150 millions km', year: '365 jours',
+            desc: 'Notre maison ! C\'est le seul endroit connu abritant la vie. Couverte à 70% d\'eau, elle possède une atmosphère riche en azote et oxygène.',
+            color: '#2E8B57', hasMoon: true
+        },
+        'Mars': {
+            name: 'Mars', type: 'Planète tellurique', diameter: '6 779 km', distance: '228 millions km', year: '687 jours',
+            desc: 'La planète rouge. Elle possède le plus grand volcan du système solaire (Olympus Mons) et des vallées profondes comme le Valles Marineris.',
+            color: '#CD5C5C', shadow: 'inset -3px -3px 6px rgba(0,0,0,0.3)'
+        },
+        'Jupiter': {
+            name: 'Jupiter', type: 'Planète gazeuse', diameter: '139 820 km', distance: '778 millions km', year: '12 ans',
+            desc: 'La géante gazeuse. La plus grande planète, connue pour sa Grande Tache Rouge (une tempête qui fait deux fois la largeur de la Terre).',
+            color: '#DEB887'
+        },
+        'Saturn': {
+            name: 'Saturne', type: 'Planète gazeuse', diameter: '116 460 km', distance: '1.4 milliard km', year: '29 ans',
+            desc: 'Célèbre pour ses anneaux spectaculaires composés de glace et de roche. C\'est la deuxième plus grande planète après Jupiter.',
+            color: '#F4A460', isRinged: true
+        },
+        'Uranus': {
+            name: 'Uranus', type: 'Géante de glace', diameter: '50 724 km', distance: '2.9 milliard km', year: '84 ans',
+            desc: 'Elle tourne sur le côté ! C\'est une géante de glace froide, d\'apparence bleu pâle due au méthane dans son atmosphère.',
+            color: '#AFEEEE', shadow: 'inset -3px -3px 6px rgba(0,0,0,0.2)'
+        },
+        'Neptune': {
+            name: 'Neptune', type: 'Géante de glace', diameter: '49 244 km', distance: '4.5 milliard km', year: '165 ans',
+            desc: 'La planète la plus lointaine. Elle est bleue intense et souffre de vents supersoniques violents, les plus rapides du système solaire.',
+            color: '#4169E1', shadow: 'inset -3px -3px 6px rgba(0,0,0,0.3)'
+        }
+    };
+
+    // Configuration visuelle (Tailles stylisées, vitesses relatives)
+    const config = [
+        { key: 'Mercury', radius: 70, speed: 0.04 },
+        { key: 'Venus', radius: 100, speed: 0.03 },
+        { key: 'Earth', radius: 140, speed: 0.02 },
+        { key: 'Mars', radius: 180, speed: 0.016 },
+        { key: 'Jupiter', radius: 260, speed: 0.008 },
+        { key: 'Saturn', radius: 340, speed: 0.006 },
+        { key: 'Uranus', radius: 410, speed: 0.004 },
+        { key: 'Neptune', radius: 480, speed: 0.003 }
+    ];
+
+    let angles = {}; // Stocke l'angle actuel de chaque planète
+    let isPaused = false;
+    let speedMultiplier = 20;
+    let animationId;
+
+    const universe = document.getElementById('solar-system');
+
+    // --- INITIALISATION ---
+    function init() {
+        config.forEach(p => {
+            // Création de l'orbite (la ligne grise)
+            const orbitDiv = document.createElement('div');
+            orbitDiv.className = 'orbit';
+            orbitDiv.style.width = (p.radius * 2) + 'px';
+            orbitDiv.style.height = (p.radius * 2) + 'px';
+            universe.appendChild(orbitDiv);
+
+            // Création du conteneur de rotation
+            const planetContainer = document.createElement('div');
+            planetContainer.className = 'planet-container';
+            planetContainer.id = `orbit-${p.key}`;
+
+            // Positionnement initial à droite (0 deg)
+            // On place cet élément EN DEHORS de l'orbite, centré sur le soleil
+            // Et on calcule la position via CSS transform
+
+            // On ajoute une div réelle pour la planète
+            const planet = document.createElement('div');
+            planet.className = 'planet';
+            if(solarData[p.key].isRinged) planet.classList.add('ringed');
+
+            planet.style.width = getPlanetSize(p.key) + 'px';
+            planet.style.height = getPlanetSize(p.key) + 'px';
+            planet.style.backgroundColor = solarData[p.key].color;
+
+            // Ajout des informations dans le dataset pour le click
+            planet.onclick = () => showInfo(p.key);
+
+            planetContainer.appendChild(planet);
+            universe.appendChild(planetContainer);
+
+            // Initialiser l'angle aléatoirement pour que tout ne parte pas en même temps
+            angles[p.key] = Math.random() * 360;
+        });
+
+        animate();
+    }
+
+    function getPlanetSize(key) {
+        // Scale down slightly for large planets so they fit
+        if(['Jupiter', 'Saturn'].includes(key)) return '25';
+        if(['Uranus', 'Neptune'].includes(key)) return '18';
+        return '10';
+    }
+
+    // --- BOUCLE D'ANIMATION ---
+    function animate() {
+        if (!isPaused) {
+            config.forEach(p => {
+                angles[p.key] += p.speed * (speedMultiplier / 5);
+
+                const el = document.getElementById(`orbit-${p.key}`);
+                if(el) {
+                    el.style.transform = `translate(-50%, -50%) rotate(${angles[p.key]}deg)`;
+                }
+            });
+        }
+        animationId = requestAnimationFrame(animate);
+    }
+
+    // --- GESTION DES INFOS ---
+    window.showInfo = function(key) {
+        const data = solarData[key];
+        document.getElementById('modalTitle').innerText = data.name;
+        document.getElementById('modalTitle').style.color = data.color || '#fff';
+        document.getElementById('modalType').innerText = data.type;
+        document.getElementById('modalDiameter').innerText = data.diameter;
+        document.getElementById('modalDistance').innerText = data.distance !== '-' ? data.distance : '-';
+        document.getElementById('modalYear').innerText = data.year;
+        document.getElementById('modalDesc').innerText = data.desc;
+
+        document.getElementById('infoModal').classList.add('active');
+    };
+
+    window.closeModal = function() {
+        document.getElementById('infoModal').classList.remove('active');
+    };
+
+    // Fermer le modal si on clique en dehors
+    document.getElementById('infoModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // --- CONTRÔLES UTILISATEUR ---
+    const btnPlay = document.getElementById('playPauseBtn');
+    const slider = document.getElementById('speedRange');
+
+    btnPlay.addEventListener('click', () => {
+        isPaused = !isPaused;
+        btnPlay.innerText = isPaused ? "Lecture" : "Pause";
+    });
+
+    slider.addEventListener('input', (e) => {
+        speedMultiplier = e.target.value;
+    });
+
+    // Démarrage
+    init();
+
+</script>
+</body>
+</html>
