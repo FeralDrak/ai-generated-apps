@@ -1,0 +1,321 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Void Forge Idle</title>
+<style>
+:root{--bg:#060d1f;--bg2:#102448;--card:rgba(10,23,47,.84);--b:rgba(140,210,255,.25);--txt:#e7f4ff;--muted:#95b3cf;--ok:#7effc2;--warn:#ffb180;--bad:#ff6a7f}
+*{box-sizing:border-box}body{margin:0;color:var(--txt);font-family:"Space Grotesk","Trebuchet MS",sans-serif;background:radial-gradient(circle at 12% 8%,rgba(115,186,255,.22),transparent 40%),radial-gradient(circle at 86% 86%,rgba(120,255,202,.15),transparent 40%),linear-gradient(140deg,var(--bg),var(--bg2));min-height:100vh}
+#app{width:min(1240px,96vw);margin:16px auto;display:grid;gap:12px}
+header,.card{background:var(--card);border:1px solid var(--b);border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.35)}
+header{padding:14px;display:grid;gap:10px}h1,h2,h3,p{margin:0}h1{font-size:clamp(1.3rem,2.2vw,1.8rem)}small,.muted{color:var(--muted)}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.chip{padding:8px 10px;border:1px solid rgba(150,216,255,.2);border-radius:10px;background:rgba(16,37,76,.65)}.chip b{display:block;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.chip span{font-weight:700}
+.top{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{border:1px solid rgba(146,214,255,.33);background:linear-gradient(160deg,rgba(28,59,114,.9),rgba(20,36,71,.95));color:var(--txt);border-radius:10px;padding:6px 10px;font:inherit;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}button:hover:not(:disabled){filter:brightness(1.12)}
+.btnGood{background:linear-gradient(160deg,rgba(26,100,83,.9),rgba(15,65,63,.95));border-color:rgba(126,255,206,.35)}
+.btnWarn{background:linear-gradient(160deg,rgba(112,56,27,.9),rgba(79,37,21,.95));border-color:rgba(255,185,140,.4)}
+.btnBad{background:linear-gradient(160deg,rgba(113,28,50,.92),rgba(80,20,38,.95));border-color:rgba(255,126,157,.4)}
+.buy{display:inline-flex;overflow:hidden;border:1px solid rgba(140,214,255,.3);border-radius:999px}.buy button{border:0;border-right:1px solid rgba(140,214,255,.25);border-radius:0}.buy button:last-child{border-right:0}.buy button.on{background:linear-gradient(90deg,rgba(72,197,255,.35),rgba(122,255,196,.35))}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{padding:12px;display:grid;gap:8px;align-content:start}.row{padding:8px;border:1px solid rgba(131,205,255,.2);border-radius:10px;background:rgba(14,32,66,.66);display:grid;gap:4px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600}.tiny{font-size:.8rem;color:var(--muted)}.cost{font-size:.82rem;color:var(--muted)}
+.bar{height:12px;border-radius:999px;border:1px solid rgba(147,213,255,.33);background:rgba(9,18,38,.9);overflow:hidden}.fill{height:100%;width:0;background:linear-gradient(90deg,#54d4ff,#adffca)}.heat .fill{background:linear-gradient(90deg,#72f3ff,#ffd27b,#ff6e74)}
+.note{border-left:3px solid #55d2ff;background:rgba(14,33,68,.7);padding:8px;border-radius:8px;font-size:.86rem}.warn{border-left-color:var(--warn)}
+.stack{display:grid;gap:8px}.pill{font-size:.76rem;padding:2px 7px;border:1px solid rgba(140,218,255,.26);border-radius:999px;color:var(--muted)}
+.tech,.doctrine{padding:8px;border:1px solid rgba(134,203,255,.2);border-radius:10px;background:rgba(13,30,60,.8);display:grid;gap:6px}.done{border-color:rgba(140,255,206,.4);background:rgba(10,56,48,.5)}
+.doctrines{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.doctrine.active{border-color:rgba(126,255,206,.45);background:rgba(14,63,54,.48)}
+#logs{list-style:none;padding:0;margin:0;display:grid;gap:6px;max-height:280px;overflow:auto}#logs li{font-size:.82rem;border-left:2px solid rgba(130,214,255,.4);padding:5px 8px;border-radius:8px;background:rgba(10,26,54,.78)}
+#anomaly{display:none;gap:8px;border:1px solid rgba(255,186,130,.35);background:rgba(65,29,19,.45);padding:10px;border-radius:10px}#anomaly.on{display:grid}
+@media(max-width:860px){.doctrines{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+<h1>Void Forge: Incremental Expedition</h1>
+<p class="muted">Idle game experimental: energie, sondes, recherche, colonies et singularite.</p>
+<div class="res">
+<div class="chip"><b>Energie</b><span id="rEnergy">0</span></div>
+<div class="chip"><b>Materiaux</b><span id="rMat">0</span></div>
+<div class="chip"><b>Science</b><span id="rSci">0</span></div>
+<div class="chip"><b>Chaleur</b><span id="rHeat">0</span></div>
+<div class="chip"><b>Fragments</b><span id="rShard">0</span></div>
+</div>
+<div class="top">
+<button id="pulse" class="btnGood">Pulse energie</button>
+<div class="buy"><button data-buy="1" class="on">x1</button><button data-buy="10">x10</button><button data-buy="25">x25</button></div>
+<button id="save">Sauvegarder</button>
+<button id="hardReset" class="btnBad">Reset total</button>
+<small id="law">Loi cosmique: aucune</small>
+</div>
+</header>
+<div class="grid">
+<section class="card">
+<h2>Module 1: Reseau energetique</h2>
+<div class="note" id="heatHint">Zone ideale: 35 a 60 chaleur.</div>
+<div class="heat"><div class="bar"><div id="heatBar" class="fill"></div></div></div>
+<div class="row"><div class="head"><span>Rendement energie</span><span id="energyEff">0%</span></div><div class="tiny" id="energyRate">0 / sec</div></div>
+<div class="row"><div class="head"><span>Dissipation</span><span id="coolRate">0 / sec</span></div><div class="tiny">Au dela de 120 chaleur, risque de pertes.</div></div>
+<div id="buildEnergy" class="stack"></div>
+</section>
+<section class="card">
+<h2>Module 2: Exploration sondes</h2>
+<div class="row"><div class="head"><span>Secteurs</span><span id="sectors">0</span></div><div class="tiny">Reliques: <span id="relics">0</span></div></div>
+<div class="row"><div class="head"><span>Vitesse</span><span id="expRate">0 / sec</span></div><div class="tiny">Flux logistique: <span id="flow">0%</span></div></div>
+<div class="bar"><div id="expBar" class="fill"></div></div>
+<div class="tiny">Progression: <span id="expProg">0 / 0</span></div>
+<div id="buildExp" class="stack"></div>
+<div id="anomaly">
+<div class="pill">Anomalie detectee</div>
+<strong id="anomalyTitle"></strong>
+<div class="tiny" id="anomalyText"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="anom0" class="btnWarn"></button><button id="anom1"></button></div>
+</div>
+</section>
+<section class="card">
+<h2>Module 3: Recherche</h2>
+<div class="note">Arbre techno multi-disciplines avec synergies.</div>
+<div id="researchList" class="stack"></div>
+</section>
+<section class="card">
+<h2>Module 4: Colonies et logistique</h2>
+<div class="row"><div class="head"><span>Colonies</span><span id="colCount">0</span></div><div class="tiny">Capacite: <span id="colCap">0</span></div></div>
+<div class="row"><div class="head"><span>Stabilite</span><span id="colStab">0%</span></div><div class="tiny">Cible: <span id="colTarget">0%</span></div></div>
+<div class="row"><div class="head"><span>Fonder une colonie</span><button id="foundCol" class="btnGood">Fonder</button></div><div class="cost" id="colCost"></div><div class="tiny">Condition: secteurs >= 2 + colonies.</div></div>
+<div id="buildCol" class="stack"></div>
+</section>
+<section class="card">
+<h2>Module 5: Singularite</h2>
+<div class="note warn">Reset de run contre fragments causaux. Les fragments boostent la meta progression.</div>
+<div class="row"><div class="head"><span>Gain potentiel</span><span id="potShard">0</span></div><div class="tiny">Total: <span id="totalShard">0</span> | Boucles: <span id="resetCount">0</span></div><button id="prestige" class="btnBad">Declencher singularite</button></div>
+<div id="metaList" class="stack"></div>
+<div id="doctrineList" class="doctrines"></div>
+</section>
+<section class="card">
+<h2>Journal mission</h2>
+<ul id="logs"></ul>
+</section>
+</div>
+</div>
+<script>
+(()=>{"use strict";
+const KEY="codex53_voidforge_v1";
+const RES={energy:"energie",materials:"materiaux",science:"science"};
+const BUILD={
+collectors:{name:"Collecteurs stellaires",desc:"Production energie, genere chaleur.",base:{energy:20,materials:5},scale:{energy:1.18,materials:1.12}},
+radiators:{name:"Radiateurs orbitaux",desc:"Dissipation thermique.",base:{energy:35,materials:12},scale:{energy:1.2,materials:1.14}},
+mines:{name:"Mines asteroidales",desc:"Production passive de materiaux.",base:{energy:70,materials:28},scale:{energy:1.22,materials:1.18}},
+labs:{name:"Labos quantiques",desc:"Convertissent l'energie en science.",base:{energy:130,materials:62},scale:{energy:1.24,materials:1.2}},
+probes:{name:"Sondes autonomes",desc:"Cartographient les secteurs.",base:{energy:95,materials:45},scale:{energy:1.26,materials:1.22}},
+hubs:{name:"Hubs logistiques",desc:"Augmentent la capacite colonies.",base:{energy:230,materials:130,science:45},scale:{energy:1.3,materials:1.26,science:1.24}}
+};
+const GROUPS={energy:["collectors","radiators","mines","labs"],exp:["probes"],col:["hubs"]};
+const TECH=[
+{id:"thermo",name:"Thermoregulation adaptative",desc:"+20% energie collecteurs.",cost:120,req:s=>true},
+{id:"drones",name:"Drones autonomes",desc:"Auto pulse chaque seconde.",cost:280,req:s=>s.research.includes("thermo")},
+{id:"cartography",name:"Cartographie quantique",desc:"+60% vitesse exploration.",cost:520,req:s=>s.exp.sectors>=2},
+{id:"fusion",name:"Fusion froide",desc:"+25% energie, -28% chaleur.",cost:980,req:s=>s.research.includes("drones")},
+{id:"exo",name:"Exobiologie synthetique",desc:"Bonus science en exploration.",cost:1500,req:s=>s.exp.sectors>=5},
+{id:"wormholes",name:"Micro-trous de ver",desc:"Capacite colonies augmentee.",cost:2600,req:s=>s.col.count>=2},
+{id:"temporal",name:"Instrumentation temporelle",desc:"+18% science globale.",cost:4500,req:s=>s.exp.sectors>=10}
+];
+const DOC={
+expansion:{name:"Doctrine Expansion",desc:"+35% exploration, -5% energie.",cost:2},
+science:{name:"Doctrine Science",desc:"+35% science, colonies +10% cout.",cost:2},
+automation:{name:"Doctrine Automation",desc:"+25% pulse energie.",cost:2}
+};
+const META=[
+{id:"chrono",name:"Condensateur chrono",desc:"+6% prod globale / niv.",base:1,scale:1.8},
+{id:"telemetry",name:"Telemetrie intriquee",desc:"+10% exploration / niv.",base:2,scale:1.9},
+{id:"glyph",name:"Glyphes cohesion",desc:"+4% stabilite min / niv.",base:2,scale:2}
+];
+const LAWS=[
+{id:"solar",name:"Derive solaire",desc:"+35% energie collecteurs, +20% chaleur."},
+{id:"fracture",name:"Fracture topologique",desc:"+40% exploration, -20% materiaux."},
+{id:"lattice",name:"Treillis causal",desc:"+30% science, colonies plus cheres."}
+];
+const ANOM={
+neutrino:{title:"Orage neutrino",text:"Flux coherent qui brouille les capteurs.",opts:[{label:"Analyser (220 energie)",cost:{energy:220},fx:"neutrinoScan"},{label:"Contourner",cost:{},fx:"neutrinoSkip"}]},
+ark:{title:"Arche derelique",text:"Station ancienne sur orbite morte.",opts:[{label:"Recuperer les modules",cost:{},fx:"arkSalvage"},{label:"Scanner les archives",cost:{},fx:"arkScan"}]},
+bloom:{title:"Efflorescence noire",text:"Nuage instable convertible en energie ou data.",opts:[{label:"Canaliser vers reacteurs",cost:{},fx:"bloomEnergy"},{label:"Calibrer les instruments",cost:{},fx:"bloomResearch"}]}
+};
+
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const now=()=>Date.now();
+const rndKey=o=>Object.keys(o)[Math.floor(Math.random()*Object.keys(o).length)];
+const fmt=n=>{if(!isFinite(n))return"0";const a=Math.abs(n);if(a<1000)return n.toFixed(a>=10?1:2).replace(/\.00$/,"" ).replace(/(\.\d)0$/,"$1");const u=["k","M","G","T","P","E"];let i=-1,v=a;while(v>=1000&&i<u.length-1){v/=1000;i++;}return (n<0?"-":"")+v.toFixed(v>=100?1:v>=10?2:3).replace(/\.0+$/,"" ).replace(/(\.\d*[1-9])0+$/,"$1")+u[i];};
+const pct=v=>(v*100).toFixed(1)+"%";
+
+function initState(){return{
+res:{energy:42,materials:100,science:0,heat:18},
+b:{collectors:1,radiators:1,mines:0,labs:0,probes:0,hubs:0},
+exp:{progress:0,target:90,sectors:0,relics:0,pending:null,solved:0},
+col:{count:0,stability:1,target:1},
+life:{science:0,sectors:0},
+research:[],
+meta:{shards:0,total:0,resets:0,unlocked:[],active:null,up:{chrono:0,telemetry:0,glyph:0},law:null},
+set:{buy:1},
+run:{last:performance.now(),autoPulse:0,researchBuff:0,exploreBuff:0,lastSave:0},
+logs:[]
+};}
+let S=initState();
+let R={energyRate:0,coolRate:0,expRate:0};
+
+function log(msg){const t=new Date().toLocaleTimeString("fr-FR",{hour12:false});S.logs.unshift(`[${t}] ${msg}`);if(S.logs.length>16)S.logs.length=16;}
+function law(){return LAWS.find(l=>l.id===S.meta.law)||null;}
+function hasTech(id){return S.research.includes(id);}
+function hasDoc(id){return S.meta.unlocked.includes(id);}
+function upCost(u){return Math.ceil(u.base*Math.pow(u.scale,S.meta.up[u.id]||0));}
+function heatEff(){const h=S.res.heat;if(h<=90){const d=Math.abs(h-45)/45;return clamp(1.25-d*0.65,0.6,1.25);}return clamp(1-(h-90)/130,0.22,1);}
+function colCap(){let c=1+S.b.hubs*2;if(hasTech("wormholes"))c+=S.b.hubs*2+1;return Math.max(1,Math.floor(c));}
+function stabFloor(){return clamp(0.2+S.meta.up.glyph*0.04+(hasTech("wormholes")?0.05:0),0.2,0.65);}
+function flow(){if(S.col.count<=0)return 1;const ratio=colCap()/Math.max(1,S.col.count);return clamp(0.55+ratio*0.45,0.45,1.2);}
+
+function mult(){
+let g=1+S.meta.total*0.08+S.meta.up.chrono*0.06+S.exp.relics*0.01;
+let e=g,m=g,s=g,x=g,co=g,cc=1,hg=1;
+if(hasTech("thermo"))e*=1.2;
+if(hasTech("fusion")){e*=1.25;hg*=0.72;}
+if(hasTech("cartography"))x*=1.6;
+if(hasTech("exo"))s*=1.2;
+if(hasTech("temporal"))s*=1.18;
+if(hasTech("wormholes"))co*=1.18;
+if(S.meta.active==="expansion"){x*=1.35;e*=0.95;}
+if(S.meta.active==="science"){s*=1.35;cc*=1.1;}
+if(S.meta.active==="automation")e*=1.05;
+x*=1+S.meta.up.telemetry*0.1;
+if(S.run.exploreBuff>now())x*=1.5;
+if(S.run.researchBuff>now())s*=1.08;
+const l=law();
+if(l){if(l.id==="solar"){e*=1.35;hg*=1.2;}if(l.id==="fracture"){x*=1.4;m*=0.8;}if(l.id==="lattice"){s*=1.3;cc*=1.22;}}
+return{e,m,s,x,co,cc,hg};
+}
+
+function geo(base,scale,start,n){if(n<=0)return 0;if(Math.abs(scale-1)<1e-6)return base*n;const first=base*Math.pow(scale,start);return first*(Math.pow(scale,n)-1)/(scale-1);}
+function bCost(id,n){const d=BUILD[id],o={};for(const r of Object.keys(d.base))o[r]=geo(d.base[r],d.scale[r],S.b[id],n);return o;}
+function colonyCost(){const c=S.col.count,m=mult();return{energy:520*Math.pow(1.45,c)*m.cc,materials:320*Math.pow(1.4,c)*m.cc,science:260*Math.pow(1.36,c)*m.cc};}
+function can(cost){return Object.keys(cost).every(k=>S.res[k]>=cost[k]);}
+function pay(cost){for(const [k,v] of Object.entries(cost))S.res[k]-=v;}
+function costTxt(cost){return Object.entries(cost).map(([k,v])=>`${fmt(v)} ${RES[k]}`).join(" / ");}
+
+function buyBuilding(id){const n=S.set.buy,c=bCost(id,n);if(!can(c))return;pay(c);S.b[id]+=n;if(id==="probes"&&S.b[id]===n)log("Premiere sonde autonome operationnelle.");if(id==="labs"&&S.b[id]===n)log("Premier labo quantique actif.");if(id==="hubs")log("Extension logistique orbitale.");}
+function buyTech(id){const t=TECH.find(x=>x.id===id);if(!t||hasTech(id)||!t.req(S))return;const d=S.run.researchBuff>now()?0.85:1,c=t.cost*d;if(S.res.science<c)return;S.res.science-=c;S.research.push(id);log(`Recherche completee: ${t.name}.`);}
+function buyDoc(id){if(!DOC[id])return;if(hasDoc(id)){S.meta.active=id;log(`Doctrine active: ${DOC[id].name}.`);return;}if(S.meta.shards<DOC[id].cost)return;S.meta.shards-=DOC[id].cost;S.meta.unlocked.push(id);S.meta.active=id;log(`Doctrine debloquee: ${DOC[id].name}.`);}
+function buyMeta(id){const u=META.find(x=>x.id===id);if(!u)return;const c=upCost(u);if(S.meta.shards<c)return;S.meta.shards-=c;S.meta.up[id]+=1;log(`Upgrade meta: ${u.name} niv. ${S.meta.up[id]}.`);}
+function pulse(auto){const m=mult();let p=12*(1+S.b.collectors*0.035)*m.e;if(S.meta.active==="automation")p*=1.25;if(auto){p*=0.45;S.res.heat+=0.06;}else S.res.heat+=0.35;S.res.energy+=p;}
+function discover(){
+S.exp.sectors+=1;S.life.sectors=S.exp.sectors;const n=S.exp.sectors;
+let e=70*Math.pow(1.16,n),m=45*Math.pow(1.17,n),s=30*Math.pow(1.18,n);
+if(hasTech("exo"))s*=1.8;if(S.meta.active==="science")s*=1.1;
+S.res.energy+=e;S.res.materials+=m;S.res.science+=s;S.life.science+=s;
+S.exp.target*=1.28;log(`Secteur ${n} cartographie.`);
+if(Math.random()<0.24){S.exp.relics+=1;log(`Relique recuperee dans le secteur ${n}.`);} 
+if(!S.exp.pending&&Math.random()<0.38){S.exp.pending=rndKey(ANOM);log(`Anomalie detectee: ${ANOM[S.exp.pending].title}.`);} 
+if(n===2)log("Colonisation debloquee.");
+if(n===10)log("Seuil singularite atteint.");
+}
+
+function applyAnomaly(fx){
+switch(fx){
+case "neutrinoScan":pay({energy:220});S.res.science+=260;S.life.science+=260;S.res.heat+=14;log("Flux neutrino analyse.");break;
+case "neutrinoSkip":S.exp.progress+=S.exp.target*0.18;S.res.heat=Math.max(0,S.res.heat-8);log("Contournement: progression immediate.");break;
+case "arkSalvage":S.res.materials+=380;if(Math.random()<0.35){S.exp.relics+=1;log("Module rare trouve: +1 relique.");}else log("Arche deconstruite: materiaux augmentes.");break;
+case "arkScan":S.res.science+=320;S.life.science+=320;S.col.stability=clamp(S.col.stability+0.08,0,1);log("Archives decodees: science + stabilite.");break;
+case "bloomEnergy":S.res.energy+=650;S.res.heat+=26;log("Matiere noire canalisee: gros pic energie.");break;
+case "bloomResearch":S.res.heat=Math.max(0,S.res.heat-22);S.run.researchBuff=now()+120000;S.run.exploreBuff=now()+90000;log("Calibration: recherche -15% et exploration boostee.");break;
+default:break;
+}}
+
+function resolveAnomaly(i){const id=S.exp.pending;if(!id)return;const a=ANOM[id];if(!a){S.exp.pending=null;return;}const o=a.opts[i];if(!o||!can(o.cost||{}))return;applyAnomaly(o.fx);S.exp.pending=null;S.exp.solved+=1;}
+function potShards(){const score=S.life.science/3600+S.exp.sectors/4+S.exp.relics*0.9;const total=Math.floor(Math.pow(Math.max(0,score),0.92));return Math.max(0,total-S.meta.total);}
+function newLaw(){let c=LAWS.filter(l=>l.id!==S.meta.law);if(!c.length)c=LAWS;const pick=c[Math.floor(Math.random()*c.length)];S.meta.law=pick.id;log(`Nouvelle loi cosmique: ${pick.name}.`);}
+function prestige(){const gain=potShards();if(gain<1)return;const keep=JSON.parse(JSON.stringify(S.meta)),buy=S.set.buy;keep.shards+=gain;keep.total+=gain;keep.resets+=1;S=initState();S.meta=keep;S.set.buy=buy;newLaw();S.run.last=performance.now();S.logs=[];log(`Boucle temporelle executee: +${gain} fragments.`);}
+function foundCol(){const need=2+S.col.count;if(S.exp.sectors<need)return;const c=colonyCost();if(!can(c))return;pay(c);S.col.count+=1;log(`Nouvelle colonie etablie. Total ${S.col.count}.`);}
+
+function tick(dtRaw){
+const dt=Math.min(dtRaw,0.5),m=mult();
+const collectors=S.b.collectors,radiators=S.b.radiators,mines=S.b.mines,labs=S.b.labs,probes=S.b.probes,cols=S.col.count;
+const eGain=collectors*1.15*m.e*heatEff();
+const colMat=cols*0.24*S.col.stability*m.co,colSci=cols*0.21*S.col.stability*m.co;
+const matGain=mines*0.38*m.m+colMat;
+const sciGain=labs*0.24*m.s*(0.82+S.col.stability*0.18)+colSci;
+const expRate=probes*0.22*m.x*flow()*(S.exp.pending?0.12:1);
+S.res.energy+=eGain*dt;S.res.materials+=matGain*dt;S.res.science+=sciGain*dt;S.life.science+=sciGain*dt;
+const hIn=(collectors*0.55*m.hg+labs*0.06)*dt,hOut=radiators*0.95*dt;
+S.res.heat=clamp(S.res.heat+hIn-hOut,0,220);
+S.exp.progress+=expRate*dt;while(S.exp.progress>=S.exp.target){S.exp.progress-=S.exp.target;discover();}
+const pressure=cols/Math.max(1,colCap()),stress=Math.max(0,(S.res.heat-90)/90),floor=stabFloor();
+S.col.target=clamp(1-Math.max(0,pressure-1)*0.34-stress*0.5,floor,1);
+S.col.stability=clamp(S.col.stability+(S.col.target-S.col.stability)*Math.min(1,dt*1.6),0,1);
+if(S.res.heat>150&&Math.random()<0.025*dt){const loss=0.04+Math.random()*0.04;S.res.energy*=1-loss;S.res.materials*=1-loss*0.8;log("Surchauffe critique: pertes de reserve.");}
+if(cols>0&&S.col.stability<0.3&&Math.random()<0.0025*dt){S.col.count=Math.max(0,S.col.count-1);log("Une colonie a ete evacuee.");}
+if(hasTech("drones")){S.run.autoPulse+=dt;while(S.run.autoPulse>=1){S.run.autoPulse-=1;pulse(true);}}
+S.res.energy=Math.max(0,S.res.energy);S.res.materials=Math.max(0,S.res.materials);S.res.science=Math.max(0,S.res.science);
+R={energyRate:eGain,coolRate:hOut/Math.max(dt,0.0001),expRate};
+if(now()-S.run.lastSave>10000){save();S.run.lastSave=now();}
+}
+
+function save(){try{const p=JSON.parse(JSON.stringify(S));p.run.last=performance.now();localStorage.setItem(KEY,JSON.stringify(p));}catch(e){console.error(e);}}
+function load(){const raw=localStorage.getItem(KEY);if(!raw){log("Nouvelle mission initialisee.");return;}try{const d=JSON.parse(raw),b=initState();
+S.res=Object.assign(b.res,d.res||{});S.b=Object.assign(b.b,d.b||{});S.exp=Object.assign(b.exp,d.exp||{});S.col=Object.assign(b.col,d.col||{});S.life=Object.assign(b.life,d.life||{});
+S.research=Array.isArray(d.research)?d.research.filter(id=>TECH.some(t=>t.id===id)):[];
+S.meta=Object.assign(b.meta,d.meta||{});S.meta.up=Object.assign(b.meta.up,(d.meta&&d.meta.up)||{});
+S.meta.unlocked=Array.isArray(S.meta.unlocked)?S.meta.unlocked.filter(id=>DOC[id]):[];
+S.set=Object.assign(b.set,d.set||{});S.run=Object.assign(b.run,d.run||{});S.run.last=performance.now();S.logs=Array.isArray(d.logs)?d.logs.slice(0,16):[];if(!S.logs.length)log("Sauvegarde chargee.");}
+catch(e){console.error(e);S=initState();log("Sauvegarde invalide, nouvelle mission.");}}
+function hardReset(){if(!confirm("Confirmer le reset total ?"))return;localStorage.removeItem(KEY);S=initState();log("Reset total effectue.");}
+
+function mountBuildings(ids,host){host.innerHTML="";for(const id of ids){const d=BUILD[id],r=document.createElement("div");r.className="row";r.innerHTML=`<div class="head"><span>${d.name} <span class="pill" id="count-${id}">0</span></span><button id="buy-${id}">Acheter</button></div><div class="tiny">${d.desc}</div><div class="cost" id="cost-${id}"></div>`;host.appendChild(r);$("buy-"+id).onclick=()=>buyBuilding(id);}}
+function mountResearch(){const host=$("researchList");host.innerHTML="";for(const t of TECH){const c=document.createElement("div");c.className="tech";c.id="tech-"+t.id;c.innerHTML=`<h3>${t.name}</h3><div class="tiny">${t.desc}</div><div class="head"><span class="cost" id="techCost-${t.id}"></span><button id="techBtn-${t.id}">Rechercher</button></div>`;host.appendChild(c);$("techBtn-"+t.id).onclick=()=>buyTech(t.id);}}
+function mountMeta(){const host=$("metaList");host.innerHTML="";for(const u of META){const r=document.createElement("div");r.className="row";r.innerHTML=`<div class="head"><span>${u.name} <span class="pill" id="metaLvl-${u.id}">N0</span></span><button id="metaBtn-${u.id}">Ameliorer</button></div><div class="tiny">${u.desc}</div><div class="cost" id="metaCost-${u.id}"></div>`;host.appendChild(r);$("metaBtn-"+u.id).onclick=()=>buyMeta(u.id);}}
+function mountDocs(){const host=$("doctrineList");host.innerHTML="";for(const [id,d] of Object.entries(DOC)){const c=document.createElement("div");c.className="doctrine";c.id="doc-"+id;c.innerHTML=`<strong>${d.name}</strong><div class="tiny">${d.desc}</div><button id="docBtn-${id}"></button>`;host.appendChild(c);$("docBtn-"+id).onclick=()=>buyDoc(id);}}
+function renderTop(){
+$("rEnergy").textContent=fmt(S.res.energy);$("rMat").textContent=fmt(S.res.materials);$("rSci").textContent=fmt(S.res.science);$("rHeat").textContent=fmt(S.res.heat);$("rShard").textContent=fmt(S.meta.shards);
+$("energyRate").textContent=`${fmt(R.energyRate)} / sec`;$("coolRate").textContent=`${fmt(R.coolRate)} / sec`;$("energyEff").textContent=pct(heatEff());$("heatBar").style.width=(clamp(S.res.heat/220,0,1)*100)+"%";
+const l=law();$("law").textContent="Loi cosmique: "+(l?`${l.name} - ${l.desc}`:"aucune");
+const hint=$("heatHint");hint.classList.remove("warn");if(S.res.heat>120)hint.classList.add("warn");
+}
+
+function renderBuildings(){for(const id of Object.keys(BUILD)){const n=S.set.buy,c=bCost(id,n),btn=$("buy-"+id);$("count-"+id).textContent=fmt(S.b[id]);$("cost-"+id).textContent=`Cout x${n}: ${costTxt(c)}`;btn.textContent=`Acheter x${n}`;btn.disabled=!can(c);}}
+function renderExp(){
+$("sectors").textContent=fmt(S.exp.sectors);$("relics").textContent=fmt(S.exp.relics);$("expRate").textContent=`${fmt(R.expRate)} / sec`;$("flow").textContent=pct(flow());
+$("expProg").textContent=`${fmt(S.exp.progress)} / ${fmt(S.exp.target)}`;$("expBar").style.width=(clamp(S.exp.progress/S.exp.target,0,1)*100)+"%";
+const id=S.exp.pending,p=$("anomaly");if(!id||!ANOM[id]){p.classList.remove("on");return;}const a=ANOM[id];p.classList.add("on");$("anomalyTitle").textContent=a.title;$("anomalyText").textContent=a.text;
+for(let i=0;i<2;i++){const o=a.opts[i],b=$("anom"+i);b.textContent=o.label;b.disabled=!can(o.cost||{});}
+}
+function renderResearch(){for(const t of TECH){const done=hasTech(t.id),show=t.req(S)||done,card=$("tech-"+t.id),btn=$("techBtn-"+t.id),disc=S.run.researchBuff>now()?0.85:1,c=t.cost*disc;card.style.display=show?"grid":"none";$("techCost-"+t.id).textContent=`Cout: ${fmt(c)} science`;if(done){card.classList.add("done");btn.textContent="Validee";btn.disabled=true;}else{card.classList.remove("done");btn.textContent="Rechercher";btn.disabled=!t.req(S)||S.res.science<c;}}}
+function renderCol(){const c=colonyCost(),need=2+S.col.count;$("colCount").textContent=fmt(S.col.count);$("colCap").textContent=fmt(colCap());$("colStab").textContent=pct(S.col.stability);$("colTarget").textContent=pct(S.col.target);$("colCost").textContent=costTxt(c);$("foundCol").disabled=S.exp.sectors<need||!can(c);}
+function renderPrestige(){const g=potShards();$("potShard").textContent="+"+fmt(g);$("totalShard").textContent=fmt(S.meta.total);$("resetCount").textContent=fmt(S.meta.resets);$("prestige").disabled=g<1;
+for(const u of META){$("metaLvl-"+u.id).textContent="N"+S.meta.up[u.id];const c=upCost(u);$("metaCost-"+u.id).textContent=`Cout: ${c} fragments`;$("metaBtn-"+u.id).disabled=S.meta.shards<c;}
+for(const [id,d] of Object.entries(DOC)){const card=$("doc-"+id),btn=$("docBtn-"+id),on=S.meta.active===id,un=hasDoc(id);card.classList.toggle("active",on);if(!un){btn.textContent=`Debloquer (${d.cost})`;btn.disabled=S.meta.shards<d.cost;}else if(on){btn.textContent="Active";btn.disabled=true;}else{btn.textContent="Activer";btn.disabled=false;}}
+}
+function renderLogs(){$("logs").innerHTML=S.logs.map(x=>`<li>${x}</li>`).join("");}
+function renderBuyToggle(){document.querySelectorAll("[data-buy]").forEach(b=>b.classList.toggle("on",Number(b.dataset.buy)===S.set.buy));}
+function renderAll(){renderTop();renderBuyToggle();renderBuildings();renderExp();renderResearch();renderCol();renderPrestige();renderLogs();}
+
+function frame(t){const dt=(t-S.run.last)/1000;S.run.last=t;tick(dt);renderAll();requestAnimationFrame(frame);}
+
+function bind(){
+$("pulse").onclick=()=>pulse(false);$("save").onclick=()=>{save();log("Sauvegarde manuelle.");};$("hardReset").onclick=hardReset;$("foundCol").onclick=foundCol;$("prestige").onclick=prestige;$("anom0").onclick=()=>resolveAnomaly(0);$("anom1").onclick=()=>resolveAnomaly(1);
+document.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{S.set.buy=Number(b.dataset.buy);document.querySelectorAll("[data-buy]").forEach(x=>x.classList.remove("on"));b.classList.add("on");});
+}
+
+mountBuildings(GROUPS.energy,$("buildEnergy"));
+mountBuildings(GROUPS.exp,$("buildExp"));
+mountBuildings(GROUPS.col,$("buildCol"));
+mountResearch();
+mountMeta();
+mountDocs();
+bind();
+load();
+renderAll();
+requestAnimationFrame(frame);
+window.addEventListener("beforeunload",save);
+})();
+</script>
+</body>
+</html>
+
