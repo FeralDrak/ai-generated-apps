@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CosmoExplorer - Système Solaire Interactif</title>
+    <style>
+        /* --- CSS : Styles et Animations --- */
+        :root {
+            --bg-color: #050505;
+            --orbit-color: rgba(255, 255, 255, 0.15);
+            --text-color: #ffffff;
+            --panel-bg: rgba(20, 20, 30, 0.85);
+            --accent: #4facfe;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; /* Empêche le scroll */
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Effet d'étoiles en arrière-plan */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                    radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+                    radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+                    radial-gradient(1px 1px at 50px 160px, #ddd, rgba(0,0,0,0)),
+                    radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+                    radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)),
+                    radial-gradient(1px 1px at 160px 120px, #ddd, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            animation: moveStars 100s linear infinite;
+        }
+
+        @keyframes moveStars {
+            from {transform: translateY(0);}
+            to {transform: translateY(-1000px);}
+        }
+
+        /* Conteneur principal */
+        .universe {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+        }
+
+        /* Le Soleil */
+        .sun {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #ffd700, #ff8c00);
+            border-radius: 50%;
+            box-shadow: 0 0 60px #ff8c00, 0 0 20px #fff;
+            z-index: 10;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {box-shadow: 0 0 40px #ff8c00, 0 0 10px #fff;}
+            to {box-shadow: 0 0 80px #ff4500, 0 0 20px #ffeb3b;}
+        }
+
+        /* Orbits et Planètes */
+        .orbit-container {
+            position: absolute;
+            border: 1px solid var(--orbit-color);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.5s ease;
+        }
+
+        .planet {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            z-index: 20;
+        }
+
+        /* Hover effect sur la planète */
+        .planet:hover {
+            transform: translate(-50%, -50%) scale(1.5);
+            box-shadow: 0 0 15px white;
+            z-index: 30;
+        }
+
+        /* Orbites spécifiques (rayons approximatifs pour l'échelle visuelle) */
+        /* Mercure */
+        .orbit-mercury { width: 120px; height: 120px; }
+        .mercury { width: 12px; height: 12px; background: #a5a5a5; top: 0; left: 0; margin-top: -6px; margin-left: -6px; }
+
+        /* Vénus */
+        .orbit-venus { width: 180px; height: 180px; }
+        .venus { width: 18px; height: 18px; background: #e3bb76; top: 0; left: 0; margin-top: -9px; margin-left: -9px; }
+
+        /* Terre */
+        .orbit-earth { width: 260px; height: 260px; }
+        .earth { width: 20px; height: 20px; background: #22a6b3; top: 0; left: 0; margin-top: -10px; margin-left: -10px;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.5); }
+        .earth::after {
+            content: ''; position: absolute; top: 5px; left: 5px; width: 10px; height: 10px; background: yellow; border-radius: 50%; opacity: 0.8;
+        }
+
+        /* Mars */
+        .orbit-mars { width: 340px; height: 340px; }
+        .mars { width: 16px; height: 16px; background: #eb4d4b; top: 0; left: 0; margin-top: -8px; margin-left: -8px; }
+
+        /* Jupiter */
+        .orbit-jupiter { width: 480px; height: 480px; }
+        .jupiter { width: 40px; height: 40px; background: #f0932b; top: 0; left: 0; margin-top: -20px; margin-left: -20px;
+            background: linear-gradient(180deg, #d98c3e, #f0932b, #d98c3e, #e67e22); }
+
+        /* Saturne */
+        .orbit-saturn { width: 620px; height: 620px; }
+        .saturn { width: 36px; height: 36px; background: #f6e58d; top: 0; left: 0; margin-top: -18px; margin-left: -18px; }
+        .saturn::before { /* Anneaux */
+            content: ''; position: absolute; top: 50%; left: 50%; width: 54px; height: 14px;
+            border: 6px solid rgba(200, 180, 100, 0.6); border-radius: 50%; transform: translate(-50%, -50%);
+        }
+
+        /* Uranus */
+        .orbit-uranus { width: 740px; height: 740px; }
+        .uranus { width: 24px; height: 24px; background: #7de3f4; top: 0; left: 0; margin-top: -12px; margin-left: -12px; }
+
+        /* Neptune */
+        .orbit-neptune { width: 860px; height: 860px; }
+        .neptune { width: 22px; height: 22px; background: #30336b; top: 0; left: 0; margin-top: -11px; margin-left: -11px; }
+
+        /* --- Interface Utilisateur --- */
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none; /* Permet de cliquer à travers le UI */
+            z-index: 100;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+            pointer-events: auto;
+            min-width: 250px;
+        }
+
+        /* Panneau d'information Planète */
+        #planet-info {
+            display: none; /* Caché par défaut */
+            animation: fadeIn 0.5s;
+        }
+
+        #planet-info h2 { margin-top: 0; color: var(--accent); }
+        .info-row { margin-bottom: 8px; font-size: 0.9em; color: #ccc; }
+        .info-label { font-weight: bold; color: #888; }
+
+        /* Panneau de contrôle */
+        #controls {
+            text-align: center;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+        }
+
+        button:active { transform: translateY(0); }
+
+        /* Animation des planètes */
+        .orbiting {
+            animation: orbit 0s linear infinite; /* Durée gérée par JS */
+        }
+
+        @keyframes orbit {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+            /* Note: Comme le conteneur est centré, on utilise une astuce CSS :
+               On fait tourner le conteneur de l'orbite. Mais pour simplifier
+               l'animation dans un fichier unique, on utilise transform: rotate sur le conteneur
+               et translate sur la planète pour maintenir la distance.
+            */
+        }
+
+        /* Astuce : On animera le conteneur de l'orbite, la planète est fixée à un coin. */
+        .orbiting-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            animation: spin 0s linear infinite;
+        }
+
+        .orbiting-wrapper .planet {
+            /* La planète est positionnée à droite (0deg) via top/left */
+            /* On va utiliser une animation qui tourne le wrapper */
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive simple */
+        @media (max-width: 800px) {
+            .orbit-neptune { width: 90vw; height: 90vw; }
+            .orbit-mercury { width: 20vw; height: 20vw; }
+            /* Ajustement des marges pour que ça tienne sur mobile */
+            .mercury { margin-top: -6px; margin-left: -6px; }
+            .venus { margin-top: -9px; margin-left: -9px; }
+            .earth { margin-top: -10px; margin-left: -10px; }
+            .mars { margin-top: -8px; margin-left: -8px; }
+            .jupiter { margin-top: -20px; margin-left: -20px; }
+            .saturn { margin-top: -18px; margin-left: -18px; }
+            .uranus { margin-top: -12px; margin-left: -12px; }
+            .neptune { margin-top: -11px; margin-left: -11px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="stars"></div>
+
+<div class="universe">
+    <!-- Le Soleil -->
+    <div class="sun" id="sun"></div>
+
+    <!-- Orbits et Planètes -->
+    <!-- Mercure -->
+    <div class="orbit-container orbit-mercury">
+        <div class="orbiting-wrapper">
+            <div class="planet mercury" data-name="Mercure" data-dist="57.9M km" data-period="88j" data-desc="La planète la plus proche du Soleil. Elle est petite, rocheuse et ne possède pas de satellites naturels."></div>
+        </div>
+    </div>
+
+    <!-- Vénus -->
+    <div class="orbit-container orbit-venus">
+        <div class="orbiting-wrapper">
+            <div class="planet venus" data-name="Vénus" data-dist="108.2M km" data-period="225j" data-desc="Connu comme la 'planète brillante', elle est la deuxième planète. Elle possède une atmosphère épaisse et un effet de serre intense."></div>
+        </div>
+    </div>
+
+    <!-- Terre -->
+    <div class="orbit-container orbit-earth">
+        <div class="orbiting-wrapper">
+            <div class="planet earth" data-name="Terre" data-dist="149.6M km" data-period="365j" data-desc="Notre maison. La seule planète connue abritant la vie, avec des océans couvrant 70% de sa surface."></div>
+        </div>
+    </div>
+
+    <!-- Mars -->
+    <div class="orbit-container orbit-mars">
+        <div class="orbiting-wrapper">
+            <div class="planet mars" data-name="Mars" data-dist="227.9M km" data-period="687j" data-desc="La planète rouge. Un monde aride et froid parsemé de cratères, mais ayant abrité de l'eau liquide dans le passé."></div>
+        </div>
+    </div>
+
+    <!-- Jupiter -->
+    <div class="orbit-container orbit-jupiter">
+        <div class="orbiting-wrapper">
+            <div class="planet jupiter" data-name="Jupiter" data-dist="778.5M km" data-period="12a" data-desc="Le plus grand objet du système solaire. Une géante gazeuse célèbre pour sa Grande Tache Rouge, un immense tourbillon."></div>
+        </div>
+    </div>
+
+    <!-- Saturne -->
+    <div class="orbit-container orbit-saturn">
+        <div class="orbiting-wrapper">
+            <div class="planet saturn" data-name="Saturne" data-dist="1.4M km" data-period="29a" data-desc="Admirée pour son système d'anneaux complexe composé de glace et de roche. C'est la deuxième plus grande planète."></div>
+        </div>
+    </div>
+
+    <!-- Uranus -->
+    <div class="orbit-container orbit-uranus">
+        <div class="orbiting-wrapper">
+            <div class="planet uranus" data-name="Uranus" data-dist="2.8M km" data-period="84a" data-desc="Une géante de glace qui tourne sur le côté. Elle a une couleur bleu pâle due au méthane dans son atmosphère."></div>
+        </div>
+    </div>
+
+    <!-- Neptune -->
+    <div class="orbit-container orbit-neptune">
+        <div class="orbiting-wrapper">
+            <div class="planet neptune" data-name="Neptune" data-dist="4.5M km" data-period="165a" data-desc="La planète la plus lointaine. Elle est sombre, venteuse et a une couleur bleu intense."></div>
+        </div>
+    </div>
+</div>
+
+<!-- Interface Utilisateur -->
+<div id="ui-layer">
+    <!-- Panneau Info -->
+    <div class="panel" id="planet-info">
+        <h2 id="p-name">Nom Planète</h2>
+        <div class="info-row"><span class="info-label">Distance (du Soleil):</span> <span id="p-dist">0</span></div>
+        <div class="info-row"><span class="info-label">Année (durée orbitale):</span> <span id="p-period">0</span></div>
+        <p id="p-desc" style="margin-top: 15px; line-height: 1.4; font-size: 0.9em;">Description...</p>
+    </div>
+
+    <!-- Panneau Contrôles -->
+    <div class="panel" id="controls">
+        <h3>Contrôles de Simulation</h3>
+        <button id="btn-play">Pause</button>
+        <button id="btn-speed">Vitesse: 1x</button>
+        <button id="btn-reset">Réinitialiser</button>
+    </div>
+</div>
+
+<script>
+    /* --- JavaScript : Logique de l'application --- */
+
+    // 1. Données des planètes (attributs HTML)
+    const planets = document.querySelectorAll('.planet');
+    const infoPanel = document.getElementById('planet-info');
+    const btnPlay = document.getElementById('btn-play');
+    const btnSpeed = document.getElementById('btn-speed');
+    const btnReset = document.getElementById('btn-reset');
+
+    let isPlaying = true;
+    let speedMultiplier = 1; // 1 = vitesse normale, 5 = rapide
+    let animationId;
+
+    // 2. Animation des orbites
+    function startOrbits() {
+        // On supprime d'abord les animations CSS pour les reprendre sous contrôle JS
+        // Cela permet de contrôler la vitesse dynamiquement.
+        const wrappers = document.querySelectorAll('.orbiting-wrapper');
+        wrappers.forEach(w => w.style.animation = 'none');
+
+        if (isPlaying) {
+            wrappers.forEach((wrapper, index) => {
+                // On calcule la durée basée sur la période réelle de la planète (stockée dans data-period)
+                // On la multiplie par l'inverse de la vitesse pour accélérer le tout.
+                // Exemple: Si période = 88j et vitesse = 5, durée = 88 / 5 = 17.6s
+                const period = parseFloat(wrapper.querySelector('.planet').getAttribute('data-period'));
+                const duration = period / speedMultiplier;
+
+                wrapper.style.animation = `spin ${duration}s linear infinite`;
+            });
+        } else {
+            wrappers.forEach(w => w.style.animation = 'none');
+        }
+    }
+
+    // 3. Interaction avec les planètes
+    planets.forEach(planet => {
+        planet.addEventListener('click', () => {
+            // Arrêter l'animation au clic pour que la planète ne bouge pas sous le doigt
+            isPlaying = false;
+            startOrbits();
+
+            // Récupérer les données
+            const name = planet.getAttribute('data-name');
+            const dist = planet.getAttribute('data-dist');
+            const period = planet.getAttribute('data-period');
+            const desc = planet.getAttribute('data-desc');
+
+            // Mettre à jour le panneau
+            document.getElementById('p-name').innerText = name;
+            document.getElementById('p-dist').innerText = dist;
+            document.getElementById('p-period').innerText = period;
+            document.getElementById('p-desc').innerText = desc;
+
+            // Afficher le panneau
+            infoPanel.style.display = 'block';
+        });
+    });
+
+    // 4. Contrôles globaux
+    btnPlay.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        btnPlay.innerText = isPlaying ? "Pause" : "Reprendre";
+        startOrbits();
+    });
+
+    btnSpeed.addEventListener('click', () => {
+        if (speedMultiplier === 1) speedMultiplier = 5;
+        else if (speedMultiplier === 5) speedMultiplier = 20;
+        else speedMultiplier = 1;
+
+        btnSpeed.innerText = `Vitesse: ${speedMultiplier}x`;
+        startOrbits();
+    });
+
+    btnReset.addEventListener('click', () => {
+        isPlaying = true;
+        speedMultiplier = 1;
+        btnPlay.innerText = "Pause";
+        btnSpeed.innerText = "Vitesse: 1x";
+        startOrbits();
+        infoPanel.style.display = 'none';
+    });
+
+    // Initialisation
+    startOrbits();
+
+</script>
+</body>
+</html>

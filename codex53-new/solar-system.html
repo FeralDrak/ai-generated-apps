@@ -1,0 +1,1126 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explorateur du Système Solaire</title>
+  <style>
+    :root {
+      --bg-deep: #070b1c;
+      --bg-mid: #0f1f43;
+      --bg-soft: #1f335f;
+      --panel: rgba(13, 20, 47, 0.75);
+      --panel-border: rgba(160, 197, 255, 0.2);
+      --text: #eef4ff;
+      --muted: #a3bbdf;
+      --accent: #67d3ff;
+      --accent-2: #ffc067;
+      --good: #9cffbf;
+      --bad: #ff9f9f;
+      --shadow: 0 14px 35px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 900px at 80% -10%, #2a457f 0%, rgba(42, 69, 127, 0) 65%),
+        radial-gradient(900px 700px at 15% 120%, #1e5a85 0%, rgba(30, 90, 133, 0) 60%),
+        linear-gradient(150deg, var(--bg-deep), var(--bg-mid) 45%, var(--bg-soft));
+      font-family: "Space Grotesk", "Avenir Next", "Futura", "Trebuchet MS", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 14% 26%, rgba(255, 255, 255, 0.7) 1.2px, transparent 1.2px),
+        radial-gradient(circle at 83% 62%, rgba(255, 255, 255, 0.42) 1px, transparent 1px),
+        radial-gradient(circle at 56% 81%, rgba(255, 255, 255, 0.52) 0.9px, transparent 0.9px),
+        radial-gradient(circle at 38% 53%, rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+      background-size: 290px 290px, 230px 230px, 270px 270px, 320px 320px;
+      opacity: 0.35;
+      z-index: -1;
+      animation: twinkle 12s linear infinite;
+    }
+
+    @keyframes twinkle {
+      0% { transform: translateY(0); opacity: 0.35; }
+      50% { transform: translateY(-8px); opacity: 0.42; }
+      100% { transform: translateY(0); opacity: 0.35; }
+    }
+
+    .app {
+      width: min(1400px, 100%);
+      margin: 0 auto;
+      padding: clamp(14px, 2vw, 26px);
+      display: grid;
+      grid-template-columns: minmax(380px, 1.75fr) minmax(310px, 1fr);
+      gap: clamp(12px, 1.7vw, 20px);
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(7px);
+    }
+
+    .sim-panel {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .title-wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 1.3rem + 1vw, 2rem);
+      letter-spacing: 0.3px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 72ch;
+    }
+
+    .sim-date {
+      font-size: 0.9rem;
+      color: var(--accent-2);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .canvas-wrap {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(141, 184, 255, 0.25);
+      background: radial-gradient(circle at 50% 40%, #132047, #0a1030 65%, #060915);
+      min-height: 420px;
+      position: relative;
+    }
+
+    #spaceCanvas {
+      width: 100%;
+      height: min(72vh, 620px);
+      display: block;
+    }
+
+    .controls {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .control-block {
+      background: rgba(20, 32, 70, 0.6);
+      border: 1px solid rgba(157, 195, 255, 0.2);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .control-title {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 0;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button,
+    select,
+    input[type="number"] {
+      border: 1px solid rgba(163, 204, 255, 0.33);
+      border-radius: 9px;
+      color: var(--text);
+      background: rgba(30, 53, 111, 0.72);
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: transform 0.18s ease, background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    button {
+      padding: 8px 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(214, 233, 255, 0.6);
+      background: rgba(57, 90, 163, 0.82);
+    }
+
+    button.active {
+      background: linear-gradient(120deg, #2d79db, #2f9ec4);
+      border-color: rgba(172, 224, 255, 0.8);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .speed-value {
+      color: var(--accent);
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    .body-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .body-chip {
+      padding: 7px 10px;
+      font-size: 0.85rem;
+      border-radius: 999px;
+    }
+
+    .side-panel {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .card {
+      padding: 14px;
+    }
+
+    .astro-name {
+      margin: 0 0 6px;
+      font-size: 1.28rem;
+    }
+
+    .astro-type {
+      margin: 0;
+      color: var(--accent-2);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .stat-grid {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(100px, 1fr));
+      gap: 8px;
+    }
+
+    .stat {
+      background: rgba(21, 35, 76, 0.62);
+      border: 1px solid rgba(152, 194, 255, 0.2);
+      border-radius: 10px;
+      padding: 9px;
+      min-height: 66px;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin: 0 0 5px;
+    }
+
+    .stat-value {
+      font-size: 0.93rem;
+      margin: 0;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .fact-list {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: #d7e8ff;
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .fact-list li + li {
+      margin-top: 5px;
+    }
+
+    .live-metrics {
+      margin: 12px 0 0;
+      font-size: 0.9rem;
+      color: #c9eaff;
+      padding: 9px;
+      border-radius: 10px;
+      background: rgba(17, 33, 72, 0.6);
+      border: 1px solid rgba(142, 185, 247, 0.28);
+      line-height: 1.4;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      letter-spacing: 0.3px;
+    }
+
+    .weight-wrap,
+    .quiz-wrap {
+      display: grid;
+      gap: 10px;
+    }
+
+    .inline-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+    }
+
+    .weight-result {
+      font-size: 0.95rem;
+      color: #d7efff;
+      margin: 0;
+      padding: 9px;
+      background: rgba(22, 40, 82, 0.63);
+      border-radius: 10px;
+      border: 1px solid rgba(153, 195, 255, 0.25);
+    }
+
+    .quiz-question {
+      margin: 0;
+      line-height: 1.4;
+      font-size: 0.94rem;
+    }
+
+    .quiz-options {
+      display: grid;
+      gap: 7px;
+    }
+
+    .quiz-option {
+      text-align: left;
+      width: 100%;
+    }
+
+    .quiz-feedback {
+      margin: 0;
+      font-size: 0.9rem;
+      min-height: 40px;
+      line-height: 1.35;
+    }
+
+    .quiz-feedback.good {
+      color: var(--good);
+    }
+
+    .quiz-feedback.bad {
+      color: var(--bad);
+    }
+
+    .footer-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 1080px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      #spaceCanvas {
+        height: min(63vh, 540px);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .sim-panel {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      .inline-inputs {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel sim-panel">
+      <div class="title-wrap">
+        <div>
+          <h1>Explorateur Dynamique du Système Solaire</h1>
+          <p class="subtitle">
+            Clique un astre, ajuste le temps, compare les distances et découvre les propriétés physiques en temps réel.
+          </p>
+        </div>
+        <p class="sim-date" id="simDate">Date simulée : --</p>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="spaceCanvas" aria-label="Simulation du système solaire"></canvas>
+      </div>
+
+      <div class="controls">
+        <article class="control-block">
+          <p class="control-title">Simulation</p>
+          <div class="buttons">
+            <button id="toggleRun">Pause</button>
+            <button id="resetBtn">Recentrer le temps</button>
+          </div>
+        </article>
+
+        <article class="control-block">
+          <p class="control-title">Vitesse</p>
+          <label for="speedRange">Jours simulés / seconde <span id="speedValue" class="speed-value">30</span></label>
+          <input type="range" id="speedRange" min="1" max="720" step="1" value="30">
+        </article>
+
+        <article class="control-block">
+          <p class="control-title">Affichage</p>
+          <div class="buttons">
+            <button id="scaleBtn">Mode : Distances didactiques</button>
+            <button id="labelsBtn" class="active">Étiquettes visibles</button>
+          </div>
+        </article>
+      </div>
+
+      <article class="control-block">
+        <p class="control-title">Sélection rapide des astres</p>
+        <div class="body-list" id="bodyList"></div>
+      </article>
+    </section>
+
+    <aside class="side-panel">
+      <article class="panel card" id="astroCard">
+        <h2 class="astro-name" id="astroName">--</h2>
+        <p class="astro-type" id="astroType">--</p>
+        <div class="stat-grid" id="statGrid"></div>
+        <p class="live-metrics" id="liveMetrics">--</p>
+        <ul class="fact-list" id="factList"></ul>
+      </article>
+
+      <article class="panel card">
+        <h2>Comparateur de poids</h2>
+        <div class="weight-wrap">
+          <div class="inline-inputs">
+            <label>
+              Poids sur Terre (kg)
+              <input type="number" id="earthWeight" min="1" step="1" value="70">
+            </label>
+            <label>
+              Astre cible
+              <select id="weightBodySelect"></select>
+            </label>
+          </div>
+          <p class="weight-result" id="weightResult">--</p>
+        </div>
+      </article>
+
+      <article class="panel card">
+        <h2>Mini quiz spatial</h2>
+        <div class="quiz-wrap">
+          <p class="quiz-question" id="quizQuestion">--</p>
+          <div class="quiz-options" id="quizOptions"></div>
+          <p class="quiz-feedback" id="quizFeedback"></p>
+          <button id="nextQuiz">Question suivante</button>
+        </div>
+      </article>
+
+      <p class="footer-note panel card">
+        Les orbites sont simplifiées (quasi circulaires) pour favoriser la compréhension.
+        Les données physiques sont des valeurs moyennes.
+      </p>
+    </aside>
+  </main>
+
+  <script>
+    const solarBodies = [
+      {
+        id: "sun",
+        name: "Soleil",
+        type: "Étoile",
+        color: "#ffc44d",
+        orbitAU: 0,
+        orbitalDays: 0,
+        diameterKm: 1392700,
+        mass: "1,989 x 10^30 kg",
+        gravity: 274,
+        temperature: "5 500 °C (surface)",
+        moons: 0,
+        rotationHours: 609.12,
+        tilt: "7,25°",
+        displaySize: 20,
+        facts: [
+          "Contient ~99,86 % de la masse totale du système solaire.",
+          "Produit son énergie par fusion nucléaire (hydrogène vers hélium).",
+          "Sa lumière met environ 8 minutes 20 secondes pour atteindre la Terre."
+        ]
+      },
+      {
+        id: "mercury",
+        name: "Mercure",
+        type: "Planète tellurique",
+        color: "#b5b5b5",
+        orbitAU: 0.39,
+        orbitalDays: 88,
+        diameterKm: 4879,
+        mass: "3,30 x 10^23 kg",
+        gravity: 3.7,
+        temperature: "-173 °C à 427 °C",
+        moons: 0,
+        rotationHours: 1407.6,
+        tilt: "0,03°",
+        displaySize: 5,
+        phase: 0.08,
+        facts: [
+          "C'est la planète la plus proche du Soleil.",
+          "Une journée solaire y dure plus longtemps qu'une année mercurienne.",
+          "Elle ne possède pratiquement pas d'atmosphère."
+        ]
+      },
+      {
+        id: "venus",
+        name: "Vénus",
+        type: "Planète tellurique",
+        color: "#f5c38f",
+        orbitAU: 0.72,
+        orbitalDays: 225,
+        diameterKm: 12104,
+        mass: "4,87 x 10^24 kg",
+        gravity: 8.87,
+        temperature: "≈ 465 °C",
+        moons: 0,
+        rotationHours: -5832.5,
+        tilt: "177,4°",
+        displaySize: 7,
+        phase: 0.35,
+        facts: [
+          "Rotation rétrograde : le Soleil s'y lève à l'ouest.",
+          "Son effet de serre extrême en fait la planète la plus chaude.",
+          "Sa pression atmosphérique est ~92 fois celle de la Terre."
+        ]
+      },
+      {
+        id: "earth",
+        name: "Terre",
+        type: "Planète tellurique",
+        color: "#67c8ff",
+        orbitAU: 1,
+        orbitalDays: 365.25,
+        diameterKm: 12742,
+        mass: "5,97 x 10^24 kg",
+        gravity: 9.81,
+        temperature: "-89 °C à 58 °C",
+        moons: 1,
+        rotationHours: 23.93,
+        tilt: "23,44°",
+        displaySize: 7.5,
+        phase: 0.63,
+        facts: [
+          "Seule planète connue abritant la vie.",
+          "Son inclinaison provoque les saisons.",
+          "La Lune stabilise partiellement son axe de rotation."
+        ]
+      },
+      {
+        id: "mars",
+        name: "Mars",
+        type: "Planète tellurique",
+        color: "#e49371",
+        orbitAU: 1.52,
+        orbitalDays: 687,
+        diameterKm: 6779,
+        mass: "6,42 x 10^23 kg",
+        gravity: 3.71,
+        temperature: "-125 °C à 20 °C",
+        moons: 2,
+        rotationHours: 24.6,
+        tilt: "25,19°",
+        displaySize: 6.5,
+        phase: 0.2,
+        facts: [
+          "Connue comme la planète rouge (oxyde de fer en surface).",
+          "Abrite le volcan Olympus Mons, le plus grand du système solaire.",
+          "Sa faible atmosphère est majoritairement composée de CO2."
+        ]
+      },
+      {
+        id: "jupiter",
+        name: "Jupiter",
+        type: "Géante gazeuse",
+        color: "#e8ba8b",
+        orbitAU: 5.2,
+        orbitalDays: 4331,
+        diameterKm: 139820,
+        mass: "1,90 x 10^27 kg",
+        gravity: 24.79,
+        temperature: "≈ -145 °C (nuages)",
+        moons: 95,
+        rotationHours: 9.9,
+        tilt: "3,13°",
+        displaySize: 13,
+        phase: 0.76,
+        facts: [
+          "La plus grande planète du système solaire.",
+          "Sa Grande Tache Rouge est une tempête active depuis des siècles.",
+          "Son champ magnétique est extrêmement puissant."
+        ]
+      },
+      {
+        id: "saturn",
+        name: "Saturne",
+        type: "Géante gazeuse",
+        color: "#f0d39d",
+        orbitAU: 9.58,
+        orbitalDays: 10747,
+        diameterKm: 116460,
+        mass: "5,68 x 10^26 kg",
+        gravity: 10.44,
+        temperature: "≈ -178 °C (nuages)",
+        moons: 146,
+        rotationHours: 10.7,
+        tilt: "26,73°",
+        displaySize: 12,
+        phase: 0.47,
+        facts: [
+          "Célèbre pour ses anneaux composés de glace et de poussières.",
+          "Sa densité moyenne est inférieure à celle de l'eau.",
+          "Titan, sa lune principale, possède une atmosphère dense."
+        ]
+      },
+      {
+        id: "uranus",
+        name: "Uranus",
+        type: "Géante de glace",
+        color: "#a6f6f8",
+        orbitAU: 19.22,
+        orbitalDays: 30589,
+        diameterKm: 50724,
+        mass: "8,68 x 10^25 kg",
+        gravity: 8.69,
+        temperature: "≈ -224 °C",
+        moons: 28,
+        rotationHours: -17.2,
+        tilt: "97,77°",
+        displaySize: 10.5,
+        phase: 0.91,
+        facts: [
+          "Son axe incliné le fait 'tourner sur le côté'.",
+          "Classée parmi les géantes de glace.",
+          "Une année uranienne dure plus de 84 ans terrestres."
+        ]
+      },
+      {
+        id: "neptune",
+        name: "Neptune",
+        type: "Géante de glace",
+        color: "#5da3ff",
+        orbitAU: 30.05,
+        orbitalDays: 59800,
+        diameterKm: 49244,
+        mass: "1,02 x 10^26 kg",
+        gravity: 11.15,
+        temperature: "≈ -214 °C",
+        moons: 16,
+        rotationHours: 16.1,
+        tilt: "28,32°",
+        displaySize: 10.4,
+        phase: 0.16,
+        facts: [
+          "La planète la plus éloignée du Soleil.",
+          "Vents supersoniques parmi les plus rapides connus.",
+          "Triton, son satellite principal, orbite en sens rétrograde."
+        ]
+      },
+      {
+        id: "pluto",
+        name: "Pluton",
+        type: "Planète naine",
+        color: "#d2c2ae",
+        orbitAU: 39.48,
+        orbitalDays: 90560,
+        diameterKm: 2377,
+        mass: "1,31 x 10^22 kg",
+        gravity: 0.62,
+        temperature: "≈ -229 °C",
+        moons: 5,
+        rotationHours: -153.3,
+        tilt: "122,53°",
+        displaySize: 4.3,
+        phase: 0.55,
+        facts: [
+          "Reclassée planète naine en 2006.",
+          "Possède une orbite très inclinée et excentrique.",
+          "Forme un duo gravitationnel serré avec Charon."
+        ]
+      }
+    ];
+
+    const quizBank = [
+      {
+        question: "Quelle planète a la journée (rotation) la plus courte ?",
+        options: ["Jupiter", "Mars", "Neptune"],
+        answer: 0,
+        explanation: "Jupiter tourne sur elle-même en environ 9 h 55, un record dans le système solaire."
+      },
+      {
+        question: "Pourquoi Vénus est-elle plus chaude que Mercure ?",
+        options: ["Son effet de serre extrême", "Elle est plus proche du Soleil", "Son noyau est plus massif"],
+        answer: 0,
+        explanation: "L'atmosphère très dense de Vénus piège la chaleur et provoque un fort effet de serre."
+      },
+      {
+        question: "Quelle propriété de la Terre est liée aux saisons ?",
+        options: ["Son inclinaison axiale", "Sa couleur bleue", "La présence de la Lune"],
+        answer: 0,
+        explanation: "L'axe terrestre incliné à 23,44° modifie l'angle des rayons solaires au fil de l'année."
+      },
+      {
+        question: "Qu'appelle-t-on une 'géante de glace' ?",
+        options: ["Uranus et Neptune", "Jupiter et Saturne", "Mars et Terre"],
+        answer: 0,
+        explanation: "Uranus et Neptune ont davantage d'eau, d'ammoniac et de méthane dans leur composition."
+      },
+      {
+        question: "Combien de temps met environ la lumière du Soleil pour arriver jusqu'à la Terre ?",
+        options: ["8 min 20 s", "1 min 30 s", "25 min"],
+        answer: 0,
+        explanation: "La lumière met environ 8 minutes et 20 secondes pour parcourir 1 UA."
+      }
+    ];
+
+    const canvas = document.getElementById("spaceCanvas");
+    const ctx = canvas.getContext("2d");
+    const simDateEl = document.getElementById("simDate");
+    const bodyListEl = document.getElementById("bodyList");
+    const toggleRunBtn = document.getElementById("toggleRun");
+    const resetBtn = document.getElementById("resetBtn");
+    const speedRange = document.getElementById("speedRange");
+    const speedValue = document.getElementById("speedValue");
+    const scaleBtn = document.getElementById("scaleBtn");
+    const labelsBtn = document.getElementById("labelsBtn");
+    const astroNameEl = document.getElementById("astroName");
+    const astroTypeEl = document.getElementById("astroType");
+    const statGridEl = document.getElementById("statGrid");
+    const liveMetricsEl = document.getElementById("liveMetrics");
+    const factListEl = document.getElementById("factList");
+    const earthWeightInput = document.getElementById("earthWeight");
+    const weightBodySelect = document.getElementById("weightBodySelect");
+    const weightResult = document.getElementById("weightResult");
+    const quizQuestion = document.getElementById("quizQuestion");
+    const quizOptions = document.getElementById("quizOptions");
+    const quizFeedback = document.getElementById("quizFeedback");
+    const nextQuiz = document.getElementById("nextQuiz");
+
+    const earthGravity = 9.81;
+    const orbitingBodies = solarBodies.filter((body) => body.orbitAU > 0);
+    const bodyById = Object.fromEntries(solarBodies.map((body) => [body.id, body]));
+    const currentPositions = {};
+
+    let selectedBodyId = "earth";
+    let running = true;
+    let showLabels = true;
+    let displayMode = "didactic";
+    let simDays = 0;
+    let daysPerSecond = Number(speedRange.value);
+    let lastTime = performance.now();
+    let currentQuiz = null;
+
+    const simStartDate = new Date("2026-01-01T00:00:00Z");
+
+    function formatNumber(value) {
+      return value.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+    }
+
+    function kmPerSecEstimate(au) {
+      return 29.78 / Math.sqrt(au);
+    }
+
+    function renderBodyButtons() {
+      bodyListEl.innerHTML = "";
+      for (const body of solarBodies) {
+        const btn = document.createElement("button");
+        btn.className = "body-chip" + (body.id === selectedBodyId ? " active" : "");
+        btn.textContent = body.name;
+        btn.style.borderColor = `${body.color}99`;
+        btn.addEventListener("click", () => setSelectedBody(body.id));
+        bodyListEl.appendChild(btn);
+      }
+    }
+
+    function setSelectedBody(id) {
+      selectedBodyId = id;
+      renderBodyButtons();
+      renderAstroCard();
+    }
+
+    function renderAstroCard() {
+      const body = bodyById[selectedBodyId];
+      const orbitalInfo = body.orbitalDays > 0
+        ? `${formatNumber(body.orbitalDays)} jours`
+        : "N/A";
+      const rotationHours = Math.abs(body.rotationHours);
+      const rotationInfo = `${formatNumber(rotationHours)} h${body.rotationHours < 0 ? " (rétrograde)" : ""}`;
+      const speed = body.orbitAU > 0 ? `${formatNumber(kmPerSecEstimate(body.orbitAU))} km/s` : "N/A";
+      const distance = body.orbitAU > 0 ? `${formatNumber(body.orbitAU)} UA` : "Centre du système";
+
+      astroNameEl.textContent = body.name;
+      astroTypeEl.textContent = body.type;
+
+      const stats = [
+        { label: "Distance moyenne", value: distance },
+        { label: "Année locale", value: orbitalInfo },
+        { label: "Jour local", value: rotationInfo },
+        { label: "Vitesse orbitale", value: speed },
+        { label: "Diamètre", value: `${formatNumber(body.diameterKm)} km` },
+        { label: "Gravité", value: `${formatNumber(body.gravity)} m/s²` },
+        { label: "Température", value: body.temperature },
+        { label: "Inclinaison", value: body.tilt },
+        { label: "Lunes", value: String(body.moons) },
+        { label: "Masse", value: body.mass }
+      ];
+
+      statGridEl.innerHTML = stats.map((stat) => `
+        <article class="stat">
+          <p class="stat-label">${stat.label}</p>
+          <p class="stat-value">${stat.value}</p>
+        </article>
+      `).join("");
+
+      factListEl.innerHTML = body.facts.map((fact) => `<li>${fact}</li>`).join("");
+      updateLiveMetrics();
+    }
+
+    function updateLiveMetrics() {
+      const body = bodyById[selectedBodyId];
+
+      if (body.orbitalDays <= 0) {
+        liveMetricsEl.textContent = "Le Soleil est la référence centrale : les planètes orbitent autour de lui.";
+        return;
+      }
+
+      const orbitFraction = ((simDays / body.orbitalDays) % 1 + 1) % 1;
+      const orbitPercent = orbitFraction * 100;
+      const localDayDurationHours = Math.abs(body.rotationHours);
+      const dayFraction = ((simDays * 24 / localDayDurationHours) % 1 + 1) % 1;
+      const dayPercent = dayFraction * 100;
+      const completedYears = simDays / body.orbitalDays;
+
+      liveMetricsEl.textContent =
+        `Année locale en cours : ${formatNumber(orbitPercent)} %. ` +
+        `Jour local en cours : ${formatNumber(dayPercent)} %. ` +
+        `Révolutions complètes depuis le départ de la simulation : ${formatNumber(Math.floor(completedYears))}.`;
+    }
+
+    function populateWeightSelect() {
+      weightBodySelect.innerHTML = solarBodies
+        .filter((body) => body.id !== "earth")
+        .map((body) => `<option value="${body.id}">${body.name}</option>`)
+        .join("");
+      weightBodySelect.value = "mars";
+    }
+
+    function updateWeightResult() {
+      const kg = Number(earthWeightInput.value);
+      const body = bodyById[weightBodySelect.value];
+
+      if (!Number.isFinite(kg) || kg <= 0) {
+        weightResult.textContent = "Entre une valeur positive.";
+        return;
+      }
+
+      const converted = (kg * body.gravity) / earthGravity;
+      weightResult.textContent = `Sur ${body.name}, tu pèserais environ ${formatNumber(converted)} kg (équivalent poids).`;
+    }
+
+    function pickQuiz() {
+      const idx = Math.floor(Math.random() * quizBank.length);
+      currentQuiz = quizBank[idx];
+      quizQuestion.textContent = currentQuiz.question;
+      quizFeedback.textContent = "";
+      quizFeedback.className = "quiz-feedback";
+      quizOptions.innerHTML = "";
+
+      currentQuiz.options.forEach((option, index) => {
+        const btn = document.createElement("button");
+        btn.className = "quiz-option";
+        btn.textContent = option;
+        btn.addEventListener("click", () => answerQuiz(index, btn));
+        quizOptions.appendChild(btn);
+      });
+    }
+
+    function answerQuiz(index) {
+      const options = Array.from(quizOptions.querySelectorAll("button"));
+      options.forEach((button) => {
+        button.disabled = true;
+      });
+
+      const success = index === currentQuiz.answer;
+      quizFeedback.className = `quiz-feedback ${success ? "good" : "bad"}`;
+      quizFeedback.textContent = `${success ? "Correct." : "Pas tout à fait."} ${currentQuiz.explanation}`;
+    }
+
+    function resizeCanvas() {
+      const ratio = window.devicePixelRatio || 1;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
+    function getOrbitRadiusPx(au, maxRadius) {
+      if (displayMode === "didactic") {
+        return 38 + Math.pow(au / 39.48, 0.57) * (maxRadius - 45);
+      }
+      return 26 + (au / 39.48) * (maxRadius - 35);
+    }
+
+    function getBodySize(body) {
+      if (displayMode === "didactic") {
+        return body.displaySize;
+      }
+      if (body.id === "sun") {
+        return 16;
+      }
+      const scaled = 2.2 + Math.log10(body.diameterKm) * 1.15;
+      return Math.max(2.2, Math.min(11.5, scaled));
+    }
+
+    function drawBackground(width, height) {
+      const grad = ctx.createRadialGradient(width * 0.5, height * 0.45, 20, width * 0.5, height * 0.45, width * 0.7);
+      grad.addColorStop(0, "rgba(28, 45, 89, 0.45)");
+      grad.addColorStop(1, "rgba(4, 6, 14, 1)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    function drawSystem() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      drawBackground(width, height);
+
+      const cx = width / 2;
+      const cy = height / 2;
+      const maxRadius = Math.min(width, height) * 0.45;
+
+      ctx.strokeStyle = "rgba(124, 160, 228, 0.18)";
+      ctx.lineWidth = 1;
+      for (const body of orbitingBodies) {
+        const orbitR = getOrbitRadiusPx(body.orbitAU, maxRadius);
+        ctx.beginPath();
+        ctx.arc(cx, cy, orbitR, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      const sun = bodyById.sun;
+      const sunSize = getBodySize(sun);
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, sunSize * 4.5);
+      glow.addColorStop(0, "rgba(255, 215, 131, 0.95)");
+      glow.addColorStop(0.5, "rgba(255, 184, 83, 0.38)");
+      glow.addColorStop(1, "rgba(255, 143, 45, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(cx, cy, sunSize * 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = sun.color;
+      ctx.beginPath();
+      ctx.arc(cx, cy, sunSize, 0, Math.PI * 2);
+      ctx.fill();
+      currentPositions.sun = { x: cx, y: cy, size: sunSize };
+
+      if (selectedBodyId === "sun") {
+        ctx.strokeStyle = "rgba(255, 244, 185, 0.9)";
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, sunSize + 7, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      if (showLabels) {
+        ctx.fillStyle = "#ffe3a6";
+        ctx.font = "600 13px 'Space Grotesk', sans-serif";
+        ctx.fillText("Soleil", cx + sunSize + 10, cy - 8);
+      }
+
+      for (const body of orbitingBodies) {
+        const orbitR = getOrbitRadiusPx(body.orbitAU, maxRadius);
+        const angle = ((simDays / body.orbitalDays + (body.phase || 0)) % 1) * Math.PI * 2;
+        const x = cx + orbitR * Math.cos(angle);
+        const y = cy + orbitR * Math.sin(angle);
+        const size = getBodySize(body);
+        currentPositions[body.id] = { x, y, size };
+
+        ctx.fillStyle = body.color;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (selectedBodyId === body.id) {
+          ctx.strokeStyle = "rgba(220, 241, 255, 0.92)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(x, y, size + 5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        if (body.id === "saturn") {
+          ctx.strokeStyle = "rgba(255, 228, 180, 0.55)";
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(x, y, size + 4.4, size + 1.4, 0.35, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        if (showLabels) {
+          ctx.fillStyle = "#dfefff";
+          ctx.font = "12px 'Space Grotesk', sans-serif";
+          ctx.fillText(body.name, x + size + 7, y - size - 5);
+        }
+      }
+    }
+
+    function updateSimDate() {
+      const date = new Date(simStartDate.getTime() + simDays * 24 * 60 * 60 * 1000);
+      simDateEl.textContent = `Date simulée : ${date.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+      })}`;
+    }
+
+    function animationLoop(now) {
+      const deltaSec = (now - lastTime) / 1000;
+      lastTime = now;
+
+      if (running) {
+        simDays += deltaSec * daysPerSecond;
+      }
+
+      drawSystem();
+      updateSimDate();
+      updateLiveMetrics();
+      requestAnimationFrame(animationLoop);
+    }
+
+    function toggleRunning() {
+      running = !running;
+      toggleRunBtn.textContent = running ? "Pause" : "Lecture";
+    }
+
+    function toggleScaleMode() {
+      displayMode = displayMode === "didactic" ? "proportional" : "didactic";
+      scaleBtn.textContent = displayMode === "didactic"
+        ? "Mode : Distances didactiques"
+        : "Mode : Distances proportionnelles";
+    }
+
+    function toggleLabels() {
+      showLabels = !showLabels;
+      labelsBtn.classList.toggle("active", showLabels);
+      labelsBtn.textContent = showLabels ? "Étiquettes visibles" : "Étiquettes masquées";
+    }
+
+    function resetSimulation() {
+      simDays = 0;
+      lastTime = performance.now();
+    }
+
+    function handleCanvasClick(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      let nearest = null;
+      let best = Infinity;
+
+      for (const [id, pos] of Object.entries(currentPositions)) {
+        const d = Math.hypot(x - pos.x, y - pos.y);
+        const threshold = pos.size + 8;
+        if (d <= threshold && d < best) {
+          nearest = id;
+          best = d;
+        }
+      }
+
+      if (nearest) {
+        setSelectedBody(nearest);
+      }
+    }
+
+    function bindEvents() {
+      window.addEventListener("resize", resizeCanvas);
+      canvas.addEventListener("click", handleCanvasClick);
+
+      toggleRunBtn.addEventListener("click", toggleRunning);
+      resetBtn.addEventListener("click", resetSimulation);
+      scaleBtn.addEventListener("click", toggleScaleMode);
+      labelsBtn.addEventListener("click", toggleLabels);
+
+      speedRange.addEventListener("input", () => {
+        daysPerSecond = Number(speedRange.value);
+        speedValue.textContent = String(daysPerSecond);
+      });
+
+      earthWeightInput.addEventListener("input", updateWeightResult);
+      weightBodySelect.addEventListener("change", updateWeightResult);
+      nextQuiz.addEventListener("click", pickQuiz);
+    }
+
+    function init() {
+      renderBodyButtons();
+      renderAstroCard();
+      populateWeightSelect();
+      updateWeightResult();
+      pickQuiz();
+      bindEvents();
+      resizeCanvas();
+      requestAnimationFrame(animationLoop);
+    }
+
+    init();
+  </script>
+</body>
+</html>
+
