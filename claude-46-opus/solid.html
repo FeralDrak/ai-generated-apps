@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dev Principles Academy — SOLID, DRY, KISS, YAGNI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --bg-card: #12121a;
+    --bg-card-hover: #1a1a28;
+    --bg-code: #0d0d15;
+    --border: #1e1e2e;
+    --border-active: #6366f1;
+    --text: #e2e2f0;
+    --text-muted: #7a7a9a;
+    --text-dim: #4a4a6a;
+    --accent: #6366f1;
+    --accent-glow: rgba(99,102,241,.25);
+    --green: #22c55e;
+    --green-glow: rgba(34,197,94,.2);
+    --red: #ef4444;
+    --red-glow: rgba(239,68,68,.2);
+    --orange: #f59e0b;
+    --orange-glow: rgba(245,158,11,.2);
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --purple: #a855f7;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,.4);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 20% 20%, rgba(99,102,241,.07), transparent),
+      radial-gradient(ellipse 500px 500px at 80% 80%, rgba(168,85,247,.05), transparent),
+      radial-gradient(ellipse 400px 300px at 50% 50%, rgba(6,182,212,.04), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ───────── HEADER ───────── */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .header-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 800; font-size: 18px; letter-spacing: -.5px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 18px; font-weight: 900; color: #fff;
+  }
+  .xp-bar-container {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .xp-info {
+    text-align: right;
+  }
+  .xp-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .xp-value { font-size: 15px; font-weight: 700; color: var(--accent); }
+  .xp-bar-outer {
+    width: 160px; height: 8px;
+    background: var(--border);
+    border-radius: 99px; overflow: hidden;
+  }
+  .xp-bar-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+    border-radius: 99px;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+  }
+  .level-badge {
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    color: #fff; font-weight: 700; font-size: 13px;
+    padding: 4px 12px; border-radius: 99px;
+    white-space: nowrap;
+  }
+
+  /* ───────── LAYOUT ───────── */
+  .app {
+    position: relative; z-index: 1;
+    max-width: 1200px; margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ───────── NAV TABS ───────── */
+  .nav-tabs {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 32px;
+    padding: 6px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .nav-tab {
+    flex: 1; min-width: 120px;
+    padding: 12px 16px;
+    background: transparent;
+    border: none; border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    position: relative;
+  }
+  .nav-tab:hover { color: var(--text); background: rgba(255,255,255,.03); }
+  .nav-tab.active {
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 2px 12px var(--accent-glow);
+  }
+  .nav-tab .tab-check {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    display: grid; place-items: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .nav-tab .tab-check.done {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+
+  /* ───────── SECTIONS ───────── */
+  .section { display: none; animation: fadeIn .4s ease; }
+  .section.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ───────── HERO CARDS ───────── */
+  .hero-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--purple), var(--cyan));
+  }
+  .hero-card h1 {
+    font-size: 28px; font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-card p { color: var(--text-muted); font-size: 15px; line-height: 1.6; max-width: 700px; }
+
+  /* ───────── PRINCIPLE CARD ───────── */
+  .principle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .principle-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: all .25s;
+    cursor: default;
+  }
+  .principle-card:hover {
+    border-color: var(--border-active);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+  .principle-card .letter {
+    display: inline-flex;
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    font-weight: 900; font-size: 20px;
+    align-items: center; justify-content: center;
+    margin-bottom: 14px;
+    color: #fff;
+  }
+  .principle-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .principle-card .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; font-style: italic; }
+  .principle-card .desc { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; }
+
+  /* ───────── CODE BLOCK ───────── */
+  .code-example {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin: 16px 0;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px;
+    background: rgba(255,255,255,.02);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px; font-weight: 600;
+    color: var(--text-muted);
+  }
+  .code-tag {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 6px;
+  }
+  .code-tag.bad { background: var(--red-glow); color: var(--red); }
+  .code-tag.good { background: var(--green-glow); color: var(--green); }
+  .code-body {
+    padding: 16px;
+    overflow-x: auto;
+  }
+  .code-body pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #c4c4dc;
+    white-space: pre;
+    tab-size: 2;
+  }
+  .code-body .kw { color: #c678dd; }
+  .code-body .fn { color: #61afef; }
+  .code-body .str { color: #98c379; }
+  .code-body .cm { color: #5c6370; font-style: italic; }
+  .code-body .num { color: #d19a66; }
+  .code-body .type { color: #e5c07b; }
+  .code-body .op { color: #56b6c2; }
+
+  /* ───────── TOGGLE GOOD/BAD ───────── */
+  .toggle-row {
+    display: flex; gap: 6px; margin-bottom: 16px;
+  }
+  .toggle-btn {
+    flex: 1; padding: 10px;
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+  }
+  .toggle-btn:hover { border-color: var(--text-dim); }
+  .toggle-btn.active-bad { border-color: var(--red); color: var(--red); background: var(--red-glow); }
+  .toggle-btn.active-good { border-color: var(--green); color: var(--green); background: var(--green-glow); }
+
+  /* ───────── QUIZ ───────── */
+  .quiz-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  .quiz-progress {
+    display: flex; gap: 6px; margin-bottom: 20px;
+  }
+  .quiz-dot {
+    flex: 1; height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    transition: background .3s;
+  }
+  .quiz-dot.current { background: var(--accent); }
+  .quiz-dot.correct { background: var(--green); }
+  .quiz-dot.wrong { background: var(--red); }
+
+  .quiz-question {
+    font-size: 17px; font-weight: 700;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+  .quiz-option {
+    padding: 14px 18px;
+    background: rgba(255,255,255,.02);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: all .2s;
+    text-align: left;
+    line-height: 1.5;
+  }
+  .quiz-option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .quiz-option.selected-correct {
+    border-color: var(--green);
+    background: var(--green-glow);
+    color: var(--green);
+  }
+  .quiz-option.selected-wrong {
+    border-color: var(--red);
+    background: var(--red-glow);
+    color: var(--red);
+  }
+  .quiz-option.reveal-correct {
+    border-color: var(--green);
+    background: var(--green-glow);
+  }
+  .quiz-option:disabled { cursor: default; }
+
+  .quiz-feedback {
+    margin-top: 16px;
+    padding: 14px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 14px; line-height: 1.6;
+    display: none;
+  }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.correct { background: var(--green-glow); border: 1px solid rgba(34,197,94,.3); }
+  .quiz-feedback.wrong { background: var(--red-glow); border: 1px solid rgba(239,68,68,.3); }
+
+  .quiz-next {
+    margin-top: 16px;
+    padding: 12px 28px;
+    background: var(--accent);
+    border: none; border-radius: var(--radius-sm);
+    color: #fff; font-family: inherit;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    display: none;
+  }
+  .quiz-next.show { display: inline-flex; }
+  .quiz-next:hover { filter: brightness(1.15); }
+
+  /* ───────── FLASHCARDS ───────── */
+  .flashcard-area {
+    perspective: 1000px;
+    margin-bottom: 24px;
+  }
+  .flashcard {
+    width: 100%; min-height: 260px;
+    position: relative;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform .6s cubic-bezier(.4,0,.2,1);
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .flashcard-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .flashcard-back {
+    transform: rotateY(180deg);
+  }
+  .flashcard-face h3 {
+    font-size: 22px; font-weight: 800; margin-bottom: 12px;
+  }
+  .flashcard-face p {
+    color: var(--text-muted); font-size: 14px; line-height: 1.7; max-width: 500px;
+  }
+  .flashcard-hint {
+    font-size: 12px; color: var(--text-dim);
+    margin-top: 16px;
+  }
+  .flashcard-nav {
+    display: flex; gap: 12px; justify-content: center; margin-top: 16px;
+  }
+  .flashcard-nav button {
+    padding: 10px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+  }
+  .flashcard-nav button:hover { border-color: var(--accent); }
+  .flashcard-counter {
+    text-align: center; font-size: 13px; color: var(--text-dim); margin-top: 8px;
+  }
+
+  /* ───────── CHALLENGE / DRAG ───────── */
+  .challenge-area {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  .challenge-area h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .challenge-area > p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
+
+  .match-game {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  .match-col { display: flex; flex-direction: column; gap: 10px; }
+  .match-arrow { display: flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: 20px; padding-top: 6px; }
+
+  .match-item {
+    padding: 14px 18px;
+    background: rgba(255,255,255,.02);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    text-align: center;
+    user-select: none;
+  }
+  .match-item:hover { border-color: var(--accent); }
+  .match-item.selected { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
+  .match-item.matched-correct { border-color: var(--green); background: var(--green-glow); color: var(--green); cursor: default; }
+  .match-item.matched-wrong { border-color: var(--red); background: var(--red-glow); color: var(--red); }
+
+  .match-def {
+    padding: 14px 18px;
+    background: rgba(255,255,255,.02);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px; color: var(--text-muted);
+    cursor: pointer; transition: all .2s;
+    text-align: center;
+    line-height: 1.5;
+    user-select: none;
+  }
+  .match-def:hover { border-color: var(--accent); }
+  .match-def.selected { border-color: var(--accent); background: var(--accent-glow); }
+  .match-def.matched-correct { border-color: var(--green); background: var(--green-glow); color: var(--green); cursor: default; }
+  .match-def.matched-wrong { border-color: var(--red); background: var(--red-glow); color: var(--red); }
+
+  /* ───────── SCORE / RESULT ───────── */
+  .result-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .result-card .score-circle {
+    width: 120px; height: 120px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 36px; font-weight: 900;
+    position: relative;
+  }
+  .result-card .score-circle::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 4px solid var(--border);
+  }
+  .result-card h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+  .result-card p { color: var(--text-muted); font-size: 15px; }
+
+  .btn-primary {
+    padding: 12px 32px;
+    background: var(--accent);
+    border: none; border-radius: var(--radius-sm);
+    color: #fff; font-family: inherit;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    margin-top: 16px;
+  }
+  .btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+  /* ───────── CHEATSHEET ───────── */
+  .cheatsheet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .cheat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .cheat-card h4 {
+    font-size: 15px; font-weight: 700; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cheat-card .pill {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 6px; letter-spacing: .5px;
+  }
+  .cheat-card ul {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .cheat-card li {
+    font-size: 13px; color: var(--text-muted); line-height: 1.5;
+    padding-left: 16px;
+    position: relative;
+  }
+  .cheat-card li::before {
+    content: '›';
+    position: absolute; left: 0;
+    color: var(--accent); font-weight: 700;
+  }
+
+  /* ───────── INTERVIEW TIPS ───────── */
+  .tip-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 12px;
+    display: flex; gap: 16px; align-items: flex-start;
+  }
+  .tip-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .tip-content h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .tip-content p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  /* ───────── PATTERN CARDS ───────── */
+  .pattern-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: all .25s;
+  }
+  .pattern-card:hover {
+    border-color: var(--border-active);
+    box-shadow: var(--shadow);
+  }
+  .pattern-header {
+    padding: 24px 28px 20px;
+    display: flex; align-items: flex-start; gap: 16px;
+    cursor: pointer;
+  }
+  .pattern-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: grid; place-items: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .pattern-meta { flex: 1; }
+  .pattern-meta h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .pattern-meta .pattern-type {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .8px; padding: 2px 8px; border-radius: 6px;
+    display: inline-block; margin-bottom: 8px;
+  }
+  .pattern-meta .pattern-desc {
+    font-size: 13.5px; color: var(--text-muted); line-height: 1.6;
+  }
+  .pattern-principles {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .pattern-principle-tag {
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 6px;
+    background: var(--accent-glow); color: var(--accent);
+  }
+  .pattern-body {
+    padding: 0 28px 24px;
+    border-top: 1px solid var(--border);
+  }
+  .pattern-body .pattern-section-title {
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--text-dim);
+    margin: 16px 0 10px;
+  }
+  .pattern-body .pattern-use-case {
+    font-size: 13px; color: var(--text-muted); line-height: 1.6;
+    padding-left: 14px; position: relative; margin-bottom: 4px;
+  }
+  .pattern-body .pattern-use-case::before {
+    content: '›'; position: absolute; left: 0;
+    color: var(--accent); font-weight: 700;
+  }
+  .pattern-toggle {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; padding: 10px;
+    font-size: 12px; color: var(--text-dim);
+    cursor: pointer; border-top: 1px solid var(--border);
+    transition: all .2s;
+  }
+  .pattern-toggle:hover { color: var(--accent); background: rgba(99,102,241,.04); }
+  .pattern-toggle .chevron { transition: transform .3s; }
+  .pattern-toggle .chevron.open { transform: rotate(180deg); }
+  .pattern-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .pattern-relation {
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .pattern-relation .pr-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: grid; place-items: center; font-size: 18px; flex-shrink: 0;
+  }
+  .pattern-relation .pr-text h4 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .pattern-relation .pr-text p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ───────── MISC ───────── */
+  .section-title {
+    font-size: 20px; font-weight: 800; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title .icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: grid; place-items: center; font-size: 16px;
+  }
+  .mb-24 { margin-bottom: 24px; }
+  .mb-16 { margin-bottom: 16px; }
+
+  /* ───────── TOAST ───────── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    padding: 14px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600;
+    z-index: 9999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all .4s cubic-bezier(.4,0,.2,1);
+    pointer-events: none;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.xp { background: var(--accent); color: #fff; box-shadow: 0 4px 20px var(--accent-glow); }
+  .toast.success { background: var(--green); color: #fff; box-shadow: 0 4px 20px var(--green-glow); }
+  .toast.error { background: var(--red); color: #fff; }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 768px) {
+    .header-inner { gap: 8px; }
+    .xp-bar-outer { width: 80px; }
+    .level-badge { font-size: 11px; padding: 3px 8px; }
+    .hero-card h1 { font-size: 22px; }
+    .hero-card { padding: 24px; }
+    .principle-grid { grid-template-columns: 1fr; }
+    .match-game { grid-template-columns: 1fr; }
+    .match-arrow { transform: rotate(90deg); }
+    .nav-tab { min-width: 80px; font-size: 12px; padding: 10px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">P</div>
+      <span>Principles Academy</span>
+    </div>
+    <div class="xp-bar-container">
+      <div class="xp-info">
+        <div class="xp-label">Expérience</div>
+        <div class="xp-value" id="xpValue">0 XP</div>
+      </div>
+      <div class="xp-bar-outer">
+        <div class="xp-bar-fill" id="xpBar"></div>
+      </div>
+      <div class="level-badge" id="levelBadge">Niv. 1</div>
+    </div>
+  </div>
+</header>
+
+<!-- APP -->
+<main class="app">
+
+  <!-- NAV -->
+  <nav class="nav-tabs" id="navTabs">
+    <button class="nav-tab active" data-tab="learn" onclick="switchTab('learn')">
+      <span class="tab-check" id="check-learn">1</span> Apprendre
+    </button>
+    <button class="nav-tab" data-tab="examples" onclick="switchTab('examples')">
+      <span class="tab-check" id="check-examples">2</span> Exemples
+    </button>
+    <button class="nav-tab" data-tab="quiz" onclick="switchTab('quiz')">
+      <span class="tab-check" id="check-quiz">3</span> Quiz
+    </button>
+    <button class="nav-tab" data-tab="match" onclick="switchTab('match')">
+      <span class="tab-check" id="check-match">4</span> Associer
+    </button>
+    <button class="nav-tab" data-tab="flashcards" onclick="switchTab('flashcards')">
+      <span class="tab-check" id="check-flashcards">5</span> Flashcards
+    </button>
+    <button class="nav-tab" data-tab="patterns" onclick="switchTab('patterns')">
+      <span class="tab-check" id="check-patterns">6</span> Patterns
+    </button>
+    <button class="nav-tab" data-tab="cheatsheet" onclick="switchTab('cheatsheet')">
+      <span class="tab-check" id="check-cheatsheet">7</span> Mémo
+    </button>
+  </nav>
+
+  <!-- ═══════ TAB 1: LEARN ═══════ -->
+  <section class="section active" id="tab-learn">
+    <div class="hero-card">
+      <h1>Les principes fondamentaux du Clean Code</h1>
+      <p>Maîtrise les 8 principes essentiels pour briller en entretien technique. Chaque principe est un pilier de la qualité logicielle — les connaître, c'est montrer que tu codes avec intention.</p>
+    </div>
+
+    <div class="section-title"><div class="icon" style="background:var(--accent-glow);color:var(--accent)">S</div> Les 5 principes SOLID</div>
+    <div class="principle-grid" id="solidGrid">
+      <!-- Filled by JS -->
+    </div>
+
+    <div class="section-title"><div class="icon" style="background:var(--orange-glow);color:var(--orange)">+</div> DRY, KISS & YAGNI</div>
+    <div class="principle-grid" id="otherGrid">
+      <!-- Filled by JS -->
+    </div>
+  </section>
+
+  <!-- ═══════ TAB 2: EXAMPLES ═══════ -->
+  <section class="section" id="tab-examples">
+    <div class="hero-card">
+      <h1>Avant / Après — Code en action</h1>
+      <p>8 exemples avant/après couvrant tous les principes SOLID, DRY, KISS et YAGNI. Bascule entre la version qui viole le principe et sa version corrigée.</p>
+    </div>
+    <div id="examplesContainer"></div>
+  </section>
+
+  <!-- ═══════ TAB 3: QUIZ ═══════ -->
+  <section class="section" id="tab-quiz">
+    <div class="hero-card">
+      <h1>Quiz — Teste tes connaissances</h1>
+      <p>15 questions pour vérifier ta compréhension des principes. Chaque bonne réponse te rapporte de l'XP !</p>
+    </div>
+    <div class="quiz-container" id="quizContainer"></div>
+  </section>
+
+  <!-- ═══════ TAB 4: MATCH ═══════ -->
+  <section class="section" id="tab-match">
+    <div class="hero-card">
+      <h1>Jeu d'association</h1>
+      <p>Relie chaque principe à sa définition. Clique sur un principe à gauche, puis sur la bonne définition à droite.</p>
+    </div>
+    <div class="challenge-area" id="matchArea"></div>
+  </section>
+
+  <!-- ═══════ TAB 5: FLASHCARDS ═══════ -->
+  <section class="section" id="tab-flashcards">
+    <div class="hero-card">
+      <h1>Flashcards — Révision rapide</h1>
+      <p>Clique sur la carte pour la retourner et voir la réponse. Parfait pour réviser juste avant l'entretien.</p>
+    </div>
+    <div class="flashcard-area" id="flashcardArea"></div>
+    <div class="flashcard-nav">
+      <button onclick="prevFlashcard()">← Précédente</button>
+      <button onclick="nextFlashcard()">Suivante →</button>
+    </div>
+    <div class="flashcard-counter" id="flashcardCounter"></div>
+  </section>
+
+  <!-- ═══════ TAB 6: PATTERNS ═══════ -->
+  <section class="section" id="tab-patterns">
+    <div class="hero-card">
+      <h1>Design Patterns & Principes</h1>
+      <p>Les design patterns sont des solutions éprouvées aux problèmes récurrents. Chaque pattern est lié à un ou plusieurs principes SOLID/DRY/KISS. Savoir les relier est un vrai plus en entretien.</p>
+    </div>
+    <div id="patternsContainer"></div>
+  </section>
+
+  <!-- ═══════ TAB 7: CHEATSHEET ═══════ -->
+  <section class="section" id="tab-cheatsheet">
+    <div class="hero-card">
+      <h1>Mémo & Tips d'entretien</h1>
+      <p>Tout ce qu'il faut retenir en un coup d'œil, plus des conseils pour impressionner tes intervieweurs.</p>
+    </div>
+
+    <div class="section-title mb-16">📋 Résumé express</div>
+    <div class="cheatsheet-grid mb-24" id="cheatGrid"></div>
+
+    <div class="section-title mb-16">💡 Tips pour l'entretien</div>
+    <div id="tipsContainer"></div>
+  </section>
+
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+
+const SOLID = [
+  {
+    letter: 'S', color: '#6366f1',
+    name: 'Single Responsibility',
+    subtitle: 'Principe de responsabilité unique',
+    desc: 'Une classe ou un module ne doit avoir qu\'une seule raison de changer. Chaque composant a un seul rôle bien défini.',
+    tips: ['Facilite la maintenance', 'Réduit les effets de bord', 'Améliore la testabilité']
+  },
+  {
+    letter: 'O', color: '#a855f7',
+    name: 'Open/Closed',
+    subtitle: 'Ouvert à l\'extension, fermé à la modification',
+    desc: 'Le code doit pouvoir être étendu sans être modifié. On ajoute du comportement via l\'héritage ou la composition, pas en éditant le code existant.',
+    tips: ['Utilise les interfaces et l\'abstraction', 'Pattern Strategy, Decorator', 'Protège le code existant']
+  },
+  {
+    letter: 'L', color: '#ec4899',
+    name: 'Liskov Substitution',
+    subtitle: 'Principe de substitution de Liskov',
+    desc: 'Toute classe dérivée doit pouvoir remplacer sa classe parente sans casser le programme. Le comportement attendu doit être respecté.',
+    tips: ['Pas de surprises dans l\'héritage', 'Les sous-types respectent le contrat', 'Teste avec la classe parente']
+  },
+  {
+    letter: 'I', color: '#06b6d4',
+    name: 'Interface Segregation',
+    subtitle: 'Ségrégation des interfaces',
+    desc: 'Mieux vaut plusieurs petites interfaces spécifiques qu\'une grosse interface générale. Un client ne doit pas dépendre de méthodes qu\'il n\'utilise pas.',
+    tips: ['Interfaces fines et ciblées', 'Évite les "fat interfaces"', 'Meilleur découplage']
+  },
+  {
+    letter: 'D', color: '#f59e0b',
+    name: 'Dependency Inversion',
+    subtitle: 'Inversion des dépendances',
+    desc: 'Les modules de haut niveau ne doivent pas dépendre de modules de bas niveau. Les deux doivent dépendre d\'abstractions (interfaces).',
+    tips: ['Injection de dépendances', 'Facilite le mocking en tests', 'Découplage maximal']
+  },
+];
+
+const OTHERS = [
+  {
+    letter: 'DRY', color: '#22c55e',
+    name: "Don't Repeat Yourself",
+    subtitle: 'Ne te répète pas',
+    desc: 'Chaque élément de connaissance doit avoir une seule représentation dans le système. La duplication de logique est l\'ennemi de la maintenabilité.',
+    tips: ['Factorise le code dupliqué', 'Crée des fonctions utilitaires', 'Attention à la duplication "cachée"']
+  },
+  {
+    letter: 'KISS', color: '#06b6d4',
+    name: 'Keep It Simple, Stupid',
+    subtitle: 'Reste simple',
+    desc: 'La simplicité doit être un objectif de conception. Évite la complexité inutile. Le code le plus simple qui résout le problème est souvent le meilleur.',
+    tips: ['Code lisible > code "intelligent"', 'Pas d\'optimisation prématurée', 'Si c\'est dur à expliquer, simplifie']
+  },
+  {
+    letter: 'YAGNI', color: '#ef4444',
+    name: "You Ain't Gonna Need It",
+    subtitle: 'Tu n\'en auras pas besoin',
+    desc: 'N\'implémente pas une fonctionnalité tant qu\'elle n\'est pas nécessaire. Coder "au cas où" ajoute de la complexité sans valeur immédiate.',
+    tips: ['Code pour aujourd\'hui, pas demain', 'Supprime le code mort', 'Chaque ligne a un coût de maintenance']
+  }
+];
+
+const CODE_EXAMPLES = [
+  {
+    principle: 'S — Single Responsibility',
+    bad: {
+      title: 'UserManager fait tout',
+      code: `<span class="kw">class</span> <span class="type">UserManager</span> {
+  <span class="fn">createUser</span>(data) {
+    <span class="cm">// Valide les données</span>
+    <span class="kw">if</span> (!data.email.includes(<span class="str">'@'</span>)) <span class="kw">throw</span> <span class="str">'Invalid'</span>;
+    <span class="cm">// Sauvegarde en base</span>
+    db.query(<span class="str">'INSERT INTO users...'</span>);
+    <span class="cm">// Envoie un email</span>
+    smtp.send({ to: data.email, subject: <span class="str">'Bienvenue!'</span> });
+    <span class="cm">// Log l'action</span>
+    fs.appendFile(<span class="str">'log.txt'</span>, <span class="str">'User created'</span>);
+  }
+}`
+    },
+    good: {
+      title: 'Chaque classe a son rôle',
+      code: `<span class="kw">class</span> <span class="type">UserValidator</span> {
+  <span class="fn">validate</span>(data) { <span class="cm">/* validation */</span> }
+}
+
+<span class="kw">class</span> <span class="type">UserRepository</span> {
+  <span class="fn">save</span>(user) { <span class="cm">/* accès BDD */</span> }
+}
+
+<span class="kw">class</span> <span class="type">EmailService</span> {
+  <span class="fn">sendWelcome</span>(email) { <span class="cm">/* envoi email */</span> }
+}
+
+<span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="fn">constructor</span>(validator, repo, mailer) {
+    <span class="kw">this</span>.validator = validator;
+    <span class="kw">this</span>.repo = repo;
+    <span class="kw">this</span>.mailer = mailer;
+  }
+  <span class="fn">createUser</span>(data) {
+    <span class="kw">this</span>.validator.<span class="fn">validate</span>(data);
+    <span class="kw">this</span>.repo.<span class="fn">save</span>(data);
+    <span class="kw">this</span>.mailer.<span class="fn">sendWelcome</span>(data.email);
+  }
+}`
+    }
+  },
+  {
+    principle: 'O — Open/Closed',
+    bad: {
+      title: 'Modifier à chaque nouveau type',
+      code: `<span class="kw">class</span> <span class="type">DiscountCalculator</span> {
+  <span class="fn">calculate</span>(type, price) {
+    <span class="kw">if</span> (type === <span class="str">'student'</span>) <span class="kw">return</span> price * <span class="num">0.8</span>;
+    <span class="kw">if</span> (type === <span class="str">'senior'</span>) <span class="kw">return</span> price * <span class="num">0.7</span>;
+    <span class="kw">if</span> (type === <span class="str">'vip'</span>) <span class="kw">return</span> price * <span class="num">0.6</span>;
+    <span class="cm">// Chaque nouveau type = modifier cette méthode</span>
+    <span class="kw">return</span> price;
+  }
+}`
+    },
+    good: {
+      title: 'Extensible via des stratégies',
+      code: `<span class="kw">class</span> <span class="type">StudentDiscount</span> {
+  <span class="fn">apply</span>(price) { <span class="kw">return</span> price * <span class="num">0.8</span>; }
+}
+<span class="kw">class</span> <span class="type">SeniorDiscount</span> {
+  <span class="fn">apply</span>(price) { <span class="kw">return</span> price * <span class="num">0.7</span>; }
+}
+
+<span class="kw">class</span> <span class="type">DiscountCalculator</span> {
+  <span class="fn">constructor</span>(strategy) {
+    <span class="kw">this</span>.strategy = strategy;
+  }
+  <span class="fn">calculate</span>(price) {
+    <span class="kw">return this</span>.strategy.<span class="fn">apply</span>(price);
+  }
+}
+<span class="cm">// Ajouter un type = nouvelle classe, 0 modif !</span>`
+    }
+  },
+  {
+    principle: 'L — Liskov Substitution',
+    bad: {
+      title: 'Le carré casse le rectangle',
+      code: `<span class="kw">class</span> <span class="type">Rectangle</span> {
+  <span class="fn">setWidth</span>(w)  { <span class="kw">this</span>.width = w; }
+  <span class="fn">setHeight</span>(h) { <span class="kw">this</span>.height = h; }
+  <span class="fn">area</span>() { <span class="kw">return this</span>.width * <span class="kw">this</span>.height; }
+}
+
+<span class="kw">class</span> <span class="type">Square</span> <span class="kw">extends</span> <span class="type">Rectangle</span> {
+  <span class="fn">setWidth</span>(w)  { <span class="kw">this</span>.width = w; <span class="kw">this</span>.height = w; }
+  <span class="fn">setHeight</span>(h) { <span class="kw">this</span>.width = h; <span class="kw">this</span>.height = h; }
+}
+<span class="cm">// rect.setWidth(5); rect.setHeight(3);</span>
+<span class="cm">// rect.area() → attendu: 15, obtenu: 9 💥</span>`
+    },
+    good: {
+      title: 'Abstraction commune sans piège',
+      code: `<span class="kw">class</span> <span class="type">Shape</span> {
+  <span class="fn">area</span>() { <span class="kw">throw</span> <span class="str">'Not implemented'</span>; }
+}
+
+<span class="kw">class</span> <span class="type">Rectangle</span> <span class="kw">extends</span> <span class="type">Shape</span> {
+  <span class="fn">constructor</span>(w, h) { <span class="kw">super</span>(); <span class="kw">this</span>.w = w; <span class="kw">this</span>.h = h; }
+  <span class="fn">area</span>() { <span class="kw">return this</span>.w * <span class="kw">this</span>.h; }
+}
+
+<span class="kw">class</span> <span class="type">Square</span> <span class="kw">extends</span> <span class="type">Shape</span> {
+  <span class="fn">constructor</span>(s) { <span class="kw">super</span>(); <span class="kw">this</span>.s = s; }
+  <span class="fn">area</span>() { <span class="kw">return this</span>.s * <span class="kw">this</span>.s; }
+}
+<span class="cm">// Chaque forme respecte son contrat ✓</span>`
+    }
+  },
+  {
+    principle: 'I — Interface Segregation',
+    bad: {
+      title: 'Une grosse interface pour tout le monde',
+      code: `<span class="kw">interface</span> <span class="type">Animal</span> {
+  <span class="fn">eat</span>(): <span class="type">void</span>;
+  <span class="fn">fly</span>(): <span class="type">void</span>;
+  <span class="fn">swim</span>(): <span class="type">void</span>;
+  <span class="fn">run</span>(): <span class="type">void</span>;
+}
+
+<span class="kw">class</span> <span class="type">Dog</span> <span class="kw">implements</span> <span class="type">Animal</span> {
+  <span class="fn">eat</span>()  { <span class="cm">/* OK ✓ */</span> }
+  <span class="fn">fly</span>()  { <span class="kw">throw</span> <span class="str">'Un chien ne vole pas !'</span>; } <span class="cm">// 💥</span>
+  <span class="fn">swim</span>() { <span class="cm">/* OK ✓ */</span> }
+  <span class="fn">run</span>()  { <span class="cm">/* OK ✓ */</span> }
+}
+
+<span class="kw">class</span> <span class="type">Fish</span> <span class="kw">implements</span> <span class="type">Animal</span> {
+  <span class="fn">eat</span>()  { <span class="cm">/* OK ✓ */</span> }
+  <span class="fn">fly</span>()  { <span class="kw">throw</span> <span class="str">'Un poisson ne vole pas !'</span>; } <span class="cm">// 💥</span>
+  <span class="fn">swim</span>() { <span class="cm">/* OK ✓ */</span> }
+  <span class="fn">run</span>()  { <span class="kw">throw</span> <span class="str">'Un poisson ne court pas !'</span>; } <span class="cm">// 💥</span>
+}
+<span class="cm">// Chaque classe implémente des méthodes inutiles 😩</span>`
+    },
+    good: {
+      title: 'Petites interfaces ciblées',
+      code: `<span class="kw">interface</span> <span class="type">Eatable</span>  { <span class="fn">eat</span>(): <span class="type">void</span>; }
+<span class="kw">interface</span> <span class="type">Flyable</span>  { <span class="fn">fly</span>(): <span class="type">void</span>; }
+<span class="kw">interface</span> <span class="type">Swimmable</span> { <span class="fn">swim</span>(): <span class="type">void</span>; }
+<span class="kw">interface</span> <span class="type">Runnable</span> { <span class="fn">run</span>(): <span class="type">void</span>; }
+
+<span class="kw">class</span> <span class="type">Dog</span> <span class="kw">implements</span> <span class="type">Eatable</span>, <span class="type">Swimmable</span>, <span class="type">Runnable</span> {
+  <span class="fn">eat</span>()  { <span class="cm">/* ... */</span> }
+  <span class="fn">swim</span>() { <span class="cm">/* ... */</span> }
+  <span class="fn">run</span>()  { <span class="cm">/* ... */</span> }
+}
+
+<span class="kw">class</span> <span class="type">Fish</span> <span class="kw">implements</span> <span class="type">Eatable</span>, <span class="type">Swimmable</span> {
+  <span class="fn">eat</span>()  { <span class="cm">/* ... */</span> }
+  <span class="fn">swim</span>() { <span class="cm">/* ... */</span> }
+}
+
+<span class="kw">class</span> <span class="type">Eagle</span> <span class="kw">implements</span> <span class="type">Eatable</span>, <span class="type">Flyable</span> {
+  <span class="fn">eat</span>()  { <span class="cm">/* ... */</span> }
+  <span class="fn">fly</span>()  { <span class="cm">/* ... */</span> }
+}
+<span class="cm">// Chaque classe n'implémente que le nécessaire ✓</span>`
+    }
+  },
+  {
+    principle: 'D — Dependency Inversion',
+    bad: {
+      title: 'Couplage fort au concret',
+      code: `<span class="kw">class</span> <span class="type">MySQLDatabase</span> {
+  <span class="fn">query</span>(sql) { <span class="cm">/* requête MySQL */</span> }
+}
+
+<span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="fn">constructor</span>() {
+    <span class="cm">// ❌ Dépendance directe au concret</span>
+    <span class="kw">this</span>.db = <span class="kw">new</span> <span class="type">MySQLDatabase</span>();
+  }
+  <span class="fn">getUser</span>(id) {
+    <span class="kw">return this</span>.db.<span class="fn">query</span>(
+      <span class="str">\`SELECT * FROM users WHERE id = \${id}\`</span>
+    );
+  }
+}
+
+<span class="cm">// Impossible de tester sans MySQL réel</span>
+<span class="cm">// Impossible de changer de BDD sans tout modifier 💥</span>`
+    },
+    good: {
+      title: 'Dépendre d\'une abstraction',
+      code: `<span class="cm">// Abstraction (interface / contrat)</span>
+<span class="kw">interface</span> <span class="type">Database</span> {
+  <span class="fn">query</span>(sql: <span class="type">string</span>): <span class="type">any</span>;
+}
+
+<span class="kw">class</span> <span class="type">MySQLDatabase</span> <span class="kw">implements</span> <span class="type">Database</span> {
+  <span class="fn">query</span>(sql) { <span class="cm">/* MySQL */</span> }
+}
+<span class="kw">class</span> <span class="type">PostgresDatabase</span> <span class="kw">implements</span> <span class="type">Database</span> {
+  <span class="fn">query</span>(sql) { <span class="cm">/* Postgres */</span> }
+}
+
+<span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="fn">constructor</span>(db: <span class="type">Database</span>) {
+    <span class="kw">this</span>.db = db; <span class="cm">// ✅ Injection de dépendance</span>
+  }
+  <span class="fn">getUser</span>(id) {
+    <span class="kw">return this</span>.db.<span class="fn">query</span>(<span class="str">'SELECT ...'</span>);
+  }
+}
+
+<span class="cm">// En prod : new UserService(new MySQLDatabase())</span>
+<span class="cm">// En test : new UserService(new MockDatabase()) ✓</span>`
+    }
+  },
+  {
+    principle: 'DRY — Don\'t Repeat Yourself',
+    bad: {
+      title: 'Logique dupliquée partout',
+      code: `<span class="kw">function</span> <span class="fn">getUserDisplay</span>(user) {
+  <span class="kw">const</span> name = user.firstName + <span class="str">' '</span> + user.lastName;
+  <span class="kw">return</span> name.trim().toUpperCase();
+}
+
+<span class="kw">function</span> <span class="fn">getOrderLabel</span>(order) {
+  <span class="kw">const</span> name = order.firstName + <span class="str">' '</span> + order.lastName;
+  <span class="kw">return</span> <span class="str">'Commande de '</span> + name.trim().toUpperCase();
+}
+
+<span class="kw">function</span> <span class="fn">getInvoiceHeader</span>(client) {
+  <span class="kw">const</span> name = client.firstName + <span class="str">' '</span> + client.lastName;
+  <span class="kw">return</span> <span class="str">'Facture — '</span> + name.trim().toUpperCase();
+}`
+    },
+    good: {
+      title: 'Une seule source de vérité',
+      code: `<span class="kw">function</span> <span class="fn">formatName</span>(person) {
+  <span class="kw">return</span> (person.firstName + <span class="str">' '</span> + person.lastName)
+    .trim().toUpperCase();
+}
+
+<span class="kw">function</span> <span class="fn">getUserDisplay</span>(user) {
+  <span class="kw">return</span> <span class="fn">formatName</span>(user);
+}
+
+<span class="kw">function</span> <span class="fn">getOrderLabel</span>(order) {
+  <span class="kw">return</span> <span class="str">'Commande de '</span> + <span class="fn">formatName</span>(order);
+}
+
+<span class="kw">function</span> <span class="fn">getInvoiceHeader</span>(client) {
+  <span class="kw">return</span> <span class="str">'Facture — '</span> + <span class="fn">formatName</span>(client);
+}
+<span class="cm">// Un seul endroit à modifier ✓</span>`
+    }
+  },
+  {
+    principle: 'KISS — Keep It Simple',
+    bad: {
+      title: 'Sur-ingénierie pour une tâche simple',
+      code: `<span class="kw">class</span> <span class="type">ParityCheckerFactory</span> {
+  <span class="fn">static create</span>(config = {}) {
+    <span class="kw">const</span> strategy = config.strategy || <span class="str">'modulo'</span>;
+    <span class="kw">const</span> checker = <span class="kw">new</span> <span class="type">ParityChecker</span>();
+    checker.<span class="fn">setStrategy</span>(
+      <span class="type">StrategyRegistry</span>.<span class="fn">get</span>(strategy)
+    );
+    <span class="kw">return</span> checker;
+  }
+}
+
+<span class="kw">const</span> result = <span class="type">ParityCheckerFactory</span>
+  .<span class="fn">create</span>()
+  .<span class="fn">check</span>(<span class="num">42</span>);`
+    },
+    good: {
+      title: 'Simple et direct',
+      code: `<span class="kw">function</span> <span class="fn">isEven</span>(n) {
+  <span class="kw">return</span> n % <span class="num">2</span> === <span class="num">0</span>;
+}
+
+<span class="fn">isEven</span>(<span class="num">42</span>); <span class="cm">// true ✓</span>
+
+<span class="cm">// Lisible, testable, maintenable.</span>
+<span class="cm">// Pas besoin d'une factory pour ça.</span>`
+    }
+  },
+  {
+    principle: 'YAGNI — You Ain\'t Gonna Need It',
+    bad: {
+      title: 'Fonctionnalités "au cas où"',
+      code: `<span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="fn">getUser</span>(id) { <span class="cm">/* ... */</span> }
+  <span class="fn">getUserWithCache</span>(id) { <span class="cm">/* cache Redis */</span> }
+  <span class="fn">getUserWithRetry</span>(id, attempts) { <span class="cm">/* retry */</span> }
+  <span class="fn">getUserFromBackup</span>(id) { <span class="cm">/* backup DB */</span> }
+  <span class="fn">getUserBatch</span>(ids) { <span class="cm">/* batch load */</span> }
+  <span class="fn">migrateUserToV2</span>(id) { <span class="cm">/* v2 API */</span> }
+  <span class="fn">exportUserAsXML</span>(id) { <span class="cm">/* XML export */</span> }
+}
+<span class="cm">// On n'utilise que getUser... 😅</span>`
+    },
+    good: {
+      title: 'Juste ce qu\'il faut',
+      code: `<span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="fn">getUser</span>(id) {
+    <span class="kw">return</span> db.<span class="fn">query</span>(<span class="str">'SELECT * FROM users WHERE id = ?'</span>, [id]);
+  }
+}
+
+<span class="cm">// On ajoutera le cache, le retry, le batch</span>
+<span class="cm">// QUAND on en aura besoin. Pas avant.</span>
+<span class="cm">// Moins de code = moins de bugs ✓</span>`
+    }
+  }
+];
+
+const QUIZ_DATA = [
+  {
+    q: "Une classe qui gère à la fois la validation, la sauvegarde et l'envoi d'emails viole quel principe ?",
+    options: ["Open/Closed", "Single Responsibility", "KISS", "Liskov Substitution"],
+    correct: 1,
+    explanation: "Elle a plusieurs responsabilités (validation, persistence, notification). Le SRP dit qu'une classe ne doit avoir qu'une seule raison de changer."
+  },
+  {
+    q: "Quel principe recommande d'utiliser des abstractions plutôt que de modifier le code existant ?",
+    options: ["YAGNI", "DRY", "Open/Closed", "Interface Segregation"],
+    correct: 2,
+    explanation: "Le principe Open/Closed dit que le code doit être ouvert à l'extension (héritage, interfaces) mais fermé à la modification."
+  },
+  {
+    q: "Copier-coller la même logique de formatage dans 5 fichiers différents viole quel principe ?",
+    options: ["SOLID", "DRY", "YAGNI", "Liskov"],
+    correct: 1,
+    explanation: "DRY (Don't Repeat Yourself) : chaque logique doit avoir une seule source de vérité. Il faut factoriser dans une fonction commune."
+  },
+  {
+    q: "Créer une Factory, un Singleton et un Adapter pour vérifier si un nombre est pair viole quel principe ?",
+    options: ["DRY", "Single Responsibility", "KISS", "Open/Closed"],
+    correct: 2,
+    explanation: "KISS (Keep It Simple) : un simple `n % 2 === 0` suffit. La sur-ingénierie ajoute de la complexité inutile."
+  },
+  {
+    q: "Tu développes un blog. Tu ajoutes un système d'export PDF, XML et CSV alors qu'aucun besoin ne le demande. Quel principe violes-tu ?",
+    options: ["DRY", "KISS", "YAGNI", "Interface Segregation"],
+    correct: 2,
+    explanation: "YAGNI (You Ain't Gonna Need It) : n'implémente pas de fonctionnalités tant qu'elles ne sont pas nécessaires."
+  },
+  {
+    q: "Si un Carré (extends Rectangle) casse le code quand on l'utilise à la place d'un Rectangle, quel principe est violé ?",
+    options: ["Liskov Substitution", "Single Responsibility", "DRY", "Dependency Inversion"],
+    correct: 0,
+    explanation: "Liskov Substitution : un sous-type doit pouvoir remplacer son type parent sans changer le comportement attendu du programme."
+  },
+  {
+    q: "Une interface `Worker` avec les méthodes `work()`, `eat()` et `sleep()` est utilisée par un robot. Quel principe est violé ?",
+    options: ["Open/Closed", "KISS", "Interface Segregation", "DRY"],
+    correct: 2,
+    explanation: "Interface Segregation : le robot ne mange ni ne dort. Il faut des interfaces plus fines (Workable, Eatable...)."
+  },
+  {
+    q: "Un module de haut niveau instancie directement une classe MySQL au lieu de passer par une interface. Quel principe est violé ?",
+    options: ["Dependency Inversion", "Single Responsibility", "YAGNI", "Open/Closed"],
+    correct: 0,
+    explanation: "Dependency Inversion : les modules de haut niveau doivent dépendre d'abstractions, pas d'implémentations concrètes."
+  },
+  {
+    q: "Lequel de ces principes est directement lié à l'injection de dépendances ?",
+    options: ["Single Responsibility", "Liskov Substitution", "Dependency Inversion", "DRY"],
+    correct: 2,
+    explanation: "L'injection de dépendances est une technique qui implémente le principe d'Inversion des Dépendances (D de SOLID)."
+  },
+  {
+    q: "Un développeur refactorise du code en déplaçant une constante de configuration dans 3 fichiers différents. Quel principe viole-t-il ?",
+    options: ["KISS", "DRY", "YAGNI", "Open/Closed"],
+    correct: 1,
+    explanation: "DRY : la configuration devrait être centralisée en un seul endroit, pas dupliquée dans 3 fichiers."
+  },
+  {
+    q: "Quel est l'avantage principal du principe Open/Closed ?",
+    options: ["Réduire la duplication", "Protéger le code existant et testé", "Simplifier le code", "Supprimer le code inutile"],
+    correct: 1,
+    explanation: "Le OCP permet d'ajouter du comportement sans risquer de casser le code existant qui fonctionne et est déjà testé."
+  },
+  {
+    q: "Tu écris un système de notification. Plutôt que d'envoyer seulement des emails (le seul besoin actuel), tu ajoutes SMS, Slack et webhook. Quel principe ?",
+    options: ["KISS", "DRY", "YAGNI", "SRP"],
+    correct: 2,
+    explanation: "YAGNI : tant que seul l'email est demandé, n'implémente que ça. Les autres canaux viendront quand ils seront nécessaires."
+  },
+  {
+    q: "Le pattern Strategy est une implémentation concrète de quel principe SOLID ?",
+    options: ["SRP", "Open/Closed", "Liskov", "ISP"],
+    correct: 1,
+    explanation: "Le pattern Strategy permet d'étendre le comportement sans modifier le code existant — c'est le cœur du principe Open/Closed."
+  },
+  {
+    q: "DRY ne concerne PAS uniquement le code. Lequel de ces éléments peut aussi violer DRY ?",
+    options: ["Les commentaires", "La documentation dupliquée", "La logique métier en double", "Tous ces éléments"],
+    correct: 3,
+    explanation: "DRY s'applique à toute connaissance dans le système : code, documentation, configuration, logique métier..."
+  },
+  {
+    q: "Quel est le risque principal de violer KISS ?",
+    options: ["Code lent", "Code non-DRY", "Code difficile à comprendre et maintenir", "Code non testable"],
+    correct: 2,
+    explanation: "Un code trop complexe devient difficile à lire, comprendre, débugger et maintenir — pour toi ET pour l'équipe."
+  }
+];
+
+const FLASHCARD_DATA = [
+  { front: "S — SRP", back: "Single Responsibility Principle\n\nUne classe = une responsabilité = une raison de changer.\n\nExemple : séparer validation, persistence et notification." },
+  { front: "O — OCP", back: "Open/Closed Principle\n\nOuvert à l'extension, fermé à la modification.\n\nUtilise le polymorphisme, les interfaces, le pattern Strategy." },
+  { front: "L — LSP", back: "Liskov Substitution Principle\n\nUn sous-type doit pouvoir remplacer son type parent sans surprise.\n\nExemple classique : Carré vs Rectangle." },
+  { front: "I — ISP", back: "Interface Segregation Principle\n\nPlein de petites interfaces > une grosse.\n\nUn client ne doit pas implémenter des méthodes qu'il n'utilise pas." },
+  { front: "D — DIP", back: "Dependency Inversion Principle\n\nDépends des abstractions, pas des implémentations.\n\nInjection de dépendances = technique d'implémentation du DIP." },
+  { front: "DRY", back: "Don't Repeat Yourself\n\nChaque connaissance a une seule source de vérité.\n\nS'applique au code, à la config, à la doc." },
+  { front: "KISS", back: "Keep It Simple, Stupid\n\nLa simplicité est un objectif de design.\n\nn % 2 === 0 > ParityCheckerFactoryStrategy" },
+  { front: "YAGNI", back: "You Ain't Gonna Need It\n\nN'implémente que ce qui est nécessaire maintenant.\n\nCode pour aujourd'hui, refactorise demain si besoin." },
+  { front: "Injection de\ndépendances", back: "Technique qui implémente le DIP.\n\nOn passe les dépendances au constructeur au lieu de les instancier.\n\nconstructor(repo, mailer) au lieu de this.repo = new MySQLRepo()" },
+  { front: "Pattern\nStrategy", back: "Implémentation du principe Open/Closed.\n\nPermet de varier le comportement en injectant différentes stratégies.\n\nÉvite les cascades de if/else ou switch." },
+  { front: "Quand refactoriser\nvs YAGNI ?", back: "YAGNI = pas de feature inutile.\nRefactoring = améliorer le code existant.\n\nRefactoriser du code sale ≠ ajouter des features inutiles.\nOn peut (et on doit) refactoriser tout en respectant YAGNI." },
+  { front: "Code Smell :\nGod Class", back: "Classe qui fait tout → viole SRP.\n\nSignes : trop de méthodes, trop d'imports, nom vague comme 'Manager' ou 'Helper'.\n\nSolution : extraire des classes spécialisées." },
+];
+
+const MATCH_DATA = [
+  { principle: "SRP", def: "Une classe = une seule raison de changer" },
+  { principle: "OCP", def: "Extensible sans modifier le code existant" },
+  { principle: "LSP", def: "Un sous-type remplace son parent sans casser" },
+  { principle: "ISP", def: "Petites interfaces ciblées > grosse interface" },
+  { principle: "DIP", def: "Dépendre des abstractions, pas du concret" },
+  { principle: "DRY", def: "Pas de duplication de connaissance" },
+  { principle: "KISS", def: "La solution la plus simple est la meilleure" },
+  { principle: "YAGNI", def: "N'implémente que le nécessaire" },
+];
+
+const CHEAT_DATA = [
+  { title: 'S — Single Responsibility', pill: 'SOLID', pillColor: '#6366f1', items: ['1 classe = 1 responsabilité', 'Si tu dois dire "et" en décrivant la classe, scinde-la', '"Cette classe gère les users ET les emails" → problème'] },
+  { title: 'O — Open/Closed', pill: 'SOLID', pillColor: '#6366f1', items: ['Étendre sans modifier', 'Utilise polymorphisme + interfaces', 'Strategy, Decorator, Template Method'] },
+  { title: 'L — Liskov Substitution', pill: 'SOLID', pillColor: '#6366f1', items: ['Sous-type = substitution transparente', 'Respecter le contrat du parent', 'Carré ≠ Rectangle (exemple classique)'] },
+  { title: 'I — Interface Segregation', pill: 'SOLID', pillColor: '#6366f1', items: ['Interfaces fines et spécifiques', 'Pas de méthodes inutiles pour le client', 'Workable + Eatable > Worker'] },
+  { title: 'D — Dependency Inversion', pill: 'SOLID', pillColor: '#6366f1', items: ['Abstraction entre haut et bas niveau', 'Injection de dépendances', 'Facilite le testing (mocks)'] },
+  { title: 'DRY', pill: 'PRINCIPE', pillColor: '#22c55e', items: ['1 connaissance = 1 seul endroit', 'Factorise code, config, doc', 'Attention au DRY excessif (couplage)'] },
+  { title: 'KISS', pill: 'PRINCIPE', pillColor: '#06b6d4', items: ['Simple > "clever"', 'Pas de sur-ingénierie', 'Si c\'est dur à expliquer, simplifie'] },
+  { title: 'YAGNI', pill: 'PRINCIPE', pillColor: '#ef4444', items: ['Pas de feature "au cas où"', 'Code pour le besoin actuel', 'Moins de code = moins de bugs'] },
+];
+
+const TIPS_DATA = [
+  { icon: '🎯', bg: 'var(--accent-glow)', title: 'Cite le bon principe au bon moment', text: 'En review de code ou en live coding, nomme le principe que tu appliques. "Je sépare ça car SRP" montre que tu ne codes pas au hasard.' },
+  { icon: '⚖️', bg: 'var(--orange-glow)', title: 'Montre que tu sais nuancer', text: 'Les principes ne sont pas absolus. Savoir dire "ici YAGNI l\'emporte sur OCP" montre de la maturité technique.' },
+  { icon: '🔗', bg: 'var(--green-glow)', title: 'Lie les principes aux patterns', text: 'Strategy → OCP, Injection de dépendances → DIP, Repository → SRP. Ça montre que tu maîtrises la théorie ET la pratique.' },
+  { icon: '🧪', bg: 'var(--red-glow)', title: 'Parle testabilité', text: 'SRP et DIP rendent le code testable (mocking, isolation). En entretien, "ce design facilite les tests unitaires" fait mouche.' },
+  { icon: '💬', bg: 'rgba(168,85,247,.15)', title: 'Prépare des exemples concrets', text: 'Décris un cas où tu as appliqué ces principes sur un vrai projet. L\'anecdote vaut mieux que la définition Wikipedia.' },
+  { icon: '🔄', bg: 'rgba(6,182,212,.15)', title: 'Connais les limites', text: 'DRY excessif → couplage. Trop de SOLID → abstraction inutile. Montre que tu cherches le bon équilibre pragmatique.' },
+];
+
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+
+let xp = 0;
+let level = 1;
+const xpPerLevel = 150;
+let currentQuiz = 0;
+let quizScore = 0;
+let quizAnswered = [];
+let currentFlashcard = 0;
+let matchSelected = null; // { type: 'principle'|'def', index }
+let matchMatched = new Set();
+let completedSections = new Set();
+
+// ═══════════════════════════════════════
+// XP SYSTEM
+// ═══════════════════════════════════════
+
+function addXP(amount) {
+  xp += amount;
+  while (xp >= level * xpPerLevel) {
+    xp -= level * xpPerLevel;
+    level++;
+    showToast(`Niveau ${level} atteint ! 🎉`, 'success');
+  }
+  updateXPDisplay();
+  showToast(`+${amount} XP`, 'xp');
+}
+
+function updateXPDisplay() {
+  document.getElementById('xpValue').textContent = `${xp} / ${level * xpPerLevel} XP`;
+  document.getElementById('xpBar').style.width = `${(xp / (level * xpPerLevel)) * 100}%`;
+  document.getElementById('levelBadge').textContent = `Niv. ${level}`;
+}
+
+function showToast(msg, type = 'xp') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function completeSection(name) {
+  if (completedSections.has(name)) return;
+  completedSections.add(name);
+  const el = document.getElementById(`check-${name}`);
+  if (el) { el.classList.add('done'); el.textContent = '✓'; }
+}
+
+// ═══════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════
+
+function switchTab(tab) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.nav-tab[data-tab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+
+  // Mark learn as complete when leaving it
+  if (tab !== 'learn') completeSection('learn');
+}
+
+// ═══════════════════════════════════════
+// RENDER: Learn
+// ═══════════════════════════════════════
+
+function renderLearn() {
+  const solidGrid = document.getElementById('solidGrid');
+  solidGrid.innerHTML = SOLID.map(p => `
+    <div class="principle-card">
+      <div class="letter" style="background:${p.color}">${p.letter}</div>
+      <h3>${p.name}</h3>
+      <div class="subtitle">${p.subtitle}</div>
+      <div class="desc">${p.desc}</div>
+      <ul style="margin-top:10px;list-style:none;display:flex;flex-direction:column;gap:4px;">
+        ${p.tips.map(t => `<li style="font-size:12px;color:var(--text-dim);padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:${p.color}">›</span>${t}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+
+  const otherGrid = document.getElementById('otherGrid');
+  otherGrid.innerHTML = OTHERS.map(p => `
+    <div class="principle-card">
+      <div class="letter" style="background:${p.color};font-size:${p.letter.length > 2 ? 12 : 20}px">${p.letter}</div>
+      <h3>${p.name}</h3>
+      <div class="subtitle">${p.subtitle}</div>
+      <div class="desc">${p.desc}</div>
+      <ul style="margin-top:10px;list-style:none;display:flex;flex-direction:column;gap:4px;">
+        ${p.tips.map(t => `<li style="font-size:12px;color:var(--text-dim);padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:${p.color}">›</span>${t}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+// RENDER: Examples
+// ═══════════════════════════════════════
+
+function renderExamples() {
+  const container = document.getElementById('examplesContainer');
+  container.innerHTML = CODE_EXAMPLES.map((ex, i) => `
+    <div class="mb-24">
+      <div class="section-title">${ex.principle}</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active-bad" id="toggleBad${i}" onclick="showExample(${i},'bad')">❌ Mauvais</button>
+        <button class="toggle-btn" id="toggleGood${i}" onclick="showExample(${i},'good')">✅ Bon</button>
+      </div>
+      <div id="exBad${i}" class="code-example">
+        <div class="code-header"><span>${ex.bad.title}</span><span class="code-tag bad">À éviter</span></div>
+        <div class="code-body"><pre>${ex.bad.code}</pre></div>
+      </div>
+      <div id="exGood${i}" class="code-example" style="display:none">
+        <div class="code-header"><span>${ex.good.title}</span><span class="code-tag good">Recommandé</span></div>
+        <div class="code-body"><pre>${ex.good.code}</pre></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showExample(i, type) {
+  document.getElementById(`exBad${i}`).style.display = type === 'bad' ? 'block' : 'none';
+  document.getElementById(`exGood${i}`).style.display = type === 'good' ? 'block' : 'none';
+  document.getElementById(`toggleBad${i}`).className = `toggle-btn ${type === 'bad' ? 'active-bad' : ''}`;
+  document.getElementById(`toggleGood${i}`).className = `toggle-btn ${type === 'good' ? 'active-good' : ''}`;
+  completeSection('examples');
+}
+
+// ═══════════════════════════════════════
+// RENDER: Quiz
+// ═══════════════════════════════════════
+
+function renderQuiz() {
+  const c = document.getElementById('quizContainer');
+  if (currentQuiz >= QUIZ_DATA.length) {
+    const pct = Math.round((quizScore / QUIZ_DATA.length) * 100);
+    const emoji = pct >= 80 ? '🏆' : pct >= 50 ? '👍' : '📚';
+    const msg = pct >= 80 ? 'Excellent ! Tu es prêt pour l\'entretien !' : pct >= 50 ? 'Bien joué ! Révise encore les points faibles.' : 'Continue de t\'entraîner, tu progresses !';
+    c.innerHTML = `
+      <div class="result-card">
+        <div class="score-circle" style="border:4px solid ${pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--orange)' : 'var(--red)'}; color: ${pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--orange)' : 'var(--red)'}">
+          ${pct}%
+        </div>
+        <h2>${emoji} ${quizScore} / ${QUIZ_DATA.length}</h2>
+        <p>${msg}</p>
+        <button class="btn-primary" onclick="resetQuiz()">Recommencer le quiz</button>
+      </div>
+    `;
+    completeSection('quiz');
+    return;
+  }
+
+  const q = QUIZ_DATA[currentQuiz];
+  c.innerHTML = `
+    <div class="quiz-progress">
+      ${QUIZ_DATA.map((_, i) => `<div class="quiz-dot ${i === currentQuiz ? 'current' : i < currentQuiz ? (quizAnswered[i] ? 'correct' : 'wrong') : ''}"></div>`).join('')}
+    </div>
+    <div class="quiz-question">Question ${currentQuiz + 1}/${QUIZ_DATA.length} — ${q.q}</div>
+    <div class="quiz-options">
+      ${q.options.map((o, i) => `<button class="quiz-option" onclick="answerQuiz(${i})">${o}</button>`).join('')}
+    </div>
+    <div class="quiz-feedback" id="quizFeedback"></div>
+    <button class="quiz-next" id="quizNext" onclick="nextQuiz()">Suivante →</button>
+  `;
+}
+
+function answerQuiz(idx) {
+  const q = QUIZ_DATA[currentQuiz];
+  const isCorrect = idx === q.correct;
+  quizAnswered[currentQuiz] = isCorrect;
+  if (isCorrect) {
+    quizScore++;
+    addXP(15);
+  }
+
+  const btns = document.querySelectorAll('.quiz-option');
+  btns.forEach((b, i) => {
+    b.disabled = true;
+    if (i === idx) b.classList.add(isCorrect ? 'selected-correct' : 'selected-wrong');
+    if (i === q.correct && !isCorrect) b.classList.add('reveal-correct');
+  });
+
+  const fb = document.getElementById('quizFeedback');
+  fb.className = `quiz-feedback show ${isCorrect ? 'correct' : 'wrong'}`;
+  fb.innerHTML = isCorrect
+    ? `✅ <strong>Correct !</strong> ${q.explanation}`
+    : `❌ <strong>Raté.</strong> ${q.explanation}`;
+
+  document.getElementById('quizNext').classList.add('show');
+}
+
+function nextQuiz() {
+  currentQuiz++;
+  renderQuiz();
+}
+
+function resetQuiz() {
+  currentQuiz = 0;
+  quizScore = 0;
+  quizAnswered = [];
+  renderQuiz();
+}
+
+// ═══════════════════════════════════════
+// RENDER: Match
+// ═══════════════════════════════════════
+
+let shuffledDefs = [];
+
+function renderMatch() {
+  matchMatched = new Set();
+  matchSelected = null;
+
+  // Shuffle definitions
+  shuffledDefs = [...MATCH_DATA].map((d, i) => ({ ...d, origIdx: i }));
+  for (let i = shuffledDefs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledDefs[i], shuffledDefs[j]] = [shuffledDefs[j], shuffledDefs[i]];
+  }
+
+  const area = document.getElementById('matchArea');
+  area.innerHTML = `
+    <h3>Relie chaque principe à sa définition</h3>
+    <p>Clique sur un principe, puis sur sa définition correspondante.</p>
+    <div class="match-game">
+      <div class="match-col" id="matchPrinciples">
+        ${MATCH_DATA.map((d, i) => `<div class="match-item" data-idx="${i}" onclick="selectMatch('principle',${i})">${d.principle}</div>`).join('')}
+      </div>
+      <div class="match-arrow">→</div>
+      <div class="match-col" id="matchDefs">
+        ${shuffledDefs.map((d, i) => `<div class="match-def" data-idx="${i}" onclick="selectMatch('def',${i})">${d.def}</div>`).join('')}
+      </div>
+    </div>
+    <div id="matchResult" style="text-align:center;margin-top:20px;"></div>
+  `;
+}
+
+function selectMatch(type, idx) {
+  if (matchMatched.has(`p${type === 'principle' ? idx : ''}`)) return;
+
+  if (!matchSelected) {
+    matchSelected = { type, idx };
+    highlightMatch(type, idx, true);
+  } else if (matchSelected.type === type) {
+    highlightMatch(matchSelected.type, matchSelected.idx, false);
+    matchSelected = { type, idx };
+    highlightMatch(type, idx, true);
+  } else {
+    // Two different types selected — check match
+    const pIdx = type === 'principle' ? idx : matchSelected.idx;
+    const dIdx = type === 'def' ? idx : matchSelected.idx;
+
+    const principleData = MATCH_DATA[pIdx];
+    const defData = shuffledDefs[dIdx];
+
+    const isCorrect = principleData.principle === defData.principle;
+
+    const pEl = document.querySelector(`#matchPrinciples .match-item[data-idx="${pIdx}"]`);
+    const dEl = document.querySelector(`#matchDefs .match-def[data-idx="${dIdx}"]`);
+
+    if (isCorrect) {
+      pEl.className = 'match-item matched-correct';
+      dEl.className = 'match-def matched-correct';
+      matchMatched.add(`p${pIdx}`);
+      matchMatched.add(`d${dIdx}`);
+      addXP(10);
+
+      if (matchMatched.size === MATCH_DATA.length * 2) {
+        document.getElementById('matchResult').innerHTML = `
+          <div style="margin-top:16px;font-size:18px;font-weight:700;color:var(--green)">🎉 Parfait ! Tout est associé correctement !</div>
+          <button class="btn-primary" onclick="renderMatch()">Rejouer</button>
+        `;
+        completeSection('match');
+      }
+    } else {
+      pEl.classList.add('matched-wrong');
+      dEl.classList.add('matched-wrong');
+      setTimeout(() => {
+        pEl.classList.remove('matched-wrong', 'selected');
+        dEl.classList.remove('matched-wrong', 'selected');
+      }, 800);
+    }
+
+    matchSelected = null;
+    // Clear all selected state
+    document.querySelectorAll('.match-item.selected, .match-def.selected').forEach(el => el.classList.remove('selected'));
+  }
+}
+
+function highlightMatch(type, idx, on) {
+  const container = type === 'principle' ? '#matchPrinciples .match-item' : '#matchDefs .match-def';
+  const el = document.querySelector(`${container}[data-idx="${idx}"]`);
+  if (el) el.classList.toggle('selected', on);
+}
+
+// ═══════════════════════════════════════
+// RENDER: Flashcards
+// ═══════════════════════════════════════
+
+function renderFlashcard() {
+  const area = document.getElementById('flashcardArea');
+  const card = FLASHCARD_DATA[currentFlashcard];
+  area.innerHTML = `
+    <div class="flashcard" id="flashcard" onclick="this.classList.toggle('flipped')">
+      <div class="flashcard-face">
+        <h3 style="font-size:28px;white-space:pre-line">${card.front}</h3>
+        <div class="flashcard-hint">Clique pour retourner</div>
+      </div>
+      <div class="flashcard-face flashcard-back">
+        <p style="white-space:pre-line;font-size:15px;line-height:1.8">${card.back}</p>
+      </div>
+    </div>
+  `;
+  document.getElementById('flashcardCounter').textContent = `${currentFlashcard + 1} / ${FLASHCARD_DATA.length}`;
+  completeSection('flashcards');
+}
+
+function nextFlashcard() {
+  currentFlashcard = (currentFlashcard + 1) % FLASHCARD_DATA.length;
+  renderFlashcard();
+}
+function prevFlashcard() {
+  currentFlashcard = (currentFlashcard - 1 + FLASHCARD_DATA.length) % FLASHCARD_DATA.length;
+  renderFlashcard();
+}
+
+// ═══════════════════════════════════════
+// RENDER: Patterns
+// ═══════════════════════════════════════
+
+const PATTERNS_DATA = [
+  {
+    name: 'Strategy',
+    icon: '♟️',
+    iconBg: 'var(--accent-glow)',
+    type: 'Comportemental',
+    typeColor: '#a855f7',
+    principles: ['Open/Closed', 'DIP', 'SRP'],
+    desc: 'Définit une famille d\'algorithmes interchangeables. Le client choisit la stratégie à utiliser sans connaître les détails d\'implémentation.',
+    useCases: [
+      'Systèmes de calcul de prix avec différentes remises',
+      'Algorithmes de tri ou de recherche interchangeables',
+      'Validation de formulaires avec règles variables',
+      'Systèmes de paiement (CB, PayPal, virement...)',
+    ],
+    code: `<span class="kw">interface</span> <span class="type">SortStrategy</span> {
+  <span class="fn">sort</span>(data: <span class="type">number</span>[]): <span class="type">number</span>[];
+}
+
+<span class="kw">class</span> <span class="type">BubbleSort</span> <span class="kw">implements</span> <span class="type">SortStrategy</span> {
+  <span class="fn">sort</span>(data) { <span class="cm">/* tri à bulles */</span> }
+}
+<span class="kw">class</span> <span class="type">QuickSort</span> <span class="kw">implements</span> <span class="type">SortStrategy</span> {
+  <span class="fn">sort</span>(data) { <span class="cm">/* tri rapide */</span> }
+}
+
+<span class="kw">class</span> <span class="type">Sorter</span> {
+  <span class="fn">constructor</span>(<span class="kw">private</span> strategy: <span class="type">SortStrategy</span>) {}
+  <span class="fn">execute</span>(data) {
+    <span class="kw">return this</span>.strategy.<span class="fn">sort</span>(data);
+  }
+}
+<span class="cm">// Changez l'algo sans toucher au Sorter ✓</span>`
+  },
+  {
+    name: 'Observer',
+    icon: '👁️',
+    iconBg: 'var(--green-glow)',
+    type: 'Comportemental',
+    typeColor: '#a855f7',
+    principles: ['Open/Closed', 'SRP', 'DIP'],
+    desc: 'Un objet (sujet) notifie automatiquement ses abonnés quand son état change. Découple l\'émetteur des récepteurs.',
+    useCases: [
+      'Systèmes d\'événements (EventEmitter, pub/sub)',
+      'Mise à jour d\'UI en temps réel (React, Vue)',
+      'Notifications push et alertes',
+      'Logging et monitoring découplés',
+    ],
+    code: `<span class="kw">class</span> <span class="type">EventEmitter</span> {
+  listeners = <span class="kw">new</span> <span class="type">Map</span>();
+
+  <span class="fn">on</span>(event, callback) {
+    <span class="kw">if</span> (!<span class="kw">this</span>.listeners.has(event))
+      <span class="kw">this</span>.listeners.set(event, []);
+    <span class="kw">this</span>.listeners.get(event).push(callback);
+  }
+
+  <span class="fn">emit</span>(event, data) {
+    <span class="kw">this</span>.listeners.get(event)
+      ?.forEach(<span class="fn">cb</span> => <span class="fn">cb</span>(data));
+  }
+}
+
+<span class="kw">const</span> bus = <span class="kw">new</span> <span class="type">EventEmitter</span>();
+bus.<span class="fn">on</span>(<span class="str">'userCreated'</span>, sendWelcomeEmail);
+bus.<span class="fn">on</span>(<span class="str">'userCreated'</span>, logActivity);
+bus.<span class="fn">emit</span>(<span class="str">'userCreated'</span>, { name: <span class="str">'Alice'</span> });`
+  },
+  {
+    name: 'Decorator',
+    icon: '🎨',
+    iconBg: 'var(--orange-glow)',
+    type: 'Structurel',
+    typeColor: '#06b6d4',
+    principles: ['Open/Closed', 'SRP'],
+    desc: 'Ajoute dynamiquement de nouvelles responsabilités à un objet sans modifier sa classe. Alternatif à l\'héritage multiple.',
+    useCases: [
+      'Ajout de logging, caching, retry à un service',
+      'Middleware Express / Koa / NestJS',
+      'Enrichissement de composants React (HOC)',
+      'Compression, chiffrement de flux de données',
+    ],
+    code: `<span class="kw">interface</span> <span class="type">Logger</span> {
+  <span class="fn">log</span>(msg: <span class="type">string</span>): <span class="type">void</span>;
+}
+
+<span class="kw">class</span> <span class="type">ConsoleLogger</span> <span class="kw">implements</span> <span class="type">Logger</span> {
+  <span class="fn">log</span>(msg) { console.log(msg); }
+}
+
+<span class="cm">// Decorator : ajoute un timestamp</span>
+<span class="kw">class</span> <span class="type">TimestampLogger</span> <span class="kw">implements</span> <span class="type">Logger</span> {
+  <span class="fn">constructor</span>(<span class="kw">private</span> inner: <span class="type">Logger</span>) {}
+  <span class="fn">log</span>(msg) {
+    <span class="kw">this</span>.inner.<span class="fn">log</span>(
+      <span class="str">\`[\${new Date().toISOString()}] \${msg}\`</span>
+    );
+  }
+}
+<span class="cm">// On empile les comportements ✓</span>
+<span class="kw">const</span> logger = <span class="kw">new</span> <span class="type">TimestampLogger</span>(
+  <span class="kw">new</span> <span class="type">ConsoleLogger</span>()
+);`
+  },
+  {
+    name: 'Factory Method',
+    icon: '🏭',
+    iconBg: 'rgba(236,72,153,.15)',
+    type: 'Créationnel',
+    typeColor: '#ec4899',
+    principles: ['Open/Closed', 'DIP', 'SRP'],
+    desc: 'Délègue la création d\'objets à des sous-classes. Le client manipule une interface sans connaître la classe concrète instanciée.',
+    useCases: [
+      'Création de connecteurs BDD (MySQL, Postgres, Mongo)',
+      'Parseurs de fichiers selon le format (JSON, XML, CSV)',
+      'Générateurs de rapports multi-formats',
+      'Systèmes de plugins extensibles',
+    ],
+    code: `<span class="kw">interface</span> <span class="type">Notification</span> {
+  <span class="fn">send</span>(to: <span class="type">string</span>, msg: <span class="type">string</span>): <span class="type">void</span>;
+}
+
+<span class="kw">class</span> <span class="type">EmailNotification</span> <span class="kw">implements</span> <span class="type">Notification</span> {
+  <span class="fn">send</span>(to, msg) { <span class="cm">/* via SMTP */</span> }
+}
+<span class="kw">class</span> <span class="type">SMSNotification</span> <span class="kw">implements</span> <span class="type">Notification</span> {
+  <span class="fn">send</span>(to, msg) { <span class="cm">/* via Twilio */</span> }
+}
+
+<span class="kw">class</span> <span class="type">NotificationFactory</span> {
+  <span class="kw">static</span> <span class="fn">create</span>(channel): <span class="type">Notification</span> {
+    <span class="kw">switch</span> (channel) {
+      <span class="kw">case</span> <span class="str">'email'</span>: <span class="kw">return new</span> <span class="type">EmailNotification</span>();
+      <span class="kw">case</span> <span class="str">'sms'</span>:   <span class="kw">return new</span> <span class="type">SMSNotification</span>();
+    }
+  }
+}
+<span class="cm">// Le client ne connaît que l'interface ✓</span>`
+  },
+  {
+    name: 'Repository',
+    icon: '🗄️',
+    iconBg: 'rgba(245,158,11,.15)',
+    type: 'Architecturel',
+    typeColor: '#f59e0b',
+    principles: ['SRP', 'DIP', 'DRY'],
+    desc: 'Abstrait l\'accès aux données derrière une interface. La logique métier ne sait pas d\'où viennent les données (BDD, API, cache, fichier...).',
+    useCases: [
+      'Couche d\'accès aux données (DAO / Repository)',
+      'Abstraction BDD pour tests unitaires',
+      'Changement de source de données transparent',
+      'CQRS (Command Query Responsibility Segregation)',
+    ],
+    code: `<span class="kw">interface</span> <span class="type">UserRepository</span> {
+  <span class="fn">findById</span>(id): <span class="type">User</span>;
+  <span class="fn">save</span>(user: <span class="type">User</span>): <span class="type">void</span>;
+  <span class="fn">delete</span>(id): <span class="type">void</span>;
+}
+
+<span class="kw">class</span> <span class="type">PostgresUserRepo</span> <span class="kw">implements</span> <span class="type">UserRepository</span> {
+  <span class="fn">findById</span>(id) { <span class="cm">/* SQL query */</span> }
+  <span class="fn">save</span>(user)   { <span class="cm">/* INSERT/UPDATE */</span> }
+  <span class="fn">delete</span>(id)   { <span class="cm">/* DELETE */</span> }
+}
+
+<span class="kw">class</span> <span class="type">InMemoryUserRepo</span> <span class="kw">implements</span> <span class="type">UserRepository</span> {
+  users = <span class="kw">new</span> <span class="type">Map</span>();
+  <span class="fn">findById</span>(id) { <span class="kw">return this</span>.users.get(id); }
+  <span class="fn">save</span>(user)   { <span class="kw">this</span>.users.set(user.id, user); }
+  <span class="fn">delete</span>(id)   { <span class="kw">this</span>.users.delete(id); }
+}
+<span class="cm">// Parfait pour les tests ✓</span>`
+  },
+  {
+    name: 'Adapter',
+    icon: '🔌',
+    iconBg: 'rgba(6,182,212,.15)',
+    type: 'Structurel',
+    typeColor: '#06b6d4',
+    principles: ['Open/Closed', 'DIP', 'ISP'],
+    desc: 'Convertit l\'interface d\'une classe en une autre interface attendue par le client. Permet à des classes incompatibles de travailler ensemble.',
+    useCases: [
+      'Intégration d\'API tierces (Stripe, Twilio, AWS)',
+      'Migration de librairies (moment → dayjs)',
+      'Wrapper autour de code legacy',
+      'Normalisation de données de sources variées',
+    ],
+    code: `<span class="cm">// Interface que notre app attend</span>
+<span class="kw">interface</span> <span class="type">PaymentGateway</span> {
+  <span class="fn">charge</span>(amount: <span class="type">number</span>): <span class="type">boolean</span>;
+}
+
+<span class="cm">// API tierce avec une interface différente</span>
+<span class="kw">class</span> <span class="type">StripeSDK</span> {
+  <span class="fn">createPaymentIntent</span>(opts) { <span class="cm">/* ... */</span> }
+}
+
+<span class="cm">// Adapter : fait le pont</span>
+<span class="kw">class</span> <span class="type">StripeAdapter</span> <span class="kw">implements</span> <span class="type">PaymentGateway</span> {
+  <span class="fn">constructor</span>(<span class="kw">private</span> stripe: <span class="type">StripeSDK</span>) {}
+  <span class="fn">charge</span>(amount) {
+    <span class="kw">return this</span>.stripe
+      .<span class="fn">createPaymentIntent</span>({ amount });
+  }
+}
+<span class="cm">// Changez de provider sans toucher au métier ✓</span>`
+  },
+  {
+    name: 'Singleton',
+    icon: '1️⃣',
+    iconBg: 'rgba(239,68,68,.15)',
+    type: 'Créationnel',
+    typeColor: '#ec4899',
+    principles: ['KISS', 'YAGNI'],
+    desc: 'Garantit qu\'une classe n\'a qu\'une seule instance et fournit un point d\'accès global. Attention : souvent un anti-pattern si mal utilisé !',
+    useCases: [
+      'Pool de connexions BDD',
+      'Cache applicatif global',
+      'Configuration centralisée',
+      '⚠️ Rend le code difficile à tester (état global)',
+    ],
+    code: `<span class="kw">class</span> <span class="type">Config</span> {
+  <span class="kw">static</span> #instance;
+  #data = {};
+
+  <span class="kw">static</span> <span class="fn">getInstance</span>() {
+    <span class="kw">if</span> (!<span class="type">Config</span>.#instance)
+      <span class="type">Config</span>.#instance = <span class="kw">new</span> <span class="type">Config</span>();
+    <span class="kw">return</span> <span class="type">Config</span>.#instance;
+  }
+
+  <span class="fn">get</span>(key) { <span class="kw">return this</span>.#data[key]; }
+  <span class="fn">set</span>(key, val) { <span class="kw">this</span>.#data[key] = val; }
+}
+
+<span class="cm">// Toujours la même instance</span>
+<span class="type">Config</span>.<span class="fn">getInstance</span>().<span class="fn">set</span>(<span class="str">'env'</span>, <span class="str">'prod'</span>);
+
+<span class="cm">// ⚠️ Préférer l'injection de dépendances</span>
+<span class="cm">// quand c'est possible (plus testable)</span>`
+  },
+  {
+    name: 'Template Method',
+    icon: '📐',
+    iconBg: 'rgba(168,85,247,.15)',
+    type: 'Comportemental',
+    typeColor: '#a855f7',
+    principles: ['Open/Closed', 'DRY', 'LSP'],
+    desc: 'Définit le squelette d\'un algorithme dans une classe mère, en laissant les sous-classes redéfinir certaines étapes sans changer la structure globale.',
+    useCases: [
+      'Pipeline de traitement de données (ETL)',
+      'Frameworks de test (setup → run → teardown)',
+      'Génération de documents multi-formats',
+      'Processus d\'onboarding avec étapes variables',
+    ],
+    code: `<span class="kw">abstract class</span> <span class="type">DataProcessor</span> {
+  <span class="cm">// Template method — squelette fixe</span>
+  <span class="fn">process</span>() {
+    <span class="kw">const</span> raw  = <span class="kw">this</span>.<span class="fn">extract</span>();
+    <span class="kw">const</span> data = <span class="kw">this</span>.<span class="fn">transform</span>(raw);
+    <span class="kw">this</span>.<span class="fn">load</span>(data);
+  }
+
+  <span class="kw">abstract</span> <span class="fn">extract</span>(): <span class="type">any</span>;
+  <span class="kw">abstract</span> <span class="fn">transform</span>(raw): <span class="type">any</span>;
+  <span class="kw">abstract</span> <span class="fn">load</span>(data): <span class="type">void</span>;
+}
+
+<span class="kw">class</span> <span class="type">CSVProcessor</span> <span class="kw">extends</span> <span class="type">DataProcessor</span> {
+  <span class="fn">extract</span>()    { <span class="cm">/* lire CSV */</span> }
+  <span class="fn">transform</span>(r) { <span class="cm">/* parser */</span> }
+  <span class="fn">load</span>(data)   { <span class="cm">/* insérer BDD */</span> }
+}
+<span class="cm">// Le workflow est garanti, les détails varient ✓</span>`
+  },
+];
+
+const PRINCIPLE_PATTERN_MAP = [
+  { principle: 'SRP', icon: 'S', color: '#6366f1', patterns: 'Strategy, Observer, Factory, Repository', desc: 'Chaque classe a un seul rôle. Les patterns séparent création, logique et notification.' },
+  { principle: 'OCP', icon: 'O', color: '#a855f7', patterns: 'Strategy, Decorator, Observer, Template Method', desc: 'On étend sans modifier grâce au polymorphisme et à la composition.' },
+  { principle: 'LSP', icon: 'L', color: '#ec4899', patterns: 'Template Method, Strategy', desc: 'Les sous-classes respectent le contrat du parent dans le Template Method.' },
+  { principle: 'ISP', icon: 'I', color: '#06b6d4', patterns: 'Adapter, Strategy', desc: 'Les interfaces fines du Strategy et de l\'Adapter évitent les dépendances inutiles.' },
+  { principle: 'DIP', icon: 'D', color: '#f59e0b', patterns: 'Factory, Repository, Adapter, Strategy', desc: 'On dépend d\'abstractions. L\'injection de dépendances est la mise en pratique directe.' },
+  { principle: 'DRY', icon: '✂️', color: '#22c55e', patterns: 'Template Method, Repository', desc: 'Le Template Method factorise le squelette d\'un algorithme. Le Repository centralise l\'accès données.' },
+  { principle: 'KISS', icon: '💡', color: '#06b6d4', patterns: 'Singleton (attention !)', desc: 'Le Singleton est simple mais piégeux. KISS rappelle de ne pas abuser des patterns.' },
+];
+
+function renderPatterns() {
+  const container = document.getElementById('patternsContainer');
+  let html = '';
+
+  // Relation map
+  html += `<div class="section-title mb-16"><div class="icon" style="background:var(--accent-glow);color:var(--accent)">🔗</div> Principe → Patterns associés</div>`;
+  html += '<div class="pattern-grid-2 mb-24">';
+  html += PRINCIPLE_PATTERN_MAP.map(r => `
+    <div class="pattern-relation">
+      <div class="pr-icon" style="background:${r.color}22;color:${r.color};font-weight:900;font-size:${r.icon.length > 1 ? 14 : 18}px">${r.icon}</div>
+      <div class="pr-text">
+        <h4>${r.principle} → ${r.patterns}</h4>
+        <p>${r.desc}</p>
+      </div>
+    </div>
+  `).join('');
+  html += '</div>';
+
+  // Pattern cards
+  html += `<div class="section-title mb-16"><div class="icon" style="background:var(--accent-glow);color:var(--accent)">🧩</div> Catalogue des patterns</div>`;
+  html += PATTERNS_DATA.map((p, i) => `
+    <div class="pattern-card" id="pattern-${i}">
+      <div class="pattern-header" onclick="togglePattern(${i})">
+        <div class="pattern-icon" style="background:${p.iconBg}">${p.icon}</div>
+        <div class="pattern-meta">
+          <span class="pattern-type" style="background:${p.typeColor}22;color:${p.typeColor}">${p.type}</span>
+          <h3>${p.name}</h3>
+          <div class="pattern-desc">${p.desc}</div>
+          <div class="pattern-principles">
+            ${p.principles.map(pr => `<span class="pattern-principle-tag">${pr}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="pattern-toggle" onclick="togglePattern(${i})">
+        <span>Voir le code & cas d'usage</span>
+        <span class="chevron" id="chevron-${i}">▼</span>
+      </div>
+      <div class="pattern-body" id="patternBody-${i}" style="display:none">
+        <div class="pattern-section-title">Cas d'usage</div>
+        ${p.useCases.map(u => `<div class="pattern-use-case">${u}</div>`).join('')}
+        <div class="pattern-section-title" style="margin-top:18px">Exemple de code</div>
+        <div class="code-example" style="margin-top:8px">
+          <div class="code-header"><span>${p.name} Pattern</span><span class="code-tag good">Pattern</span></div>
+          <div class="code-body"><pre>${p.code}</pre></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  container.innerHTML = html;
+  completeSection('patterns');
+}
+
+function togglePattern(i) {
+  const body = document.getElementById(`patternBody-${i}`);
+  const chevron = document.getElementById(`chevron-${i}`);
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  chevron.classList.toggle('open', !isOpen);
+  if (!isOpen) addXP(5);
+}
+
+// ═══════════════════════════════════════
+// RENDER: Cheatsheet
+// ═══════════════════════════════════════
+
+function renderCheatsheet() {
+  document.getElementById('cheatGrid').innerHTML = CHEAT_DATA.map(c => `
+    <div class="cheat-card">
+      <h4>${c.title} <span class="pill" style="background:${c.pillColor}22;color:${c.pillColor}">${c.pill}</span></h4>
+      <ul>${c.items.map(i => `<li>${i}</li>`).join('')}</ul>
+    </div>
+  `).join('');
+
+  document.getElementById('tipsContainer').innerHTML = TIPS_DATA.map(t => `
+    <div class="tip-card">
+      <div class="tip-icon" style="background:${t.bg}">${t.icon}</div>
+      <div class="tip-content">
+        <h4>${t.title}</h4>
+        <p>${t.text}</p>
+      </div>
+    </div>
+  `).join('');
+
+  completeSection('cheatsheet');
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+
+renderLearn();
+renderExamples();
+renderQuiz();
+renderMatch();
+renderFlashcard();
+renderPatterns();
+renderCheatsheet();
+updateXPDisplay();
+</script>
+</body>
+</html>

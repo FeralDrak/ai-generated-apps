@@ -1,0 +1,492 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Axiom Drift</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <style>
+    :root {
+      --bg:#060913;
+      --bg2:#0f1828;
+      --panel:rgba(8,13,24,.8);
+      --line:rgba(148,191,255,.16);
+      --text:#edf4ff;
+      --muted:#9bb0cf;
+      --gold:#ffcf78;
+      --cyan:#79e7ff;
+      --green:#98f0bc;
+      --red:#ff8f8b;
+      --violet:#d2a7ff;
+      --shadow:0 24px 70px rgba(0,0,0,.36);
+      --body:"Trebuchet MS","Lucida Sans Unicode","Segoe UI Variable",sans-serif;
+      --head:"Palatino Linotype","Book Antiqua","Times New Roman",serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;color:var(--text);font-family:var(--body);background:
+      radial-gradient(circle at 15% 15%,rgba(255,207,120,.16),transparent 24%),
+      radial-gradient(circle at 82% 8%,rgba(121,231,255,.12),transparent 22%),
+      radial-gradient(circle at 50% 80%,rgba(210,167,255,.08),transparent 26%),
+      linear-gradient(150deg,var(--bg) 0%,var(--bg2) 60%,#120d18 100%)}
+    body:before,body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0}
+    body:before{background-image:
+      radial-gradient(circle at 20% 35%,rgba(255,255,255,.75) 0 1px,transparent 1.4px),
+      radial-gradient(circle at 80% 20%,rgba(255,255,255,.7) 0 1px,transparent 1.5px),
+      radial-gradient(circle at 40% 75%,rgba(255,255,255,.6) 0 .8px,transparent 1.4px);
+      background-size:320px 320px,280px 280px,360px 360px;opacity:.55;animation:drift 80s linear infinite}
+    body:after{background:radial-gradient(circle at 50% 50%,transparent 0%,rgba(6,9,19,.16) 55%,rgba(6,9,19,.7) 100%)}
+    @keyframes drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-120px,60px,0)}}
+    .app{position:relative;z-index:1;width:min(1400px,calc(100% - 28px));margin:20px auto 32px}
+    .hero,.panel{border:1px solid var(--line);background:linear-gradient(160deg,rgba(255,255,255,.03),transparent 28%),var(--panel);box-shadow:var(--shadow);backdrop-filter:blur(14px)}
+    .hero{padding:26px;border-radius:30px;overflow:hidden}
+    .hero:before{content:"";position:absolute;top:-80px;right:-90px;width:260px;height:260px;border-radius:50%;filter:blur(8px);background:radial-gradient(circle at 35% 35%,rgba(255,220,160,.95),rgba(255,170,80,.12) 34%,transparent 60%)}
+    .heroGrid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;position:relative}
+    .kicker,.pill,.tag{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);font-size:.8rem}
+    .kicker{color:var(--gold);text-transform:uppercase;letter-spacing:.14em;border-color:rgba(255,207,120,.22)}
+    h1,h2{font-family:var(--head);margin:0;line-height:.95}
+    h1{font-size:clamp(2.9rem,5vw,4.6rem);margin-top:14px}
+    h2{font-size:1.9rem}
+    p,.sub,.meta,.note,.labelSmall{color:var(--muted);line-height:1.6}
+    .directive{margin-top:18px;padding:16px 18px;border-radius:18px;background:rgba(7,12,22,.72);border:1px solid rgba(121,231,255,.16)}
+    .summary,.resources,.layout,.modes,.actions3,.targets,.missions,.research,.buildings,.status,.logs{display:grid;gap:12px}
+    .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .tile,.card,.resource{padding:15px 16px;border-radius:18px;background:rgba(7,12,22,.78);border:1px solid rgba(255,255,255,.06);position:relative;overflow:hidden}
+    .tile strong,.big{display:block;margin-top:10px;font-size:1.45rem}
+    .resource:after,.card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent,var(--cyan));opacity:.9}
+    .resource:after{left:0;right:0;top:auto;bottom:0;height:3px;width:auto}
+    .resourceName,.eyebrow,.mini{text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-size:.75rem}
+    .resources{grid-template-columns:repeat(7,minmax(0,1fr));margin-top:18px}
+    .layout{grid-template-columns:repeat(12,minmax(0,1fr));margin-top:18px}
+    .span7{grid-column:span 7}.span5{grid-column:span 5}.span8{grid-column:span 8}.span4{grid-column:span 4}
+    .panel{padding:22px;border-radius:24px}
+    .panelHead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+    .panel p{margin:0}
+    .bar{height:12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.05);overflow:hidden}
+    .fill{height:100%;background:linear-gradient(90deg,var(--gold),#ffe7bb 65%,var(--cyan));box-shadow:0 0 20px rgba(255,207,120,.35)}
+    .row{display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .modes{grid-template-columns:repeat(3,minmax(0,1fr));margin:16px 0}
+    .actions3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .targets,.missions,.research,.buildings{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .status{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:16px}
+    .card.active{border-color:rgba(121,231,255,.3);box-shadow:inset 0 0 0 1px rgba(121,231,255,.14)}
+    .common{--accent:var(--cyan)}.rare{--accent:var(--gold)}.anomaly{--accent:var(--violet)}.done{--accent:var(--green)}
+    .energy{--accent:var(--gold)}.data{--accent:var(--cyan)}.science{--accent:var(--green)}.alloy{--accent:#ffbf8f}.heat{--accent:var(--red)}.mission{--accent:var(--violet)}
+    button{appearance:none;border:0;cursor:pointer;font:inherit}
+    .btn{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border-radius:999px;color:var(--text);border:1px solid rgba(255,255,255,.08);background:linear-gradient(135deg,rgba(255,207,120,.2),rgba(121,231,255,.12));transition:transform .12s ease,opacity .12s ease}
+    .btn:hover:not(:disabled){transform:translateY(-1px)}
+    .btn.alt{background:rgba(255,255,255,.04)}
+    .btn.warn{background:rgba(255,143,139,.13);border-color:rgba(255,143,139,.16)}
+    .btn.prestige{background:linear-gradient(135deg,rgba(210,167,255,.22),rgba(121,231,255,.14));border-color:rgba(210,167,255,.22)}
+    .full{width:100%;margin-top:14px}
+    .btn:disabled{opacity:.42;cursor:not-allowed}
+    .good{color:#d4ffe3;background:rgba(152,240,188,.12);border-color:rgba(152,240,188,.2)}
+    .bad{color:#ffd9d6;background:rgba(255,143,139,.12);border-color:rgba(255,143,139,.2)}
+    .log.good{background:rgba(152,240,188,.08);border-color:rgba(152,240,188,.16)}
+    .log.bad{background:rgba(255,143,139,.08);border-color:rgba(255,143,139,.18)}
+    .log.accent{background:rgba(210,167,255,.08);border-color:rgba(210,167,255,.18)}
+    .empty{padding:18px;border-radius:18px;border:1px dashed rgba(255,255,255,.09);color:var(--muted);background:rgba(255,255,255,.03)}
+    @media (max-width:1200px){.heroGrid{grid-template-columns:1fr}.resources{grid-template-columns:repeat(4,minmax(0,1fr))}.span7,.span5,.span8,.span4{grid-column:span 12}}
+    @media (max-width:860px){.app{width:min(100% - 18px,100%)}.hero,.panel{padding:18px}.summary,.resources,.modes,.actions3,.targets,.missions,.research,.buildings,.status{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(() => {
+  const { useEffect, useMemo, useRef, useState } = React;
+  const h = React.createElement;
+  const SAVE = "axiom-drift-v1";
+
+  const STRUCTURES = [
+    { id:"solar", name:"Heliostat veil", txt:"+2.8 energie/s", cls:"energy", growth:1.23, cost:{alloys:10, minerals:12} },
+    { id:"relay", name:"Signal lattice", txt:"+0.72 donnees/s", cls:"data", growth:1.26, cost:{alloys:12, data:30} },
+    { id:"lab", name:"Theory vault", txt:"Convertit donnees en science", cls:"science", growth:1.3, cost:{alloys:15, data:40, science:10} },
+    { id:"fabricator", name:"Matter kiln", txt:"Transforme minerais en alliages", cls:"alloy", growth:1.32, cost:{alloys:20, minerals:28, data:30} },
+    { id:"coolant", name:"Cryo spine", txt:"Refroidit le reseau", cls:"heat", growth:1.28, cost:{alloys:16, science:18} },
+    { id:"dock", name:"Launch cradle", txt:"+1 slot expedition", cls:"mission", growth:1.34, cost:{alloys:24, science:28, data:60} }
+  ];
+
+  const MODES = {
+    wide:{ id:"wide", name:"Wide sweep", txt:"Vite, stable, ouvre la carte.", speed:1.15, data:.85, energy:.75, anomaly:.03, rare:.07 },
+    deep:{ id:"deep", name:"Deep field", txt:"Plus lent, meilleur rendement.", speed:.78, data:1.45, energy:1.15, anomaly:.08, rare:.16 },
+    resonance:{ id:"resonance", name:"Resonance sweep", txt:"Cherche les anomalies fortes.", speed:.92, data:1.1, energy:1.65, anomaly:.16, rare:.24 }
+  };
+
+  const RESEARCH = [
+    { id:"droneLattice", name:"Treillis de drones", txt:"Scan +35%.", req:{sectors:2}, cost:{science:18, data:50} },
+    { id:"cryoCooling", name:"Cryo discipline", txt:"Cap thermique +8.", req:{sectors:2}, cost:{science:26, alloys:16} },
+    { id:"tightbeam", name:"Tightbeam relays", txt:"+1 mission et retour meilleur.", req:{sectors:3}, cost:{science:24, alloys:12, data:60} },
+    { id:"solarSkin", name:"Peau heliophage", txt:"Energie solaire +60%.", req:{sectors:4}, cost:{science:34, alloys:20} },
+    { id:"autoLabs", name:"Auto theoristes", txt:"Science labo +40%.", req:{sectors:5}, cost:{science:46, data:90, alloys:18} },
+    { id:"matterForge", name:"Forge asymetrique", txt:"Alliages +45%.", req:{sectors:5}, cost:{science:54, alloys:26, minerals:24} },
+    { id:"quantumCartography", name:"Cartographie quantique", txt:"Anomalies plus frequentes.", req:{sectors:6}, cost:{science:72, data:120, alloys:40} },
+    { id:"exoAnthology", name:"Exo anthology", txt:"Ruines et anomalies plus savantes.", req:{sectors:7, research:["quantumCartography"]}, cost:{science:86, data:80, alloys:32, fragments:25} },
+    { id:"horizonProtocol", name:"Horizon protocol", txt:"Chaque reset donne +1 axiom.", req:{sectors:10, research:["exoAnthology"]}, cost:{science:120, alloys:60, fragments:45} }
+  ];
+
+  const TARGETS = [
+    { min:0, rarity:"common", kind:"resource", names:["Veine ferreuse","Ceinture nickel","Mine flottante"], note:"Depot dense pret a etre fore.", time:[38,62], energy:[8,14], success:[.9,.96], rewards:{minerals:[14,26], data:[4,10]} },
+    { min:1, rarity:"common", kind:"survey", names:["Lune cryo","Arc de glace","Noyau de comete"], note:"Bon rendement data.", time:[52,78], energy:[10,16], success:[.86,.94], rewards:{minerals:[8,16], data:[12,20], science:[2,5]} },
+    { min:2, rarity:"rare", kind:"ruin", names:["Relais mort","Archive orbital","Dock abandonne"], note:"Science haute, risque modere.", time:[70,104], energy:[14,22], success:[.76,.88], rewards:{data:[18,34], science:[6,12], fragments:[3,8]} },
+    { min:4, rarity:"rare", kind:"bio", names:["Jardin poussiere","Atoll fongique","Bassin ambre"], note:"Echantillons rares et signaux propres.", time:[82,118], energy:[16,24], success:[.72,.86], rewards:{data:[18,30], science:[10,16], fragments:[4,10]} },
+    { min:6, rarity:"anomaly", kind:"anomaly", names:["Faille de lentille","Puits gamma","Noeud impossible"], note:"Tres instable mais excellente source de fragments.", time:[110,150], energy:[20,30], success:[.62,.8], rewards:{data:[20,36], science:[10,18], fragments:[10,18]} }
+  ];
+
+  const META = {
+    energy:["Energie","#ffcf78"], data:["Donnees","#79e7ff"], science:["Science","#98f0bc"], minerals:["Minerais","#ffc58f"], alloys:["Alliages","#ffb8aa"], fragments:["Fragments","#d2a7ff"], axioms:["Axioms","#ffffff"]
+  };
+
+  const clamp = (n,a,b) => Math.min(Math.max(n,a),b);
+  const roll = (a,b) => a + Math.random() * (b - a);
+  const id = (p) => p + Math.random().toString(36).slice(2,8);
+  const has = (s,k) => s.research.includes(k);
+  const costOk = (res,cost) => Object.entries(cost).every(([k,v]) => res[k] >= v);
+  const spend = (res,cost) => Object.entries(cost).forEach(([k,v]) => { res[k] -= v; });
+  const reward = (res,gain,m=1) => Object.entries(gain).forEach(([k,v]) => { res[k] += v * m; });
+  const stamp = () => new Date().toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
+  const fmt = (n,d=1) => { const a=Math.abs(n); if (a>=1e6) return (n/1e6).toFixed(a>=1e7?1:2)+"M"; if (a>=1e3) return (n/1e3).toFixed(a>=1e4?1:2)+"k"; if (a>=100) return n.toFixed(0); if (a>=10) return n.toFixed(1); return n===0?"0":n.toFixed(d); };
+  const rate = (n) => (n>=0?"+":"") + fmt(n,2) + "/s";
+  const secs = (n) => { n=Math.max(0,Math.round(n)); const m=Math.floor(n/60), s=n%60; if (m<1) return s+"s"; if (m<60) return m+"m "+String(s).padStart(2,"0")+"s"; const h=Math.floor(m/60); return h+"h "+String(m%60).padStart(2,"0")+"m"; };
+  const push = (s,text,tone="",silent=false) => { if (silent) return; s.log.unshift({ id:id("l"), at:stamp(), tone, text }); s.log=s.log.slice(0,12); };
+
+  const startTargets = () => [
+    { id:id("t"), name:"Veine ferreuse Eos-12", rarity:"common", kind:"resource", duration:46, remaining:46, energyCost:10, success:.94, note:"Carte archivee du systeme interne.", rewards:{ minerals:18, data:6 } },
+    { id:id("t"), name:"Relais mort Umbra-3", rarity:"rare", kind:"ruin", duration:74, remaining:74, energyCost:14, success:.86, note:"Station oubliee chargee de logs.", rewards:{ data:18, science:6, fragments:4 } }
+  ];
+
+  const make = (axioms=0, cycles=0) => ({
+    resources:{ energy:90+axioms*8, data:28, science:10+Math.floor(axioms/2)*4, minerals:24, alloys:14, fragments:0, axioms, heat:0 },
+    structures:{ solar:2, relay:1, lab:1, fabricator:0, coolant:1, dock:1 },
+    observatory:{ mode:"wide", progress:18, sectors:0 },
+    fleet:{ targets:startTargets(), active:[] },
+    research:[],
+    cycles,
+    log:[{ id:id("l"), at:stamp(), tone:"accent", text:"Observation deck aligne. Deux cibles archivees sont deja pretes." }]
+  });
+
+  const copy = (s) => ({
+    resources:{ ...s.resources },
+    structures:{ ...s.structures },
+    observatory:{ ...s.observatory },
+    fleet:{ targets:s.fleet.targets.map((x)=>({ ...x })), active:s.fleet.active.map((x)=>({ ...x })) },
+    research:[...s.research],
+    cycles:s.cycles,
+    log:s.log.map((x)=>({ ...x }))
+  });
+  const bonus = (s) => ({
+    scan:1+s.resources.axioms*.12+(has(s,"droneLattice")?.35:0),
+    data:1+s.resources.axioms*.08+(has(s,"tightbeam")?.2:0),
+    energy:1+s.resources.axioms*.08+(has(s,"solarSkin")?.6:0),
+    science:1+s.resources.axioms*.06+(has(s,"autoLabs")?.4:0),
+    alloy:1+s.resources.axioms*.06+(has(s,"matterForge")?.45:0),
+    slots:(has(s,"tightbeam")?1:0),
+    mission:s.resources.axioms*.05+(has(s,"tightbeam")?.12:0),
+    success:(has(s,"exoAnthology")?.04:0)+s.resources.axioms*.005,
+    anomaly:has(s,"quantumCartography")?.08:0,
+    coolCap:has(s,"cryoCooling")?8:0,
+    coolPow:has(s,"cryoCooling")?1.5:0,
+    lore:has(s,"exoAnthology")?.35:0,
+    rewrite:has(s,"horizonProtocol")?1:0
+  });
+
+  const coolCap = (s,b) => 6 + s.structures.coolant * 4 + b.coolCap;
+  const slots = (s,b) => s.structures.dock + 1 + b.slots;
+  const sectorNeed = (n) => 72 + n * 21;
+  const rewriteCost = (s) => 100 + s.resources.axioms * 60;
+  const rewriteGain = (s,b) => s.resources.fragments < rewriteCost(s) ? 0 : Math.max(1, Math.floor((s.resources.fragments - rewriteCost(s)) / 70) + 1 + b.rewrite);
+  const reqOk = (s,r) => (!r.req?.sectors || s.observatory.sectors >= r.req.sectors) && (!r.req?.research || r.req.research.every((k) => has(s,k)));
+  const reqTxt = (r) => [r.req?.sectors ? r.req.sectors + " secteurs" : "", ...(r.req?.research || []).map((k) => RESEARCH.find((x) => x.id === k)?.name || k)].filter(Boolean).join(" + ");
+  const buildingCost = (b, count) => Object.fromEntries(Object.entries(b.cost).map(([k,v]) => [k, Math.ceil(v * Math.pow(b.growth, count))]));
+
+  function targetFor(sector, rareOnly=false) {
+    const pool = TARGETS.filter((t) => t.min <= sector && (!rareOnly || t.rarity !== "common"));
+    const t = pool[Math.floor(Math.random() * pool.length)] || TARGETS[0];
+    const name = t.names[Math.floor(Math.random() * t.names.length)] + " " + ["A","B","C","D","E","F"][Math.floor(Math.random()*6)] + "-" + Math.round(10 + Math.random() * 88);
+    const rewards = {};
+    Object.entries(t.rewards).forEach(([k, range]) => { rewards[k] = Math.round(roll(range[0], range[1]) * (1 + sector * .06)); });
+    return {
+      id:id("t"), name, rarity:t.rarity, kind:t.kind, note:t.note,
+      duration:Math.round(roll(t.time[0], t.time[1]) * (1 + sector * .035)),
+      remaining:0,
+      energyCost:Math.round(roll(t.energy[0], t.energy[1]) * (1 + sector * .04)),
+      success:clamp(roll(t.success[0], t.success[1]) - sector * .005, .56, .97),
+      rewards
+    };
+  }
+
+  function sectorUp(next, mode, b, silent) {
+    next.observatory.sectors += 1;
+    const n = next.observatory.sectors;
+    next.resources.data += 12 + n * 2.5;
+    const main = targetFor(n, false);
+    next.fleet.targets.unshift(main);
+    if (Math.random() < mode.rare) next.fleet.targets.unshift(targetFor(n + 1, true));
+    next.fleet.targets = next.fleet.targets.slice(0, 9);
+    if (Math.random() < mode.anomaly + b.anomaly) {
+      const gain = 4 + Math.floor(n / 2);
+      next.resources.fragments += gain;
+      push(next, "Secteur " + n + " cartographie: anomalie faible stabilisee, +" + gain + " fragments.", "accent", silent);
+    } else {
+      push(next, "Secteur " + n + " cartographie: " + main.name + " ajoute a la file.", "good", silent);
+    }
+  }
+
+  function missionDone(next, m, b, silent) {
+    const ok = Math.random() < clamp(m.success + b.success, .08, .99);
+    if (ok) {
+      reward(next.resources, m.rewards, 1 + b.mission);
+      if ((m.kind === "ruin" || m.kind === "anomaly" || m.kind === "bio") && b.lore > 0) next.resources.science += 4 + next.observatory.sectors * b.lore;
+      push(next, m.name + " traite avec succes.", "good", silent);
+    } else {
+      next.resources.energy = Math.max(0, next.resources.energy - (6 + m.energyCost * .5));
+      next.resources.heat = Math.min(next.resources.heat + 4.5, coolCap(next, b) + 18);
+      if (m.kind === "anomaly") next.resources.fragments += 2;
+      push(next, m.name + " a rompu le lien. Surcharge du reseau.", "bad", silent);
+    }
+  }
+
+  function tick(s, dt, silent=false) {
+    const next = copy(s);
+    const b = bonus(next);
+    const mode = MODES[next.observatory.mode];
+    const cap = coolCap(next, b);
+    const hot = next.fleet.active.length;
+    const heatIn = next.structures.solar*.12 + next.structures.relay*.05 + next.structures.lab*.22 + next.structures.fabricator*.18 + hot*.16 + (mode.id === "resonance" ? .4 : .08);
+    const cooling = .8 + next.structures.coolant * 1.5 + b.coolPow;
+    next.resources.heat = clamp(next.resources.heat + (heatIn - cooling) * dt, 0, cap + 20);
+    const efficiency = clamp(1 - Math.max(0, next.resources.heat - cap) / (cap + 10), .42, 1);
+
+    next.resources.energy += next.structures.solar * 2.8 * b.energy * efficiency * dt;
+    next.resources.data += next.structures.relay * .72 * b.data * efficiency * dt;
+
+    const power = next.resources.energy > mode.energy * dt ? 1 : .35;
+    const scanRate = (.62 + next.structures.relay*.08 + next.structures.dock*.04) * mode.speed * b.scan * efficiency * power;
+    next.observatory.progress += scanRate * dt;
+    next.resources.data += scanRate * dt * .28 * mode.data * b.data;
+    next.resources.energy = Math.max(0, next.resources.energy - mode.energy * dt);
+
+    const sci = Math.min(next.structures.lab * .2 * b.science * efficiency * dt, next.resources.data / 1.8, next.resources.energy / .8);
+    if (sci > 0) {
+      next.resources.science += sci;
+      next.resources.data -= sci * 1.8;
+      next.resources.energy -= sci * .8;
+    }
+
+    const alloy = Math.min(next.structures.fabricator * .24 * b.alloy * efficiency * dt, next.resources.minerals / 1.6, next.resources.energy / .7);
+    if (alloy > 0) {
+      next.resources.alloys += alloy;
+      next.resources.minerals -= alloy * 1.6;
+      next.resources.energy -= alloy * .7;
+    }
+
+    let need = sectorNeed(next.observatory.sectors);
+    while (next.observatory.progress >= need) {
+      next.observatory.progress -= need;
+      sectorUp(next, mode, b, silent);
+      need = sectorNeed(next.observatory.sectors);
+    }
+
+    const done = [];
+    next.fleet.active = next.fleet.active.filter((m) => { m.remaining -= dt; if (m.remaining <= 0) { done.push(m); return false; } return true; });
+    done.forEach((m) => missionDone(next, m, b, silent));
+    return next;
+  }
+
+  function offline(s, seconds) {
+    let next = copy(s);
+    let left = Math.min(seconds, 60 * 60 * 4);
+    if (left <= 5) return next;
+    while (left > 0) {
+      const step = Math.min(5, left);
+      next = tick(next, step, true);
+      left -= step;
+    }
+    push(next, "Chronologie reprise: " + secs(seconds) + " hors ecran.", "accent");
+    return next;
+  }
+
+  function load() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SAVE) || "null");
+      if (!raw?.state) return make();
+      let s = raw.state;
+      const fresh = make(s.resources?.axioms || 0, s.cycles || 0);
+      s = {
+        resources:{ ...fresh.resources, ...s.resources },
+        structures:{ ...fresh.structures, ...s.structures },
+        observatory:{ ...fresh.observatory, ...s.observatory },
+        fleet:{ targets:s.fleet?.targets || startTargets(), active:s.fleet?.active || [] },
+        research:s.research || [],
+        cycles:s.cycles || 0,
+        log:s.log || fresh.log
+      };
+      if (raw.at) s = offline(s, Math.max(0, Math.floor((Date.now() - raw.at) / 1000)));
+      return s;
+    } catch {
+      return make();
+    }
+  }
+
+  const save = (s) => localStorage.setItem(SAVE, JSON.stringify({ at:Date.now(), state:s }));
+
+  function view(s) {
+    const b = bonus(s);
+    const mode = MODES[s.observatory.mode];
+    const cap = coolCap(s, b);
+    const heatIn = s.structures.solar*.12 + s.structures.relay*.05 + s.structures.lab*.22 + s.structures.fabricator*.18 + s.fleet.active.length*.16 + (mode.id === "resonance" ? .4 : .08);
+    const cooling = .8 + s.structures.coolant * 1.5 + b.coolPow;
+    const efficiency = clamp(1 - Math.max(0, s.resources.heat - cap) / (cap + 10), .42, 1);
+    const scienceRate = Math.min(s.structures.lab * .2 * b.science * efficiency, s.resources.data / 1.8, s.resources.energy / .8);
+    const alloyRate = Math.min(s.structures.fabricator * .24 * b.alloy * efficiency, s.resources.minerals / 1.6, s.resources.energy / .7);
+    const scanRate = (.62 + s.structures.relay*.08 + s.structures.dock*.04) * mode.speed * b.scan * efficiency;
+    return {
+      efficiency,
+      cap,
+      slots:slots(s, b),
+      rewriteCost:rewriteCost(s),
+      rewriteGain:rewriteGain(s, b),
+      energy:s.structures.solar * 2.8 * b.energy * efficiency - mode.energy - scienceRate * .8 - alloyRate * .7,
+      data:s.structures.relay * .72 * b.data * efficiency + scanRate * .28 * mode.data * b.data - scienceRate * 1.8,
+      science:scienceRate,
+      minerals:-alloyRate * 1.6,
+      alloys:alloyRate,
+      heat:heatIn - cooling
+    };
+  }
+
+  const chips = (obj, type) => Object.entries(obj).map(([k,v]) => h("span", { className:"tag " + (type || ""), key:k }, (type === "good" ? "+" : "") + fmt(v,0) + " " + META[k][0]));
+  const directive = (s,v) => s.observatory.sectors < 2 ? "Ouvre les premiers secteurs pour remplir la file d expedition." : s.structures.lab < 2 ? "Installe un second Theory vault. La science est le goulot principal." : s.resources.fragments < v.rewriteCost ? "Passe en Deep field ou Resonance sweep pour nourrir le noyau d anomalie." : "La reecriture est prete. Tu peux reset pour gagner des axioms permanents.";
+
+  const Panel = ({ cls, eyebrow, title, sub, children }) => h("section", { className:"panel " + (cls || "") }, [
+    h("div", { className:"panelHead", key:"h" }, h("div", {}, [h("div", { className:"eyebrow", key:"e" }, eyebrow), h("h2", { key:"t" }, title)])),
+    h("p", { className:"sub", key:"s" }, sub),
+    children
+  ]);
+  function App() {
+    const [game, setGame] = useState(load);
+    const ref = useRef(game);
+    useEffect(() => { ref.current = game; }, [game]);
+    useEffect(() => {
+      let last = performance.now();
+      const t = setInterval(() => {
+        const now = performance.now();
+        const dt = Math.min((now - last) / 1000, 1.2);
+        last = now;
+        setGame((prev) => tick(prev, dt));
+      }, 200);
+      return () => clearInterval(t);
+    }, []);
+    useEffect(() => {
+      const t = setInterval(() => save(ref.current), 2500);
+      const unload = () => save(ref.current);
+      window.addEventListener("beforeunload", unload);
+      return () => { clearInterval(t); window.removeEventListener("beforeunload", unload); };
+    }, []);
+
+    const v = useMemo(() => view(game), [game]);
+    const b = useMemo(() => bonus(game), [game]);
+    const need = sectorNeed(game.observatory.sectors);
+    const p = game.observatory.progress / need * 100;
+    const act = (fn) => setGame((prev) => fn(prev));
+
+    const changeMode = (idMode) => act((prev) => { const s = copy(prev); s.observatory.mode = idMode; push(s, "Mode passe sur " + MODES[idMode].name + "."); return s; });
+    const pulse = () => act((prev) => { if (prev.resources.energy < 15) return prev; const s = copy(prev); s.resources.energy -= 15; s.resources.data += 6; s.observatory.progress += 22; push(s, "Pulse scan envoye. +22 scan."); return s; });
+    const theory = () => act((prev) => { const c = { data:14, energy:8 }; if (!costOk(prev.resources, c)) return prev; const s = copy(prev); spend(s.resources, c); s.resources.science += 4; push(s, "Lot theorique compile. +4 science."); return s; });
+    const smelt = () => act((prev) => { const c = { minerals:10, energy:6 }; if (!costOk(prev.resources, c)) return prev; const s = copy(prev); spend(s.resources, c); s.resources.alloys += 4; push(s, "Fusion locale lancee. +4 alliages."); return s; });
+    const build = (item) => act((prev) => { const s = copy(prev); const c = buildingCost(item, s.structures[item.id]); if (!costOk(s.resources, c)) return prev; spend(s.resources, c); s.structures[item.id] += 1; push(s, item.name + " assemble.", "good"); return s; });
+    const research = (item) => act((prev) => { if (has(prev, item.id) || !reqOk(prev, item) || !costOk(prev.resources, item.cost)) return prev; const s = copy(prev); spend(s.resources, item.cost); s.research.push(item.id); push(s, "Recherche terminee: " + item.name + ".", "good"); return s; });
+    const launch = (idTarget) => act((prev) => { const s = copy(prev); if (s.fleet.active.length >= slots(s, bonus(s))) return prev; const idx = s.fleet.targets.findIndex((x) => x.id === idTarget); if (idx === -1) return prev; const t = s.fleet.targets[idx]; if (s.resources.energy < t.energyCost) return prev; s.resources.energy -= t.energyCost; s.fleet.targets.splice(idx, 1); s.fleet.active.unshift({ ...t, remaining:t.duration }); push(s, "Expedition lancee vers " + t.name + ".", "accent"); return s; });
+    const rewrite = () => act((prev) => { const bb = bonus(prev); const gain = rewriteGain(prev, bb); if (gain <= 0) return prev; const s = make(prev.resources.axioms + gain, prev.cycles + 1); push(s, "La simulation a ete reecrite. +" + gain + " axioms.", "accent"); return s; });
+    const wipe = () => { if (!window.confirm("Effacer la sauvegarde locale ?")) return; localStorage.removeItem(SAVE); setGame(make()); };
+
+    return h("div", { className:"app" }, [
+      h("header", { className:"hero", key:"hero" }, [
+        h("div", { className:"heroGrid", key:"grid" }, [
+          h("div", { key:"left" }, [
+            h("div", { className:"kicker", key:"k" }, "Experimental idle / orbital science"),
+            h("h1", { key:"h1" }, ["Axiom", h("br", { key:"br" }), "Drift"]),
+            h("p", { key:"p" }, "Prototype incremental en React: exploration spatiale, automatisation scientifique, industrie orbitale et prestige par anomalies."),
+            h("div", { className:"directive", key:"d" }, [h("div", { className:"eyebrow", key:"e" }, "Directive du cycle"), h("div", { key:"t" }, directive(game, v))])
+          ]),
+          h("div", { key:"right" }, [
+            h("div", { className:"summary", key:"sum" }, [
+              h("div", { className:"tile", key:"s" }, [h("div", { className:"labelSmall", key:"l" }, "Secteurs"), h("strong", { key:"v" }, game.observatory.sectors), h("div", { className:"sub", key:"x" }, "Carte en expansion")]),
+              h("div", { className:"tile", key:"c" }, [h("div", { className:"labelSmall", key:"l" }, "Cycles"), h("strong", { key:"v" }, game.cycles), h("div", { className:"sub", key:"x" }, "Axioms " + fmt(game.resources.axioms,0))]),
+              h("div", { className:"tile", key:"f" }, [h("div", { className:"labelSmall", key:"l" }, "Flotte"), h("strong", { key:"v" }, game.fleet.active.length + "/" + v.slots), h("div", { className:"sub", key:"x" }, "Missions actives")]),
+              h("div", { className:"tile", key:"r" }, [h("div", { className:"labelSmall", key:"l" }, "Rendement"), h("strong", { key:"v" }, Math.round(v.efficiency * 100) + "%"), h("div", { className:"sub", key:"x" }, "Chaleur " + fmt(game.resources.heat,1) + " / " + fmt(v.cap,0))])
+            ]),
+            h("div", { style:{ display:"flex", gap:"10px", flexWrap:"wrap", marginTop:"12px" }, key:"a" }, [
+              h("button", { className:"btn alt", onClick:() => save(game), key:"save" }, "Sauvegarder"),
+              h("button", { className:"btn warn", onClick:wipe, key:"wipe" }, "Effacer la boucle")
+            ])
+          ])
+        ]),
+        h("div", { className:"resources", key:"res" }, Object.keys(META).map((k) => h("div", { className:"resource", key:k, style:{ "--accent": META[k][1] } }, [h("div", { className:"resourceName", key:"n" }, META[k][0]), h("div", { className:"big", key:"v" }, fmt(game.resources[k], k === "axioms" ? 0 : 1)), h("div", { className:"meta", key:"r" }, k === "axioms" ? "Bonus permanent" : rate(v[k] || 0))])))
+      ]),
+
+      h("main", { className:"layout", key:"layout" }, [
+        h(Panel, { cls:"span7", eyebrow:"Module 1", title:"Observatoire et cartographie", sub:"Le scan alimente donnees, nouveaux secteurs, cibles et fragments." }, [
+          h("div", { className:"row", key:"m1" }, [h("div", { className:"meta", key:"l" }, "Progression du prochain secteur"), h("div", { className:"meta", key:"r" }, fmt(game.observatory.progress,1) + " / " + fmt(need,0))]),
+          h("div", { className:"bar", key:"bar" }, h("div", { className:"fill", style:{ width:Math.max(3, clamp(p,0,100)) + "%" } })),
+          h("div", { className:"modes", key:"modes" }, Object.values(MODES).map((m) => h("button", { className:"card " + (game.observatory.mode === m.id ? "active" : ""), key:m.id, onClick:() => changeMode(m.id) }, [h("strong", { key:"n" }, m.name), h("div", { className:"sub", key:"t" }, m.txt), h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px" }, key:"chips" }, [h("span", { className:"tag", key:"a" }, "Scan x" + fmt(m.speed,2)), h("span", { className:"tag", key:"b" }, "-" + fmt(m.energy,2) + "/s"), h("span", { className:"tag", key:"c" }, "Anomalie +" + Math.round((m.anomaly + b.anomaly) * 100) + "%")])]))),
+          h("div", { className:"actions3", key:"acts" }, [
+            h("div", { className:"card", key:"pulse" }, [h("strong", { key:"a" }, "Pulse scan"), h("div", { className:"sub", key:"b" }, "Injecte de la puissance pour terminer un secteur plus vite."), h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px" }, key:"c" }, [h("span", { className:"tag", key:"1" }, "15 Energie"), h("span", { className:"tag good", key:"2" }, "+22 scan"), h("span", { className:"tag good", key:"3" }, "+6 Donnees")]), h("button", { className:"btn full", disabled:game.resources.energy < 15, onClick:pulse, key:"d" }, "Declencher")]),
+            h("div", { className:"card", key:"theory" }, [h("strong", { key:"a" }, "Distill theory"), h("div", { className:"sub", key:"b" }, "Convertit rapidement un lot de donnees en science."), h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px" }, key:"c" }, [h("span", { className:"tag", key:"1" }, "14 Donnees"), h("span", { className:"tag", key:"2" }, "8 Energie"), h("span", { className:"tag good", key:"3" }, "+4 Science")]), h("button", { className:"btn full", disabled:game.resources.data < 14 || game.resources.energy < 8, onClick:theory, key:"d" }, "Compiler")]),
+            h("div", { className:"card", key:"smelt" }, [h("strong", { key:"a" }, "Rapid smelt"), h("div", { className:"sub", key:"b" }, "Fusion locale pour debloquer une structure critique."), h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px" }, key:"c" }, [h("span", { className:"tag", key:"1" }, "10 Minerais"), h("span", { className:"tag", key:"2" }, "6 Energie"), h("span", { className:"tag good", key:"3" }, "+4 Alliages")]), h("button", { className:"btn full", disabled:game.resources.minerals < 10 || game.resources.energy < 6, onClick:smelt, key:"d" }, "Fondre")])
+          ])
+        ]),
+
+        h(Panel, { cls:"span5", eyebrow:"Module 5", title:"Noyau d anomalie", sub:"Les fragments servent de monnaie de prestige et reecrivent la simulation." }, [
+          h("div", { className:"status", key:"s" }, [
+            h("div", { className:"tile", key:"a" }, [h("div", { className:"mini", key:"m" }, "Fragments"), h("strong", { key:"v" }, fmt(game.resources.fragments,0)), h("div", { className:"sub", key:"x" }, "Cout actuel " + v.rewriteCost)]),
+            h("div", { className:"tile", key:"b" }, [h("div", { className:"mini", key:"m" }, "Gain possible"), h("strong", { key:"v" }, "+" + v.rewriteGain), h("div", { className:"sub", key:"x" }, "Axioms permanents")]),
+            h("div", { className:"tile", key:"c" }, [h("div", { className:"mini", key:"m" }, "Aura"), h("strong", { key:"v" }, "Scan +" + Math.round((b.scan - 1) * 100) + "%"), h("div", { className:"sub", key:"x" }, "Les axioms dopent chaque cycle")])
+          ]),
+          h("p", { className:"sub", key:"p" }, "Une reecriture reset ressources, structures et recherche. Les axioms restent et accelerent la boucle suivante."),
+          h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap" }, key:"chips" }, [h("span", { className:"tag", key:"1" }, "Energie +" + Math.round((b.energy - 1) * 100) + "%"), h("span", { className:"tag", key:"2" }, "Scan +" + Math.round((b.scan - 1) * 100) + "%"), h("span", { className:"tag", key:"3" }, "Missions +" + Math.round(b.mission * 100) + "%")]),
+          h("button", { className:"btn prestige full", disabled:v.rewriteGain <= 0, onClick:rewrite, key:"btn" }, v.rewriteGain > 0 ? "Reecrire la simulation" : "Fragments insuffisants"),
+          h("div", { className:"note", key:"n" }, "Le mode Resonance sweep et les expeditions d anomalies sont le chemin le plus court vers le prestige.")
+        ]),
+        h(Panel, { cls:"span7", eyebrow:"Module 2", title:"Programme d expeditions", sub:"Les scans produisent des cibles. Les missions ramassent minerais, science et fragments." }, [
+          h("div", { className:"status", key:"status" }, [
+            h("div", { className:"tile", key:"a" }, [h("div", { className:"mini", key:"m" }, "Slots actifs"), h("strong", { key:"v" }, game.fleet.active.length + " / " + v.slots), h("div", { className:"sub", key:"x" }, "Ajoute des Launch cradles")]),
+            h("div", { className:"tile", key:"b" }, [h("div", { className:"mini", key:"m" }, "Cibles"), h("strong", { key:"v" }, game.fleet.targets.length), h("div", { className:"sub", key:"x" }, "Les scans alimentent la reserve")]),
+            h("div", { className:"tile", key:"c" }, [h("div", { className:"mini", key:"m" }, "Bonus mission"), h("strong", { key:"v" }, "+" + Math.round(b.mission * 100) + "%"), h("div", { className:"sub", key:"x" }, "Transmission et axioms")])
+          ]),
+          h("div", { className:"mini", key:"t1" }, "Cibles disponibles"),
+          game.fleet.targets.length ? h("div", { className:"targets", key:"targets" }, game.fleet.targets.map((t) => h("div", { className:"card " + t.rarity, key:t.id }, [h("strong", { key:"n" }, t.name), h("div", { className:"sub", key:"d" }, t.note), h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px" }, key:"s" }, [h("span", { className:"tag", key:"a" }, secs(t.duration)), h("span", { className:"tag", key:"b" }, "-" + t.energyCost + " Energie"), h("span", { className:"tag", key:"c" }, Math.round(t.success * 100) + "% succes")]), h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px" }, key:"r" }, chips(t.rewards, "good")), h("button", { className:"btn full", disabled:game.resources.energy < t.energyCost || game.fleet.active.length >= v.slots, onClick:() => launch(t.id), key:"btn" }, "Lancer l expedition")])) ) : h("div", { className:"empty", key:"empty1" }, "Aucune cible en attente. Continue a scanner."),
+          h("div", { className:"mini", key:"t2", style:{ marginTop:"16px" } }, "Missions actives"),
+          game.fleet.active.length ? h("div", { className:"missions", key:"missions" }, game.fleet.active.map((m) => { const done = 100 - m.remaining / m.duration * 100; return h("div", { className:"card done", key:m.id }, [h("strong", { key:"n" }, m.name), h("div", { className:"sub", key:"d" }, m.note), h("div", { className:"row", key:"r1" }, [h("div", { className:"meta", key:"a" }, "Transit"), h("div", { className:"meta", key:"b" }, secs(m.remaining))]), h("div", { className:"bar", key:"bar" }, h("div", { className:"fill", style:{ width:Math.max(4, clamp(done,0,100)) + "%" } })), h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px" }, key:"r" }, chips(m.rewards, "good"))]); })) : h("div", { className:"empty", key:"empty2" }, "Aucune expedition active.")
+        ]),
+
+        h(Panel, { cls:"span5", eyebrow:"Module 4", title:"Infrastructure orbitale", sub:"Production, chaleur et logistique structurent la boucle idle." }, [
+          h("div", { className:"status", key:"status" }, [
+            h("div", { className:"tile", key:"a" }, [h("div", { className:"mini", key:"m" }, "Flux energie"), h("strong", { key:"v" }, rate(v.energy)), h("div", { className:"sub", key:"x" }, "Net apres scans, labos et forges")]),
+            h("div", { className:"tile", key:"b" }, [h("div", { className:"mini", key:"m" }, "Flux chaleur"), h("strong", { key:"v" }, rate(v.heat)), h("div", { className:"sub", key:"x" }, "Cap " + fmt(v.cap,0) + " | rendement " + Math.round(v.efficiency * 100) + "%")]),
+            h("div", { className:"tile", key:"c" }, [h("div", { className:"mini", key:"m" }, "Flux alliages"), h("strong", { key:"v" }, rate(v.alloys)), h("div", { className:"sub", key:"x" }, "Les forges consomment minerais + energie")])
+          ]),
+          h("div", { className:"buildings", key:"build" }, STRUCTURES.map((it) => { const c = buildingCost(it, game.structures[it.id]); return h("div", { className:"card " + it.cls, key:it.id }, [h("strong", { key:"n" }, it.name + " x" + game.structures[it.id]), h("div", { className:"sub", key:"d" }, it.txt), h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px" }, key:"c" }, chips(c)), h("button", { className:"btn full", disabled:!costOk(game.resources, c), onClick:() => build(it), key:"b" }, "Construire")]); })),
+          h("div", { className:"note", key:"n" }, v.efficiency < .8 ? "Le reseau surchauffe. Ajoute du Cryo spine ou change de mode." : "L equilibre thermique est stable. Tu peux pousser la production.")
+        ]),
+
+        h(Panel, { cls:"span8", eyebrow:"Module 3", title:"Laboratoire et theories", sub:"La recherche change les priorites de la boucle au lieu de seulement ajouter des multiplicateurs." }, [
+          h("div", { className:"status", key:"s" }, [
+            h("div", { className:"tile", key:"a" }, [h("div", { className:"mini", key:"m" }, "Flux science"), h("strong", { key:"v" }, rate(v.science)), h("div", { className:"sub", key:"x" }, "Rythme des Theory vaults")]),
+            h("div", { className:"tile", key:"b" }, [h("div", { className:"mini", key:"m" }, "Flux donnees"), h("strong", { key:"v" }, rate(v.data)), h("div", { className:"sub", key:"x" }, "Le scan nourrit tout")]),
+            h("div", { className:"tile", key:"c" }, [h("div", { className:"mini", key:"m" }, "Recherche terminee"), h("strong", { key:"v" }, game.research.length + "/" + RESEARCH.length), h("div", { className:"sub", key:"x" }, "Certaines recherches debloquent le prestige")])
+          ]),
+          h("div", { className:"research", key:"grid" }, RESEARCH.map((r) => { const done = has(game, r.id); const open = reqOk(game, r); const disabled = done || !open || !costOk(game.resources, r.cost); return h("div", { className:"card " + (done ? "done" : open ? "" : "anomaly"), key:r.id }, [h("strong", { key:"n" }, r.name), h("div", { className:"sub", key:"t" }, r.txt), !open ? h("div", { className:"row", key:"req", style:{ marginTop:"8px" } }, [h("div", { className:"meta", key:"a" }, "Prerequis"), h("div", { className:"meta", key:"b" }, reqTxt(r))]) : null, h("div", { style:{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px" }, key:"c" }, chips(r.cost)), done ? h("button", { className:"btn alt full", disabled:true, key:"done" }, "Terminee") : h("button", { className:"btn full", disabled, onClick:() => research(r), key:"btn" }, open ? "Rechercher" : "Verrouillee")]); }))
+        ]),
+
+        h(Panel, { cls:"span4", eyebrow:"Chronique", title:"Journal de bord", sub:"Evenements clefs du cycle en cours." }, h("div", { className:"logs", key:"logs" }, game.log.map((log) => h("div", { className:"tile log " + (log.tone || ""), key:log.id }, [h("div", { className:"mini", key:"a" }, log.at), h("div", { key:"b" }, log.text)]))))
+      ])
+    ]);
+  }
+
+  ReactDOM.createRoot(document.getElementById("app")).render(h(App));
+})();
+</script>
+</body>
+</html>
+

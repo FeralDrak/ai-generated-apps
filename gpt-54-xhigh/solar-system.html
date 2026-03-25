@@ -1,0 +1,1810 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planetarium orbital interactif</title>
+  <style>
+    :root {
+      --bg-1: #020914;
+      --bg-2: #071b2a;
+      --bg-3: #103547;
+      --panel: rgba(7, 22, 35, 0.82);
+      --panel-strong: rgba(9, 28, 44, 0.92);
+      --line: rgba(145, 205, 227, 0.18);
+      --line-strong: rgba(145, 205, 227, 0.38);
+      --ink: #f8f3e6;
+      --muted: #bed2d8;
+      --accent: #ffc14c;
+      --cyan: #7de0ff;
+      --lime: #b5e26f;
+      --danger: #ff8572;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255, 193, 76, 0.12), transparent 20%),
+        radial-gradient(circle at 85% 12%, rgba(125, 224, 255, 0.14), transparent 24%),
+        radial-gradient(circle at 50% 110%, rgba(181, 226, 111, 0.1), transparent 26%),
+        linear-gradient(140deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(255, 255, 255, 0.7) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 24% 30%, rgba(255, 255, 255, 0.45) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 46% 18%, rgba(255, 255, 255, 0.5) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 72% 26%, rgba(255, 255, 255, 0.55) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 90% 12%, rgba(255, 255, 255, 0.6) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 14% 76%, rgba(255, 255, 255, 0.55) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 52% 82%, rgba(255, 255, 255, 0.6) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 80% 72%, rgba(255, 255, 255, 0.45) 0 1px, transparent 1.5px);
+      opacity: 0.45;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(280px, 330px) minmax(420px, 1fr) minmax(320px, 390px);
+      grid-template-areas: "left center right";
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .left-column {
+      grid-area: left;
+    }
+
+    .center-column {
+      grid-area: center;
+    }
+
+    .right-column {
+      grid-area: right;
+    }
+
+    .panel {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 16%),
+        linear-gradient(180deg, var(--panel-strong) 0%, var(--panel) 100%);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 24%),
+        linear-gradient(320deg, rgba(125, 224, 255, 0.05), transparent 28%);
+    }
+
+    .panel-content {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      padding: 22px;
+    }
+
+    .left-column,
+    .right-column {
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    p {
+      margin-top: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: "Palatino Linotype", "Book Antiqua", serif;
+      letter-spacing: 0.02em;
+    }
+
+    h1 {
+      margin-bottom: 12px;
+      font-size: clamp(2.1rem, 4vw, 3.1rem);
+      line-height: 0.95;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-size: 1.4rem;
+    }
+
+    h3 {
+      margin-bottom: 12px;
+      font-size: 1.05rem;
+    }
+
+    .hero-copy {
+      margin-bottom: 22px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-heading h2,
+    .section-heading h3 {
+      margin-bottom: 0;
+    }
+
+    .status-badge,
+    .score-badge,
+    .pill,
+    .ticker-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--ink);
+      font-size: 0.82rem;
+    }
+
+    .status-badge::before,
+    .score-badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--lime);
+      box-shadow: 0 0 10px rgba(181, 226, 111, 0.5);
+    }
+
+    .control-card,
+    .quick-select-card,
+    .panel-subsection,
+    .challenge-card {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .primary-button,
+    .ghost-button,
+    .quiz-button,
+    .body-tab {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 10px 14px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.06);
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .primary-button:hover,
+    .ghost-button:hover,
+    .quiz-button:hover,
+    .body-tab:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .primary-button {
+      background: linear-gradient(135deg, rgba(255, 193, 76, 0.22), rgba(125, 224, 255, 0.16));
+      border-color: rgba(255, 193, 76, 0.28);
+    }
+
+    .slider-wrap {
+      display: grid;
+      gap: 10px;
+    }
+
+    .slider-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(125, 224, 255, 0.45), rgba(255, 193, 76, 0.55));
+      outline: none;
+      appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--ink);
+      border: 2px solid rgba(0, 0, 0, 0.2);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--ink);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    .slider-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .learn-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .learn-card {
+      padding: 16px;
+      border-radius: 20px;
+      background:
+        linear-gradient(135deg, rgba(255, 193, 76, 0.12), transparent 45%),
+        rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .learn-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.94rem;
+    }
+
+    .learn-card p {
+      margin-bottom: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.92rem;
+    }
+
+    .quick-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .body-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding-inline: 12px 14px;
+    }
+
+    .body-tab.is-active {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--line-strong);
+      box-shadow: inset 0 0 0 1px rgba(125, 224, 255, 0.18);
+    }
+    .body-tab-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14);
+      flex: none;
+    }
+
+    .scene-panel .panel-content {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+    }
+
+    .scene-topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .scene-topbar h2 {
+      margin-bottom: 6px;
+    }
+
+    .scene-topbar p:last-child {
+      margin-bottom: 0;
+      color: var(--muted);
+      max-width: 46ch;
+      line-height: 1.45;
+    }
+
+    .scene-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: end;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+    }
+
+    .scene-viewport {
+      position: relative;
+      min-height: 620px;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        radial-gradient(circle at center, rgba(11, 45, 69, 0.5) 0%, rgba(3, 10, 19, 0.95) 72%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 18%);
+    }
+
+    .scene-backdrop {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      animation: twinkle var(--twinkle, 4.5s) ease-in-out infinite;
+      opacity: var(--alpha, 0.6);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.28);
+    }
+
+    .solar-system {
+      position: absolute;
+      inset: 0;
+    }
+
+    .orbit-ring {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 1px solid rgba(156, 212, 235, 0.12);
+      pointer-events: none;
+      transition: border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+      opacity: 0.8;
+    }
+
+    .orbit-ring.is-active {
+      border-color: rgba(125, 224, 255, 0.5);
+      box-shadow:
+        0 0 0 1px rgba(125, 224, 255, 0.14),
+        inset 0 0 18px rgba(125, 224, 255, 0.08);
+      opacity: 1;
+    }
+
+    .asteroid-belt {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    .asteroid-belt::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background:
+        repeating-conic-gradient(
+          from 0deg,
+          rgba(255, 193, 76, 0.42) 0deg 1.1deg,
+          transparent 1.1deg 4.5deg,
+          rgba(255, 255, 255, 0.18) 4.5deg 5deg,
+          transparent 5deg 9deg
+        );
+      -webkit-mask: radial-gradient(
+        circle at center,
+        transparent calc(50% - 10px),
+        #000 calc(50% - 8px),
+        #000 calc(50% + 8px),
+        transparent calc(50% + 10px)
+      );
+      mask: radial-gradient(
+        circle at center,
+        transparent calc(50% - 10px),
+        #000 calc(50% - 8px),
+        #000 calc(50% + 8px),
+        transparent calc(50% + 10px)
+      );
+      animation: orbitDrift 40s linear infinite;
+    }
+
+    .body-marker {
+      position: absolute;
+      left: 0;
+      top: 0;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      padding: 0;
+      transform: translate(-50%, -50%);
+      transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+      isolation: isolate;
+    }
+
+    .body-marker:hover {
+      filter: saturate(1.1) brightness(1.08);
+    }
+
+    .body-marker::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      opacity: 0;
+      transition: opacity 180ms ease, border-color 180ms ease;
+    }
+
+    .body-marker.is-active::before {
+      opacity: 1;
+      border-color: rgba(255, 255, 255, 0.78);
+    }
+
+    .body-marker::after {
+      content: "";
+      position: absolute;
+      inset: 14%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 28% 30%, rgba(255, 255, 255, 0.65), transparent 42%);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .body-marker.sun::after {
+      inset: 8%;
+      background: radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.85), transparent 40%);
+    }
+
+    .body-marker.sun {
+      animation: solarPulse 3.2s ease-in-out infinite;
+      box-shadow:
+        0 0 28px rgba(255, 193, 76, 0.45),
+        0 0 64px rgba(255, 110, 40, 0.25);
+    }
+
+    .planet-ring {
+      position: absolute;
+      width: 170%;
+      height: 42%;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.36);
+      transform: rotate(18deg);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .body-label {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(4, 13, 22, 0.62);
+      color: var(--muted);
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .body-marker:hover .body-label,
+    .body-marker.is-active .body-label {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    .scene-caption {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      max-width: min(420px, calc(100% - 40px));
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(4, 13, 22, 0.68);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      line-height: 1.45;
+      backdrop-filter: blur(12px);
+    }
+
+    .ticker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .ticker-chip {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+    }
+
+    .selected-header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .selected-body p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .planet-chip {
+      width: 58px;
+      height: 58px;
+      flex: none;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 1rem;
+      line-height: 1.3;
+      font-weight: 700;
+    }
+
+    .insight-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .insight-card {
+      padding: 14px;
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(125, 224, 255, 0.1), transparent 55%),
+        rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .insight-card h4 {
+      margin: 0 0 6px;
+      font-size: 0.96rem;
+    }
+
+    .insight-card p {
+      margin-bottom: 0;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .fact-list {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .fact-list li {
+      line-height: 1.45;
+    }
+
+    .quiz-prompt {
+      min-height: 56px;
+      color: var(--ink);
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+
+    .quiz-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quiz-button {
+      text-align: left;
+      border-radius: 18px;
+      padding: 12px 14px;
+    }
+
+    .quiz-button.correct {
+      background: rgba(181, 226, 111, 0.15);
+      border-color: rgba(181, 226, 111, 0.36);
+    }
+
+    .quiz-button.wrong {
+      background: rgba(255, 133, 114, 0.14);
+      border-color: rgba(255, 133, 114, 0.34);
+    }
+
+    .quiz-button:disabled {
+      cursor: default;
+      opacity: 0.9;
+    }
+
+    .quiz-feedback {
+      min-height: 44px;
+      margin: 16px 0 14px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .challenge-card .ghost-button {
+      width: 100%;
+      justify-content: center;
+    }
+
+    @keyframes twinkle {
+      0%,
+      100% {
+        opacity: var(--alpha, 0.6);
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.35);
+      }
+    }
+
+    @keyframes solarPulse {
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.04);
+      }
+    }
+
+    @keyframes orbitDrift {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "center"
+          "left"
+          "right";
+      }
+
+      .left-column,
+      .right-column {
+        max-height: none;
+      }
+
+      .scene-viewport {
+        min-height: 540px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        padding: 12px;
+        gap: 12px;
+      }
+
+      .panel-content {
+        padding: 18px;
+      }
+
+      .scene-topbar {
+        flex-direction: column;
+      }
+
+      .scene-pills {
+        justify-content: start;
+      }
+
+      .scene-viewport {
+        min-height: 420px;
+      }
+
+      .stats-grid,
+      .quiz-options {
+        grid-template-columns: 1fr;
+      }
+
+      .scene-caption {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel left-column">
+      <div class="panel-content">
+        <p class="eyebrow">Laboratoire orbital</p>
+        <h1>Planetarium de poche</h1>
+        <p class="hero-copy">
+          Fais tourner le temps, observe les orbites et clique sur chaque astre pour comprendre son role.
+          Cette maquette privilegie la pedagogie: les tailles et distances sont adaptees a l'ecran pour garder tout le systeme solaire lisible.
+        </p>
+
+        <section class="control-card">
+          <div class="section-heading">
+            <h2>Piloter la simulation</h2>
+            <span class="status-badge" id="playState">En mouvement</span>
+          </div>
+          <div class="control-row">
+            <button class="primary-button" id="toggleMotion" type="button">Pause</button>
+            <button class="ghost-button" id="resetTime" type="button">Revenir au depart</button>
+            <button class="ghost-button" id="randomFocus" type="button">Explorer au hasard</button>
+          </div>
+          <div class="slider-wrap">
+            <label class="slider-label" for="speedRange">
+              <span>Vitesse du temps</span>
+              <strong id="speedValue">1 s = 12 jours</strong>
+            </label>
+            <input id="speedRange" type="range" min="1" max="45" step="0.5" value="12">
+            <div class="slider-meta">
+              <span id="simClock">Jour simule: 0</span>
+              <span id="earthYears">0 annee terrestre</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="learn-grid" aria-label="Principes du systeme solaire">
+          <article class="learn-card">
+            <strong>Gravite</strong>
+            <p>Le Soleil retient les planetes sur leurs trajectoires: plus on est proche, plus l'orbite est rapide et courte.</p>
+          </article>
+          <article class="learn-card">
+            <strong>Rotation</strong>
+            <p>Quand un astre tourne sur lui-meme, il cree un cycle jour-nuit. Certains tournent vite, d'autres tres lentement.</p>
+          </article>
+          <article class="learn-card">
+            <strong>Revolution</strong>
+            <p>Faire un tour complet autour du Soleil definit une annee. Mercure boucle vite, Neptune prend plus de 160 ans.</p>
+          </article>
+          <article class="learn-card">
+            <strong>Familles d'astres</strong>
+            <p>Les mondes rocheux dominent pres du Soleil, tandis que les geantes gazeuses et glacees regnent plus loin.</p>
+          </article>
+        </section>
+
+        <section class="quick-select-card">
+          <div class="section-heading">
+            <h2>Acces rapide</h2>
+          </div>
+          <div class="quick-select" id="quickSelect"></div>
+        </section>
+      </div>
+    </aside>
+
+    <main class="panel center-column scene-panel">
+      <div class="panel-content">
+        <div class="scene-topbar">
+          <div>
+            <p class="eyebrow">Vue heliocentrique</p>
+            <h2>Le ballet des orbites</h2>
+            <p>Les vitesses affichees respectent les durees relatives des annees planetaires. Clique sur un monde pour suivre son annee, sa rotation et ses particularites.</p>
+          </div>
+          <div class="scene-pills" aria-label="Legende">
+            <span class="pill">8 planetes + Pluton</span>
+            <span class="pill">Ceinture d'asteroides</span>
+            <span class="pill">Fiches interactives</span>
+          </div>
+        </div>
+
+        <div class="scene-viewport">
+          <div class="scene-backdrop" id="sceneBackdrop"></div>
+          <div class="asteroid-belt" id="asteroidBelt" aria-hidden="true"></div>
+          <div class="solar-system" id="solarSystem" aria-label="Simulation animee du systeme solaire"></div>
+          <div class="scene-caption" id="sceneCaption" aria-live="polite"></div>
+        </div>
+
+        <div class="ticker" id="ticker" aria-live="polite"></div>
+      </div>
+    </main>
+
+    <aside class="panel right-column">
+      <div class="panel-content">
+        <section class="selected-body">
+          <div class="selected-header">
+            <div>
+              <p class="eyebrow" id="selectedType">Planete rocheuse habitable</p>
+              <h2 id="selectedName">Terre</h2>
+            </div>
+            <div class="planet-chip" id="selectedChip" aria-hidden="true"></div>
+          </div>
+          <p id="selectedDescription"></p>
+          <div class="stats-grid" id="statsGrid"></div>
+        </section>
+
+        <section class="panel-subsection">
+          <h3>Ce que cela signifie</h3>
+          <div class="insight-stack" id="insightStack"></div>
+        </section>
+
+        <section class="panel-subsection">
+          <h3>Reperes et curiosites</h3>
+          <ul class="fact-list" id="factList"></ul>
+        </section>
+
+        <section class="challenge-card">
+          <div class="section-heading">
+            <h3>Defi cosmique</h3>
+            <span class="score-badge" id="quizScore">0 / 0</span>
+          </div>
+          <p class="quiz-prompt" id="quizPrompt"></p>
+          <div class="quiz-options" id="quizOptions"></div>
+          <p class="quiz-feedback" id="quizFeedback">Lis l'indice puis choisis l'astre correspondant.</p>
+          <button class="ghost-button" id="nextChallenge" type="button">Nouvel indice</button>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const bodies = [
+      {
+        id: "sun",
+        name: "Soleil",
+        type: "Etoile au centre du systeme",
+        description: "Le Soleil contient presque toute la masse du systeme solaire. Sa gravite guide les orbites, sa lumiere chauffe les mondes et ses eruptions influencent l'espace proche.",
+        orbitFactor: 0,
+        displaySize: 74,
+        diameter: "1,39 million km",
+        distance: "0 km",
+        orbitDays: 0,
+        rotationHours: 609.1,
+        gravity: "274 m/s^2",
+        temperature: "5 500 deg C en surface",
+        orbitalSpeed: "centre du systeme",
+        axialTilt: 7.25,
+        gradient: "radial-gradient(circle at 30% 28%, #fff4c9, #ffc74f 40%, #ff8b2b 72%, #bf3600 100%)",
+        glow: "0 0 26px rgba(255, 193, 76, 0.6)",
+        baseAngle: 0,
+        composition: "Hydrogene et helium, avec des couches de plasma en mouvement.",
+        comparison: "Sans lui, pas de lumiere, pas de chaleur et pas d'orbites stables pour les planetes.",
+        facts: [
+          "Son coeur transforme l'hydrogene en helium par fusion nucleaire.",
+          "La lumiere du Soleil met environ 8 minutes 20 secondes pour atteindre la Terre.",
+          "Son activite magnetique produit des taches, des eruptions et des vents solaires."
+        ],
+        quizHints: [
+          "Je suis l'etoile qui retient presque tous les autres astres autour de moi.",
+          "Ma lumiere atteint la Terre en un peu plus de 8 minutes.",
+          "Je fournis l'energie qui alimente la plupart des climats planetaires."
+        ]
+      },
+      {
+        id: "mercury",
+        name: "Mercure",
+        type: "Petite planete rocheuse",
+        description: "Mercure est la planete la plus proche du Soleil. Son annee est tres courte, mais sa rotation lente allonge enormement ses journees.",
+        orbitFactor: 0.16,
+        displaySize: 10,
+        diameter: "4 879 km",
+        distance: "57,9 millions km",
+        orbitDays: 88,
+        rotationHours: 1407.6,
+        gravity: "3,7 m/s^2",
+        temperature: "de -173 a 427 deg C",
+        orbitalSpeed: "47,4 km/s",
+        axialTilt: 0.03,
+        gradient: "linear-gradient(135deg, #b6ab9e 0%, #8f8374 48%, #665b51 100%)",
+        glow: "0 0 12px rgba(182, 171, 158, 0.28)",
+        baseAngle: 2.2,
+        composition: "Croute rocheuse, enorme noyau metallique riche en fer.",
+        comparison: "Une annee y dure 88 jours terrestres: Mercure tourne tres vite autour du Soleil.",
+        facts: [
+          "Mercure n'a presque pas d'atmosphere pour retenir la chaleur.",
+          "Une journee solaire y dure environ 176 jours terrestres.",
+          "Sa surface est couverte de crateres comme celle de la Lune."
+        ],
+        quizHints: [
+          "Je suis la planete la plus proche du Soleil.",
+          "Mon annee est plus courte qu'un trimestre terrestre.",
+          "Je suis petite, craterisee et presque sans atmosphere."
+        ]
+      },
+      {
+        id: "venus",
+        name: "Venus",
+        type: "Planete tellurique tres chaude",
+        description: "Venus ressemble a la Terre par sa taille, mais son epaisse atmosphere de dioxyde de carbone declenche un effet de serre extreme.",
+        orbitFactor: 0.23,
+        displaySize: 14,
+        diameter: "12 104 km",
+        distance: "108,2 millions km",
+        orbitDays: 224.7,
+        rotationHours: -5832.5,
+        gravity: "8,9 m/s^2",
+        temperature: "environ 465 deg C",
+        orbitalSpeed: "35,0 km/s",
+        axialTilt: 177.4,
+        gradient: "linear-gradient(135deg, #f8dfad 0%, #d59f53 42%, #9f5d2f 100%)",
+        glow: "0 0 14px rgba(248, 223, 173, 0.25)",
+        baseAngle: 0.8,
+        composition: "Atmosphere tres dense, nuages d'acide sulfurique, surface volcanique.",
+        comparison: "Venus tourne en sens retrograde: le Soleil s'y leverait a l'ouest.",
+        facts: [
+          "C'est la planete la plus chaude du systeme solaire, meme si Mercure est plus proche du Soleil.",
+          "Son atmosphere exerce une pression enorme au sol, comparable a celle des grands fonds oceaniques.",
+          "Sa rotation inverse est une exception remarquable parmi les planetes."
+        ],
+        quizHints: [
+          "Je suis la plus chaude de toutes les planetes.",
+          "Je tourne dans le sens inverse de la plupart des autres mondes.",
+          "Je suis parfois appelee la jumelle infernale de la Terre."
+        ]
+      },
+      {
+        id: "earth",
+        name: "Terre",
+        type: "Planete rocheuse habitable",
+        description: "La Terre combine eau liquide, atmosphere protectrice et champ magnetique. Son inclinaison cree des saisons, et sa rotation produit notre alternance jour-nuit.",
+        orbitFactor: 0.31,
+        displaySize: 16,
+        diameter: "12 742 km",
+        distance: "149,6 millions km",
+        orbitDays: 365.25,
+        rotationHours: 23.93,
+        gravity: "9,8 m/s^2",
+        temperature: "moyenne 15 deg C",
+        orbitalSpeed: "29,8 km/s",
+        axialTilt: 23.4,
+        gradient: "linear-gradient(135deg, #3ad1ff 0%, #2856d7 44%, #44bf60 100%)",
+        glow: "0 0 16px rgba(58, 209, 255, 0.3)",
+        baseAngle: 4.1,
+        composition: "Roches, oceans d'eau liquide, atmosphere azote-oxygene.",
+        comparison: "Reference ideale pour comparer les autres mondes: 1 an, 1 jour d'environ 24 h, saisons moderees.",
+        facts: [
+          "Son axe incline explique les saisons, pas la distance au Soleil.",
+          "La Lune stabilise en partie l'inclinaison de la Terre.",
+          "C'est la seule planete connue a abriter la vie."
+        ],
+        quizHints: [
+          "Je suis la seule planete connue avec de vastes oceans liquides et la vie.",
+          "Mes saisons viennent surtout de mon axe incline.",
+          "Je sers souvent de reference pour mesurer les jours et les annees."
+        ]
+      },
+      {
+        id: "mars",
+        name: "Mars",
+        type: "Planete rouge et froide",
+        description: "Mars possede des saisons, des calottes polaires et des traces d'anciennes rivieres. Son atmosphere fine laisse toutefois la chaleur s'echapper tres vite.",
+        orbitFactor: 0.39,
+        displaySize: 12,
+        diameter: "6 779 km",
+        distance: "227,9 millions km",
+        orbitDays: 687,
+        rotationHours: 24.62,
+        gravity: "3,7 m/s^2",
+        temperature: "moyenne -63 deg C",
+        orbitalSpeed: "24,1 km/s",
+        axialTilt: 25.2,
+        gradient: "linear-gradient(135deg, #df8a52 0%, #b15330 50%, #7f2e1f 100%)",
+        glow: "0 0 14px rgba(223, 138, 82, 0.25)",
+        baseAngle: 1.7,
+        composition: "Roches riches en oxyde de fer, atmosphere fine de CO2.",
+        comparison: "Sa journee dure presque comme la notre, mais son annee est presque deux fois plus longue.",
+        facts: [
+          "Olympus Mons est l'un des plus grands volcans connus du systeme solaire.",
+          "Mars possede deux petites lunes: Phobos et Deimos.",
+          "Des robots y cherchent des indices d'eau et de vie passee."
+        ],
+        quizHints: [
+          "On m'appelle souvent la planete rouge.",
+          "Ma journee ressemble beaucoup a celle de la Terre.",
+          "Des robots explorent ma surface a la recherche d'eau ancienne."
+        ]
+      },
+      {
+        id: "jupiter",
+        name: "Jupiter",
+        type: "Plus grande planete du systeme",
+        description: "Jupiter est une geante gazeuse massive. Sa gravite influence les trajectoires voisines et sa rotation tres rapide aplatie legerement la planete.",
+        orbitFactor: 0.55,
+        displaySize: 29,
+        diameter: "139 820 km",
+        distance: "778,5 millions km",
+        orbitDays: 4331,
+        rotationHours: 9.93,
+        gravity: "24,8 m/s^2",
+        temperature: "environ -145 deg C",
+        orbitalSpeed: "13,1 km/s",
+        axialTilt: 3.1,
+        gradient: "linear-gradient(135deg, #e7c391 0%, #c88a59 34%, #a96b48 52%, #f6e0c8 100%)",
+        glow: "0 0 18px rgba(231, 195, 145, 0.28)",
+        baseAngle: 5.3,
+        composition: "Hydrogene, helium, couches nuageuses et possible coeur dense.",
+        comparison: "Sa masse aide a modeler le trafic d'asteroides et de cometes dans tout le systeme solaire.",
+        facts: [
+          "La Grande Tache rouge est une tempete geante observee depuis des siecles.",
+          "Jupiter accomplit une rotation en moins de 10 heures.",
+          "De nombreuses lunes gravitent autour d'elle, dont Europe, Ganymede et Io."
+        ],
+        quizHints: [
+          "Je suis la plus grande planete du systeme solaire.",
+          "Une immense tempete coloree tourbillonne dans mon atmosphere.",
+          "Je tourne sur moi-meme en moins de 10 heures."
+        ]
+      },
+      {
+        id: "saturn",
+        name: "Saturne",
+        type: "Geante gazeuse cernee d'anneaux",
+        description: "Saturne est celebre pour ses anneaux de glace et de poussiere. Ils illustrent parfaitement l'action de la gravite et des resonances orbitales.",
+        orbitFactor: 0.68,
+        displaySize: 25,
+        diameter: "116 460 km",
+        distance: "1,43 milliard km",
+        orbitDays: 10747,
+        rotationHours: 10.7,
+        gravity: "10,4 m/s^2",
+        temperature: "environ -178 deg C",
+        orbitalSpeed: "9,7 km/s",
+        axialTilt: 26.7,
+        gradient: "linear-gradient(135deg, #f5d79a 0%, #d1a760 42%, #9d7741 100%)",
+        glow: "0 0 18px rgba(245, 215, 154, 0.25)",
+        ringColor: "rgba(255, 235, 189, 0.76)",
+        baseAngle: 3.4,
+        composition: "Hydrogene, helium, particules de glace et roches dans les anneaux.",
+        comparison: "Ses anneaux sont un laboratoire visuel pour comprendre collisions, gravite et tri des particules.",
+        facts: [
+          "Les anneaux ne sont pas pleins: ils contiennent d'innombrables morceaux de glace et de roche.",
+          "Saturne est si peu dense qu'elle flotterait dans une immense cuve d'eau imaginaire.",
+          "Titan, sa grande lune, possede une atmosphere epaisse."
+        ],
+        quizHints: [
+          "Je suis la geante celebre pour mes anneaux spectaculaires.",
+          "Ma densite moyenne est inferieure a celle de l'eau.",
+          "Titan fait partie de mes lunes les plus connues."
+        ],
+        hasRing: true
+      },
+      {
+        id: "uranus",
+        name: "Uranus",
+        type: "Geante glacee couchee sur le cote",
+        description: "Uranus a probablement subi un choc ancien qui a incline son axe presque a l'horizontale. Ses saisons y sont donc tres inhabituelles et extremement longues.",
+        orbitFactor: 0.8,
+        displaySize: 19,
+        diameter: "50 724 km",
+        distance: "2,87 milliards km",
+        orbitDays: 30589,
+        rotationHours: -17.2,
+        gravity: "8,7 m/s^2",
+        temperature: "environ -224 deg C",
+        orbitalSpeed: "6,8 km/s",
+        axialTilt: 97.8,
+        gradient: "linear-gradient(135deg, #c7f8ff 0%, #87dce2 45%, #4f9bab 100%)",
+        glow: "0 0 16px rgba(199, 248, 255, 0.24)",
+        baseAngle: 0.2,
+        composition: "Hydrogene, helium, methane et couches riches en glaces profondes.",
+        comparison: "Son axe fortement incline change completement la maniere dont ses poles recoivent la lumiere du Soleil.",
+        facts: [
+          "Son methane absorbe le rouge et lui donne sa teinte bleu-vert.",
+          "Uranus tourne presque couchee sur son orbite.",
+          "Une saison y dure environ 21 ans terrestres."
+        ],
+        quizHints: [
+          "Je suis presque couchee sur le cote.",
+          "Mon axe incline rend mes saisons tres extremes.",
+          "Ma couleur bleu-vert vient en partie du methane."
+        ]
+      },
+      {
+        id: "neptune",
+        name: "Neptune",
+        type: "Monde lointain et venteux",
+        description: "Neptune orbite tres loin du Soleil, mais son atmosphere reste tres dynamique. Elle abrite des vents parmi les plus rapides du systeme solaire.",
+        orbitFactor: 0.9,
+        displaySize: 19,
+        diameter: "49 244 km",
+        distance: "4,5 milliards km",
+        orbitDays: 59800,
+        rotationHours: 16.1,
+        gravity: "11,2 m/s^2",
+        temperature: "environ -214 deg C",
+        orbitalSpeed: "5,4 km/s",
+        axialTilt: 28.3,
+        gradient: "linear-gradient(135deg, #78b5ff 0%, #345bdb 44%, #1e2c8f 100%)",
+        glow: "0 0 17px rgba(120, 181, 255, 0.24)",
+        baseAngle: 4.8,
+        composition: "Hydrogene, helium, methane et interieur riche en glaces.",
+        comparison: "Son annee dure environ 165 ans terrestres: l'humanite moderne n'a vu qu'un seul tour complet depuis sa decouverte.",
+        facts: [
+          "Neptune a ete d'abord predite par le calcul avant d'etre observee.",
+          "Ses vents peuvent depasser 2 000 km/h.",
+          "Sa grande distance au Soleil n'empeche pas une meteorologie active."
+        ],
+        quizHints: [
+          "Mon annee est d'environ 165 ans terrestres.",
+          "Je suis tres bleue et tres venteuse.",
+          "On m'a trouvee grace aux mathematiques avant de me voir dans un telescope."
+        ]
+      },
+      {
+        id: "pluto",
+        name: "Pluton",
+        type: "Planete naine de la ceinture de Kuiper",
+        description: "Pluton n'est plus classee parmi les huit planetes majeures, mais elle reste un monde fascinant aux glaces diverses et a l'orbite tres excentrique.",
+        orbitFactor: 0.98,
+        displaySize: 8,
+        diameter: "2 377 km",
+        distance: "5,9 milliards km en moyenne",
+        orbitDays: 90560,
+        rotationHours: -153.3,
+        gravity: "0,62 m/s^2",
+        temperature: "environ -229 deg C",
+        orbitalSpeed: "4,7 km/s",
+        axialTilt: 122.5,
+        gradient: "linear-gradient(135deg, #edd4bb 0%, #a78b77 52%, #6f5b50 100%)",
+        glow: "0 0 10px rgba(237, 212, 187, 0.22)",
+        baseAngle: 2.9,
+        composition: "Glaces d'azote, de methane et de monoxyde de carbone sur une base rocheuse.",
+        comparison: "Pluton montre que le systeme solaire continue bien au-dela de Neptune, avec de nombreux petits mondes glaces.",
+        facts: [
+          "Son orbite est inclinee et plus elliptique que celle des huit planetes.",
+          "Charon, sa grande lune, forme avec elle un duo tres particulier.",
+          "Pluton appartient a la ceinture de Kuiper, une region pleine de petits corps glaces."
+        ],
+        quizHints: [
+          "Je suis une planete naine de la ceinture de Kuiper.",
+          "Mon statut a change en 2006, mais je reste celebre.",
+          "Mon orbite est plus excentrique et inclinee que celle des huit planetes."
+        ]
+      }
+    ];
+
+    const bodyMap = new Map(bodies.map((body) => [body.id, body]));
+    const planetsForQuiz = bodies.filter((body) => body.id !== "sun");
+
+    const state = {
+      selectedId: "earth",
+      isPlaying: true,
+      daysPerSecond: 12,
+      simDays: 0,
+      lastFrame: performance.now(),
+      lastDetailRefresh: 0,
+      layout: {
+        centerX: 0,
+        centerY: 0,
+        baseRadius: 0
+      },
+      quiz: {
+        correct: 0,
+        total: 0,
+        targetId: null,
+        options: [],
+        clue: "",
+        locked: false
+      }
+    };
+
+    const elements = {
+      quickSelect: document.getElementById("quickSelect"),
+      playState: document.getElementById("playState"),
+      toggleMotion: document.getElementById("toggleMotion"),
+      resetTime: document.getElementById("resetTime"),
+      randomFocus: document.getElementById("randomFocus"),
+      speedRange: document.getElementById("speedRange"),
+      speedValue: document.getElementById("speedValue"),
+      simClock: document.getElementById("simClock"),
+      earthYears: document.getElementById("earthYears"),
+      sceneBackdrop: document.getElementById("sceneBackdrop"),
+      solarSystem: document.getElementById("solarSystem"),
+      asteroidBelt: document.getElementById("asteroidBelt"),
+      sceneCaption: document.getElementById("sceneCaption"),
+      ticker: document.getElementById("ticker"),
+      selectedType: document.getElementById("selectedType"),
+      selectedName: document.getElementById("selectedName"),
+      selectedDescription: document.getElementById("selectedDescription"),
+      selectedChip: document.getElementById("selectedChip"),
+      statsGrid: document.getElementById("statsGrid"),
+      insightStack: document.getElementById("insightStack"),
+      factList: document.getElementById("factList"),
+      quizScore: document.getElementById("quizScore"),
+      quizPrompt: document.getElementById("quizPrompt"),
+      quizOptions: document.getElementById("quizOptions"),
+      quizFeedback: document.getElementById("quizFeedback"),
+      nextChallenge: document.getElementById("nextChallenge")
+    };
+
+    const orbitElements = new Map();
+    const markerElements = new Map();
+    const quickButtons = new Map();
+
+    const numberFormat = new Intl.NumberFormat("fr-FR", {
+      maximumFractionDigits: 1
+    });
+
+    function formatNumber(value) {
+      return numberFormat.format(value);
+    }
+
+    function formatPeriodDays(days) {
+      if (!days) {
+        return "centre du systeme";
+      }
+
+      if (days >= 365.25) {
+        const years = days / 365.25;
+        return years >= 10 ? formatNumber(years) + " ans" : formatNumber(years) + " an";
+      }
+
+      return formatNumber(days) + " jours";
+    }
+
+    function formatRotation(hours) {
+      if (!hours) {
+        return "non defini";
+      }
+
+      const retrograde = hours < 0 ? " retrograde" : "";
+      const absolute = Math.abs(hours);
+
+      if (absolute >= 24 * 365) {
+        return formatNumber(absolute / (24 * 365)) + " an" + retrograde;
+      }
+
+      if (absolute >= 24) {
+        return formatNumber(absolute / 24) + " jours" + retrograde;
+      }
+
+      return formatNumber(absolute) + " h" + retrograde;
+    }
+
+    function sampleWithoutReplacement(list, count) {
+      const pool = [...list];
+      const picked = [];
+
+      while (pool.length && picked.length < count) {
+        const index = Math.floor(Math.random() * pool.length);
+        picked.push(pool.splice(index, 1)[0]);
+      }
+
+      return picked;
+    }
+
+    function shuffle(list) {
+      const clone = [...list];
+
+      for (let index = clone.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [clone[index], clone[swapIndex]] = [clone[swapIndex], clone[index]];
+      }
+
+      return clone;
+    }
+
+    function buildQuickSelect() {
+      bodies.forEach((body) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "body-tab";
+        button.innerHTML = '<span class="body-tab-dot"></span><span>' + body.name + '</span>';
+        button.querySelector(".body-tab-dot").style.background = body.gradient;
+        button.addEventListener("click", () => selectBody(body.id));
+        elements.quickSelect.appendChild(button);
+        quickButtons.set(body.id, button);
+      });
+    }
+
+    function buildScene() {
+      bodies.forEach((body) => {
+        if (body.orbitFactor > 0) {
+          const orbit = document.createElement("div");
+          orbit.className = "orbit-ring";
+          elements.solarSystem.appendChild(orbit);
+          orbitElements.set(body.id, orbit);
+        }
+
+        const marker = document.createElement("button");
+        marker.type = "button";
+        marker.className = "body-marker" + (body.id === "sun" ? " sun" : "");
+        marker.style.width = body.displaySize + "px";
+        marker.style.height = body.displaySize + "px";
+        marker.style.background = body.gradient;
+        marker.style.boxShadow = body.glow;
+        marker.setAttribute("aria-label", body.name);
+        marker.addEventListener("click", () => selectBody(body.id));
+
+        if (body.hasRing) {
+          const ring = document.createElement("span");
+          ring.className = "planet-ring";
+          ring.style.borderColor = body.ringColor;
+          marker.appendChild(ring);
+        }
+
+        const label = document.createElement("span");
+        label.className = "body-label";
+        label.textContent = body.name;
+        marker.appendChild(label);
+
+        elements.solarSystem.appendChild(marker);
+        markerElements.set(body.id, marker);
+      });
+    }
+
+    function buildStars() {
+      for (let index = 0; index < 160; index += 1) {
+        const star = document.createElement("span");
+        const size = Math.random() * 2.6 + 0.6;
+        star.className = "star";
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+        star.style.left = Math.random() * 100 + "%";
+        star.style.top = Math.random() * 100 + "%";
+        star.style.setProperty("--alpha", (Math.random() * 0.6 + 0.25).toFixed(2));
+        star.style.setProperty("--twinkle", (Math.random() * 4 + 2.8).toFixed(2) + "s");
+        star.style.animationDelay = (Math.random() * 4).toFixed(2) + "s";
+        elements.sceneBackdrop.appendChild(star);
+      }
+    }
+    function updateLayout() {
+      const rect = elements.solarSystem.getBoundingClientRect();
+      const diameter = Math.min(rect.width, rect.height) * 0.92;
+      const baseRadius = diameter / 2;
+
+      state.layout.centerX = rect.width / 2;
+      state.layout.centerY = rect.height / 2;
+      state.layout.baseRadius = baseRadius;
+
+      bodies.forEach((body) => {
+        if (!body.orbitFactor) {
+          return;
+        }
+
+        body.screenRadius = body.orbitFactor * baseRadius;
+        const orbit = orbitElements.get(body.id);
+        orbit.style.width = body.screenRadius * 2 + "px";
+        orbit.style.height = body.screenRadius * 2 + "px";
+      });
+
+      const beltRadius = baseRadius * 0.47;
+      elements.asteroidBelt.style.width = beltRadius * 2 + "px";
+      elements.asteroidBelt.style.height = beltRadius * 2 + "px";
+    }
+
+    function getBodyAngle(body) {
+      if (!body.orbitDays) {
+        return 0;
+      }
+
+      return body.baseAngle + (state.simDays / body.orbitDays) * Math.PI * 2;
+    }
+
+    function updateMarkers() {
+      bodies.forEach((body) => {
+        const marker = markerElements.get(body.id);
+
+        if (!body.orbitFactor) {
+          marker.style.left = state.layout.centerX + "px";
+          marker.style.top = state.layout.centerY + "px";
+          marker.style.zIndex = "10";
+          return;
+        }
+
+        const angle = getBodyAngle(body);
+        const x = state.layout.centerX + Math.cos(angle) * body.screenRadius;
+        const y = state.layout.centerY + Math.sin(angle) * body.screenRadius * 0.9;
+        const depth = 0.92 + ((y - state.layout.centerY) / Math.max(state.layout.baseRadius, 1)) * 0.08;
+        const focusScale = body.id === state.selectedId ? 1.18 : 1;
+
+        marker.style.left = x + "px";
+        marker.style.top = y + "px";
+        marker.style.transform = "translate(-50%, -50%) scale(" + (focusScale * depth).toFixed(3) + ")";
+        marker.style.zIndex = String(Math.round(100 + y));
+      });
+    }
+
+    function describeSeasons(body) {
+      if (!body.orbitDays) {
+        return "Comme etoile centrale, le Soleil ne connait pas de saisons de la meme maniere qu'une planete.";
+      }
+
+      const tilt = Math.abs(body.axialTilt);
+
+      if (tilt < 3) {
+        return "Son axe est presque droit: les saisons y sont tres faibles ou peu marquees.";
+      }
+
+      if (tilt < 30) {
+        return "Son inclinaison cree des saisons reconnaissables, avec une intensite variable selon son atmosphere.";
+      }
+
+      if (tilt < 100) {
+        return "Son axe tres penche produit des saisons fortes et parfois longues.";
+      }
+
+      return "Son axe est si renverse que les saisons y sont vraiment extremes et peu intuitives.";
+    }
+
+    function describeRotation(body) {
+      if (!body.orbitDays) {
+        return "Le Soleil tourne aussi sur lui-meme: environ 25 jours a l'equateur, ce qui deforme son champ magnetique.";
+      }
+
+      const turns = state.simDays * 24 / Math.abs(body.rotationHours);
+      const completedTurns = Math.floor(turns);
+      const direction = body.rotationHours < 0 ? "en sens retrograde" : "dans le sens direct";
+
+      return body.name + " tourne " + direction + ". A ce stade de la simulation, elle a effectue environ " + formatNumber(completedTurns) + " rotations completes.";
+    }
+
+    function describeOrbit(body) {
+      if (!body.orbitDays) {
+        return "Le Soleil sert de reference: toutes les autres trajectoires se construisent autour de lui.";
+      }
+
+      const progress = ((state.simDays % body.orbitDays) + body.orbitDays) % body.orbitDays / body.orbitDays;
+      return "Une annee sur " + body.name + " dure " + formatPeriodDays(body.orbitDays) + ". Dans cette simulation, son orbite est avancee a " + formatNumber(progress * 100) + " %.";
+    }
+
+    function describeComposition(body) {
+      return body.composition + " " + body.comparison;
+    }
+
+    function renderStats(body) {
+      const stats = [
+        { label: "Distance moyenne", value: body.distance },
+        { label: "Diametre", value: body.diameter },
+        { label: "Une annee dure", value: formatPeriodDays(body.orbitDays) },
+        { label: "Une journee dure", value: formatRotation(body.rotationHours) },
+        { label: "Gravite", value: body.gravity },
+        { label: "Temperature", value: body.temperature },
+        { label: "Inclinaison", value: formatNumber(body.axialTilt) + " deg" },
+        { label: "Vitesse orbitale", value: body.orbitalSpeed }
+      ];
+
+      elements.statsGrid.innerHTML = "";
+
+      stats.forEach((stat) => {
+        const card = document.createElement("article");
+        card.className = "stat-card";
+        card.innerHTML = '<div class="stat-label">' + stat.label + '</div><div class="stat-value">' + stat.value + '</div>';
+        elements.statsGrid.appendChild(card);
+      });
+    }
+
+    function renderInsights(body) {
+      const insights = [
+        { title: "Rotation", text: describeRotation(body) },
+        { title: "Revolution", text: describeOrbit(body) },
+        { title: "Saisons et inclinaison", text: describeSeasons(body) },
+        { title: "Matiere et structure", text: describeComposition(body) }
+      ];
+
+      elements.insightStack.innerHTML = "";
+
+      insights.forEach((insight) => {
+        const card = document.createElement("article");
+        card.className = "insight-card";
+        card.innerHTML = '<h4>' + insight.title + '</h4><p>' + insight.text + '</p>';
+        elements.insightStack.appendChild(card);
+      });
+    }
+
+    function renderFacts(body) {
+      elements.factList.innerHTML = "";
+
+      body.facts.forEach((fact) => {
+        const item = document.createElement("li");
+        item.textContent = fact;
+        elements.factList.appendChild(item);
+      });
+    }
+
+    function renderTicker(body) {
+      const orbitProgress = body.orbitDays
+        ? (((state.simDays % body.orbitDays) + body.orbitDays) % body.orbitDays / body.orbitDays) * 100
+        : 0;
+
+      const rotationCount = body.rotationHours
+        ? Math.floor(state.simDays * 24 / Math.abs(body.rotationHours))
+        : 0;
+
+      const chips = [
+        'Temps simule: jour ' + formatNumber(Math.floor(state.simDays)),
+        '1 seconde = ' + formatNumber(state.daysPerSecond) + ' jours',
+        body.orbitDays ? body.name + ': ' + formatNumber(orbitProgress) + ' % de son annee' : 'Le Soleil gouverne les orbites',
+        body.orbitDays ? body.name + ': ' + formatNumber(rotationCount) + ' rotations' : 'Etoile centrale du systeme'
+      ];
+
+      elements.ticker.innerHTML = "";
+
+      chips.forEach((text) => {
+        const chip = document.createElement("span");
+        chip.className = "ticker-chip";
+        chip.textContent = text;
+        elements.ticker.appendChild(chip);
+      });
+    }
+
+    function renderSelection() {
+      const body = bodyMap.get(state.selectedId);
+
+      elements.selectedType.textContent = body.type;
+      elements.selectedName.textContent = body.name;
+      elements.selectedDescription.textContent = body.description;
+      elements.selectedChip.style.background = body.gradient;
+      elements.selectedChip.style.boxShadow = body.glow;
+
+      renderStats(body);
+      renderInsights(body);
+      renderFacts(body);
+      renderTicker(body);
+
+      elements.sceneCaption.textContent =
+        body.name + ' se situe a ' + body.distance +
+        ' du Soleil. ' +
+        (body.orbitDays
+          ? 'Son annee dure ' + formatPeriodDays(body.orbitDays) + ', avec une vitesse moyenne d\'environ ' + body.orbitalSpeed + '.'
+          : 'Sa gravite maintient l\'ensemble du systeme solaire en ordre.') +
+        ' La vue adapte les distances pour que tous les mondes restent visibles.';
+
+      bodies.forEach((candidate) => {
+        const marker = markerElements.get(candidate.id);
+        marker.classList.toggle('is-active', candidate.id === body.id);
+
+        if (orbitElements.has(candidate.id)) {
+          orbitElements.get(candidate.id).classList.toggle('is-active', candidate.id === body.id);
+        }
+
+        if (quickButtons.has(candidate.id)) {
+          quickButtons.get(candidate.id).classList.toggle('is-active', candidate.id === body.id);
+        }
+      });
+    }
+
+    function selectBody(id) {
+      state.selectedId = id;
+      renderSelection();
+      updateMarkers();
+    }
+
+    function updateSimulationReadouts() {
+      elements.speedValue.textContent = '1 s = ' + formatNumber(state.daysPerSecond) + ' jours';
+      elements.simClock.textContent = 'Jour simule: ' + formatNumber(Math.floor(state.simDays));
+      elements.earthYears.textContent = formatNumber(state.simDays / 365.25) + ' annee terrestre';
+      elements.playState.textContent = state.isPlaying ? 'En mouvement' : 'En pause';
+      elements.toggleMotion.textContent = state.isPlaying ? 'Pause' : 'Relancer';
+    }
+    function nextQuiz() {
+      const target = planetsForQuiz[Math.floor(Math.random() * planetsForQuiz.length)];
+      const distractors = sampleWithoutReplacement(
+        planetsForQuiz.filter((body) => body.id !== target.id),
+        3
+      );
+
+      state.quiz.targetId = target.id;
+      state.quiz.options = shuffle([target, ...distractors]);
+      state.quiz.clue = target.quizHints[Math.floor(Math.random() * target.quizHints.length)];
+      state.quiz.locked = false;
+
+      renderQuiz();
+    }
+
+    function renderQuiz() {
+      elements.quizScore.textContent = state.quiz.correct + ' / ' + state.quiz.total;
+      elements.quizPrompt.textContent = state.quiz.clue;
+      elements.quizOptions.innerHTML = '';
+
+      state.quiz.options.forEach((body) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'quiz-button';
+        button.textContent = body.name;
+        button.disabled = state.quiz.locked;
+        button.addEventListener('click', () => answerQuiz(body.id, button));
+        elements.quizOptions.appendChild(button);
+      });
+
+      if (!state.quiz.locked) {
+        elements.quizFeedback.textContent = "Lis l'indice puis choisis l'astre correspondant.";
+      }
+    }
+
+    function answerQuiz(id, clickedButton) {
+      if (state.quiz.locked) {
+        return;
+      }
+
+      state.quiz.locked = true;
+      state.quiz.total += 1;
+
+      const target = bodyMap.get(state.quiz.targetId);
+      const correct = id === state.quiz.targetId;
+
+      if (correct) {
+        state.quiz.correct += 1;
+      }
+
+      Array.from(elements.quizOptions.children).forEach((button) => {
+        const isTarget = button.textContent === target.name;
+        button.disabled = true;
+        button.classList.toggle('correct', isTarget);
+      });
+
+      if (!correct) {
+        clickedButton.classList.add('wrong');
+      }
+
+      elements.quizScore.textContent = state.quiz.correct + ' / ' + state.quiz.total;
+      elements.quizFeedback.textContent = correct
+        ? 'Exact. ' + target.name + ' correspond bien a cet indice. Sa fiche vient de s\'ouvrir a droite.'
+        : 'Pas encore. L\'indice designait ' + target.name + '. Observe sa fiche pour retenir le point cle.';
+
+      selectBody(target.id);
+    }
+
+    function randomExplore() {
+      const target = bodies[Math.floor(Math.random() * bodies.length)];
+      selectBody(target.id);
+    }
+
+    function animate(now) {
+      const delta = Math.min((now - state.lastFrame) / 1000, 0.05);
+      state.lastFrame = now;
+
+      if (state.isPlaying) {
+        state.simDays += delta * state.daysPerSecond;
+      }
+
+      if (now - state.lastDetailRefresh > 250) {
+        renderSelection();
+        state.lastDetailRefresh = now;
+      }
+
+      updateMarkers();
+      updateSimulationReadouts();
+      requestAnimationFrame(animate);
+    }
+
+    function wireEvents() {
+      elements.toggleMotion.addEventListener('click', () => {
+        state.isPlaying = !state.isPlaying;
+        updateSimulationReadouts();
+      });
+
+      elements.resetTime.addEventListener('click', () => {
+        state.simDays = 0;
+        renderSelection();
+        updateMarkers();
+        updateSimulationReadouts();
+      });
+
+      elements.randomFocus.addEventListener('click', randomExplore);
+
+      elements.speedRange.addEventListener('input', (event) => {
+        state.daysPerSecond = Number(event.target.value);
+        updateSimulationReadouts();
+        renderTicker(bodyMap.get(state.selectedId));
+      });
+
+      elements.nextChallenge.addEventListener('click', nextQuiz);
+      window.addEventListener('resize', updateLayout);
+    }
+
+    buildQuickSelect();
+    buildStars();
+    buildScene();
+    updateLayout();
+    wireEvents();
+    renderSelection();
+    updateSimulationReadouts();
+    nextQuiz();
+
+    requestAnimationFrame((time) => {
+      state.lastFrame = time;
+      animate(time);
+    });
+  </script>
+</body>
+</html>

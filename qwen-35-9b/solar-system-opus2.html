@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Explorateur Solaire Interactif</title>
+    <style>
+        :root {
+            --bg-color: #0b0d17;
+            --text-color: #e0e6ed;
+            --accent: #4cc9f0;
+            --panel-bg: rgba(20, 30, 50, 0.85);
+            --border-color: #3a506b;
+            
+            /* Couleurs Planètes */
+            --sun: #ffde59;
+            --mercury: #a5a5a5;
+            --venus: #e3bb76;
+            --earth: #22a6b3;
+            --mars: #eb4d4b;
+            --jupiter: #f0932b;
+            --saturn: #f6e58d;
+            --uranus: #7ed6df;
+            --neptune: #4834d4;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding: 1rem 2rem;
+            background: linear-gradient(90deg, rgba(0,0,0,0.8), transparent);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 { font-weight: 300; letter-spacing: 2px; }
+        .controls button {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .controls button:hover { background: var(--accent); color: var(--bg-color); }
+
+        /* --- LAYOUT PRINCIPAL --- */
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 350px; /* Visuel vs Info */
+            gap: 20px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* --- ZONE SOLAIRE (VISUEL) --- */
+        .solar-system-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            border-radius: 12px;
+            background: radial-gradient(circle at center, #1b1e30 0%, #000000 70%);
+            overflow: hidden;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        /* Étoiles de fond */
+        .stars {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: twinkle var(--duration) ease-in-out infinite;
+        }
+
+        /* Astres */
+        .celestial-body {
+            position: absolute;
+            transform-origin: center center;
+            cursor: pointer;
+            transition: filter 0.3s;
+            z-index: 10;
+        }
+        .celestial-body:hover { filter: brightness(1.3); }
+        
+        /* Orbites */
+        .orbit-path {
+            position: absolute;
+            top: 50%; left: 50%;
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Soleil */
+        #sun {
+            width: 60px; height: 60px;
+            background: radial-gradient(circle, #fff 10%, var(--sun) 80%);
+            border-radius: 50%;
+            box-shadow: 0 0 40px var(--sun), 0 0 80px rgba(255, 220, 89, 0.3);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #sun::after { content: '☉'; font-size: 24px; color: white; text-shadow: 0 0 5px black;}
+
+        /* Planètes */
+        .planet-orbit-wrapper {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+        
+        .planet-body {
+            border-radius: 50%;
+            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            color: rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        /* Anneau Saturne */
+        .ring {
+            position: absolute;
+            width: 200%; height: 200%;
+            border-radius: 50%;
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(200, 180, 140, 0.3),
+                rgba(200, 180, 140, 0.3) 2px,
+                transparent 2px,
+                transparent 10px
+            );
+            pointer-events: none;
+        }
+
+        /* --- PANEAU INFORMATION --- */
+        .info-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .info-header h2 { color: var(--accent); font-size: 1.5rem; }
+        .info-header span { color: #889; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;}
+
+        .info-content { display: none; animation: fadeIn 0.4s ease; }
+        .info-content.active { display: block; }
+
+        .fact-card {
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .fact-title { font-weight: bold; color: var(--accent); display: flex; justify-content: space-between; }
+        .fact-desc { font-size: 0.9rem; line-height: 1.4; }
+
+        /* --- ZONE DE JEU (GRAVITY WELL) --- */
+        #game-section {
+            margin-top: auto;
+            background: rgba(0,0,0,0.6);
+            padding-bottom: 20px;
+            display: none; /* Caché par défaut */
+        }
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+        #sandbox-canvas {
+            background: #050508;
+            border-radius: 8px;
+            cursor: crosshair;
+            touch-action: none; /* Empêche le scroll sur mobile */
+        }
+
+        /* Animations */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            main { grid-template-columns: 1fr; overflow-y: auto; }
+            .solar-system-container { min-height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <h1>SOLAR<span style="color:var(--accent)">SYSTEM</span></h1>
+    </div>
+    <div class="controls">
+        <span style="margin-right: 10px; font-size: 0.9rem; color:#888;">Mode :</span>
+        <button id="toggle-info-btn" onclick="document.querySelector('.game-section').style.display = 'none'">Info</button>
+        <button id="toggle-game-btn" onclick="initGame()">Sandbox Gravitationnel</button>
+    </div>
+</header>
+
+<main>
+    <!-- ZONE VISUELLE -->
+    <div class="solar-system-container" id="ss-container">
+        <div class="stars" id="stars"></div>
+        
+        <!-- Le Soleil sera généré ici par JS -->
+        <!-- Les planètes seront générées ici par JS -->
+    </div>
+
+    <!-- PANNEAU INFO -->
+    <div class="info-panel">
+        <div class="info-header">
+            <h2 id="p-name">Le Système Solaire</h2>
+            <span id="p-type">Vue d'ensemble</span>
+        </div>
+
+        <!-- Soleil Info -->
+        <div class="info-content active" data-id="sun">
+            <div class="fact-card"><div class="fact-title">Le Cœur <span>⚠️ Classement: Étoile naine jaune</span></div><div class="fact-desc">C'est une boule de plasma ionisé en fusion nucléaire hydrogène-hélium. Sans elle, le système serait sombre et mort.</div></div>
+            <div class="fact-card"><div class="fact-title">Composition <span>☀️ 74% H, 24% He</span></div><div class="fact-desc">Le soleil représente 99.86 % de la masse totale du système solaire.</div></div>
+        </div>
+
+        <!-- Planète Mercure -->
+        <div class="info-content" data-id="mercury">
+            <div class="fact-card"><div class="fact-title">La plus proche <span>📏 4 879 km (diameter)</span></div><div class="fact-desc">Mercure bouge si vite qu'il a été redécouvert au XXe siècle alors que l'on pensait le voir depuis l'Antiquité.</div></div>
+            <div class="fact-card"><div class="fact-title">Température <span>⚖️ -180°C à 430°C</span></div><div class="fact-desc">L'absence d'atmosphère empêche la chaleur de rester la nuit, créant les extrêmes thermiques.</div></div>
+            <div class="fact-card"><div class="fact-title">Moons <span>🌑 0</span></div><div class="fact-desc">C'est l'un des plus petits corps du système solaire ayant une orbite principale autour du soleil.</div></div>
+        </div>
+
+        <!-- Planète Vénus -->
+        <div class="info-content" data-id="venus">
+            <div class="fact-card"><div class="fact-title">La Chaleur <span>🌡️ 462°C (Température moyenne)</span></div><div class="fact-desc">C'est le planétoïde le plus chaud du système solaire, malgré sa distance intermédiaire.</div></div>
+            <div class="fact-card"><div class="fact-title">Rotation Anormale <span>🔄 Jour = 243 jours</span></div><div class="fact-desc">Vénus tourne sur elle-même dans le sens inverse de la rotation des autres planètes (retrograde).</div></div>
+        </div>
+
+        <!-- Planète Terre -->
+        <div class="info-content" data-id="earth">
+            <div class="fact-card"><div class="fact-title">Le Gardien <span>💧 12 742 km</span></div><div class="fact-desc">La seule planète connue à l'heure actuelle d'avoir développé la vie et des êtres vivants.</div></div>
+            <div class="fact-card"><div class="fact-title">Atmosphère <span>🛡️ Azote (78%)</span></div><div class="fact-desc">Notre seule sphère de protection connue contre les rayonnements cosmiques mortels et les impacts météorites.</div></div>
+        </div>
+
+        <!-- Planète Mars -->
+        <div class="info-content" data-id="mars">
+            <div class="fact-card"><div class="fact-title">La Rouge <span>🧂 6 779 km</span></div><div class="fact-desc">Sa surface est recouverte d'oxyde de fer (rouille) qui lui donne cette couleur terrrifiante.</div></div>
+            <div class="fact-card"><div class="fact-title">Mont Everest Martien <span>🏔️ Olympus Mons</span></div><div class="fact-desc">Son volcan Olympus Mons est le plus grand mont du système solaire, trois fois plus haut que l'Everest.</div></div>
+        </div>
+
+        <!-- Géantes Gazeuses -->
+        <div class="info-content" data-id="jupiter">
+            <div class="fact-card"><div class="fact-title">Le Roi des Planètes <span>🐻 139 820 km</span></div><div class="fact-desc">C'est le plus grand monde, avec une masse égale à celle des sept planètes restantes réunies.</div></div>
+            <div class="fact-card"><div class="fact-title">Grande Tache <span>🌪️ Tempête permanente</span></div><div class="fact-desc">Une dépression de haute pression massive qui dure depuis au moins 350 ans, plus large que la Terre.</div></div>
+        </div>
+
+        <div class="info-content" data-id="saturn">
+            <div class="fact-card"><div class="fact-title">Le Joyeux <span>💍 Anneaux dominants</span></div><div class="fact-desc">Ses anneaux, composés de milliards d'éclats de roche et de glace, peuvent s'étendre jusqu'à 280 000 km.</div></div>
+        </div>
+
+        <div class="info-content" data-id="uranus">
+            <div class="fact-card"><div class="fact-title">La Glaciale Bleue <span>❄️ -224°C</span></div><div class="fact-desc">Uranus est la seule planète dont l'axe de rotation inclinaison se trouve dans le plan orbitale, tournant "sur le côté".</div></div>
+        </div>
+
+        <div class="info-content" data-id="neptune">
+            <div class="fact-card"><div class="fact-title">La Tempête Bleue <span>🌪️ 247 km/h (Vent max)</span></div><div class="fact-desc">Bien que plus loin du soleil, Neptune est la planète la plus froide du système solaire.</div></div>
+        </div>
+    </div>
+</main>
+
+<!-- SECTION JEU -->
+<div id="game-section" class="game-section">
+    <div class="game-header">
+        <h3>Sandbox Gravitationnel 🔭</h3>
+        <p style="font-size:0.8rem; color:#aaa;">Créez des champs gravitationnels avec votre souris/touch. Observez l'effet sur les planètes !</p>
+    </div>
+    <canvas id="sandbox-canvas" width="600" height="250"></canvas>
+</div>
+
+<script>
+/* --- DONNÉES DU SYSTÈME SOLAIRE --- */
+const solarData = [
+    { id: 'sun', name: 'Soleil', size: 60, color: '#ffde59', dist: 0, speed: 0, isBody: true, infoId: 'sun' },
+    { id: 'mercury', name: 'Mercure', size: 8, color: '#a5a5a5', dist: 60, speed: 4.7, moons: 0, infoId: 'mercury' },
+    { id: 'venus', name: 'Vénus', size: 12, color: '#e3bb76', dist: 90, speed: 3.5, moons: 0, infoId: 'venus' },
+    { id: 'earth', name: 'Terre', size: 13, color: '#22a6b3', dist: 130, speed: 2.9, moons: 1, infoId: 'earth' },
+    { id: 'mars', name: 'Mars', size: 10, color: '#eb4d4b', dist: 170, speed: 2.4, moons: 2, infoId: 'mars' },
+    { id: 'jupiter', name: 'Jupiter', size: 35, color: '#f0932b', dist: 260, speed: 1.3, moons: 79, ring: false, infoId: 'jupiter' },
+    { id: 'saturn', name: 'Saturne', size: 30, color: '#f6e58d', dist: 340, speed: 0.9, moons: 82, hasRings: true, infoId: 'saturn' },
+    { id: 'uranus', name: 'Uranus', size: 20, color: '#7ed6df', dist: 420, speed: 0.6, moons: 27, infoId: 'uranus' },
+    { id: 'neptune', name: 'Neptune', size: 19, color: '#4834d4', dist: 480, speed: 0.5, moons: 14, infoId: 'neptune' }
+];
+
+/* --- GÉNÉRATION VISUELLE --- */
+function initSolarSystem() {
+    const container = document.getElementById('ss-container');
+    let currentAngle = 0;
+
+    // Générer les étoiles
+    const starsContainer = document.getElementById('stars');
+    for(let i=0; i<150; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.width = Math.random() * 3 + 'px';
+        star.style.height = star.style.width;
+        star.style.setProperty('--duration', (Math.random() * 2 + 1) + 's');
+        starsContainer.appendChild(star);
+    }
+
+    // Générer le système
+    solarData.forEach(planet => {
+        const el = document.createElement('div');
+        
+        // Si c'est le soleil
+        if (planet.isBody && planet.id === 'sun') {
+            el.id = 'sun';
+            el.innerHTML = planet.name; // Affiche le symbole via CSS::after ou texte simple ici si besoin
+            container.appendChild(el);
+            return;
+        }
+
+        // Créer la structure Orbite -> Planète
+        const orbitWrapper = document.createElement('div');
+        orbitWrapper.className = 'planet-orbit-wrapper';
+        
+        // Calculs dynamiques pour l'animation CSS
+        // On utilise transform: rotate(...) sur le wrapper, et translate(...) sur la planète pour la positionner
+        
+        orbitWrapper.style.width = (planet.dist * 2) + 'px';
+        orbitWrapper.style.height = (planet.dist * 2) + 'px';
+        
+        // Ligne d'orbite visible
+        const path = document.createElement('div');
+        path.className = 'orbit-path';
+        path.style.width = planet.dist + 'px';
+        path.style.height = planet.dist + 'px';
+        orbitWrapper.appendChild(path);
+
+        // Corps de la planète
+        const planetEl = document.createElement('div');
+        planetEl.className = 'planet-body';
+        planetEl.style.width = planet.size + 'px';
+        planetEl.style.height = planet.size + 'px';
+        planetEl.style.backgroundColor = planet.color;
+        
+        // Anneau de Saturne
+        if(planet.hasRings) {
+            const ring = document.createElement('div');
+            ring.className = 'ring';
+            planetEl.appendChild(ring);
+        }
+
+        planetEl.style.cursor = 'pointer';
+        planetEl.onclick = () => showInfo(planet.infoId);
+
+        // On attache la planète au wrapper via transform translate X/Y (calculé par JS en boucle) 
+        // MAIS pour l'animation, on utilise CSS animation sur le parent.
+        
+        orbitWrapper.appendChild(planetEl);
+        container.appendChild(orbitWrapper);
+
+        // Variables pour l'animation CSS
+        // Note: Pour simplifier ici, je vais utiliser un style injecté avec une animation keyframe personnalisée
+        // ou simplement positionner manuellement si on veut éviter les bugs de z-index complexes.
+        
+        // Approche simplifiée pour la démo : 
+        // On place la div orbitWrapper au centre du parent container (position: absolute).
+        // La planète El est positionnée via translateX/Y relatif à son wrapper.
+    });
+
+    // Animation Loop JS pour les orbites fluides (optionnel, mais plus performant que CSS pour beaucoup d'objets)
+    const wrappers = document.querySelectorAll('.planet-orbit-wrapper');
+    
+    function animateOrbits() {
+        let t = Date.now() / 1000;
+        wrappers.forEach((w, index) => {
+            const planet = solarData[index + 1]; // Skip sun
+            // On bouge le wrapper qui contient la planète pour faire tourner l'orbite
+            // Note: Cette méthode est approximative car elle tourne autour de (0,0) du container.
+            // Une meilleure méthode est d'utiliser des transformations imbriquées, mais cela devient vite complexe en un seul fichier sans framework.
+            
+            // Solution hybride : Utiliser CSS Animation keyframes définie dynamiquement par angle
+            const speed = planet.speed;
+            const angle = (t * speed * 0.5) % (Math.PI * 2);
+            const x = Math.cos(angle) * planet.dist;
+            const y = Math.sin(angle) * planet.dist;
+            
+            // Pour l'effet visuel simple demandé, on utilise transform sur le wrapper qui contient la planète ? 
+            // Non, transform sur wrapper tournerait tout autour du centre. C'est ce qu'on veut !
+            w.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+        });
+        requestAnimationFrame(animateOrbits);
+    }
+    
+    animateOrbits();
+
+    // Click sur Soleil
+    document.getElementById('sun').onclick = () => showInfo('sun');
+}
+
+/* --- LOGIQUE INFO --- */
+function showInfo(id) {
+    // Cacher tout sauf le header
+    const contents = document.querySelectorAll('.info-content');
+    contents.forEach(el => el.classList.remove('active'));
+    
+    // Afficher le bon
+    const target = document.querySelector(`.info-content[data-id="${id}"]`);
+    if(target) target.classList.add('active');
+
+    // Mettre à jour header
+    const nameEl = document.getElementById('p-name');
+    const typeEl = document.getElementById('p-type');
+    
+    let details = "";
+    if(id === 'sun') {
+        nameEl.innerText = "Le Soleil";
+        typeEl.innerText = "Étoile naine jaune";
+        details = "Fusion Nucléaire";
+    } else {
+        const data = solarData.find(p => p.infoId === id);
+        nameEl.innerText = data.name;
+        let typeText = "";
+        if(id === 'earth') typeText = "Habitée";
+        else if(id === 'mars') typeText = "Désertique";
+        else typeText = "Géologique";
+        
+        typeEl.innerText = typeText;
+        details = data.moons > 0 ? `${data.moons} Satellites naturels` : "Aucun satellite naturel";
+    }
+
+    // Mettre en avant les cartes
+    document.querySelectorAll('.fact-card').forEach(card => {
+        card.style.opacity = "0.5";
+        if(card.dataset.id === id) card.style.opacity = "1";
+    });
+}
+
+/* --- MINI JEU : SANDBOX GRAVITATIONNEL --- */
+function initGame() {
+    const canvas = document.getElementById('sandbox-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Configuration physique simplifiée
+    let planets = solarData.slice(1).map(p => ({
+        ...p,
+        x: 0, y: p.dist, // Position initiale sur l'axe Y
+        vx: (Math.random() * 0.2) - 0.1, // Vitesse initiale aléatoire légère
+        vy: 0,
+        angle: 0
+    }));
+
+    let fields = []; // {x, y, radius, strength}
+    
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        fields.push({ x: e.clientX - rect.left, y: e.clientY - rect.top, r: 100, s: 50 });
+    });
+
+    // Loop de jeu
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Dessiner champs gravitationnels (visuel)
+        ctx.lineWidth = 2;
+        fields.forEach(f => {
+            ctx.strokeStyle = `rgba(76, 201, 240, ${f.s/50})`;
+            ctx.fillStyle = `rgba(76, 201, 240, ${f.s/200})`;
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        // Mettre à jour et dessiner planètes
+        planets.forEach(p => {
+            // Gravité artificielle des champs + gravité du soleil (simplifiée)
+            fields.forEach(f => {
+                const dx = f.x - p.x;
+                const dy = f.y - p.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist < f.r) {
+                    // Force d'attraction vers le point de souris
+                    const force = (f.s / (dist * dist)) * 50; 
+                    p.vx += (dx / dist) * force;
+                    p.vy += (dy / dist) * force;
+                }
+            });
+            
+            // Gravité du soleil fictive pour stabiliser l'orbite de base
+            const sunForce = (1.5 / Math.pow(p.y, 2)) * 500; 
+            p.vy -= sunForce;
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Dessin
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Numéro pour identifier
+            ctx.fillStyle = "white";
+            ctx.font = "10px Arial";
+            ctx.fillText(p.name, p.x - 5, p.y + p.size/2 + 3);
+        });
+
+        requestAnimationFrame(gameLoop);
+    }
+    
+    // Lancer si l'utilisateur clique sur le bouton dans le header
+    if(document.getElementById('game-section').style.display !== 'block') {
+         document.getElementById('game-section').style.display = 'block';
+         gameLoop();
+    }
+}
+
+/* --- INITIALISATION --- */
+window.onload = () => {
+    initSolarSystem();
+    
+    // Gestion bouton retour info
+    document.getElementById('toggle-info-btn').onclick = function() {
+        const gameSection = document.getElementById('game-section');
+        if(gameSection.style.display === 'none') {
+            gameSection.style.display = 'block';
+            this.innerText = "Info";
+            document.querySelector('.game-header h3').style.display = 'none'; // Cacher titre si visible dans overlay
+        } else {
+            gameSection.style.display = 'none';
+            this.innerText = "Sandbox";
+        }
+    };
+};
+
+</script>
+</body>
+</html>

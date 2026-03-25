@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Weather Cards</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --text-color: #ffffff;
+            --sun-yellow: #fbd045;
+            --cloud-white: #ffffff;
+            --rain-blue: #4ec0ca;
+            --snow-white: #f0f0f0;
+            --wind-line: rgba(255, 255, 255, 0.6);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        /* Container for the cards */
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Card Styling */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px 20px;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: background-color 0.5s ease;
+        }
+
+        .card h2 {
+            margin: 0;
+            font-size: 2rem;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .card p {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #ccc;
+            z-index: 2;
+        }
+
+        /* Controls */
+        .controls {
+            margin-top: 40px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #3e4c66;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #4a5b7e;
+            transform: translateY(-2px);
+        }
+
+        button.active {
+            background-color: var(--sun-yellow);
+            color: #000;
+        }
+
+        /* --- ANIMATIONS --- */
+
+        /* Cloud (Base for Rain/Snow) */
+        .cloud-icon {
+            width: 80px;
+            height: 40px;
+            background: var(--cloud-white);
+            border-radius: 50px;
+            position: relative;
+            margin-bottom: 20px;
+            z-index: 1;
+        }
+
+        .cloud-icon::after, .cloud-icon::before {
+            content: '';
+            position: absolute;
+            background: var(--cloud-white);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            top: -20px;
+        }
+        .cloud-icon::after { right: -15px; }
+        .cloud-icon::before { left: -15px; }
+
+        /* Sun */
+        .sun-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--sun-yellow);
+            border-radius: 50%;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 0 40px rgba(251, 208, 69, 0.4);
+        }
+
+        .sun-rays {
+            position: absolute;
+            width: 120%;
+            height: 120%;
+            background-image: radial-gradient(var(--sun-yellow) 2px, transparent 2px);
+            background-size: 15px 15px;
+            border-radius: 50%;
+            opacity: 0.4;
+            animation: spinSun 10s linear infinite;
+        }
+
+        @keyframes spinSun {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Rain */
+        .rain-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.5s ease;
+        }
+
+        .rain-drop {
+            position: absolute;
+            top: -20px;
+            width: 4px;
+            height: 15px;
+            background-color: var(--rain-blue);
+            border-radius: 2px;
+            animation: rainFall linear infinite;
+        }
+
+        @keyframes rainFall {
+            0% { transform: translateY(0); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(350px); opacity: 0; }
+        }
+
+        /* Snow */
+        .snow-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            width: 8px;
+            height: 8px;
+            background-color: var(--snow-white);
+            border-radius: 2px;
+            animation: snowFall linear infinite;
+        }
+
+        @keyframes snowFall {
+            0% { transform: translateY(0) translateX(0); opacity: 0.8; }
+            100% { transform: translateY(350px) translateX(20px); opacity: 0.4; }
+        }
+
+        /* Wind */
+        .wind-lines-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .wind-line {
+            position: absolute;
+            height: 4px;
+            background-color: var(--wind-line);
+            border-radius: 2px;
+            animation: windBlow linear infinite;
+            box-shadow: 10px -5px 0 rgba(255,255,255,0.3);
+        }
+
+        @keyframes windBlow {
+            0% { transform: translateX(-100%); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateX(200%); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+<h1>Weather Animations</h1>
+
+<div class="weather-grid">
+    <!-- Sun Card -->
+    <div class="card" id="card-sun">
+        <div class="sun-icon">
+            <div class="sun-rays"></div>
+        </div>
+        <h2>Sunny</h2>
+        <p>Temperature: 32°C</p>
+
+        <!-- Invisible container for rain/snow particles (hidden by default in Sun state) -->
+        <div id="rain-container-sun" class="rain-container"></div>
+        <div id="snow-container-sun" class="snow-container"></div>
+    </div>
+
+    <!-- Wind Card -->
+    <div class="card" id="card-wind">
+        <h2>Windy</h2>
+        <p>Temperature: 18°C</p>
+
+        <div id="wind-container-card" class="wind-lines-container"></div>
+        <div id="rain-container-wind" class="rain-container"></div>
+        <div id="snow-container-wind" class="snow-container"></div>
+    </div>
+
+    <!-- Rain Card -->
+    <div class="card" id="card-rain">
+        <h2>Raining</h2>
+        <p>Temperature: 15°C</p>
+
+        <div class="rain-container" id="rain-main-container"></div>
+        <div id="wind-container-rain" class="wind-lines-container"></div>
+    </div>
+
+    <!-- Snow Card -->
+    <div class="card" id="card-snow">
+        <h2>Snowing</h2>
+        <p>Temperature: -5°C</p>
+
+        <div class="snow-container" id="snow-main-container"></div>
+        <div id="wind-container-snow" class="wind-lines-container"></div>
+    </div>
+</div>
+
+<div class="controls">
+    <button onclick="setWeather('sun')" class="active">☀️ Sunny</button>
+    <button onclick="setWeather('rain')">🌧️ Rainy</button>
+    <button onclick="setWeather('snow')">❄️ Snowy</button>
+    <button onclick="setWeather('wind')">💨 Windy</button>
+</div>
+
+<script>
+    // Helper to generate random particles for effects
+    function createParticles(containerId, particleCount, className, animationDuration) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = ''; // Clear existing
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add(className);
+
+            // Randomize start position and animation duration slightly for natural look
+            const leftPos = Math.random() * 100;
+            const durationBase = (i % 3) + 1.5; // Varying speeds
+
+            particle.style.left = leftPos + '%';
+            particle.style.animationName = 'fallingAnimation';
+            particle.style.animationDuration = animationDuration + 's';
+            particle.style.animationDelay = '-0.5s'; // Overlap start
+
+            // Apply the specific animation based on type logic if not purely CSS keyframes
+            // We are using inline styles here for randomized delay to create the stream effect
+
+            container.appendChild(particle);
+        }
+    }
+
+    // Initialize base states (ensure particles exist but are hidden)
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // 1. Setup Rain
+        const rainMain = document.getElementById('rain-main-container');
+        for(let i=0; i<30; i++) {
+            let drop = document.createElement('div');
+            drop.classList.add('rain-drop');
+            drop.style.left = Math.random() * 95 + '%';
+            drop.style.animationDuration = (1.5 + Math.random()) + 's';
+            rainMain.appendChild(drop);
+        }
+
+        // 2. Setup Snow
+        const snowMain = document.getElementById('snow-main-container');
+        for(let i=0; i<25; i++) {
+            let flake = document.createElement('div');
+            flake.classList.add('snowflake');
+            flake.style.left = Math.random() * 95 + '%';
+            flake.style.animationDuration = (3 + Math.random()) + 's'; // Slower for snow
+            snowMain.appendChild(flake);
+        }
+
+        // 3. Setup Wind
+        const windContainer = document.getElementById('wind-container-card');
+        for(let i=0; i<15; i++) {
+            let line = document.createElement('div');
+            line.classList.add('wind-line');
+            line.style.width = Math.random() * 100 + 20 + 'px'; // Varying lengths
+            line.style.top = (Math.random() * 80) + '%';
+            line.style.animationDuration = (1 + Math.random()) + 's';
+            windContainer.appendChild(line);
+        }
+    });
+
+    function setWeather(type) {
+        // Update Buttons UI
+        document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.querySelector(`button[onclick="setWeather('${type}')"]`);
+        if(activeBtn) activeBtn.classList.add('active');
+
+        // 1. Handle Wind Visibility
+        showHideWind(type === 'wind' || type === 'rain' || type === 'snow');
+
+        // 2. Handle Rain/Snow visibility based on logic
+        const rainMain = document.getElementById('rain-main-container');
+        const snowMain = document.getElementById('snow-main-container');
+
+        if (type === 'sun') {
+            rainMain.style.opacity = '0';
+            snowMain.style.opacity = '0';
+        } else if (type === 'rain') {
+            rainMain.style.opacity = '1';
+            // Hide snow particles on this card, show rain
+            const cardRainContainer = document.querySelectorAll('.rain-container');
+            cardRainContainer.forEach(c => c.style.opacity = type === 'rain' ? '1' : '0');
+            cardRainContainer.forEach(c => c.id !== 'rain-main-container' && (c.style.opacity = '0'));
+        } else if (type === 'snow') {
+            rainMain.style.opacity = '0';
+            snowMain.style.opacity = '1';
+        }
+        // Logic for Rain/Snow cards specifically to hide opposite elements
+        else {
+            // This covers when user clicks wind, sun buttons on specific cards
+            rainMain.style.opacity = '0';
+            snowMain.style.opacity = '0';
+        }
+
+        // 3. Sun specific visual
+        if (type === 'sun') {
+            const card = document.getElementById('card-sun');
+            card.style.backgroundColor = '#2e4c59'; // Slightly brighter
+        } else {
+            document.querySelectorAll('.card').forEach(c => c.style.backgroundColor = '');
+        }
+
+        // 4. Reset/Ensure particle containers exist for off-screen cards (for the sun button specifically)
+        const windContainerRainCard = document.getElementById('wind-container-rain');
+        const rainContainerSnowCard = document.getElementById('rain-container-snow');
+        // This part ensures elements aren't null when toggling buttons globally
+
+        // Add listeners to these hidden containers to generate particles if they don't exist (simplified)
+        // Ideally, we pre-instantiate everything in DOMContentLoaded as done above.
+    }
+
+    function showHideWind(show) {
+        const windContainers = document.querySelectorAll('.wind-lines-container');
+        windContainers.forEach(container => {
+            container.style.opacity = show ? '1' : '0';
+        });
+    }
+
+</script>
+</body>
+</html>
