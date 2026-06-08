@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Genetic Garden</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <canvas id="world"></canvas>
+
+    <div class="hud">
+      <div class="topbar">
+        <div>
+          <strong>Genetic Garden</strong>
+          <span id="clock">Jour 1 · Aube</span>
+        </div>
+        <div id="toolName">Sonde ADN</div>
+      </div>
+
+      <div class="reticle" aria-hidden="true"></div>
+
+      <section class="panel left">
+        <div class="toolRow">
+          <button class="tool active" data-tool="inspect" title="Sonde ADN">ADN</button>
+          <button class="tool" data-tool="water" title="Arroser">H2O</button>
+          <button class="tool" data-tool="seed" title="Semer une graine hybride">Seed</button>
+          <button class="tool" data-tool="prune" title="Tailler">Cut</button>
+          <button class="tool" data-tool="sample" title="Prelever un echantillon">Lab</button>
+        </div>
+        <div class="meters">
+          <div><span>Plantes</span><strong id="plantCount">0</strong></div>
+          <div><span>Diversite</span><strong id="diversity">0%</strong></div>
+          <div><span>Biomasse</span><strong id="biomass">0</strong></div>
+        </div>
+      </section>
+
+      <section class="panel right">
+        <h2 id="focusName">Aucune plante visee</h2>
+        <p id="focusText">Clique dans la scene pour capturer la souris. Vise une plante avec la sonde ADN pour lire son genotype et son etat.</p>
+        <div id="geneList" class="geneList"></div>
+      </section>
+
+      <section class="panel bottom">
+        <span>WASD deplacement</span>
+        <span>Souris regarder</span>
+        <span>Clic utiliser l'outil</span>
+        <span>1-5 changer d'outil</span>
+        <span>Shift courir</span>
+      </section>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

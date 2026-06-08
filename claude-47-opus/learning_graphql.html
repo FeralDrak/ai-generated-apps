@@ -1,0 +1,2686 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GraphQL Academy — Préparation entretien Fullstack</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0b0b13;
+    --bg-card: #14141f;
+    --bg-card-hover: #1c1c2c;
+    --bg-code: #0d0d16;
+    --bg-elevated: #1a1a26;
+    --border: #232336;
+    --border-active: #e10098;
+    --text: #e6e6f2;
+    --text-muted: #8a8aaa;
+    --text-dim: #555575;
+    --gql: #e10098;
+    --gql-glow: rgba(225,0,152,.25);
+    --gql-soft: rgba(225,0,152,.12);
+    --accent: #6366f1;
+    --accent-glow: rgba(99,102,241,.25);
+    --green: #22c55e;
+    --green-glow: rgba(34,197,94,.2);
+    --red: #ef4444;
+    --red-glow: rgba(239,68,68,.2);
+    --orange: #f59e0b;
+    --orange-glow: rgba(245,158,11,.2);
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --purple: #a855f7;
+    --yellow: #fbbf24;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+    --shadow: 0 4px 24px rgba(0,0,0,.45);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,.55);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 700px 500px at 15% 10%, rgba(225,0,152,.08), transparent),
+      radial-gradient(ellipse 600px 600px at 85% 80%, rgba(99,102,241,.06), transparent),
+      radial-gradient(ellipse 500px 400px at 50% 50%, rgba(168,85,247,.04), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ───────── HEADER ───────── */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(11,11,19,.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .header-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 68px; gap: 24px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 800; font-size: 18px; letter-spacing: -.4px;
+  }
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--gql), #f300a0);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    box-shadow: 0 6px 20px var(--gql-glow);
+    transform: rotate(45deg);
+  }
+  .logo-icon svg { transform: rotate(-45deg); }
+  .logo-sub { color: var(--text-muted); font-weight: 500; font-size: 13px; }
+
+  .progress-pill {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 13px; color: var(--text-muted);
+    font-weight: 500;
+  }
+  .progress-pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green-glow);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: .4; }
+  }
+
+  /* ───────── LAYOUT ───────── */
+  .layout {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ───────── SIDEBAR ───────── */
+  .sidebar {
+    position: sticky;
+    top: 90px;
+    align-self: start;
+    height: calc(100vh - 110px);
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  .sidebar::-webkit-scrollbar { width: 6px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .nav-title {
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin: 16px 12px 8px;
+  }
+  .nav-title:first-child { margin-top: 0; }
+
+  .nav-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-xs);
+    font-size: 14px;
+    color: var(--text-muted);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .15s ease;
+    border-left: 2px solid transparent;
+    margin-bottom: 2px;
+  }
+  .nav-link:hover {
+    background: var(--bg-card);
+    color: var(--text);
+  }
+  .nav-link.active {
+    background: var(--gql-soft);
+    color: var(--gql);
+    border-left-color: var(--gql);
+    font-weight: 600;
+  }
+  .nav-num {
+    display: inline-grid; place-items: center;
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .nav-link.active .nav-num {
+    background: var(--gql);
+    border-color: var(--gql);
+    color: white;
+  }
+
+  /* ───────── CONTENT ───────── */
+  .content { min-width: 0; }
+
+  .hero {
+    text-align: center;
+    padding: 32px 0 56px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 56px;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px;
+    background: var(--gql-soft);
+    border: 1px solid rgba(225,0,152,.3);
+    border-radius: 999px;
+    color: var(--gql);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: 56px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    line-height: 1.05;
+    margin-bottom: 18px;
+    background: linear-gradient(135deg, #fff 30%, var(--gql) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 18px;
+    color: var(--text-muted);
+    max-width: 620px;
+    margin: 0 auto 28px;
+  }
+  .hero-stats {
+    display: flex; justify-content: center; gap: 32px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat-num {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .hero-stat-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+
+  /* ───────── SECTIONS ───────── */
+  .section {
+    margin-bottom: 80px;
+    scroll-margin-top: 90px;
+  }
+  .section-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+  }
+  .section-num {
+    display: grid; place-items: center;
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--gql), #c8007e);
+    color: white;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    box-shadow: 0 6px 20px var(--gql-glow);
+  }
+  .section h2 {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -.8px;
+    line-height: 1.1;
+  }
+  .section-intro {
+    color: var(--text-muted);
+    font-size: 16px;
+    margin-bottom: 28px;
+    max-width: 780px;
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -.3px;
+    margin: 32px 0 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h3::before {
+    content: '';
+    width: 4px; height: 18px;
+    background: var(--gql);
+    border-radius: 2px;
+  }
+  h4 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 20px 0 10px;
+    color: var(--text);
+  }
+  p { color: var(--text-muted); margin-bottom: 12px; }
+  p strong, li strong { color: var(--text); font-weight: 600; }
+  ul, ol { color: var(--text-muted); padding-left: 22px; margin-bottom: 14px; }
+  li { margin-bottom: 6px; }
+
+  code:not(pre code) {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .88em;
+    padding: 2px 7px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--gql);
+  }
+
+  /* ───────── CARDS ───────── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: border-color .2s ease;
+  }
+  .card:hover { border-color: rgba(225,0,152,.3); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  /* ───────── CODE BLOCKS ───────── */
+  .code {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin: 12px 0;
+  }
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .code-tag {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text-muted);
+  }
+  .code-lang {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gql);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all .15s ease;
+  }
+  .copy-btn:hover {
+    border-color: var(--gql);
+    color: var(--gql);
+  }
+  .copy-btn.copied {
+    background: var(--green-glow);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .code pre {
+    padding: 18px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+  .code pre::-webkit-scrollbar { height: 6px; }
+  .code pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Syntax colors */
+  .tk-key   { color: #ff79c6; }
+  .tk-type  { color: #8be9fd; }
+  .tk-str   { color: #f1fa8c; }
+  .tk-num   { color: #bd93f9; }
+  .tk-com   { color: #6272a4; font-style: italic; }
+  .tk-fn    { color: #50fa7b; }
+  .tk-prop  { color: #ffb86c; }
+  .tk-punct { color: #cccccc; }
+  .tk-bool  { color: #bd93f9; }
+  .tk-direct{ color: #ff5555; }
+
+  /* ───────── COMPARISON ───────── */
+  .vs-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: stretch;
+    margin: 24px 0;
+  }
+  .vs-card {
+    border-radius: var(--radius);
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .vs-card.rest {
+    background: linear-gradient(135deg, rgba(239,68,68,.05), rgba(239,68,68,.02));
+    border-color: rgba(239,68,68,.25);
+  }
+  .vs-card.gql {
+    background: linear-gradient(135deg, rgba(225,0,152,.06), rgba(225,0,152,.02));
+    border-color: rgba(225,0,152,.3);
+  }
+  .vs-title {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+  .vs-title.rest { color: var(--red); }
+  .vs-title.gql { color: var(--gql); }
+  .vs-divider {
+    display: grid; place-items: center;
+    color: var(--text-dim);
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+
+  /* ───────── CALLOUT ───────── */
+  .callout {
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    margin: 16px 0;
+    border-left: 3px solid;
+    background: var(--bg-card);
+    display: flex; gap: 12px;
+    align-items: flex-start;
+  }
+  .callout-icon {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+    border-radius: 6px;
+    margin-top: 1px;
+  }
+  .callout-body { flex: 1; }
+  .callout-body strong { display: block; margin-bottom: 4px; color: var(--text); }
+  .callout.tip {
+    border-color: var(--cyan);
+    background: rgba(6,182,212,.06);
+  }
+  .callout.tip .callout-icon { background: rgba(6,182,212,.18); color: var(--cyan); }
+  .callout.warn {
+    border-color: var(--orange);
+    background: rgba(245,158,11,.06);
+  }
+  .callout.warn .callout-icon { background: rgba(245,158,11,.18); color: var(--orange); }
+  .callout.danger {
+    border-color: var(--red);
+    background: rgba(239,68,68,.06);
+  }
+  .callout.danger .callout-icon { background: rgba(239,68,68,.18); color: var(--red); }
+  .callout.interview {
+    border-color: var(--purple);
+    background: rgba(168,85,247,.06);
+  }
+  .callout.interview .callout-icon { background: rgba(168,85,247,.18); color: var(--purple); }
+
+  /* ───────── PLAYGROUND ───────── */
+  .playground {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 20px 0;
+  }
+  .pg-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+  .pg-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .15s ease;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .pg-tab:hover { color: var(--text); background: var(--bg-card-hover); }
+  .pg-tab.active {
+    color: var(--gql);
+    border-bottom-color: var(--gql);
+    background: var(--bg-card);
+  }
+  .pg-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 380px;
+  }
+  .pg-pane {
+    display: flex;
+    flex-direction: column;
+  }
+  .pg-pane + .pg-pane { border-left: 1px solid var(--border); }
+  .pg-pane-header {
+    padding: 10px 16px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .pg-editor {
+    flex: 1;
+    background: var(--bg-code);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.65;
+    padding: 16px;
+    border: none;
+    outline: none;
+    resize: none;
+    width: 100%;
+  }
+  .pg-output {
+    flex: 1;
+    background: var(--bg-code);
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-y: auto;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .pg-controls {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-elevated);
+    display: flex; gap: 10px; align-items: center;
+  }
+  .btn {
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s ease;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:hover { border-color: var(--gql); color: var(--gql); }
+  .btn.primary {
+    background: var(--gql);
+    border-color: var(--gql);
+    color: white;
+    box-shadow: 0 4px 14px var(--gql-glow);
+  }
+  .btn.primary:hover {
+    background: #f70aa8;
+    border-color: #f70aa8;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--gql-glow);
+  }
+  .pg-hint {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* example chips */
+  .examples {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 10px 16px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+  }
+  .example-chip {
+    padding: 5px 11px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all .15s ease;
+  }
+  .example-chip:hover {
+    border-color: var(--gql);
+    color: var(--gql);
+    background: var(--gql-soft);
+  }
+
+  /* ───────── QUIZ ───────── */
+  .quiz {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .quiz-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, rgba(168,85,247,.08), rgba(225,0,152,.05));
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .quiz-progress-track {
+    flex: 1;
+    margin: 0 20px;
+    height: 6px;
+    background: var(--bg-code);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .quiz-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gql), var(--purple));
+    transition: width .3s ease;
+  }
+  .quiz-counter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .quiz-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--gql);
+  }
+  .quiz-body { padding: 32px; }
+  .quiz-question {
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .quiz-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--gql-soft);
+    color: var(--gql);
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 14px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 22px 0;
+  }
+  .quiz-option {
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    cursor: pointer;
+    transition: all .15s ease;
+    font-size: 14px;
+    display: flex; align-items: flex-start; gap: 12px;
+    color: var(--text);
+  }
+  .quiz-option:hover:not(:disabled):not(.correct):not(.wrong) {
+    border-color: var(--gql);
+    background: var(--gql-soft);
+  }
+  .quiz-option-letter {
+    flex-shrink: 0;
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .quiz-option.correct {
+    border-color: var(--green);
+    background: rgba(34,197,94,.08);
+    color: var(--text);
+  }
+  .quiz-option.correct .quiz-option-letter {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .quiz-option.wrong {
+    border-color: var(--red);
+    background: rgba(239,68,68,.08);
+  }
+  .quiz-option.wrong .quiz-option-letter {
+    background: var(--red);
+    color: white;
+    border-color: var(--red);
+  }
+  .quiz-option:disabled { cursor: not-allowed; }
+
+  .quiz-explanation {
+    padding: 16px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--gql);
+    margin-top: 18px;
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .quiz-explanation.show { display: block; }
+  .quiz-explanation { display: none; }
+  .quiz-explanation strong { color: var(--text); }
+  .quiz-actions {
+    display: flex; justify-content: space-between;
+    margin-top: 24px;
+  }
+
+  .quiz-result {
+    text-align: center;
+    padding: 50px 32px;
+  }
+  .quiz-result-emoji {
+    font-size: 56px;
+    margin-bottom: 16px;
+  }
+  .quiz-result h3 {
+    font-size: 28px;
+    margin: 0 0 12px;
+  }
+  .quiz-result h3::before { display: none; }
+  .quiz-result-score {
+    font-size: 64px;
+    font-weight: 900;
+    font-family: 'JetBrains Mono', monospace;
+    background: linear-gradient(135deg, var(--gql), var(--purple));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    margin: 14px 0;
+  }
+  .quiz-result-msg {
+    color: var(--text-muted);
+    font-size: 16px;
+    margin-bottom: 28px;
+  }
+
+  /* ───────── FLASHCARDS ───────── */
+  .flashcards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .flashcard {
+    perspective: 1000px;
+    height: 200px;
+    cursor: pointer;
+  }
+  .flashcard-inner {
+    position: relative;
+    width: 100%; height: 100%;
+    transition: transform .5s;
+    transform-style: preserve-3d;
+  }
+  .flashcard.flipped .flashcard-inner {
+    transform: rotateY(180deg);
+  }
+  .flashcard-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex; flex-direction: column;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+  .flashcard-face.back {
+    transform: rotateY(180deg);
+    background: linear-gradient(135deg, var(--gql-soft), rgba(168,85,247,.05));
+    border-color: rgba(225,0,152,.3);
+  }
+  .flashcard-q {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .flashcard-term {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: auto;
+  }
+  .flashcard-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: auto;
+    font-style: italic;
+  }
+  .flashcard-def {
+    font-size: 13.5px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* ───────── COMPARISON TABLE ───────── */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin: 16px 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  td:first-child { font-weight: 600; color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  td.good { color: var(--green); }
+  td.bad { color: var(--red); }
+
+  /* ───────── ROADMAP / TIMELINE ───────── */
+  .timeline {
+    position: relative;
+    padding-left: 32px;
+    margin: 16px 0;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 11px; top: 8px; bottom: 8px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--gql), var(--purple), transparent);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 22px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -27px; top: 6px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--gql);
+    box-shadow: 0 0 0 4px var(--gql-soft);
+  }
+  .timeline-item h4 { margin: 0 0 4px; }
+
+  /* ───────── ANIMATED REQUEST DEMO ───────── */
+  .demo-flow {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 16px 0;
+  }
+  .demo-flow-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 200px;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 14px;
+  }
+  .demo-node {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    text-align: center;
+  }
+  .demo-node-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .demo-node-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--gql);
+    font-weight: 600;
+  }
+  .demo-arrow {
+    height: 2px;
+    background: linear-gradient(to right, var(--border), var(--gql), var(--border));
+    position: relative;
+  }
+  .demo-arrow::after {
+    content: '▶';
+    position: absolute;
+    right: -8px; top: -10px;
+    color: var(--gql);
+    font-size: 14px;
+  }
+  .demo-pulse {
+    position: absolute;
+    top: -3px; left: 0;
+    width: 8px; height: 8px;
+    background: var(--gql);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--gql);
+    animation: travel 2.5s ease-in-out infinite;
+  }
+  @keyframes travel {
+    0% { left: 0; opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+  }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 1024px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+    .sidebar {
+      position: static;
+      height: auto;
+      max-height: none;
+      overflow: visible;
+    }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .flashcards { grid-template-columns: repeat(2, 1fr); }
+    .pg-body { grid-template-columns: 1fr; }
+    .pg-pane + .pg-pane { border-left: none; border-top: 1px solid var(--border); }
+  }
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 36px; }
+    .hero p { font-size: 16px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .vs-grid { grid-template-columns: 1fr; }
+    .vs-divider { display: none; }
+    .flashcards { grid-template-columns: 1fr; }
+    .demo-flow-row { grid-template-columns: 1fr; }
+    .demo-arrow { display: none; }
+    .section h2 { font-size: 24px; }
+    .section-num { width: 36px; height: 36px; font-size: 14px; }
+  }
+
+  /* ───────── BACK TO TOP ───────── */
+  .top-btn {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--gql);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 24px var(--gql-glow);
+    display: grid; place-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: all .25s ease;
+    z-index: 50;
+  }
+  .top-btn.show { opacity: 1; pointer-events: auto; }
+  .top-btn:hover { transform: translateY(-2px); }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+          <circle cx="50" cy="15" r="6" fill="white"/>
+          <circle cx="85" cy="35" r="6" fill="white"/>
+          <circle cx="85" cy="65" r="6" fill="white"/>
+          <circle cx="50" cy="85" r="6" fill="white"/>
+          <circle cx="15" cy="65" r="6" fill="white"/>
+          <circle cx="15" cy="35" r="6" fill="white"/>
+          <path d="M50 15 L85 35 L85 65 L50 85 L15 65 L15 35 Z" stroke="white" stroke-width="3" fill="none" opacity=".8"/>
+          <path d="M50 15 L85 65 M85 35 L50 85 M85 35 L15 65 M15 35 L85 65 M50 15 L15 65 M15 35 L50 85" stroke="white" stroke-width="2" opacity=".4"/>
+        </svg>
+      </div>
+      <div>
+        GraphQL Academy
+        <div class="logo-sub">Préparation entretien Fullstack React/Node.js</div>
+      </div>
+    </div>
+    <div class="progress-pill">
+      <span class="dot"></span>
+      <span id="header-progress">0% complété</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ───────── SIDEBAR ───────── -->
+  <aside class="sidebar">
+    <div class="nav-title">Fondamentaux</div>
+    <a href="#intro" class="nav-link active"><span class="nav-num">1</span>Introduction</a>
+    <a href="#rest-vs-graphql" class="nav-link"><span class="nav-num">2</span>REST vs GraphQL</a>
+    <a href="#schema" class="nav-link"><span class="nav-num">3</span>Schema &amp; Types</a>
+
+    <div class="nav-title">Opérations</div>
+    <a href="#queries" class="nav-link"><span class="nav-num">4</span>Queries</a>
+    <a href="#mutations" class="nav-link"><span class="nav-num">5</span>Mutations</a>
+    <a href="#subscriptions" class="nav-link"><span class="nav-num">6</span>Subscriptions</a>
+    <a href="#fragments" class="nav-link"><span class="nav-num">7</span>Fragments &amp; Variables</a>
+
+    <div class="nav-title">Implémentation</div>
+    <a href="#server" class="nav-link"><span class="nav-num">8</span>Serveur Node.js</a>
+    <a href="#client" class="nav-link"><span class="nav-num">9</span>Client React (Apollo)</a>
+    <a href="#advanced" class="nav-link"><span class="nav-num">10</span>Sujets avancés</a>
+
+    <div class="nav-title">Pratique</div>
+    <a href="#playground" class="nav-link"><span class="nav-num">⚡</span>Playground</a>
+    <a href="#flashcards" class="nav-link"><span class="nav-num">🃏</span>Flashcards</a>
+    <a href="#quiz" class="nav-link"><span class="nav-num">🎯</span>Quiz d'entretien</a>
+  </aside>
+
+  <!-- ───────── CONTENT ───────── -->
+  <main class="content">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+        Préparation entretien — Fullstack React / Node.js
+      </div>
+      <h1>Maîtrisez GraphQL<br/>en une session</h1>
+      <p>De la théorie aux résolveurs Node.js, des hooks Apollo Client à la gestion du N+1 — tout ce qu'un recruteur attend d'un ingénieur fullstack.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-num">10</div><div class="hero-stat-label">Modules</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">15</div><div class="hero-stat-label">Questions quiz</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">12</div><div class="hero-stat-label">Flashcards</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">∞</div><div class="hero-stat-label">Playground</div></div>
+      </div>
+    </div>
+
+    <!-- ───────── 1. INTRO ───────── -->
+    <section class="section" id="intro">
+      <div class="section-header">
+        <div class="section-num">01</div>
+        <h2>Qu'est-ce que GraphQL ?</h2>
+      </div>
+      <p class="section-intro">GraphQL est un <strong>langage de requête pour API</strong> et un runtime d'exécution côté serveur, créé par Facebook en 2012 et open-sourcé en 2015. C'est une alternative à REST qui donne au client le contrôle exact des données qu'il reçoit.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h4>📋 Schema-first</h4>
+          <p style="margin:0">Le contrat entre client et serveur est explicite. Une seule source de vérité, typée, auto-documentée via introspection.</p>
+        </div>
+        <div class="card">
+          <h4>🎯 Demande exacte</h4>
+          <p style="margin:0">Le client décrit la forme de la réponse. Pas de sur-fetching (champs en trop), pas de sous-fetching (requêtes en cascade).</p>
+        </div>
+        <div class="card">
+          <h4>🔗 Endpoint unique</h4>
+          <p style="margin:0">Une seule URL <code>/graphql</code>. La requête détermine ce qui est exécuté, pas l'URL.</p>
+        </div>
+      </div>
+
+      <h3>L'analogie du restaurant</h3>
+      <p>Avec <strong>REST</strong>, c'est un menu fixe : vous commandez le plat n°7, vous recevez tout ce qu'il contient (même les olives que vous n'aimez pas). Pour la sauce, il faut commander le plat n°12 séparément.</p>
+      <p>Avec <strong>GraphQL</strong>, c'est un menu à la carte : vous demandez exactement ce que vous voulez — "un steak saignant, sans olives, et la sauce du plat 12" — en une seule commande.</p>
+
+      <div class="callout interview">
+        <div class="callout-icon">💼</div>
+        <div class="callout-body">
+          <strong>Question type d'entretien</strong>
+          "GraphQL remplace-t-il REST ?" — La bonne réponse n'est pas binaire. GraphQL excelle pour les UIs riches avec des relations complexes (réseaux sociaux, dashboards). REST reste pertinent pour des APIs publiques simples, le cache HTTP natif, ou les endpoints orientés ressources/CRUD basiques.
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── 2. REST VS GRAPHQL ───────── -->
+    <section class="section" id="rest-vs-graphql">
+      <div class="section-header">
+        <div class="section-num">02</div>
+        <h2>REST vs GraphQL</h2>
+      </div>
+      <p class="section-intro">L'exemple classique : afficher un profil utilisateur avec ses 3 derniers posts et le nombre de commentaires sur chaque post.</p>
+
+      <div class="vs-grid">
+        <div class="vs-card rest">
+          <div class="vs-title rest">
+            <span>🔴</span> REST — 5 requêtes
+          </div>
+          <div class="code">
+            <pre>GET /api/users/42
+GET /api/users/42/posts?limit=3
+GET /api/posts/101/comments?count
+GET /api/posts/102/comments?count
+GET /api/posts/103/comments?count</pre>
+          </div>
+          <p style="font-size:13px;margin:0;color:var(--text-muted)">Sur-fetching probable (champs inutiles), waterfall de requêtes, latence cumulée.</p>
+        </div>
+        <div class="vs-divider">VS</div>
+        <div class="vs-card gql">
+          <div class="vs-title gql">
+            <span>💖</span> GraphQL — 1 requête
+          </div>
+          <div class="code">
+            <pre><span class="tk-key">query</span> <span class="tk-fn">UserProfile</span> {
+  <span class="tk-prop">user</span>(<span class="tk-prop">id</span>: <span class="tk-str">"42"</span>) {
+    <span class="tk-prop">name</span>
+    <span class="tk-prop">avatar</span>
+    <span class="tk-prop">posts</span>(<span class="tk-prop">limit</span>: <span class="tk-num">3</span>) {
+      <span class="tk-prop">title</span>
+      <span class="tk-prop">commentCount</span>
+    }
+  }
+}</pre>
+          </div>
+          <p style="font-size:13px;margin:0;color:var(--text-muted)">Champs précis, relations imbriquées, payload optimal, en un seul aller-retour réseau.</p>
+        </div>
+      </div>
+
+      <h3>Tableau comparatif</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+          <tr>
+            <th>Critère</th>
+            <th>REST</th>
+            <th>GraphQL</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr><td>Endpoints</td><td>Multiples (1 par ressource)</td><td>Un seul <code>/graphql</code></td></tr>
+          <tr><td>Méthode HTTP</td><td>GET / POST / PUT / DELETE</td><td>POST (toujours)</td></tr>
+          <tr><td>Forme de la réponse</td><td>Imposée par le serveur</td><td>Choisie par le client</td></tr>
+          <tr><td>Sur-fetching</td><td class="bad">Fréquent</td><td class="good">Éliminé</td></tr>
+          <tr><td>Sous-fetching</td><td class="bad">Fréquent (waterfall)</td><td class="good">Éliminé</td></tr>
+          <tr><td>Typage</td><td>Optionnel (OpenAPI)</td><td>Imposé par le schema</td></tr>
+          <tr><td>Cache HTTP</td><td class="good">Natif (URL)</td><td class="bad">Manuel (Apollo, urql)</td></tr>
+          <tr><td>Versioning</td><td>v1, v2, /v3...</td><td>Évolution via <code>@deprecated</code></td></tr>
+          <tr><td>Codes HTTP</td><td>200/4xx/5xx</td><td>Toujours 200, erreurs dans <code>errors[]</code></td></tr>
+          <tr><td>Upload de fichiers</td><td class="good">Natif (multipart)</td><td>Spec séparée nécessaire</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Pièges côté GraphQL</strong>
+          Cache plus complexe (pas de cache HTTP), risque de requêtes lourdes (DoS via profondeur/complexité), monitoring moins évident — chaque champ est une "route" potentielle. Ces problématiques font partie des questions avancées en entretien.
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── 3. SCHEMA ───────── -->
+    <section class="section" id="schema">
+      <div class="section-header">
+        <div class="section-num">03</div>
+        <h2>Schema &amp; Types (SDL)</h2>
+      </div>
+      <p class="section-intro">Le <strong>SDL</strong> (Schema Definition Language) est le langage qui décrit la structure de votre API. C'est le contrat partagé entre frontend et backend.</p>
+
+      <h3>Types scalaires intégrés</h3>
+      <div class="grid-3">
+        <div class="card"><h4><code>Int</code></h4><p style="margin:0;font-size:13px">Entier 32 bits signé</p></div>
+        <div class="card"><h4><code>Float</code></h4><p style="margin:0;font-size:13px">Nombre à virgule flottante</p></div>
+        <div class="card"><h4><code>String</code></h4><p style="margin:0;font-size:13px">Chaîne UTF-8</p></div>
+        <div class="card"><h4><code>Boolean</code></h4><p style="margin:0;font-size:13px"><code>true</code> / <code>false</code></p></div>
+        <div class="card"><h4><code>ID</code></h4><p style="margin:0;font-size:13px">Identifiant unique (sérialisé en string)</p></div>
+        <div class="card"><h4>Custom (ex: <code>DateTime</code>)</h4><p style="margin:0;font-size:13px">Définissables via <code>scalar</code></p></div>
+      </div>
+
+      <h3>Définir des types objets</h3>
+      <div class="code">
+        <div class="code-header">
+          <div class="code-tag"><span class="code-lang">SDL</span> schema.graphql</div>
+          <button class="copy-btn" data-copy="schema-1">Copier</button>
+        </div>
+<pre id="schema-1"><span class="tk-com"># Type personnalisé pour les dates ISO 8601</span>
+<span class="tk-key">scalar</span> <span class="tk-type">DateTime</span>
+
+<span class="tk-com"># Une énumération de valeurs autorisées</span>
+<span class="tk-key">enum</span> <span class="tk-type">Role</span> {
+  <span class="tk-prop">USER</span>
+  <span class="tk-prop">ADMIN</span>
+  <span class="tk-prop">GUEST</span>
+}
+
+<span class="tk-com"># Le ! signifie "non-null" (obligatoire)</span>
+<span class="tk-key">type</span> <span class="tk-type">User</span> {
+  <span class="tk-prop">id</span>: <span class="tk-type">ID</span>!
+  <span class="tk-prop">email</span>: <span class="tk-type">String</span>!
+  <span class="tk-prop">name</span>: <span class="tk-type">String</span>
+  <span class="tk-prop">role</span>: <span class="tk-type">Role</span>!
+  <span class="tk-prop">createdAt</span>: <span class="tk-type">DateTime</span>!
+  <span class="tk-com"># [Post!]! = liste non-null d'éléments non-null</span>
+  <span class="tk-prop">posts</span>: [<span class="tk-type">Post</span>!]!
+}
+
+<span class="tk-key">type</span> <span class="tk-type">Post</span> {
+  <span class="tk-prop">id</span>: <span class="tk-type">ID</span>!
+  <span class="tk-prop">title</span>: <span class="tk-type">String</span>!
+  <span class="tk-prop">content</span>: <span class="tk-type">String</span>!
+  <span class="tk-prop">author</span>: <span class="tk-type">User</span>!
+  <span class="tk-prop">comments</span>: [<span class="tk-type">Comment</span>!]!
+  <span class="tk-prop">publishedAt</span>: <span class="tk-type">DateTime</span>
+}</pre>
+      </div>
+
+      <h3>Le triptyque obligatoire</h3>
+      <p>Tout schema GraphQL expose au plus trois types racines :</p>
+      <div class="code">
+<pre><span class="tk-key">type</span> <span class="tk-type">Query</span> {
+  <span class="tk-com"># Lectures — équivalent des GET REST</span>
+  <span class="tk-prop">me</span>: <span class="tk-type">User</span>
+  <span class="tk-prop">user</span>(<span class="tk-prop">id</span>: <span class="tk-type">ID</span>!): <span class="tk-type">User</span>
+  <span class="tk-prop">posts</span>(<span class="tk-prop">limit</span>: <span class="tk-type">Int</span> = <span class="tk-num">10</span>): [<span class="tk-type">Post</span>!]!
+}
+
+<span class="tk-key">type</span> <span class="tk-type">Mutation</span> {
+  <span class="tk-com"># Écritures — POST/PUT/PATCH/DELETE</span>
+  <span class="tk-prop">createPost</span>(<span class="tk-prop">input</span>: <span class="tk-type">CreatePostInput</span>!): <span class="tk-type">Post</span>!
+  <span class="tk-prop">deletePost</span>(<span class="tk-prop">id</span>: <span class="tk-type">ID</span>!): <span class="tk-type">Boolean</span>!
+}
+
+<span class="tk-key">type</span> <span class="tk-type">Subscription</span> {
+  <span class="tk-com"># Temps réel via WebSocket</span>
+  <span class="tk-prop">postAdded</span>: <span class="tk-type">Post</span>!
+}
+
+<span class="tk-com"># Input type — utilisé pour les arguments complexes</span>
+<span class="tk-key">input</span> <span class="tk-type">CreatePostInput</span> {
+  <span class="tk-prop">title</span>: <span class="tk-type">String</span>!
+  <span class="tk-prop">content</span>: <span class="tk-type">String</span>!
+  <span class="tk-prop">tags</span>: [<span class="tk-type">String</span>!]
+}</pre>
+      </div>
+
+      <h3>Interfaces &amp; Unions</h3>
+      <div class="code">
+<pre><span class="tk-com"># Interface — contrat partagé</span>
+<span class="tk-key">interface</span> <span class="tk-type">Node</span> {
+  <span class="tk-prop">id</span>: <span class="tk-type">ID</span>!
+}
+
+<span class="tk-key">type</span> <span class="tk-type">User</span> <span class="tk-key">implements</span> <span class="tk-type">Node</span> {
+  <span class="tk-prop">id</span>: <span class="tk-type">ID</span>!
+  <span class="tk-prop">name</span>: <span class="tk-type">String</span>!
+}
+
+<span class="tk-com"># Union — un champ qui peut renvoyer plusieurs types distincts</span>
+<span class="tk-key">union</span> <span class="tk-type">SearchResult</span> = <span class="tk-type">User</span> | <span class="tk-type">Post</span> | <span class="tk-type">Comment</span>
+
+<span class="tk-key">type</span> <span class="tk-type">Query</span> {
+  <span class="tk-prop">search</span>(<span class="tk-prop">term</span>: <span class="tk-type">String</span>!): [<span class="tk-type">SearchResult</span>!]!
+}</pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+          <strong>À retenir : la syntaxe du nullable</strong>
+          <code>String</code> = nullable. <code>String!</code> = obligatoire. <code>[String]</code> = liste nullable d'éléments nullables. <code>[String!]!</code> = liste obligatoire dont chaque élément est obligatoire. C'est une question piège classique en entretien.
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── 4. QUERIES ───────── -->
+    <section class="section" id="queries">
+      <div class="section-header">
+        <div class="section-num">04</div>
+        <h2>Queries — Lire des données</h2>
+      </div>
+      <p class="section-intro">Une query GraphQL décrit la forme exacte de la réponse souhaitée. Le serveur renvoie un JSON qui mime la structure de la requête.</p>
+
+      <div class="grid-2">
+        <div>
+          <h4>📥 Requête</h4>
+          <div class="code">
+<pre><span class="tk-key">query</span> <span class="tk-fn">GetUser</span> {
+  <span class="tk-prop">user</span>(<span class="tk-prop">id</span>: <span class="tk-str">"42"</span>) {
+    <span class="tk-prop">name</span>
+    <span class="tk-prop">email</span>
+    <span class="tk-prop">posts</span> {
+      <span class="tk-prop">title</span>
+    }
+  }
+}</pre>
+          </div>
+        </div>
+        <div>
+          <h4>📤 Réponse</h4>
+          <div class="code">
+<pre>{
+  <span class="tk-prop">"data"</span>: {
+    <span class="tk-prop">"user"</span>: {
+      <span class="tk-prop">"name"</span>: <span class="tk-str">"Marie Dupont"</span>,
+      <span class="tk-prop">"email"</span>: <span class="tk-str">"marie@x.fr"</span>,
+      <span class="tk-prop">"posts"</span>: [
+        { <span class="tk-prop">"title"</span>: <span class="tk-str">"GraphQL 101"</span> }
+      ]
+    }
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3>Alias — éviter les collisions de noms</h3>
+      <p>Indispensable quand vous appelez le même champ avec des arguments différents :</p>
+      <div class="code">
+<pre><span class="tk-key">query</span> {
+  <span class="tk-prop">recent</span>: <span class="tk-prop">posts</span>(<span class="tk-prop">limit</span>: <span class="tk-num">5</span>, <span class="tk-prop">orderBy</span>: <span class="tk-type">DATE</span>) {
+    <span class="tk-prop">title</span>
+  }
+  <span class="tk-prop">popular</span>: <span class="tk-prop">posts</span>(<span class="tk-prop">limit</span>: <span class="tk-num">5</span>, <span class="tk-prop">orderBy</span>: <span class="tk-type">VIEWS</span>) {
+    <span class="tk-prop">title</span>
+  }
+}</pre>
+      </div>
+
+      <h3>Arguments &amp; Variables</h3>
+      <p>Ne jamais interpoler les valeurs dynamiques dans la query — utiliser des <strong>variables</strong> :</p>
+      <div class="code">
+        <div class="code-header"><div class="code-tag"><span class="code-lang">GraphQL</span> Query</div></div>
+<pre><span class="tk-key">query</span> <span class="tk-fn">GetUser</span>(<span class="tk-direct">$id</span>: <span class="tk-type">ID</span>!, <span class="tk-direct">$postLimit</span>: <span class="tk-type">Int</span> = <span class="tk-num">10</span>) {
+  <span class="tk-prop">user</span>(<span class="tk-prop">id</span>: <span class="tk-direct">$id</span>) {
+    <span class="tk-prop">name</span>
+    <span class="tk-prop">posts</span>(<span class="tk-prop">limit</span>: <span class="tk-direct">$postLimit</span>) {
+      <span class="tk-prop">title</span>
+    }
+  }
+}</pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><div class="code-tag"><span class="code-lang">JSON</span> Variables</div></div>
+<pre>{
+  <span class="tk-prop">"id"</span>: <span class="tk-str">"42"</span>,
+  <span class="tk-prop">"postLimit"</span>: <span class="tk-num">5</span>
+}</pre>
+      </div>
+
+      <div class="callout warn">
+        <div class="callout-icon">🛡️</div>
+        <div class="callout-body">
+          <strong>Sécurité : utilisez TOUJOURS des variables</strong>
+          Concaténer des valeurs dans la query c'est l'équivalent GraphQL d'une SQL injection. Les variables sont validées par le typage du schema.
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── 5. MUTATIONS ───────── -->
+    <section class="section" id="mutations">
+      <div class="section-header">
+        <div class="section-num">05</div>
+        <h2>Mutations — Modifier des données</h2>
+      </div>
+      <p class="section-intro">Les mutations sont syntaxiquement identiques aux queries, mais sémantiquement différentes : elles indiquent une intention d'écriture. Le serveur les exécute <strong>en série</strong>, contrairement aux queries qui peuvent s'exécuter en parallèle.</p>
+
+      <h3>Pattern create / update / delete</h3>
+      <div class="code">
+<pre><span class="tk-key">mutation</span> <span class="tk-fn">CreatePost</span>(<span class="tk-direct">$input</span>: <span class="tk-type">CreatePostInput</span>!) {
+  <span class="tk-prop">createPost</span>(<span class="tk-prop">input</span>: <span class="tk-direct">$input</span>) {
+    <span class="tk-prop">id</span>
+    <span class="tk-prop">title</span>
+    <span class="tk-prop">createdAt</span>
+    <span class="tk-prop">author</span> {
+      <span class="tk-prop">name</span>
+    }
+  }
+}</pre>
+      </div>
+
+      <h4>Variables</h4>
+      <div class="code">
+<pre>{
+  <span class="tk-prop">"input"</span>: {
+    <span class="tk-prop">"title"</span>: <span class="tk-str">"Mon premier post"</span>,
+    <span class="tk-prop">"content"</span>: <span class="tk-str">"Hello, world!"</span>,
+    <span class="tk-prop">"tags"</span>: [<span class="tk-str">"intro"</span>, <span class="tk-str">"graphql"</span>]
+  }
+}</pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-icon">✨</div>
+        <div class="callout-body">
+          <strong>Bonne pratique : retournez l'entité modifiée</strong>
+          Toujours faire renvoyer l'objet créé/modifié par la mutation — ça permet au client de mettre à jour son cache (Apollo) sans refetch.
+        </div>
+      </div>
+
+      <h3>Pattern Result/Error (typage des erreurs métier)</h3>
+      <p>Plutôt que de balancer une erreur générique, modélisez les erreurs comme des types de premier ordre :</p>
+      <div class="code">
+<pre><span class="tk-key">union</span> <span class="tk-type">CreatePostResult</span> = <span class="tk-type">Post</span> | <span class="tk-type">ValidationError</span> | <span class="tk-type">NotAuthorized</span>
+
+<span class="tk-key">type</span> <span class="tk-type">ValidationError</span> {
+  <span class="tk-prop">field</span>: <span class="tk-type">String</span>!
+  <span class="tk-prop">message</span>: <span class="tk-type">String</span>!
+}
+
+<span class="tk-key">type</span> <span class="tk-type">NotAuthorized</span> {
+  <span class="tk-prop">message</span>: <span class="tk-type">String</span>!
+}
+
+<span class="tk-key">type</span> <span class="tk-type">Mutation</span> {
+  <span class="tk-prop">createPost</span>(<span class="tk-prop">input</span>: <span class="tk-type">CreatePostInput</span>!): <span class="tk-type">CreatePostResult</span>!
+}</pre>
+      </div>
+      <p>Le client utilise alors <code>__typename</code> et des inline fragments pour réagir :</p>
+      <div class="code">
+<pre><span class="tk-key">mutation</span> {
+  <span class="tk-prop">createPost</span>(<span class="tk-prop">input</span>: { <span class="tk-prop">title</span>: <span class="tk-str">""</span>, <span class="tk-prop">content</span>: <span class="tk-str">"..."</span> }) {
+    <span class="tk-prop">__typename</span>
+    <span class="tk-key">... on</span> <span class="tk-type">Post</span> { <span class="tk-prop">id</span> <span class="tk-prop">title</span> }
+    <span class="tk-key">... on</span> <span class="tk-type">ValidationError</span> { <span class="tk-prop">field</span> <span class="tk-prop">message</span> }
+    <span class="tk-key">... on</span> <span class="tk-type">NotAuthorized</span> { <span class="tk-prop">message</span> }
+  }
+}</pre>
+      </div>
+    </section>
+
+    <!-- ───────── 6. SUBSCRIPTIONS ───────── -->
+    <section class="section" id="subscriptions">
+      <div class="section-header">
+        <div class="section-num">06</div>
+        <h2>Subscriptions — Temps réel</h2>
+      </div>
+      <p class="section-intro">Les subscriptions ouvrent un canal persistant (généralement WebSocket) entre client et serveur. Le serveur pousse les évènements au client à chaque déclenchement.</p>
+
+      <div class="demo-flow">
+        <div class="demo-flow-row">
+          <div class="demo-node">
+            <div class="demo-node-label">Client React</div>
+            <div class="demo-node-value">useSubscription</div>
+          </div>
+          <div class="demo-arrow">
+            <div class="demo-pulse"></div>
+          </div>
+          <div class="demo-node">
+            <div class="demo-node-label">Serveur</div>
+            <div class="demo-node-value">PubSub.publish</div>
+          </div>
+        </div>
+        <p style="font-size:13px;text-align:center;margin:12px 0 0;color:var(--text-dim)">📡 Connexion WebSocket persistante via <code>graphql-ws</code></p>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <h4>📐 Schéma</h4>
+          <div class="code">
+<pre><span class="tk-key">type</span> <span class="tk-type">Subscription</span> {
+  <span class="tk-prop">postAdded</span>(<span class="tk-prop">channelId</span>: <span class="tk-type">ID</span>): <span class="tk-type">Post</span>!
+  <span class="tk-prop">commentLive</span>(<span class="tk-prop">postId</span>: <span class="tk-type">ID</span>!): <span class="tk-type">Comment</span>!
+}</pre>
+          </div>
+        </div>
+        <div>
+          <h4>🎧 Côté client</h4>
+          <div class="code">
+<pre><span class="tk-key">subscription</span> <span class="tk-fn">OnPostAdded</span> {
+  <span class="tk-prop">postAdded</span> {
+    <span class="tk-prop">id</span>
+    <span class="tk-prop">title</span>
+    <span class="tk-prop">author</span> { <span class="tk-prop">name</span> }
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3>Côté Node.js — Apollo Server avec PubSub</h3>
+      <div class="code">
+        <div class="code-header"><div class="code-tag"><span class="code-lang">Node.js</span> resolvers.js</div></div>
+<pre><span class="tk-key">import</span> { <span class="tk-prop">PubSub</span> } <span class="tk-key">from</span> <span class="tk-str">'graphql-subscriptions'</span>;
+
+<span class="tk-key">const</span> <span class="tk-prop">pubsub</span> = <span class="tk-key">new</span> <span class="tk-fn">PubSub</span>();
+<span class="tk-key">const</span> <span class="tk-prop">POST_ADDED</span> = <span class="tk-str">'POST_ADDED'</span>;
+
+<span class="tk-key">export const</span> <span class="tk-prop">resolvers</span> = {
+  <span class="tk-prop">Mutation</span>: {
+    <span class="tk-fn">createPost</span>: <span class="tk-key">async</span> (<span class="tk-prop">_</span>, { <span class="tk-prop">input</span> }, { <span class="tk-prop">db</span> }) => {
+      <span class="tk-key">const</span> <span class="tk-prop">post</span> = <span class="tk-key">await</span> <span class="tk-prop">db</span>.<span class="tk-prop">posts</span>.<span class="tk-fn">create</span>(<span class="tk-prop">input</span>);
+      <span class="tk-prop">pubsub</span>.<span class="tk-fn">publish</span>(<span class="tk-prop">POST_ADDED</span>, { <span class="tk-prop">postAdded</span>: <span class="tk-prop">post</span> });
+      <span class="tk-key">return</span> <span class="tk-prop">post</span>;
+    }
+  },
+  <span class="tk-prop">Subscription</span>: {
+    <span class="tk-prop">postAdded</span>: {
+      <span class="tk-fn">subscribe</span>: () => <span class="tk-prop">pubsub</span>.<span class="tk-fn">asyncIterator</span>([<span class="tk-prop">POST_ADDED</span>])
+    }
+  }
+};</pre>
+      </div>
+    </section>
+
+    <!-- ───────── 7. FRAGMENTS ───────── -->
+    <section class="section" id="fragments">
+      <div class="section-header">
+        <div class="section-num">07</div>
+        <h2>Fragments &amp; Directives</h2>
+      </div>
+      <p class="section-intro">Des outils essentiels pour rendre les requêtes maintenables et conditionnelles.</p>
+
+      <h3>Fragments — la DRY de GraphQL</h3>
+      <div class="code">
+<pre><span class="tk-key">fragment</span> <span class="tk-type">UserCard</span> <span class="tk-key">on</span> <span class="tk-type">User</span> {
+  <span class="tk-prop">id</span>
+  <span class="tk-prop">name</span>
+  <span class="tk-prop">avatar</span>
+  <span class="tk-prop">role</span>
+}
+
+<span class="tk-key">query</span> <span class="tk-fn">FeedPage</span> {
+  <span class="tk-prop">posts</span> {
+    <span class="tk-prop">title</span>
+    <span class="tk-prop">author</span> { <span class="tk-key">...</span><span class="tk-type">UserCard</span> }
+    <span class="tk-prop">comments</span> {
+      <span class="tk-prop">text</span>
+      <span class="tk-prop">author</span> { <span class="tk-key">...</span><span class="tk-type">UserCard</span> }
+    }
+  }
+}</pre>
+      </div>
+      <p>Côté React, les fragments permettent de <strong>colocaliser les données avec le composant qui les utilise</strong> — chaque composant déclare ses besoins, le parent compose.</p>
+
+      <h3>Directives intégrées</h3>
+      <div class="code">
+<pre><span class="tk-key">query</span> <span class="tk-fn">GetUser</span>(<span class="tk-direct">$includeEmail</span>: <span class="tk-type">Boolean</span>!, <span class="tk-direct">$skipPosts</span>: <span class="tk-type">Boolean</span>!) {
+  <span class="tk-prop">user</span>(<span class="tk-prop">id</span>: <span class="tk-str">"42"</span>) {
+    <span class="tk-prop">name</span>
+    <span class="tk-prop">email</span> <span class="tk-direct">@include</span>(<span class="tk-prop">if</span>: <span class="tk-direct">$includeEmail</span>)
+    <span class="tk-prop">posts</span> <span class="tk-direct">@skip</span>(<span class="tk-prop">if</span>: <span class="tk-direct">$skipPosts</span>) {
+      <span class="tk-prop">title</span>
+    }
+  }
+}</pre>
+      </div>
+
+      <h4>Directives custom (côté schema)</h4>
+      <div class="code">
+<pre><span class="tk-key">directive</span> <span class="tk-direct">@auth</span>(<span class="tk-prop">role</span>: <span class="tk-type">Role</span>!) <span class="tk-key">on</span> <span class="tk-type">FIELD_DEFINITION</span>
+<span class="tk-key">directive</span> <span class="tk-direct">@deprecated</span>(<span class="tk-prop">reason</span>: <span class="tk-type">String</span>) <span class="tk-key">on</span> <span class="tk-type">FIELD_DEFINITION</span>
+
+<span class="tk-key">type</span> <span class="tk-type">Query</span> {
+  <span class="tk-prop">adminPanel</span>: <span class="tk-type">String</span>! <span class="tk-direct">@auth</span>(<span class="tk-prop">role</span>: <span class="tk-prop">ADMIN</span>)
+  <span class="tk-prop">oldField</span>: <span class="tk-type">String</span> <span class="tk-direct">@deprecated</span>(<span class="tk-prop">reason</span>: <span class="tk-str">"Use newField"</span>)
+}</pre>
+      </div>
+    </section>
+
+    <!-- ───────── 8. SERVER ───────── -->
+    <section class="section" id="server">
+      <div class="section-header">
+        <div class="section-num">08</div>
+        <h2>Serveur Node.js — Apollo Server</h2>
+      </div>
+      <p class="section-intro">Apollo Server est le standard de facto. Yoga (The Guild) est une alternative légère. Les <strong>resolvers</strong> sont des fonctions qui peuplent les champs du schema avec des données.</p>
+
+      <h3>Setup minimal</h3>
+      <div class="code">
+        <div class="code-header"><div class="code-tag"><span class="code-lang">Node.js</span> server.js</div></div>
+<pre><span class="tk-key">import</span> { <span class="tk-prop">ApolloServer</span> } <span class="tk-key">from</span> <span class="tk-str">'@apollo/server'</span>;
+<span class="tk-key">import</span> { <span class="tk-prop">startStandaloneServer</span> } <span class="tk-key">from</span> <span class="tk-str">'@apollo/server/standalone'</span>;
+
+<span class="tk-key">const</span> <span class="tk-prop">typeDefs</span> = <span class="tk-str">`#graphql
+  type Query {
+    hello: String!
+    user(id: ID!): User
+  }
+  type User { id: ID! name: String! }
+`</span>;
+
+<span class="tk-key">const</span> <span class="tk-prop">resolvers</span> = {
+  <span class="tk-prop">Query</span>: {
+    <span class="tk-fn">hello</span>: () => <span class="tk-str">'World'</span>,
+    <span class="tk-fn">user</span>: (<span class="tk-prop">_parent</span>, { <span class="tk-prop">id</span> }, <span class="tk-prop">ctx</span>) => <span class="tk-prop">ctx</span>.<span class="tk-prop">db</span>.<span class="tk-prop">users</span>.<span class="tk-fn">findById</span>(<span class="tk-prop">id</span>)
+  }
+};
+
+<span class="tk-key">const</span> <span class="tk-prop">server</span> = <span class="tk-key">new</span> <span class="tk-fn">ApolloServer</span>({ <span class="tk-prop">typeDefs</span>, <span class="tk-prop">resolvers</span> });
+
+<span class="tk-key">const</span> { <span class="tk-prop">url</span> } = <span class="tk-key">await</span> <span class="tk-fn">startStandaloneServer</span>(<span class="tk-prop">server</span>, {
+  <span class="tk-fn">context</span>: <span class="tk-key">async</span> ({ <span class="tk-prop">req</span> }) => ({
+    <span class="tk-prop">db</span>,
+    <span class="tk-prop">user</span>: <span class="tk-key">await</span> <span class="tk-fn">getUserFromToken</span>(<span class="tk-prop">req</span>.<span class="tk-prop">headers</span>.<span class="tk-prop">authorization</span>)
+  }),
+  <span class="tk-prop">listen</span>: { <span class="tk-prop">port</span>: <span class="tk-num">4000</span> }
+});
+
+<span class="tk-prop">console</span>.<span class="tk-fn">log</span>(<span class="tk-str">`🚀 Server ready at </span><span class="tk-num">${<span class="tk-prop">url</span>}</span><span class="tk-str">`</span>);</pre>
+      </div>
+
+      <h3>L'anatomie d'un resolver</h3>
+      <p>Tout resolver reçoit 4 arguments :</p>
+      <div class="code">
+<pre><span class="tk-fn">fieldName</span>: (<span class="tk-prop">parent</span>, <span class="tk-prop">args</span>, <span class="tk-prop">context</span>, <span class="tk-prop">info</span>) => {
+  <span class="tk-com">// parent  : résultat du resolver parent (ou undefined à la racine)</span>
+  <span class="tk-com">// args    : arguments passés au champ (ex: { id: "42" })</span>
+  <span class="tk-com">// context : objet partagé créé par requête (auth, dataloaders, db...)</span>
+  <span class="tk-com">// info    : AST de la requête, schéma, path, fragments...</span>
+}</pre>
+      </div>
+
+      <h3>Resolvers par type — éviter le N+1</h3>
+      <div class="code">
+        <div class="code-header"><div class="code-tag"><span class="code-lang">Node.js</span> resolvers.js</div></div>
+<pre><span class="tk-key">export const</span> <span class="tk-prop">resolvers</span> = {
+  <span class="tk-prop">Query</span>: {
+    <span class="tk-fn">posts</span>: (<span class="tk-prop">_</span>, <span class="tk-prop">__</span>, { <span class="tk-prop">db</span> }) => <span class="tk-prop">db</span>.<span class="tk-prop">posts</span>.<span class="tk-fn">findAll</span>()
+  },
+
+  <span class="tk-com">// Pour CHAQUE post retourné, ce resolver tournera</span>
+  <span class="tk-prop">Post</span>: {
+    <span class="tk-com">// ❌ N+1 : 1 query pour les posts + N queries pour les auteurs</span>
+    <span class="tk-fn">author</span>: (<span class="tk-prop">post</span>, <span class="tk-prop">_</span>, { <span class="tk-prop">db</span> }) => <span class="tk-prop">db</span>.<span class="tk-prop">users</span>.<span class="tk-fn">findById</span>(<span class="tk-prop">post</span>.<span class="tk-prop">authorId</span>),
+
+    <span class="tk-com">// ✅ DataLoader : batch + cache par requête</span>
+    <span class="tk-fn">author</span>: (<span class="tk-prop">post</span>, <span class="tk-prop">_</span>, { <span class="tk-prop">loaders</span> }) => <span class="tk-prop">loaders</span>.<span class="tk-prop">user</span>.<span class="tk-fn">load</span>(<span class="tk-prop">post</span>.<span class="tk-prop">authorId</span>)
+  }
+};</pre>
+      </div>
+
+      <div class="callout danger">
+        <div class="callout-icon">🚨</div>
+        <div class="callout-body">
+          <strong>Le problème N+1 — LA question d'entretien</strong>
+          Si une query retourne 100 posts et que chaque post déclenche une requête SQL pour récupérer son auteur, vous faites 101 requêtes. <code>DataLoader</code> bufferise les <code>load(id)</code> sur un même tick d'event loop, puis exécute UNE seule requête <code>WHERE id IN (...)</code>. Solution incontournable.
+        </div>
+      </div>
+
+      <h3>DataLoader — implémentation</h3>
+      <div class="code">
+        <div class="code-header"><div class="code-tag"><span class="code-lang">Node.js</span> loaders.js</div></div>
+<pre><span class="tk-key">import</span> <span class="tk-prop">DataLoader</span> <span class="tk-key">from</span> <span class="tk-str">'dataloader'</span>;
+
+<span class="tk-key">export const</span> <span class="tk-fn">createLoaders</span> = (<span class="tk-prop">db</span>) => ({
+  <span class="tk-prop">user</span>: <span class="tk-key">new</span> <span class="tk-fn">DataLoader</span>(<span class="tk-key">async</span> (<span class="tk-prop">ids</span>) => {
+    <span class="tk-key">const</span> <span class="tk-prop">users</span> = <span class="tk-key">await</span> <span class="tk-prop">db</span>.<span class="tk-prop">users</span>.<span class="tk-fn">findByIds</span>(<span class="tk-prop">ids</span>);
+    <span class="tk-com">// IMPORTANT: réordonner pour matcher l'ordre des ids</span>
+    <span class="tk-key">const</span> <span class="tk-prop">map</span> = <span class="tk-key">new</span> <span class="tk-fn">Map</span>(<span class="tk-prop">users</span>.<span class="tk-fn">map</span>(<span class="tk-prop">u</span> => [<span class="tk-prop">u</span>.<span class="tk-prop">id</span>, <span class="tk-prop">u</span>]));
+    <span class="tk-key">return</span> <span class="tk-prop">ids</span>.<span class="tk-fn">map</span>(<span class="tk-prop">id</span> => <span class="tk-prop">map</span>.<span class="tk-fn">get</span>(<span class="tk-prop">id</span>));
+  })
+});
+
+<span class="tk-com">// Dans le context d'Apollo Server</span>
+<span class="tk-fn">context</span>: () => ({ <span class="tk-prop">db</span>, <span class="tk-prop">loaders</span>: <span class="tk-fn">createLoaders</span>(<span class="tk-prop">db</span>) })</pre>
+      </div>
+    </section>
+
+    <!-- ───────── 9. CLIENT ───────── -->
+    <section class="section" id="client">
+      <div class="section-header">
+        <div class="section-num">09</div>
+        <h2>Client React — Apollo Client</h2>
+      </div>
+      <p class="section-intro">Apollo Client gère pour vous : exécution des requêtes, cache normalisé (par <code>__typename</code> + <code>id</code>), gestion d'état asynchrone, optimistic UI, refetch.</p>
+
+      <h3>Setup &amp; ApolloProvider</h3>
+      <div class="code">
+        <div class="code-header"><div class="code-tag"><span class="code-lang">React</span> main.jsx</div></div>
+<pre><span class="tk-key">import</span> { <span class="tk-prop">ApolloClient</span>, <span class="tk-prop">InMemoryCache</span>, <span class="tk-prop">ApolloProvider</span>, <span class="tk-prop">createHttpLink</span> } <span class="tk-key">from</span> <span class="tk-str">'@apollo/client'</span>;
+<span class="tk-key">import</span> { <span class="tk-prop">setContext</span> } <span class="tk-key">from</span> <span class="tk-str">'@apollo/client/link/context'</span>;
+
+<span class="tk-key">const</span> <span class="tk-prop">httpLink</span> = <span class="tk-fn">createHttpLink</span>({ <span class="tk-prop">uri</span>: <span class="tk-str">'/graphql'</span> });
+
+<span class="tk-key">const</span> <span class="tk-prop">authLink</span> = <span class="tk-fn">setContext</span>((<span class="tk-prop">_</span>, { <span class="tk-prop">headers</span> }) => ({
+  <span class="tk-prop">headers</span>: { ...<span class="tk-prop">headers</span>, <span class="tk-prop">authorization</span>: <span class="tk-str">`Bearer </span><span class="tk-num">${<span class="tk-fn">getToken</span>()}</span><span class="tk-str">`</span> }
+}));
+
+<span class="tk-key">const</span> <span class="tk-prop">client</span> = <span class="tk-key">new</span> <span class="tk-fn">ApolloClient</span>({
+  <span class="tk-prop">link</span>: <span class="tk-prop">authLink</span>.<span class="tk-fn">concat</span>(<span class="tk-prop">httpLink</span>),
+  <span class="tk-prop">cache</span>: <span class="tk-key">new</span> <span class="tk-fn">InMemoryCache</span>()
+});
+
+<span class="tk-fn">root</span>.<span class="tk-fn">render</span>(
+  &lt;<span class="tk-type">ApolloProvider</span> <span class="tk-prop">client</span>={<span class="tk-prop">client</span>}&gt;
+    &lt;<span class="tk-type">App</span> /&gt;
+  &lt;/<span class="tk-type">ApolloProvider</span>&gt;
+);</pre>
+      </div>
+
+      <h3>useQuery — lecture de données</h3>
+      <div class="code">
+        <div class="code-header"><div class="code-tag"><span class="code-lang">React</span> UserProfile.jsx</div></div>
+<pre><span class="tk-key">import</span> { <span class="tk-prop">useQuery</span>, <span class="tk-prop">gql</span> } <span class="tk-key">from</span> <span class="tk-str">'@apollo/client'</span>;
+
+<span class="tk-key">const</span> <span class="tk-prop">GET_USER</span> = <span class="tk-fn">gql</span><span class="tk-str">`
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      id
+      name
+      posts { id title }
+    }
+  }
+`</span>;
+
+<span class="tk-key">function</span> <span class="tk-fn">UserProfile</span>({ <span class="tk-prop">id</span> }) {
+  <span class="tk-key">const</span> { <span class="tk-prop">data</span>, <span class="tk-prop">loading</span>, <span class="tk-prop">error</span> } = <span class="tk-fn">useQuery</span>(<span class="tk-prop">GET_USER</span>, {
+    <span class="tk-prop">variables</span>: { <span class="tk-prop">id</span> },
+    <span class="tk-prop">fetchPolicy</span>: <span class="tk-str">'cache-first'</span> <span class="tk-com">// défaut</span>
+  });
+
+  <span class="tk-key">if</span> (<span class="tk-prop">loading</span>) <span class="tk-key">return</span> &lt;<span class="tk-type">Spinner</span> /&gt;;
+  <span class="tk-key">if</span> (<span class="tk-prop">error</span>) <span class="tk-key">return</span> &lt;<span class="tk-type">Error</span> <span class="tk-prop">err</span>={<span class="tk-prop">error</span>} /&gt;;
+
+  <span class="tk-key">return</span> &lt;<span class="tk-type">div</span>&gt;{<span class="tk-prop">data</span>.<span class="tk-prop">user</span>.<span class="tk-prop">name</span>}&lt;/<span class="tk-type">div</span>&gt;;
+}</pre>
+      </div>
+
+      <h3>useMutation — écriture &amp; mise à jour du cache</h3>
+      <div class="code">
+        <div class="code-header"><div class="code-tag"><span class="code-lang">React</span> CreatePost.jsx</div></div>
+<pre><span class="tk-key">const</span> <span class="tk-prop">CREATE_POST</span> = <span class="tk-fn">gql</span><span class="tk-str">`
+  mutation CreatePost($input: CreatePostInput!) {
+    createPost(input: $input) {
+      id title createdAt
+    }
+  }
+`</span>;
+
+<span class="tk-key">function</span> <span class="tk-fn">CreatePost</span>() {
+  <span class="tk-key">const</span> [<span class="tk-prop">createPost</span>, { <span class="tk-prop">loading</span> }] = <span class="tk-fn">useMutation</span>(<span class="tk-prop">CREATE_POST</span>, {
+
+    <span class="tk-com">// Option 1 : refetch — simple mais coûteux</span>
+    <span class="tk-prop">refetchQueries</span>: [{ <span class="tk-prop">query</span>: <span class="tk-prop">GET_POSTS</span> }],
+
+    <span class="tk-com">// Option 2 : update — chirurgical</span>
+    <span class="tk-fn">update</span>(<span class="tk-prop">cache</span>, { <span class="tk-prop">data</span>: { <span class="tk-prop">createPost</span> } }) {
+      <span class="tk-prop">cache</span>.<span class="tk-fn">modify</span>({
+        <span class="tk-prop">fields</span>: {
+          <span class="tk-fn">posts</span>(<span class="tk-prop">existingRefs</span> = []) {
+            <span class="tk-key">const</span> <span class="tk-prop">newRef</span> = <span class="tk-prop">cache</span>.<span class="tk-fn">writeFragment</span>({
+              <span class="tk-prop">data</span>: <span class="tk-prop">createPost</span>,
+              <span class="tk-prop">fragment</span>: <span class="tk-fn">gql</span><span class="tk-str">`fragment NewPost on Post { id title }`</span>
+            });
+            <span class="tk-key">return</span> [<span class="tk-prop">newRef</span>, ...<span class="tk-prop">existingRefs</span>];
+          }
+        }
+      });
+    },
+
+    <span class="tk-com">// Option 3 : optimistic — UI instantanée</span>
+    <span class="tk-prop">optimisticResponse</span>: { <span class="tk-prop">createPost</span>: { <span class="tk-prop">__typename</span>: <span class="tk-str">'Post'</span>, <span class="tk-prop">id</span>: <span class="tk-str">'temp'</span>, ... } }
+  });
+
+  <span class="tk-key">return</span> &lt;<span class="tk-type">button</span> <span class="tk-prop">onClick</span>={() => <span class="tk-fn">createPost</span>({ <span class="tk-prop">variables</span>: { <span class="tk-prop">input</span> } })}&gt;Publier&lt;/<span class="tk-type">button</span>&gt;;
+}</pre>
+      </div>
+
+      <h3>Le cache normalisé</h3>
+      <p>Apollo identifie chaque entité par <code>__typename</code> + <code>id</code> (ou <code>_id</code>) et stocke un objet plat. Mettre à jour <code>User:42</code> propage automatiquement à toutes les queries qui y font référence.</p>
+      <div class="code">
+<pre><span class="tk-com">// Cache après deux queries différentes :</span>
+{
+  <span class="tk-prop">"User:42"</span>: { <span class="tk-prop">__typename</span>: <span class="tk-str">"User"</span>, <span class="tk-prop">id</span>: <span class="tk-str">"42"</span>, <span class="tk-prop">name</span>: <span class="tk-str">"Marie"</span> },
+  <span class="tk-prop">"Post:101"</span>: { <span class="tk-prop">__typename</span>: <span class="tk-str">"Post"</span>, <span class="tk-prop">id</span>: <span class="tk-str">"101"</span>, <span class="tk-prop">author</span>: { <span class="tk-prop">__ref</span>: <span class="tk-str">"User:42"</span> } },
+  <span class="tk-prop">"Post:102"</span>: { <span class="tk-prop">__typename</span>: <span class="tk-str">"Post"</span>, <span class="tk-prop">id</span>: <span class="tk-str">"102"</span>, <span class="tk-prop">author</span>: { <span class="tk-prop">__ref</span>: <span class="tk-str">"User:42"</span> } }
+}</pre>
+      </div>
+
+      <h3>Fetch policies — à connaître</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Policy</th><th>Comportement</th></tr></thead>
+          <tbody>
+          <tr><td><code>cache-first</code></td><td>Cache si dispo, sinon network. <strong>Défaut.</strong></td></tr>
+          <tr><td><code>cache-and-network</code></td><td>Cache immédiat, puis revalide via network. UI ultra-rapide.</td></tr>
+          <tr><td><code>network-only</code></td><td>Toujours réseau. Met à jour le cache.</td></tr>
+          <tr><td><code>no-cache</code></td><td>Toujours réseau. N'écrit pas le cache (data sensibles).</td></tr>
+          <tr><td><code>cache-only</code></td><td>Lit uniquement le cache. Throw si absent.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ───────── 10. ADVANCED ───────── -->
+    <section class="section" id="advanced">
+      <div class="section-header">
+        <div class="section-num">10</div>
+        <h2>Sujets avancés &amp; pièges d'entretien</h2>
+      </div>
+      <p class="section-intro">Les questions où on sépare le candidat junior du senior.</p>
+
+      <h3>Pagination — Relay-style cursors</h3>
+      <p>Plus robuste que offset/limit (pas de doublon ni de saut quand des entrées s'insèrent) :</p>
+      <div class="code">
+<pre><span class="tk-key">type</span> <span class="tk-type">PostConnection</span> {
+  <span class="tk-prop">edges</span>: [<span class="tk-type">PostEdge</span>!]!
+  <span class="tk-prop">pageInfo</span>: <span class="tk-type">PageInfo</span>!
+}
+<span class="tk-key">type</span> <span class="tk-type">PostEdge</span> {
+  <span class="tk-prop">cursor</span>: <span class="tk-type">String</span>!
+  <span class="tk-prop">node</span>: <span class="tk-type">Post</span>!
+}
+<span class="tk-key">type</span> <span class="tk-type">PageInfo</span> {
+  <span class="tk-prop">hasNextPage</span>: <span class="tk-type">Boolean</span>!
+  <span class="tk-prop">endCursor</span>: <span class="tk-type">String</span>
+}
+
+<span class="tk-key">type</span> <span class="tk-type">Query</span> {
+  <span class="tk-prop">posts</span>(<span class="tk-prop">first</span>: <span class="tk-type">Int</span>!, <span class="tk-prop">after</span>: <span class="tk-type">String</span>): <span class="tk-type">PostConnection</span>!
+}</pre>
+      </div>
+
+      <h3>Sécurité — limiter les requêtes abusives</h3>
+      <ul>
+        <li><strong>Depth limiting</strong> : refuser les requêtes &gt; 7 niveaux d'imbrication (<code>graphql-depth-limit</code>).</li>
+        <li><strong>Cost analysis</strong> : assigner un "coût" à chaque champ, rejeter au-dessus d'un budget (<code>graphql-cost-analysis</code>).</li>
+        <li><strong>Persisted queries</strong> : le client envoie un hash, le serveur ne reconnaît que les requêtes pré-enregistrées.</li>
+        <li><strong>Désactiver l'introspection</strong> en production (sauf si API publique).</li>
+        <li><strong>Rate limiting</strong> par IP/user, comme tout autre endpoint.</li>
+      </ul>
+
+      <h3>Authentification &amp; autorisation</h3>
+      <p>Pattern recommandé : <strong>auth dans le context</strong>, <strong>autorisation dans les resolvers</strong> (ou via une directive <code>@auth</code>) :</p>
+      <div class="code">
+<pre><span class="tk-com">// Dans le context</span>
+<span class="tk-fn">context</span>: <span class="tk-key">async</span> ({ <span class="tk-prop">req</span> }) => {
+  <span class="tk-key">const</span> <span class="tk-prop">user</span> = <span class="tk-key">await</span> <span class="tk-fn">verifyJWT</span>(<span class="tk-prop">req</span>.<span class="tk-prop">headers</span>.<span class="tk-prop">authorization</span>);
+  <span class="tk-key">return</span> { <span class="tk-prop">user</span>, <span class="tk-prop">db</span> };
+}
+
+<span class="tk-com">// Dans le resolver</span>
+<span class="tk-prop">Mutation</span>: {
+  <span class="tk-fn">deletePost</span>: (<span class="tk-prop">_</span>, { <span class="tk-prop">id</span> }, { <span class="tk-prop">user</span>, <span class="tk-prop">db</span> }) => {
+    <span class="tk-key">if</span> (!<span class="tk-prop">user</span>) <span class="tk-key">throw new</span> <span class="tk-fn">GraphQLError</span>(<span class="tk-str">'Auth required'</span>, {
+      <span class="tk-prop">extensions</span>: { <span class="tk-prop">code</span>: <span class="tk-str">'UNAUTHENTICATED'</span> }
+    });
+    <span class="tk-key">if</span> (<span class="tk-prop">user</span>.<span class="tk-prop">role</span> !== <span class="tk-str">'ADMIN'</span>) <span class="tk-key">throw new</span> <span class="tk-fn">GraphQLError</span>(<span class="tk-str">'Forbidden'</span>);
+    <span class="tk-key">return</span> <span class="tk-prop">db</span>.<span class="tk-prop">posts</span>.<span class="tk-fn">delete</span>(<span class="tk-prop">id</span>);
+  }
+}</pre>
+      </div>
+
+      <h3>Federation &amp; microservices</h3>
+      <p>Apollo Federation permet de composer plusieurs sub-graphes (un par microservice) en un super-graphe unifié exposé au client. Une équipe = un sub-graphe. Le routeur fédéré orchestre les requêtes cross-services.</p>
+
+      <h3>Codegen — typage de bout en bout</h3>
+      <p><code>graphql-codegen</code> lit votre schema + vos requêtes <code>.graphql</code> et génère :</p>
+      <ul>
+        <li>Les types TypeScript de chaque entité du schema.</li>
+        <li>Des hooks Apollo typés (<code>useGetUserQuery</code>, etc.) — plus de <code>any</code>.</li>
+        <li>Des types pour les resolvers côté serveur.</li>
+      </ul>
+
+      <div class="callout interview">
+        <div class="callout-icon">🎯</div>
+        <div class="callout-body">
+          <strong>Top 5 questions pièges en entretien</strong>
+          <ol style="margin:8px 0 0 18px">
+            <li><strong>"GraphQL est-il toujours mieux que REST ?"</strong> — Non. Cache HTTP, simplicité, monitoring : REST gagne sur les APIs simples.</li>
+            <li><strong>"Comment évite-t-on le N+1 ?"</strong> — DataLoader. Batching + caching par requête.</li>
+            <li><strong>"Pourquoi toujours HTTP 200 ?"</strong> — Une réponse peut contenir des données partielles ET des erreurs simultanément.</li>
+            <li><strong>"Comment gère-t-on le versioning ?"</strong> — On ne version pas, on évolue : on ajoute, on déprécie via <code>@deprecated</code>, on supprime quand plus utilisé.</li>
+            <li><strong>"Quels sont les risques sécurité spécifiques ?"</strong> — Requêtes profondes, introspection en prod, IDs séquentiels exposés, manque de rate limiting par champ.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── PLAYGROUND ───────── -->
+    <section class="section" id="playground">
+      <div class="section-header">
+        <div class="section-num">⚡</div>
+        <h2>Playground interactif</h2>
+      </div>
+      <p class="section-intro">Un mini-serveur GraphQL fonctionnel directement dans votre navigateur. Schéma : utilisateurs, posts, comments. Cliquez sur un exemple ou écrivez votre propre query.</p>
+
+      <div class="card">
+        <h4>📋 Schéma disponible</h4>
+        <div class="code">
+<pre><span class="tk-key">type</span> <span class="tk-type">User</span> {
+  <span class="tk-prop">id</span>: <span class="tk-type">ID</span>! <span class="tk-prop">name</span>: <span class="tk-type">String</span>! <span class="tk-prop">email</span>: <span class="tk-type">String</span>! <span class="tk-prop">role</span>: <span class="tk-type">String</span>!
+  <span class="tk-prop">posts</span>: [<span class="tk-type">Post</span>!]!
+}
+<span class="tk-key">type</span> <span class="tk-type">Post</span> {
+  <span class="tk-prop">id</span>: <span class="tk-type">ID</span>! <span class="tk-prop">title</span>: <span class="tk-type">String</span>! <span class="tk-prop">content</span>: <span class="tk-type">String</span>! <span class="tk-prop">likes</span>: <span class="tk-type">Int</span>!
+  <span class="tk-prop">author</span>: <span class="tk-type">User</span>! <span class="tk-prop">comments</span>: [<span class="tk-type">Comment</span>!]!
+}
+<span class="tk-key">type</span> <span class="tk-type">Comment</span> {
+  <span class="tk-prop">id</span>: <span class="tk-type">ID</span>! <span class="tk-prop">text</span>: <span class="tk-type">String</span>! <span class="tk-prop">author</span>: <span class="tk-type">User</span>!
+}
+<span class="tk-key">type</span> <span class="tk-type">Query</span> {
+  <span class="tk-prop">me</span>: <span class="tk-type">User</span>!
+  <span class="tk-prop">user</span>(<span class="tk-prop">id</span>: <span class="tk-type">ID</span>!): <span class="tk-type">User</span>
+  <span class="tk-prop">users</span>: [<span class="tk-type">User</span>!]!
+  <span class="tk-prop">post</span>(<span class="tk-prop">id</span>: <span class="tk-type">ID</span>!): <span class="tk-type">Post</span>
+  <span class="tk-prop">posts</span>(<span class="tk-prop">limit</span>: <span class="tk-type">Int</span>): [<span class="tk-type">Post</span>!]!
+}</pre>
+        </div>
+      </div>
+
+      <div class="playground" id="pg">
+        <div class="examples">
+          <button class="example-chip" data-example="basic">Query basique</button>
+          <button class="example-chip" data-example="nested">Relations imbriquées</button>
+          <button class="example-chip" data-example="alias">Alias</button>
+          <button class="example-chip" data-example="args">Avec arguments</button>
+          <button class="example-chip" data-example="all">Liste complète</button>
+          <button class="example-chip" data-example="deep">Requête profonde</button>
+        </div>
+        <div class="pg-body">
+          <div class="pg-pane">
+            <div class="pg-pane-header">
+              <span>📝 Requête</span>
+              <span style="font-size:10px;color:var(--green)">▶ Live</span>
+            </div>
+            <textarea class="pg-editor" id="pg-editor" spellcheck="false">query {
+  me {
+    name
+    email
+    posts {
+      title
+      likes
+    }
+  }
+}</textarea>
+            <div class="pg-controls">
+              <button class="btn primary" id="pg-run">▶ Exécuter</button>
+              <button class="btn" id="pg-clear">Effacer</button>
+              <span class="pg-hint">Ctrl + ⏎ pour exécuter</span>
+            </div>
+          </div>
+          <div class="pg-pane">
+            <div class="pg-pane-header">
+              <span>📦 Réponse</span>
+              <span id="pg-time" style="font-size:10px;color:var(--text-dim)">—</span>
+            </div>
+            <div class="pg-output" id="pg-output">// La réponse JSON apparaîtra ici</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── FLASHCARDS ───────── -->
+    <section class="section" id="flashcards">
+      <div class="section-header">
+        <div class="section-num">🃏</div>
+        <h2>Flashcards — vocabulaire essentiel</h2>
+      </div>
+      <p class="section-intro">Cliquez pour révéler la définition. Ces termes <strong>tomberont</strong> en entretien.</p>
+
+      <div class="flashcards" id="flashcards"></div>
+    </section>
+
+    <!-- ───────── QUIZ ───────── -->
+    <section class="section" id="quiz">
+      <div class="section-header">
+        <div class="section-num">🎯</div>
+        <h2>Quiz d'entretien</h2>
+      </div>
+      <p class="section-intro">15 questions inspirées d'entretiens réels chez Doctolib, Algolia, Datadog, Sorare, BlaBlaCar...</p>
+
+      <div class="quiz" id="quiz">
+        <div class="quiz-header">
+          <span class="quiz-counter" id="quiz-counter">Question 1 / 15</span>
+          <div class="quiz-progress-track">
+            <div class="quiz-progress-fill" id="quiz-progress" style="width: 6.6%"></div>
+          </div>
+          <span class="quiz-score" id="quiz-score">0 pts</span>
+        </div>
+        <div class="quiz-body" id="quiz-body"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<button class="top-btn" id="top-btn" aria-label="Retour en haut">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  MOCK GRAPHQL ENGINE — pour le playground
+// ═══════════════════════════════════════════════════════════
+const DB = {
+  users: [
+    { id: '1', name: 'Marie Dupont', email: 'marie@example.com', role: 'ADMIN', postIds: ['101', '102'] },
+    { id: '2', name: 'Thomas Martin', email: 'thomas@example.com', role: 'USER', postIds: ['103'] },
+    { id: '3', name: 'Sofia García', email: 'sofia@example.com', role: 'USER', postIds: ['104', '105'] }
+  ],
+  posts: [
+    { id: '101', title: 'Découverte de GraphQL', content: 'GraphQL change la donne...', likes: 42, authorId: '1', commentIds: ['c1', 'c2'] },
+    { id: '102', title: 'Le N+1 expliqué', content: 'Comment éviter ce piège...', likes: 87, authorId: '1', commentIds: ['c3'] },
+    { id: '103', title: 'Apollo Client en pratique', content: 'Le cache normalisé...', likes: 23, authorId: '2', commentIds: [] },
+    { id: '104', title: 'DataLoader pour batcher', content: 'Solution ultime au N+1...', likes: 156, authorId: '3', commentIds: ['c4', 'c5'] },
+    { id: '105', title: 'Subscriptions WebSocket', content: 'Du temps réel propre...', likes: 64, authorId: '3', commentIds: [] }
+  ],
+  comments: [
+    { id: 'c1', text: 'Super article !', authorId: '2' },
+    { id: 'c2', text: 'Très clair, merci', authorId: '3' },
+    { id: 'c3', text: 'DataLoader sauve la vie', authorId: '2' },
+    { id: 'c4', text: 'Exemple parfait', authorId: '1' },
+    { id: 'c5', text: 'Je le recommande', authorId: '2' }
+  ],
+  ME_ID: '1'
+};
+
+const RESOLVERS = {
+  Query: {
+    me: () => find('users', DB.ME_ID),
+    user: (_, { id }) => find('users', id),
+    users: () => DB.users,
+    post: (_, { id }) => find('posts', id),
+    posts: (_, { limit }) => limit ? DB.posts.slice(0, limit) : DB.posts
+  },
+  User: {
+    posts: (user) => user.postIds.map(id => find('posts', id))
+  },
+  Post: {
+    author: (post) => find('users', post.authorId),
+    comments: (post) => post.commentIds.map(id => find('comments', id))
+  },
+  Comment: {
+    author: (comment) => find('users', comment.authorId)
+  }
+};
+
+function find(coll, id) { return DB[coll].find(x => x.id === id); }
+
+// Très basique, juste pour la pédagogie : parse `field { sub }` style
+function parseSelection(str) {
+  const tokens = str.replace(/[{}]/g, t => ` ${t} `).replace(/\s+/g, ' ').trim().split(' ');
+  return parseBlock(tokens);
+}
+function parseBlock(tokens) {
+  const fields = [];
+  while (tokens.length) {
+    const t = tokens.shift();
+    if (t === '}' || t === '') return fields;
+    if (t === '{') continue;
+    let alias = null, name = t, args = null;
+    if (tokens[0] === ':') { alias = name; tokens.shift(); name = tokens.shift(); }
+    if (name && name.includes('(')) {
+      const m = name.match(/^([^(]+)\((.*)\)$/);
+      if (m) { name = m[1]; args = parseArgs(m[2]); }
+    } else if (tokens[0] && tokens[0].startsWith('(')) {
+      let argStr = '';
+      while (tokens.length && !argStr.endsWith(')')) argStr += tokens.shift();
+      args = parseArgs(argStr.replace(/^\(|\)$/g, ''));
+    }
+    let children = null;
+    if (tokens[0] === '{') { tokens.shift(); children = parseBlock(tokens); }
+    if (name) fields.push({ alias: alias || name, name, args, children });
+  }
+  return fields;
+}
+function parseArgs(str) {
+  if (!str.trim()) return null;
+  const args = {};
+  const matches = str.matchAll(/(\w+)\s*:\s*("[^"]*"|\d+|true|false)/g);
+  for (const m of matches) {
+    let v = m[2];
+    if (v.startsWith('"')) v = v.slice(1, -1);
+    else if (v === 'true') v = true;
+    else if (v === 'false') v = false;
+    else v = +v;
+    args[m[1]] = v;
+  }
+  return args;
+}
+
+function executeGraphQL(queryStr) {
+  // Récupère le bloc principal entre les premières accolades
+  const stripped = queryStr.replace(/^\s*(query|mutation)?\s*\w*\s*(\([^)]*\))?\s*/, '').trim();
+  const fields = parseSelection(stripped);
+  const data = {};
+  const errors = [];
+
+  for (const f of fields) {
+    try {
+      if (!RESOLVERS.Query[f.name]) {
+        errors.push({ message: `Cannot query field "${f.name}" on type "Query".`, path: [f.name] });
+        data[f.alias] = null;
+        continue;
+      }
+      const result = RESOLVERS.Query[f.name](null, f.args || {});
+      data[f.alias] = resolveSelection(result, f.children, getType(f.name), [f.alias], errors);
+    } catch (e) {
+      errors.push({ message: e.message, path: [f.alias] });
+      data[f.alias] = null;
+    }
+  }
+  return errors.length ? { data, errors } : { data };
+}
+
+function getType(queryName) {
+  if (queryName === 'me' || queryName === 'user' || queryName === 'users') return 'User';
+  if (queryName === 'post' || queryName === 'posts') return 'Post';
+  return null;
+}
+
+function resolveSelection(value, children, parentType, path, errors) {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return value.map((v, i) => resolveSelection(v, children, parentType, [...path, i], errors));
+  if (!children) return value;
+  const out = {};
+  for (const f of children) {
+    const fullPath = [...path, f.alias];
+    let v;
+    if (RESOLVERS[parentType] && RESOLVERS[parentType][f.name]) {
+      v = RESOLVERS[parentType][f.name](value, f.args || {});
+    } else {
+      v = value[f.name];
+    }
+    if (v === undefined) {
+      errors.push({ message: `Cannot query field "${f.name}" on type "${parentType}".`, path: fullPath });
+      out[f.alias] = null;
+      continue;
+    }
+    const childType = childTypeOf(parentType, f.name);
+    out[f.alias] = resolveSelection(v, f.children, childType, fullPath, errors);
+  }
+  return out;
+}
+
+function childTypeOf(parent, field) {
+  const map = {
+    User: { posts: 'Post' },
+    Post: { author: 'User', comments: 'Comment' },
+    Comment: { author: 'User' }
+  };
+  return map[parent]?.[field] || null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PLAYGROUND UI
+// ═══════════════════════════════════════════════════════════
+const EXAMPLES = {
+  basic: `query {
+  me {
+    name
+    email
+  }
+}`,
+  nested: `query {
+  user(id: "1") {
+    name
+    posts {
+      title
+      author {
+        name
+      }
+    }
+  }
+}`,
+  alias: `query {
+  marie: user(id: "1") {
+    name
+  }
+  thomas: user(id: "2") {
+    name
+  }
+}`,
+  args: `query {
+  posts(limit: 2) {
+    title
+    likes
+  }
+}`,
+  all: `query {
+  users {
+    name
+    role
+    posts {
+      title
+      likes
+    }
+  }
+}`,
+  deep: `query {
+  posts(limit: 1) {
+    title
+    author {
+      name
+      posts {
+        title
+        comments {
+          text
+          author {
+            name
+          }
+        }
+      }
+    }
+  }
+}`
+};
+
+const editor = document.getElementById('pg-editor');
+const output = document.getElementById('pg-output');
+const timeEl = document.getElementById('pg-time');
+
+function colorizeJSON(json) {
+  return json
+    .replace(/("[^"]*")\s*:/g, '<span style="color:#ffb86c">$1</span>:')
+    .replace(/:\s*("[^"]*")/g, ': <span style="color:#f1fa8c">$1</span>')
+    .replace(/:\s*(true|false)/g, ': <span style="color:#bd93f9">$1</span>')
+    .replace(/:\s*(null)/g, ': <span style="color:#ff5555">$1</span>')
+    .replace(/:\s*(-?\d+\.?\d*)/g, ': <span style="color:#bd93f9">$1</span>');
+}
+
+function runQuery() {
+  const q = editor.value;
+  const t0 = performance.now();
+  let result;
+  try {
+    result = executeGraphQL(q);
+  } catch (e) {
+    result = { errors: [{ message: 'Parse error: ' + e.message }] };
+  }
+  const dt = (performance.now() - t0).toFixed(2);
+  const json = JSON.stringify(result, null, 2);
+  output.innerHTML = colorizeJSON(json);
+  timeEl.textContent = `${dt} ms`;
+  timeEl.style.color = result.errors ? 'var(--red)' : 'var(--green)';
+}
+
+document.getElementById('pg-run').addEventListener('click', runQuery);
+document.getElementById('pg-clear').addEventListener('click', () => {
+  editor.value = '';
+  output.innerHTML = '// La réponse JSON apparaîtra ici';
+  timeEl.textContent = '—';
+});
+editor.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runQuery();
+  }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = editor.selectionStart, en = editor.selectionEnd;
+    editor.value = editor.value.slice(0, s) + '  ' + editor.value.slice(en);
+    editor.selectionStart = editor.selectionEnd = s + 2;
+  }
+});
+
+document.querySelectorAll('.example-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    editor.value = EXAMPLES[chip.dataset.example];
+    runQuery();
+  });
+});
+
+// Run initial
+runQuery();
+
+// ═══════════════════════════════════════════════════════════
+//  FLASHCARDS
+// ═══════════════════════════════════════════════════════════
+const FLASHCARDS = [
+  { term: 'SDL', def: "Schema Definition Language — la syntaxe utilisée pour décrire un schema GraphQL (types, champs, relations)." },
+  { term: 'Resolver', def: "Fonction côté serveur qui retourne la valeur d'un champ. Reçoit (parent, args, context, info)." },
+  { term: 'N+1 Problem', def: "Anti-pattern où récupérer N entités déclenche N requêtes supplémentaires. Résolu par DataLoader (batch + cache)." },
+  { term: 'DataLoader', def: "Lib de batching/caching par requête. Bufferise les load(id) sur un tick, exécute UNE requête WHERE id IN (...)." },
+  { term: 'Fragment', def: "Bloc réutilisable de sélection de champs. Permet la colocation des données dans les composants React." },
+  { term: 'Introspection', def: "Capacité d'une API GraphQL à se décrire elle-même via __schema et __type. À désactiver en production souvent." },
+  { term: 'Persisted Queries', def: "Mécanisme où le client envoie un hash, le serveur n'accepte que les queries pré-enregistrées. Sécurité + perfs." },
+  { term: 'Subscription', def: "Opération qui ouvre un canal persistant (WebSocket via graphql-ws). Le serveur push les évènements." },
+  { term: 'Apollo Federation', def: "Architecture pour composer plusieurs sub-graphes (microservices) en un super-graphe via un router." },
+  { term: 'Optimistic UI', def: "Apollo écrit une réponse simulée dans le cache avant que le serveur réponde. UI instantanée, rollback si échec." },
+  { term: 'PubSub', def: "Bus de messages utilisé par les subscriptions. publish(event) côté mutation, asyncIterator côté subscribe." },
+  { term: 'Connection (Relay)', def: "Pattern de pagination basé curseurs : edges/node/cursor + pageInfo. Plus robuste que offset/limit." }
+];
+
+const fcContainer = document.getElementById('flashcards');
+fcContainer.innerHTML = FLASHCARDS.map((c, i) => `
+  <div class="flashcard" data-i="${i}">
+    <div class="flashcard-inner">
+      <div class="flashcard-face">
+        <div class="flashcard-q">Terme #${String(i+1).padStart(2,'0')}</div>
+        <div class="flashcard-term">${c.term}</div>
+        <div class="flashcard-hint">Cliquez pour voir la définition</div>
+      </div>
+      <div class="flashcard-face back">
+        <div class="flashcard-q">${c.term}</div>
+        <div class="flashcard-def">${c.def}</div>
+      </div>
+    </div>
+  </div>
+`).join('');
+fcContainer.querySelectorAll('.flashcard').forEach(card => {
+  card.addEventListener('click', () => card.classList.toggle('flipped'));
+});
+
+// ═══════════════════════════════════════════════════════════
+//  QUIZ
+// ═══════════════════════════════════════════════════════════
+const QUESTIONS = [
+  {
+    tag: 'Fondamentaux',
+    q: "Qu'est-ce qui rend GraphQL fondamentalement différent de REST ?",
+    options: [
+      "GraphQL utilise WebSocket à la place d'HTTP",
+      "Le client choisit la forme exacte de la réponse",
+      "GraphQL ne supporte pas les écritures",
+      "GraphQL est plus rapide que REST"
+    ],
+    answer: 1,
+    expl: "La différence clé est que le client décrit ses besoins via la query — pas de sur-fetching, pas de sous-fetching. GraphQL utilise HTTP (POST), supporte les mutations, et n'est pas intrinsèquement plus rapide."
+  },
+  {
+    tag: 'Schema',
+    q: "Que signifie [Post!]! dans un schema GraphQL ?",
+    options: [
+      "Une liste optionnelle de posts optionnels",
+      "Une liste obligatoire dont chaque élément est obligatoire",
+      "Une liste obligatoire d'éléments optionnels",
+      "Une syntaxe invalide"
+    ],
+    answer: 1,
+    expl: "Le ! externe rend la liste non-null. Le ! interne rend chaque élément non-null. Donc : une liste qui doit exister (peut être vide []) et qui ne peut contenir aucun null."
+  },
+  {
+    tag: 'Server',
+    q: "Lequel de ces moyens résout le problème N+1 ?",
+    options: [
+      "Mettre en cache les résolveurs avec Redis",
+      "Utiliser DataLoader pour batcher les chargements",
+      "Désactiver les relations dans le schema",
+      "Limiter le nombre de champs retournés"
+    ],
+    answer: 1,
+    expl: "DataLoader bufferise tous les .load(id) déclenchés sur un même tick d'event loop, puis exécute une seule requête batchée. C'est la solution canonique. Le cache aide mais ne résout pas le batching."
+  },
+  {
+    tag: 'Client',
+    q: "Quelle clé Apollo utilise par défaut pour normaliser les entités dans le cache ?",
+    options: [
+      "Le hash de la query",
+      "Le timestamp de la réponse",
+      "__typename + id",
+      "L'ordre dans lequel l'entité est arrivée"
+    ],
+    answer: 2,
+    expl: "Apollo construit la clé avec __typename + id (ou _id). Cela permet au cache de partager une même entité entre plusieurs queries — un User:42 mis à jour propage partout."
+  },
+  {
+    tag: 'Mutations',
+    q: "Pourquoi est-il recommandé de retourner l'entité modifiée depuis une mutation ?",
+    options: [
+      "Pour économiser de la bande passante",
+      "Parce que la spec GraphQL l'impose",
+      "Pour permettre au client de mettre à jour son cache sans refetch",
+      "Pour la rétro-compatibilité avec REST"
+    ],
+    answer: 2,
+    expl: "Apollo (et tous les clients à cache normalisé) peuvent mettre à jour automatiquement leur cache si la mutation retourne l'entité avec son id et __typename — évitant un refetch coûteux."
+  },
+  {
+    tag: 'Sécurité',
+    q: "Quel est un risque de sécurité spécifique à GraphQL ?",
+    options: [
+      "L'injection SQL via les variables",
+      "Les requêtes profondément imbriquées qui peuvent surcharger le serveur",
+      "L'absence de chiffrement TLS",
+      "Le partage de cookies entre domaines"
+    ],
+    answer: 1,
+    expl: "Une query récursive profonde (user → posts → author → posts → ...) peut générer une explosion combinatoire. Solutions : depth-limit, cost analysis, persisted queries, désactiver l'introspection en prod."
+  },
+  {
+    tag: 'Subscriptions',
+    q: "Quel transport est généralement utilisé pour les subscriptions GraphQL ?",
+    options: [
+      "HTTP long-polling",
+      "Server-Sent Events uniquement",
+      "WebSocket (graphql-ws)",
+      "gRPC"
+    ],
+    answer: 2,
+    expl: "Le standard moderne est graphql-ws sur WebSocket. SSE est possible mais moins courant. Les anciens utilisaient subscriptions-transport-ws (déprécié)."
+  },
+  {
+    tag: 'Erreurs',
+    q: "Pourquoi une réponse GraphQL retourne-t-elle souvent un HTTP 200 même en cas d'erreur métier ?",
+    options: [
+      "Parce que la spec interdit les codes 4xx/5xx",
+      "Parce qu'une réponse peut contenir à la fois data partielle et errors",
+      "Pour cacher les bugs aux clients",
+      "Parce que GraphQL n'utilise pas HTTP"
+    ],
+    answer: 1,
+    expl: "GraphQL retourne souvent { data: ..., errors: [...] } simultanément — certains champs peuvent réussir et d'autres échouer dans la même requête. Les codes HTTP sont réservés aux erreurs de transport/syntaxe."
+  },
+  {
+    tag: 'Schema',
+    q: "À quoi sert un type input en GraphQL ?",
+    options: [
+      "À définir les types renvoyés par les queries",
+      "À regrouper des arguments complexes passés à une mutation",
+      "À déclarer des interfaces",
+      "À définir des subscriptions"
+    ],
+    answer: 1,
+    expl: "Un type ne peut pas être utilisé comme argument. Pour un argument complexe (ex: CreatePostInput avec title, content, tags), il faut un input. Un input ne peut contenir que des scalaires, enums et autres inputs."
+  },
+  {
+    tag: 'Versioning',
+    q: "Comment gère-t-on le versioning d'une API GraphQL ?",
+    options: [
+      "Avec /v1/graphql, /v2/graphql, etc.",
+      "Avec un header X-API-Version",
+      "On ajoute des champs et on déprécie les anciens via @deprecated",
+      "On force tous les clients à migrer en même temps"
+    ],
+    answer: 2,
+    expl: "GraphQL est conçu pour évoluer sans versioning. On ajoute librement, on marque les champs obsolètes avec @deprecated(reason: \"...\"), et on supprime quand plus aucun client ne les utilise (vérifiable via tracking de l'usage)."
+  },
+  {
+    tag: 'Client',
+    q: "Quelle fetchPolicy Apollo afficher des données du cache puis revalider en arrière-plan ?",
+    options: [
+      "cache-first",
+      "cache-and-network",
+      "network-only",
+      "no-cache"
+    ],
+    answer: 1,
+    expl: "cache-and-network est parfaite pour les UIs qui veulent un affichage instantané (cache) puis se rafraîchir avec les données les plus à jour (network). cache-first ne refetch pas si le cache hit."
+  },
+  {
+    tag: 'Resolvers',
+    q: "Quels sont les arguments d'un resolver GraphQL dans Apollo Server ?",
+    options: [
+      "(req, res, next)",
+      "(parent, args, context, info)",
+      "(input, callback)",
+      "(query, variables)"
+    ],
+    answer: 1,
+    expl: "parent: résultat du resolver parent. args: arguments du champ. context: objet partagé par requête (auth, db, dataloaders). info: AST + métadonnées de la query."
+  },
+  {
+    tag: 'Avancé',
+    q: "Que sont les 'persisted queries' et à quoi servent-elles ?",
+    options: [
+      "Des queries stockées dans localStorage",
+      "Le client envoie un hash, le serveur ne reconnaît que les queries pré-enregistrées",
+      "Des queries qui survivent au reload de la page",
+      "Des queries en lecture seule"
+    ],
+    answer: 1,
+    expl: "Pattern où chaque query est hashée à la build. Le client envoie juste le hash → payload réduit + le serveur peut whitelister les queries autorisées (sécurité forte contre les requêtes abusives)."
+  },
+  {
+    tag: 'Architecture',
+    q: "Que permet Apollo Federation ?",
+    options: [
+      "De fédérer plusieurs comptes utilisateur",
+      "De composer plusieurs sub-graphes en un super-graphe unifié",
+      "De synchroniser le cache entre clients",
+      "De déployer sur plusieurs régions"
+    ],
+    answer: 1,
+    expl: "Federation permet à chaque équipe d'exposer son sub-graphe (ex: users, billing, catalog), et un router orchestre les requêtes cross-services pour servir un schema unifié au client. Idéal en microservices."
+  },
+  {
+    tag: 'Pratique',
+    q: "Vous voyez `useQuery(GET_USER, { variables: { id }, skip: !id })` — à quoi sert skip ?",
+    options: [
+      "À ignorer les erreurs",
+      "À ne pas exécuter la query tant que la condition n'est pas remplie",
+      "À sauter le cache",
+      "À paginer les résultats"
+    ],
+    answer: 1,
+    expl: "skip est essentiel pour les queries dépendantes : ne pas appeler tant que les variables nécessaires ne sont pas disponibles (ex: id pas encore défini, user pas encore loggué). Évite des requêtes inutiles ou erronées."
+  }
+];
+
+let qIdx = 0, score = 0, answered = false;
+const quizBody = document.getElementById('quiz-body');
+const quizCounter = document.getElementById('quiz-counter');
+const quizScore = document.getElementById('quiz-score');
+const quizProgress = document.getElementById('quiz-progress');
+const headerProgress = document.getElementById('header-progress');
+
+function renderQuestion() {
+  if (qIdx >= QUESTIONS.length) return renderResult();
+  const q = QUESTIONS[qIdx];
+  answered = false;
+  quizCounter.textContent = `Question ${qIdx + 1} / ${QUESTIONS.length}`;
+  quizProgress.style.width = `${((qIdx) / QUESTIONS.length) * 100}%`;
+  quizBody.innerHTML = `
+    <div class="quiz-tag">${q.tag}</div>
+    <div class="quiz-question">${q.q}</div>
+    <div class="quiz-options">
+      ${q.options.map((opt, i) => `
+        <button class="quiz-option" data-i="${i}">
+          <span class="quiz-option-letter">${String.fromCharCode(65 + i)}</span>
+          <span>${opt}</span>
+        </button>
+      `).join('')}
+    </div>
+    <div class="quiz-explanation" id="quiz-expl"><strong>💡 Explication : </strong>${q.expl}</div>
+    <div class="quiz-actions">
+      <span></span>
+      <button class="btn primary" id="quiz-next" style="display:none">Suivant →</button>
+    </div>
+  `;
+  quizBody.querySelectorAll('.quiz-option').forEach(btn => {
+    btn.addEventListener('click', () => answer(parseInt(btn.dataset.i), q));
+  });
+  document.getElementById('quiz-next').addEventListener('click', next);
+}
+
+function answer(i, q) {
+  if (answered) return;
+  answered = true;
+  const buttons = quizBody.querySelectorAll('.quiz-option');
+  buttons.forEach((btn, idx) => {
+    btn.disabled = true;
+    if (idx === q.answer) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('wrong');
+  });
+  if (i === q.answer) {
+    score++;
+    quizScore.textContent = `${score} pts`;
+    quizScore.style.color = 'var(--green)';
+    setTimeout(() => quizScore.style.color = '', 600);
+  }
+  document.getElementById('quiz-expl').classList.add('show');
+  document.getElementById('quiz-expl').style.display = 'block';
+  document.getElementById('quiz-next').style.display = 'inline-flex';
+  document.getElementById('quiz-next').textContent = qIdx === QUESTIONS.length - 1 ? 'Voir le résultat 🎉' : 'Suivant →';
+
+  const pct = Math.round(((qIdx + 1) / QUESTIONS.length) * 100);
+  headerProgress.textContent = `${pct}% complété`;
+}
+
+function next() {
+  qIdx++;
+  renderQuestion();
+}
+
+function renderResult() {
+  const pct = (score / QUESTIONS.length) * 100;
+  let emoji, msg, color;
+  if (pct >= 90) { emoji = '🏆'; msg = "Excellent ! Vous êtes prêt(e) pour l'entretien."; color = 'var(--green)'; }
+  else if (pct >= 70) { emoji = '🚀'; msg = "Très bon niveau. Quelques sujets à revoir mais l'essentiel est là."; color = 'var(--gql)'; }
+  else if (pct >= 50) { emoji = '📚'; msg = "Bonne base, mais relisez les sections sur lesquelles vous avez buté."; color = 'var(--orange)'; }
+  else { emoji = '💪'; msg = "Reprenez les modules tranquillement, vous y serez vite."; color = 'var(--red)'; }
+
+  quizProgress.style.width = '100%';
+  quizCounter.textContent = `Terminé !`;
+  quizBody.innerHTML = `
+    <div class="quiz-result">
+      <div class="quiz-result-emoji">${emoji}</div>
+      <div class="quiz-result-score" style="color:${color}">${score} / ${QUESTIONS.length}</div>
+      <div class="quiz-result-msg">${msg}</div>
+      <button class="btn primary" id="quiz-restart">Recommencer le quiz</button>
+    </div>
+  `;
+  document.getElementById('quiz-restart').addEventListener('click', () => {
+    qIdx = 0; score = 0;
+    quizScore.textContent = '0 pts';
+    headerProgress.textContent = '0% complété';
+    renderQuestion();
+  });
+  headerProgress.textContent = `100% — Score : ${score}/${QUESTIONS.length}`;
+}
+
+renderQuestion();
+
+// ═══════════════════════════════════════════════════════════
+//  COPY BUTTONS
+// ═══════════════════════════════════════════════════════════
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.copy;
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    const text = target.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copié';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.classList.remove('copied');
+      }, 1500);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  NAV — scroll spy + active link
+// ═══════════════════════════════════════════════════════════
+const navLinks = document.querySelectorAll('.nav-link');
+const sections = [...document.querySelectorAll('.section')];
+
+function updateActiveNav() {
+  const fromTop = window.scrollY + 120;
+  let activeId = sections[0]?.id;
+  for (const sec of sections) {
+    if (sec.offsetTop <= fromTop) activeId = sec.id;
+  }
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + activeId);
+  });
+}
+window.addEventListener('scroll', updateActiveNav, { passive: true });
+
+navLinks.forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  BACK TO TOP
+// ═══════════════════════════════════════════════════════════
+const topBtn = document.getElementById('top-btn');
+window.addEventListener('scroll', () => {
+  topBtn.classList.toggle('show', window.scrollY > 500);
+}, { passive: true });
+topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+</script>
+
+</body>
+</html>

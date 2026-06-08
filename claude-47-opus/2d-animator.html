@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>2D Skeleton Animator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a1a; color: #ddd; overflow: hidden;
+    user-select: none;
+  }
+  #app {
+    display: grid;
+    grid-template-rows: auto 1fr 210px;
+    height: 100vh;
+  }
+  #toolbar {
+    background: #252525; border-bottom: 1px solid #333;
+    padding: 8px 12px; display: flex; gap: 6px; align-items: center;
+    flex-wrap: wrap;
+  }
+  #toolbar button, #toolbar label.btn {
+    background: #333; color: #ddd; border: 1px solid #444;
+    padding: 6px 12px; cursor: pointer; border-radius: 4px;
+    font-size: 13px; font-family: inherit;
+  }
+  #toolbar button:hover, #toolbar label.btn:hover { background: #404040; }
+  #toolbar button.active { background: #5a8aff; border-color: #6a9aff; color: white; }
+  #toolbar button.primary { background: #4a7a4a; border-color: #5a8a5a; color: white; }
+  #toolbar button.primary:hover { background: #5a8a5a; }
+  #toolbar input[type=file] { display: none; }
+  #toolbar .sep { width: 1px; height: 22px; background: #444; margin: 0 6px; }
+  #toolbar .group-label { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 2px; }
+  #status { color: #888; font-size: 12px; margin-left: auto; }
+  #main {
+    display: grid;
+    grid-template-columns: 220px 1fr 240px;
+    min-height: 0;
+  }
+  .panel {
+    background: #1f1f1f; padding: 12px;
+    overflow-y: auto; font-size: 12px;
+    border-right: 1px solid #333;
+  }
+  #properties { border-right: none; border-left: 1px solid #333; }
+  .panel h3 {
+    font-size: 11px; text-transform: uppercase; color: #999;
+    margin-bottom: 8px; margin-top: 14px;
+    letter-spacing: 0.05em; font-weight: 600;
+  }
+  .panel h3:first-child { margin-top: 0; }
+  .bone-item, .anim-item {
+    padding: 5px 8px; cursor: pointer; border-radius: 3px;
+    display: flex; align-items: center;
+    gap: 6px; font-size: 12.5px;
+  }
+  .bone-item:hover, .anim-item:hover { background: #2a2a2a; }
+  .bone-item.selected, .anim-item.selected { background: #3a5db8; color: white; }
+  .bone-item .indent { color: #555; flex-shrink: 0; }
+  .bone-item .skin-dot { color: #ffaa44; font-size: 10px; flex-shrink: 0; }
+  .bone-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .anim-item .name { flex: 1; }
+  .anim-item .delete, .bone-item .delete {
+    color: #888; cursor: pointer; padding: 0 4px; border-radius: 2px;
+  }
+  .anim-item .delete:hover, .bone-item .delete:hover { color: #ff6a6a; background: #3a1a1a; }
+  #canvasContainer { position: relative; overflow: hidden; background: #161616; }
+  #canvas { display: block; }
+  #helpText {
+    position: absolute; bottom: 12px; left: 12px;
+    background: rgba(0,0,0,0.75); color: #ccc;
+    padding: 8px 12px; border-radius: 4px;
+    font-size: 11px; line-height: 1.6;
+    pointer-events: none; max-width: 360px;
+    border: 1px solid #333;
+  }
+  #emptyHint {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: #555; font-size: 14px;
+    pointer-events: none;
+  }
+  .prop-row {
+    display: flex; align-items: center; margin-bottom: 6px; gap: 8px;
+  }
+  .prop-row label {
+    width: 60px; color: #999; font-size: 11.5px; flex-shrink: 0;
+  }
+  .prop-row input, .prop-row select {
+    flex: 1; min-width: 0; background: #161616; border: 1px solid #333;
+    color: #ddd; padding: 4px 6px; border-radius: 3px;
+    font-size: 12px; font-family: inherit;
+  }
+  .prop-row input:focus, .prop-row select:focus {
+    outline: none; border-color: #5a8aff;
+  }
+  .panel button {
+    background: #333; color: #ddd; border: 1px solid #444;
+    padding: 5px 10px; cursor: pointer; border-radius: 3px;
+    font-size: 12px; font-family: inherit; margin-top: 6px;
+  }
+  .panel button:hover { background: #404040; }
+  .panel button.danger { background: #4a2a2a; border-color: #6a3a3a; }
+  .panel button.danger:hover { background: #6a3a3a; }
+  .panel button.full { width: 100%; }
+  #timeline {
+    background: #1f1f1f; border-top: 1px solid #333;
+    padding: 8px 12px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .timeline-header {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .timeline-header select, .timeline-header input {
+    background: #161616; border: 1px solid #333;
+    color: #ddd; padding: 4px 6px; border-radius: 3px; font-size: 12px;
+    font-family: inherit;
+  }
+  .timeline-header button {
+    background: #333; color: #ddd; border: 1px solid #444;
+    padding: 4px 10px; cursor: pointer; border-radius: 3px; font-size: 12px;
+    font-family: inherit;
+  }
+  .timeline-header button:hover { background: #404040; }
+  .timeline-header span { color: #888; font-size: 12px; }
+  #timelineCanvas {
+    flex: 1; background: #141414; border-radius: 3px;
+    cursor: pointer; min-height: 0;
+  }
+  .placeholder {
+    color: #666; font-style: italic; padding: 6px 0;
+    font-size: 12px;
+  }
+  input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+</style>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <label class="btn" for="imgUpload">📷 Upload Image</label>
+      <input type="file" id="imgUpload" accept="image/*">
+      <div class="sep"></div>
+      <span class="group-label">Mode:</span>
+      <button id="modeBone" class="active" data-mode="bone">Bone</button>
+      <button id="modeSkin" data-mode="skin">Skin</button>
+      <button id="modeAnim" data-mode="animate">Animate</button>
+      <div class="sep"></div>
+      <button id="playBtn" class="primary">▶ Play</button>
+      <button id="stopBtn">■ Stop</button>
+      <div class="sep"></div>
+      <button id="exportBtn">⤓ Export JSON</button>
+      <label class="btn" for="importJson">⤒ Import JSON</label>
+      <input type="file" id="importJson" accept=".json,application/json">
+      <div class="sep"></div>
+      <button id="clearBtn">Clear</button>
+      <span id="status">Bone Mode</span>
+    </div>
+    <div id="main">
+      <div class="panel">
+        <h3>Bones</h3>
+        <div id="boneTree"><div class="placeholder">No bones yet</div></div>
+        <h3>Animations</h3>
+        <div id="animList"><div class="placeholder">No animations</div></div>
+        <button id="newAnimBtn" class="full">+ New Animation</button>
+      </div>
+      <div id="canvasContainer">
+        <canvas id="canvas"></canvas>
+        <div id="emptyHint">Upload an image to begin</div>
+        <div id="helpText"></div>
+      </div>
+      <div class="panel" id="properties">
+        <h3>Properties</h3>
+        <div id="propPanel"><div class="placeholder">Select a bone</div></div>
+      </div>
+    </div>
+    <div id="timeline">
+      <div class="timeline-header">
+        <span>Animation:</span>
+        <select id="animSelect"><option value="">— none —</option></select>
+        <span>Duration:</span>
+        <input type="number" id="animDur" min="0.1" max="60" step="0.1" value="2" style="width:60px;">
+        <span>s</span>
+        <button id="addKfBtn">+ Keyframe</button>
+        <button id="delKfBtn">– Keyframe</button>
+        <span id="timeDisplay" style="margin-left:auto;">0.00 s</span>
+      </div>
+      <canvas id="timelineCanvas"></canvas>
+    </div>
+  </div>
+
+<script>
+'use strict';
+
+// ============= STATE =============
+const state = {
+  image: null,            // HTMLImageElement
+  imageData: null,        // dataURL
+  bones: [],              // array of bones
+  selectedBoneId: null,
+  mode: 'bone',           // 'bone' | 'skin' | 'animate'
+  view: { x: 0, y: 0, scale: 1 },
+  animations: [],
+  currentAnimationId: null,
+  currentTime: 0,
+  isPlaying: false,
+  playStartTime: 0,
+  drag: null,
+};
+
+let nextIdCounter = 1;
+function genId(prefix) {
+  return prefix + '_' + Date.now().toString(36) + '_' + (nextIdCounter++).toString(36);
+}
+
+// ============= DOM =============
+const $ = id => document.getElementById(id);
+const canvas = $('canvas');
+const ctx = canvas.getContext('2d');
+const tlCanvas = $('timelineCanvas');
+const tlCtx = tlCanvas.getContext('2d');
+
+// ============= MATH HELPERS =============
+function rotate(x, y, a) {
+  const c = Math.cos(a), s = Math.sin(a);
+  return { x: x * c - y * s, y: x * s + y * c };
+}
+function pointSegmentDist(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(px - ax, py - ay);
+  let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+// ============= COORDINATES =============
+function screenToWorld(sx, sy) {
+  return {
+    x: (sx - canvas.width / 2 - state.view.x) / state.view.scale,
+    y: (sy - canvas.height / 2 - state.view.y) / state.view.scale,
+  };
+}
+
+// ============= BONE TRANSFORMS =============
+function getBoneById(id) { return state.bones.find(b => b.id === id); }
+
+function getCurrentPose(bone) {
+  // During animate mode, return interpolated values from the active animation
+  if (state.mode === 'animate' && state.currentAnimationId) {
+    const anim = state.animations.find(a => a.id === state.currentAnimationId);
+    if (anim) {
+      const track = anim.tracks[bone.id];
+      if (track && track.length > 0) {
+        return interpolateTrack(track, state.currentTime, bone);
+      }
+    }
+  }
+  return { x: bone.x, y: bone.y, angle: bone.angle };
+}
+
+function interpolateTrack(keyframes, t, bone) {
+  const k = [...keyframes].sort((a, b) => a.time - b.time);
+  if (k.length === 0) return { x: bone.x, y: bone.y, angle: bone.angle };
+  if (t <= k[0].time) return { x: k[0].x, y: k[0].y, angle: k[0].angle };
+  if (t >= k[k.length - 1].time) {
+    const last = k[k.length - 1];
+    return { x: last.x, y: last.y, angle: last.angle };
+  }
+  for (let i = 0; i < k.length - 1; i++) {
+    if (t >= k[i].time && t <= k[i + 1].time) {
+      const a = k[i], b = k[i + 1];
+      const dt = b.time - a.time;
+      const u = dt > 0 ? (t - a.time) / dt : 0;
+      // Smooth interpolation (ease in/out)
+      const eased = u * u * (3 - 2 * u);
+      return {
+        x: a.x + (b.x - a.x) * eased,
+        y: a.y + (b.y - a.y) * eased,
+        angle: a.angle + shortestAngleDiff(a.angle, b.angle) * eased,
+      };
+    }
+  }
+  return k[k.length - 1];
+}
+
+function shortestAngleDiff(a, b) {
+  let d = b - a;
+  while (d > Math.PI) d -= 2 * Math.PI;
+  while (d < -Math.PI) d += 2 * Math.PI;
+  return d;
+}
+
+function computeWorldTransform(bone) {
+  const pose = getCurrentPose(bone);
+  if (bone.parentId) {
+    const parent = getBoneById(bone.parentId);
+    if (parent) {
+      const pm = computeWorldTransform(parent);
+      const px = pm.x + Math.cos(pm.angle) * parent.length;
+      const py = pm.y + Math.sin(pm.angle) * parent.length;
+      const r = rotate(pose.x, pose.y, pm.angle);
+      return { x: px + r.x, y: py + r.y, angle: pm.angle + pose.angle };
+    }
+  }
+  return { x: pose.x, y: pose.y, angle: pose.angle };
+}
+
+function computeRestTransform(bone) {
+  // Like computeWorldTransform but always uses rest values (bone.x, bone.y, bone.angle)
+  if (bone.parentId) {
+    const parent = getBoneById(bone.parentId);
+    if (parent) {
+      const pm = computeRestTransform(parent);
+      const px = pm.x + Math.cos(pm.angle) * parent.length;
+      const py = pm.y + Math.sin(pm.angle) * parent.length;
+      const r = rotate(bone.x, bone.y, pm.angle);
+      return { x: px + r.x, y: py + r.y, angle: pm.angle + bone.angle };
+    }
+  }
+  return { x: bone.x, y: bone.y, angle: bone.angle };
+}
+
+// ============= POSE / KEYFRAME EDITING =============
+function setBoneLocalPose(bone, x, y, angle) {
+  if (state.mode === 'animate' && state.currentAnimationId) {
+    const anim = state.animations.find(a => a.id === state.currentAnimationId);
+    if (!anim.tracks[bone.id]) anim.tracks[bone.id] = [];
+    const eps = 0.0005;
+    let kf = anim.tracks[bone.id].find(k => Math.abs(k.time - state.currentTime) < eps);
+    if (!kf) {
+      kf = { time: state.currentTime, x, y, angle };
+      anim.tracks[bone.id].push(kf);
+      anim.tracks[bone.id].sort((a, b) => a.time - b.time);
+    } else {
+      kf.x = x; kf.y = y; kf.angle = angle;
+    }
+  } else {
+    bone.x = x; bone.y = y; bone.angle = angle;
+  }
+}
+
+function addKeyframe(boneId, time) {
+  if (!state.currentAnimationId) return;
+  const anim = state.animations.find(a => a.id === state.currentAnimationId);
+  const bone = getBoneById(boneId);
+  if (!anim || !bone) return;
+  if (!anim.tracks[boneId]) anim.tracks[boneId] = [];
+  const eps = 0.0005;
+  // Capture current pose
+  const pose = getCurrentPose(bone);
+  let kf = anim.tracks[boneId].find(k => Math.abs(k.time - time) < eps);
+  if (kf) {
+    kf.x = pose.x; kf.y = pose.y; kf.angle = pose.angle;
+  } else {
+    anim.tracks[boneId].push({ time, x: pose.x, y: pose.y, angle: pose.angle });
+    anim.tracks[boneId].sort((a, b) => a.time - b.time);
+  }
+}
+
+function removeKeyframe(boneId, time) {
+  if (!state.currentAnimationId) return;
+  const anim = state.animations.find(a => a.id === state.currentAnimationId);
+  if (!anim || !anim.tracks[boneId]) return;
+  const eps = 0.005;
+  anim.tracks[boneId] = anim.tracks[boneId].filter(k => Math.abs(k.time - time) > eps);
+  if (anim.tracks[boneId].length === 0) delete anim.tracks[boneId];
+}
+
+// ============= PICKING =============
+function pickBone(w) {
+  // Reverse iterate so the most recently created (often on top) is picked first
+  for (let i = state.bones.length - 1; i >= 0; i--) {
+    const bone = state.bones[i];
+    const tf = computeWorldTransform(bone);
+    const ex = tf.x + Math.cos(tf.angle) * bone.length;
+    const ey = tf.y + Math.sin(tf.angle) * bone.length;
+    const r = 9 / state.view.scale;
+    if (Math.hypot(w.x - ex, w.y - ey) < r) return { boneId: bone.id, part: 'end' };
+    if (Math.hypot(w.x - tf.x, w.y - tf.y) < r) return { boneId: bone.id, part: 'start' };
+    if (pointSegmentDist(w.x, w.y, tf.x, tf.y, ex, ey) < 6 / state.view.scale) {
+      return { boneId: bone.id, part: 'body' };
+    }
+  }
+  return null;
+}
+
+function isOnImage(w) {
+  if (!state.image) return false;
+  const img = state.image;
+  return w.x >= -img.width / 2 && w.x <= img.width / 2
+      && w.y >= -img.height / 2 && w.y <= img.height / 2;
+}
+
+// ============= RENDERING =============
+function render() {
+  const container = canvas.parentElement;
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w; canvas.height = h;
+  }
+
+  ctx.fillStyle = '#161616';
+  ctx.fillRect(0, 0, w, h);
+
+  // Determine alphas based on mode/play state
+  let bgAlpha, skinAlpha, boneAlpha;
+  if (state.isPlaying) { bgAlpha = 0; skinAlpha = 1; boneAlpha = 0.25; }
+  else if (state.mode === 'animate') { bgAlpha = 0.12; skinAlpha = 1; boneAlpha = 1; }
+  else if (state.mode === 'skin') { bgAlpha = 0.6; skinAlpha = 0.5; boneAlpha = 1; }
+  else { bgAlpha = 0.85; skinAlpha = 0.25; boneAlpha = 1; }
+
+  ctx.save();
+  ctx.translate(w / 2 + state.view.x, h / 2 + state.view.y);
+  ctx.scale(state.view.scale, state.view.scale);
+
+  // Draw image
+  if (state.image && bgAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = bgAlpha;
+    ctx.drawImage(state.image, -state.image.width / 2, -state.image.height / 2);
+    ctx.restore();
+
+    // Faint outline
+    if (state.mode !== 'animate' && !state.isPlaying) {
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth = 1 / state.view.scale;
+      ctx.strokeRect(-state.image.width / 2, -state.image.height / 2, state.image.width, state.image.height);
+    }
+  }
+
+  // Draw skinned parts
+  if (state.image && skinAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = skinAlpha;
+    drawSkinnedParts();
+    ctx.restore();
+  }
+
+  // Draw bones
+  if (boneAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = boneAlpha;
+    drawBones();
+    ctx.restore();
+  }
+
+  // Draw drag preview
+  if (state.drag) {
+    if (state.drag.type === 'newbone') {
+      ctx.strokeStyle = '#5a8aff';
+      ctx.lineWidth = 3 / state.view.scale;
+      ctx.beginPath();
+      ctx.moveTo(state.drag.startX, state.drag.startY);
+      ctx.lineTo(state.drag.currentX, state.drag.currentY);
+      ctx.stroke();
+      // Endpoints
+      ctx.fillStyle = '#5a8aff';
+      ctx.beginPath();
+      ctx.arc(state.drag.startX, state.drag.startY, 4 / state.view.scale, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (state.drag.type === 'skinrect') {
+      const x1 = Math.min(state.drag.startX, state.drag.currentX);
+      const y1 = Math.min(state.drag.startY, state.drag.currentY);
+      const x2 = Math.max(state.drag.startX, state.drag.currentX);
+      const y2 = Math.max(state.drag.startY, state.drag.currentY);
+      ctx.strokeStyle = '#ffaa44';
+      ctx.lineWidth = 1.5 / state.view.scale;
+      ctx.setLineDash([5 / state.view.scale, 4 / state.view.scale]);
+      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      ctx.setLineDash([]);
+    }
+  }
+
+  ctx.restore();
+
+  $('emptyHint').style.display = state.image ? 'none' : 'block';
+}
+
+function drawSkinnedParts() {
+  const skinned = state.bones
+    .filter(b => b.skin)
+    .map((b, i) => ({ b, idx: state.bones.indexOf(b) }))
+    .sort((a, b) => (a.b.skin.z ?? a.idx) - (b.b.skin.z ?? b.idx));
+  for (const { b: bone } of skinned) {
+    const tf = computeWorldTransform(bone);
+    const sk = bone.skin;
+    ctx.save();
+    ctx.translate(tf.x, tf.y);
+    ctx.rotate(tf.angle);
+    ctx.translate(sk.offsetX, sk.offsetY);
+    ctx.rotate(sk.rotation || 0);
+    ctx.drawImage(state.image, sk.sx, sk.sy, sk.sw, sk.sh, -sk.sw / 2, -sk.sh / 2, sk.sw, sk.sh);
+    ctx.restore();
+  }
+}
+
+function drawBones() {
+  for (const bone of state.bones) {
+    const tf = computeWorldTransform(bone);
+    const ex = tf.x + Math.cos(tf.angle) * bone.length;
+    const ey = tf.y + Math.sin(tf.angle) * bone.length;
+    const isSelected = bone.id === state.selectedBoneId;
+    const main = isSelected ? '#7aa6ff' : '#bbbbbb';
+    const dim = isSelected ? '#3a5db8' : '#666';
+
+    // Bone body (tapered look — draw a small triangle)
+    ctx.fillStyle = isSelected ? 'rgba(122,166,255,0.25)' : 'rgba(170,170,170,0.18)';
+    ctx.strokeStyle = main;
+    ctx.lineWidth = 1.5 / state.view.scale;
+    const baseRadius = Math.max(4, bone.length * 0.08) / state.view.scale * state.view.scale;
+    const w1 = Math.min(8, bone.length * 0.15);
+    const dx = ex - tf.x, dy = ey - tf.y;
+    const len = Math.hypot(dx, dy);
+    if (len > 0.001) {
+      const nx = -dy / len * w1, ny = dx / len * w1;
+      ctx.beginPath();
+      ctx.moveTo(tf.x + nx, tf.y + ny);
+      ctx.lineTo(tf.x - nx, tf.y - ny);
+      ctx.lineTo(ex, ey);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Bone end point (handle for rotate)
+    ctx.fillStyle = isSelected ? '#ff8a4a' : '#888';
+    ctx.beginPath();
+    ctx.arc(ex, ey, 5 / state.view.scale, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bone start point (handle for translate)
+    ctx.fillStyle = main;
+    ctx.beginPath();
+    ctx.arc(tf.x, tf.y, 4 / state.view.scale, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Name label
+    if (state.view.scale > 0.4) {
+      ctx.save();
+      ctx.fillStyle = isSelected ? '#fff' : '#888';
+      ctx.font = (11 / state.view.scale) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(bone.name, (tf.x + ex) / 2, (tf.y + ey) / 2 - 6 / state.view.scale);
+      ctx.restore();
+    }
+  }
+}
+
+// ============= TIMELINE =============
+function drawTimeline() {
+  const tc = tlCanvas;
+  const w = tc.clientWidth, h = tc.clientHeight;
+  if (tc.width !== w || tc.height !== h) {
+    tc.width = w; tc.height = h;
+  }
+  tlCtx.fillStyle = '#141414';
+  tlCtx.fillRect(0, 0, w, h);
+
+  if (!state.currentAnimationId) {
+    tlCtx.fillStyle = '#555';
+    tlCtx.font = '12px sans-serif';
+    tlCtx.textAlign = 'center';
+    tlCtx.fillText('Create or select an animation to add keyframes.', w / 2, h / 2);
+    return;
+  }
+
+  const anim = state.animations.find(a => a.id === state.currentAnimationId);
+  if (!anim) return;
+
+  const padL = 90, padR = 12, padT = 22, padB = 8;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+
+  // Time ticks
+  tlCtx.strokeStyle = '#2a2a2a';
+  tlCtx.lineWidth = 1;
+  tlCtx.fillStyle = '#666';
+  tlCtx.font = '10px sans-serif';
+  tlCtx.textAlign = 'center';
+  const step = anim.duration <= 2 ? 0.25 : anim.duration <= 5 ? 0.5 : 1;
+  for (let t = 0; t <= anim.duration + 0.001; t += step) {
+    const x = padL + (t / anim.duration) * innerW;
+    tlCtx.beginPath();
+    tlCtx.moveTo(x, padT - 4);
+    tlCtx.lineTo(x, h - padB);
+    tlCtx.stroke();
+    tlCtx.fillText(t.toFixed(2) + 's', x, padT - 8);
+  }
+
+  // Tracks: include bones that have keyframes plus the selected bone
+  const trackBoneIds = new Set(Object.keys(anim.tracks));
+  if (state.selectedBoneId) trackBoneIds.add(state.selectedBoneId);
+  const trackList = state.bones
+    .filter(b => trackBoneIds.has(b.id))
+    .map(b => b.id);
+
+  const trackHeight = Math.min(22, innerH / Math.max(1, trackList.length));
+  for (let i = 0; i < trackList.length; i++) {
+    const bid = trackList[i];
+    const bone = getBoneById(bid);
+    if (!bone) continue;
+    const y = padT + i * trackHeight + trackHeight / 2;
+
+    // Bone label
+    tlCtx.fillStyle = bid === state.selectedBoneId ? '#fff' : '#aaa';
+    tlCtx.font = '11px sans-serif';
+    tlCtx.textAlign = 'right';
+    tlCtx.fillText(bone.name.slice(0, 14), padL - 8, y + 3);
+
+    // Track line
+    tlCtx.strokeStyle = bid === state.selectedBoneId ? '#3a3a3a' : '#252525';
+    tlCtx.beginPath();
+    tlCtx.moveTo(padL, y);
+    tlCtx.lineTo(padL + innerW, y);
+    tlCtx.stroke();
+
+    // Keyframes
+    const kfs = anim.tracks[bid] || [];
+    for (const kf of kfs) {
+      const x = padL + (kf.time / anim.duration) * innerW;
+      tlCtx.fillStyle = '#ffaa44';
+      tlCtx.strokeStyle = '#000';
+      tlCtx.lineWidth = 1;
+      tlCtx.beginPath();
+      tlCtx.moveTo(x, y - 5);
+      tlCtx.lineTo(x + 5, y);
+      tlCtx.lineTo(x, y + 5);
+      tlCtx.lineTo(x - 5, y);
+      tlCtx.closePath();
+      tlCtx.fill();
+      tlCtx.stroke();
+    }
+  }
+
+  // Playhead
+  const phx = padL + (state.currentTime / anim.duration) * innerW;
+  tlCtx.strokeStyle = '#5a8aff';
+  tlCtx.lineWidth = 2;
+  tlCtx.beginPath();
+  tlCtx.moveTo(phx, 0);
+  tlCtx.lineTo(phx, h);
+  tlCtx.stroke();
+  tlCtx.fillStyle = '#5a8aff';
+  tlCtx.beginPath();
+  tlCtx.moveTo(phx - 5, 0);
+  tlCtx.lineTo(phx + 5, 0);
+  tlCtx.lineTo(phx, 6);
+  tlCtx.closePath();
+  tlCtx.fill();
+}
+
+// ============= MOUSE / KEYBOARD =============
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+canvas.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const w = screenToWorld(sx, sy);
+
+  // Pan: middle mouse, alt+left, or right
+  if (e.button === 1 || e.button === 2 || (e.button === 0 && e.altKey)) {
+    state.drag = { type: 'pan', sx, sy, vx: state.view.x, vy: state.view.y };
+    canvas.style.cursor = 'grabbing';
+    return;
+  }
+  if (e.button !== 0) return;
+
+  if (state.mode === 'bone') {
+    handleBoneMouseDown(w);
+  } else if (state.mode === 'skin') {
+    handleSkinMouseDown(w);
+  } else if (state.mode === 'animate') {
+    handleAnimateMouseDown(w);
+  }
+});
+
+function handleBoneMouseDown(w) {
+  const hit = pickBone(w);
+  if (hit) {
+    state.selectedBoneId = hit.boneId;
+    if (hit.part === 'end') {
+      state.drag = { type: 'rotateresize', boneId: hit.boneId };
+    } else if (hit.part === 'start') {
+      state.drag = { type: 'movebone', boneId: hit.boneId };
+    } else {
+      // body — just select; drag in body of selected bone could create a child.
+      // To avoid confusion, body click = select only.
+      state.drag = { type: 'click' };
+    }
+  } else {
+    // Empty space: start creating a new bone
+    state.drag = { type: 'newbone', startX: w.x, startY: w.y, currentX: w.x, currentY: w.y };
+  }
+  updateUI();
+}
+
+function handleSkinMouseDown(w) {
+  if (!state.selectedBoneId) return;
+  if (!isOnImage(w)) return;
+  state.drag = { type: 'skinrect', startX: w.x, startY: w.y, currentX: w.x, currentY: w.y };
+}
+
+function handleAnimateMouseDown(w) {
+  const hit = pickBone(w);
+  if (hit) {
+    state.selectedBoneId = hit.boneId;
+    const bone = getBoneById(hit.boneId);
+    if (hit.part === 'start' && !bone.parentId) {
+      state.drag = { type: 'translateroot', boneId: hit.boneId };
+    } else {
+      state.drag = { type: 'rotatebone', boneId: hit.boneId };
+    }
+    updateUI();
+  }
+}
+
+window.addEventListener('mousemove', e => {
+  if (!state.drag) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const w = screenToWorld(sx, sy);
+  const d = state.drag;
+
+  if (d.type === 'pan') {
+    state.view.x = d.vx + (sx - d.sx);
+    state.view.y = d.vy + (sy - d.sy);
+  } else if (d.type === 'newbone') {
+    d.currentX = w.x;
+    d.currentY = w.y;
+  } else if (d.type === 'skinrect') {
+    d.currentX = w.x;
+    d.currentY = w.y;
+  } else if (d.type === 'rotateresize') {
+    const bone = getBoneById(d.boneId);
+    const tf = computeWorldTransform(bone);
+    const targetAngle = Math.atan2(w.y - tf.y, w.x - tf.x);
+    const targetLen = Math.hypot(w.x - tf.x, w.y - tf.y);
+    let parentAngle = 0;
+    if (bone.parentId) {
+      const parent = getBoneById(bone.parentId);
+      parentAngle = computeWorldTransform(parent).angle;
+    }
+    bone.angle = targetAngle - parentAngle;
+    bone.length = Math.max(5, targetLen);
+  } else if (d.type === 'rotatebone') {
+    const bone = getBoneById(d.boneId);
+    const tf = computeWorldTransform(bone);
+    const targetAngle = Math.atan2(w.y - tf.y, w.x - tf.x);
+    let parentAngle = 0;
+    if (bone.parentId) {
+      const parent = getBoneById(bone.parentId);
+      parentAngle = computeWorldTransform(parent).angle;
+    }
+    const newLocalAngle = targetAngle - parentAngle;
+    const pose = getCurrentPose(bone);
+    setBoneLocalPose(bone, pose.x, pose.y, newLocalAngle);
+  } else if (d.type === 'movebone') {
+    const bone = getBoneById(d.boneId);
+    if (bone.parentId) {
+      const parent = getBoneById(bone.parentId);
+      const pm = computeWorldTransform(parent);
+      const px = pm.x + Math.cos(pm.angle) * parent.length;
+      const py = pm.y + Math.sin(pm.angle) * parent.length;
+      const dx = w.x - px, dy = w.y - py;
+      const c = Math.cos(pm.angle), s = Math.sin(pm.angle);
+      bone.x = dx * c + dy * s;
+      bone.y = -dx * s + dy * c;
+    } else {
+      bone.x = w.x;
+      bone.y = w.y;
+    }
+  } else if (d.type === 'translateroot') {
+    const bone = getBoneById(d.boneId);
+    const pose = getCurrentPose(bone);
+    setBoneLocalPose(bone, w.x, w.y, pose.angle);
+  }
+
+  render();
+  if (d.type === 'rotatebone' || d.type === 'translateroot') drawTimeline();
+});
+
+window.addEventListener('mouseup', e => {
+  if (!state.drag) return;
+  const d = state.drag;
+  const rect = canvas.getBoundingClientRect();
+
+  if (d.type === 'newbone') {
+    const dist = Math.hypot(d.currentX - d.startX, d.currentY - d.startY);
+    if (dist > 6) createBoneFromDrag(d);
+  } else if (d.type === 'skinrect') {
+    finalizeSkinRect(d);
+  }
+
+  state.drag = null;
+  canvas.style.cursor = '';
+  updateUI();
+});
+
+function createBoneFromDrag(d) {
+  const angle = Math.atan2(d.currentY - d.startY, d.currentX - d.startX);
+  const length = Math.hypot(d.currentX - d.startX, d.currentY - d.startY);
+  const parentId = state.selectedBoneId; // child of selected bone, if any
+  let bx, by, ba;
+  if (parentId) {
+    const parent = getBoneById(parentId);
+    const pm = computeRestTransform(parent);
+    const px = pm.x + Math.cos(pm.angle) * parent.length;
+    const py = pm.y + Math.sin(pm.angle) * parent.length;
+    const dx = d.startX - px, dy = d.startY - py;
+    const c = Math.cos(pm.angle), s = Math.sin(pm.angle);
+    bx = dx * c + dy * s;
+    by = -dx * s + dy * c;
+    ba = angle - pm.angle;
+  } else {
+    bx = d.startX;
+    by = d.startY;
+    ba = angle;
+  }
+  const newBone = {
+    id: genId('bone'),
+    name: 'bone' + (state.bones.length + 1),
+    parentId: parentId || null,
+    x: bx, y: by, angle: ba, length,
+    skin: null,
+  };
+  state.bones.push(newBone);
+  state.selectedBoneId = newBone.id;
+}
+
+function finalizeSkinRect(d) {
+  if (!state.selectedBoneId || !state.image) return;
+  const x1 = Math.min(d.startX, d.currentX);
+  const y1 = Math.min(d.startY, d.currentY);
+  const x2 = Math.max(d.startX, d.currentX);
+  const y2 = Math.max(d.startY, d.currentY);
+  if (x2 - x1 < 5 || y2 - y1 < 5) return;
+  const img = state.image;
+  const sx = Math.max(0, Math.floor(x1 + img.width / 2));
+  const sy = Math.max(0, Math.floor(y1 + img.height / 2));
+  const ex = Math.min(img.width, Math.ceil(x2 + img.width / 2));
+  const ey = Math.min(img.height, Math.ceil(y2 + img.height / 2));
+  const sw = ex - sx, sh = ey - sy;
+  if (sw < 2 || sh < 2) return;
+
+  // Center of rect in world
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  // Transform into bone-local frame (using rest transform)
+  const bone = getBoneById(state.selectedBoneId);
+  const tf = computeRestTransform(bone);
+  const dx = cx - tf.x, dy = cy - tf.y;
+  const c = Math.cos(tf.angle), s = Math.sin(tf.angle);
+  const offsetX = dx * c + dy * s;
+  const offsetY = -dx * s + dy * c;
+  bone.skin = {
+    sx, sy, sw, sh,
+    offsetX, offsetY,
+    rotation: 0,
+    z: state.bones.indexOf(bone),
+  };
+}
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const w0 = screenToWorld(sx, sy);
+  const factor = e.deltaY > 0 ? 0.9 : 1.1;
+  state.view.scale = Math.max(0.05, Math.min(10, state.view.scale * factor));
+  // Re-anchor to cursor
+  state.view.x = sx - canvas.width / 2 - w0.x * state.view.scale;
+  state.view.y = sy - canvas.height / 2 - w0.y * state.view.scale;
+  render();
+}, { passive: false });
+
+// Timeline interactions
+let tlDragging = false;
+tlCanvas.addEventListener('mousedown', e => {
+  if (!state.currentAnimationId) return;
+  tlDragging = true;
+  setTimeFromTimelineEvent(e);
+});
+window.addEventListener('mousemove', e => {
+  if (!tlDragging) return;
+  setTimeFromTimelineEvent(e);
+});
+window.addEventListener('mouseup', () => { tlDragging = false; });
+
+function setTimeFromTimelineEvent(e) {
+  const rect = tlCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const anim = state.animations.find(a => a.id === state.currentAnimationId);
+  if (!anim) return;
+  const padL = 90, padR = 12;
+  const innerW = tlCanvas.width - padL - padR;
+  let t = ((x - padL) / innerW) * anim.duration;
+  t = Math.max(0, Math.min(anim.duration, t));
+  state.currentTime = t;
+  render();
+  drawTimeline();
+  $('timeDisplay').textContent = state.currentTime.toFixed(2) + ' s';
+}
+
+window.addEventListener('keydown', e => {
+  // Don't intercept while typing in inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (state.selectedBoneId) {
+      deleteBone(state.selectedBoneId);
+      state.selectedBoneId = null;
+      updateUI();
+    }
+  } else if (e.key === 'k' || e.key === 'K') {
+    if (state.selectedBoneId && state.currentAnimationId) {
+      addKeyframe(state.selectedBoneId, state.currentTime);
+      drawTimeline();
+    }
+  } else if (e.key === 'Escape') {
+    state.selectedBoneId = null;
+    updateUI();
+  } else if (e.key === ' ') {
+    e.preventDefault();
+    if (state.isPlaying) stopPlayback(); else startPlayback();
+  }
+});
+
+// ============= BONE MANAGEMENT =============
+function deleteBone(id) {
+  // Recursively delete this bone and all its descendants
+  const toDelete = new Set([id]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const b of state.bones) {
+      if (b.parentId && toDelete.has(b.parentId) && !toDelete.has(b.id)) {
+        toDelete.add(b.id);
+        changed = true;
+      }
+    }
+  }
+  state.bones = state.bones.filter(b => !toDelete.has(b.id));
+  // Remove tracks for deleted bones
+  for (const anim of state.animations) {
+    for (const bid of [...toDelete]) delete anim.tracks[bid];
+  }
+}
+
+// ============= UI PANELS =============
+function updateUI() {
+  drawBoneTree();
+  drawAnimList();
+  drawProperties();
+  drawAnimSelect();
+  drawTimeline();
+  updateHelpText();
+  updateStatus();
+  $('timeDisplay').textContent = state.currentTime.toFixed(2) + ' s';
+  render();
+}
+
+function drawBoneTree() {
+  const tree = $('boneTree');
+  tree.innerHTML = '';
+  if (state.bones.length === 0) {
+    tree.innerHTML = '<div class="placeholder">No bones yet</div>';
+    return;
+  }
+  // Build hierarchy
+  const childrenMap = {};
+  const roots = [];
+  for (const b of state.bones) {
+    if (b.parentId) {
+      if (!childrenMap[b.parentId]) childrenMap[b.parentId] = [];
+      childrenMap[b.parentId].push(b);
+    } else {
+      roots.push(b);
+    }
+  }
+  function renderNode(bone, depth) {
+    const item = document.createElement('div');
+    item.className = 'bone-item' + (bone.id === state.selectedBoneId ? ' selected' : '');
+    let prefix = '';
+    if (depth > 0) prefix = '└ ';
+    item.innerHTML = `<span class="indent">${'&nbsp;&nbsp;'.repeat(depth)}${prefix}</span>` +
+                     `<span class="name">${escapeHtml(bone.name)}</span>` +
+                     (bone.skin ? '<span class="skin-dot">●</span>' : '');
+    item.onclick = () => {
+      state.selectedBoneId = bone.id;
+      updateUI();
+    };
+    tree.appendChild(item);
+    const kids = childrenMap[bone.id] || [];
+    for (const k of kids) renderNode(k, depth + 1);
+  }
+  for (const r of roots) renderNode(r, 0);
+}
+
+function drawAnimList() {
+  const list = $('animList');
+  list.innerHTML = '';
+  if (state.animations.length === 0) {
+    list.innerHTML = '<div class="placeholder">No animations</div>';
+    return;
+  }
+  for (const a of state.animations) {
+    const item = document.createElement('div');
+    item.className = 'anim-item' + (a.id === state.currentAnimationId ? ' selected' : '');
+    item.innerHTML = `<span class="name">${escapeHtml(a.name)}</span><span class="delete">✕</span>`;
+    item.onclick = (e) => {
+      if (e.target.classList.contains('delete')) {
+        if (confirm('Delete animation "' + a.name + '"?')) {
+          state.animations = state.animations.filter(x => x.id !== a.id);
+          if (state.currentAnimationId === a.id) state.currentAnimationId = null;
+          updateUI();
+        }
+      } else {
+        state.currentAnimationId = a.id;
+        state.currentTime = 0;
+        updateUI();
+      }
+    };
+    list.appendChild(item);
+  }
+}
+
+function drawProperties() {
+  const panel = $('propPanel');
+  panel.innerHTML = '';
+  if (!state.selectedBoneId) {
+    panel.innerHTML = '<div class="placeholder">Select a bone</div>';
+    return;
+  }
+  const bone = getBoneById(state.selectedBoneId);
+  if (!bone) {
+    panel.innerHTML = '<div class="placeholder">Select a bone</div>';
+    return;
+  }
+
+  const pose = getCurrentPose(bone);
+
+  panel.innerHTML = `
+    <div class="prop-row"><label>Name</label><input id="pName" type="text" value="${escapeAttr(bone.name)}"></div>
+    <div class="prop-row"><label>Parent</label><select id="pParent"></select></div>
+    <h3>Local transform</h3>
+    <div class="prop-row"><label>X</label><input id="pX" type="number" step="1" value="${pose.x.toFixed(2)}"></div>
+    <div class="prop-row"><label>Y</label><input id="pY" type="number" step="1" value="${pose.y.toFixed(2)}"></div>
+    <div class="prop-row"><label>Angle</label><input id="pAngle" type="number" step="1" value="${(pose.angle * 180 / Math.PI).toFixed(1)}"> °</div>
+    <div class="prop-row"><label>Length</label><input id="pLength" type="number" step="1" min="1" value="${bone.length.toFixed(2)}"></div>
+    <h3>Skin</h3>
+    <div id="skinInfo"></div>
+    <h3>Actions</h3>
+    <button id="btnAddChild">+ Child Bone</button>
+    <button id="btnRaise">Raise</button>
+    <button id="btnLower">Lower</button>
+    <button id="btnDelete" class="danger">Delete</button>
+  `;
+
+  // Parent select
+  const pSel = $('pParent');
+  pSel.innerHTML = '<option value="">— root —</option>';
+  // Don't allow setting parent to self or descendants
+  const descendants = collectDescendants(bone.id);
+  for (const b of state.bones) {
+    if (b.id === bone.id) continue;
+    if (descendants.has(b.id)) continue;
+    const opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = b.name;
+    if (b.id === bone.parentId) opt.selected = true;
+    pSel.appendChild(opt);
+  }
+  pSel.onchange = () => {
+    bone.parentId = pSel.value || null;
+    updateUI();
+  };
+
+  $('pName').oninput = () => { bone.name = $('pName').value; drawBoneTree(); drawTimeline(); };
+  $('pX').oninput = () => { setBoneLocalPose(bone, parseFloat($('pX').value) || 0, getCurrentPose(bone).y, getCurrentPose(bone).angle); render(); drawTimeline(); };
+  $('pY').oninput = () => { setBoneLocalPose(bone, getCurrentPose(bone).x, parseFloat($('pY').value) || 0, getCurrentPose(bone).angle); render(); drawTimeline(); };
+  $('pAngle').oninput = () => {
+    const ang = (parseFloat($('pAngle').value) || 0) * Math.PI / 180;
+    const p = getCurrentPose(bone);
+    setBoneLocalPose(bone, p.x, p.y, ang);
+    render(); drawTimeline();
+  };
+  $('pLength').oninput = () => { bone.length = Math.max(1, parseFloat($('pLength').value) || 1); render(); };
+
+  $('btnAddChild').onclick = () => {
+    // Create a child bone at parent's tail
+    const child = {
+      id: genId('bone'),
+      name: 'bone' + (state.bones.length + 1),
+      parentId: bone.id,
+      x: 0, y: 0,
+      angle: 0,
+      length: Math.max(40, bone.length * 0.6),
+      skin: null,
+    };
+    state.bones.push(child);
+    state.selectedBoneId = child.id;
+    updateUI();
+  };
+  $('btnRaise').onclick = () => {
+    const i = state.bones.indexOf(bone);
+    if (i < state.bones.length - 1) {
+      [state.bones[i], state.bones[i + 1]] = [state.bones[i + 1], state.bones[i]];
+      // Update z-order in skins to reflect new position
+      state.bones.forEach((b, idx) => { if (b.skin) b.skin.z = idx; });
+      updateUI();
+    }
+  };
+  $('btnLower').onclick = () => {
+    const i = state.bones.indexOf(bone);
+    if (i > 0) {
+      [state.bones[i], state.bones[i - 1]] = [state.bones[i - 1], state.bones[i]];
+      state.bones.forEach((b, idx) => { if (b.skin) b.skin.z = idx; });
+      updateUI();
+    }
+  };
+  $('btnDelete').onclick = () => {
+    if (confirm('Delete bone "' + bone.name + '" and its children?')) {
+      deleteBone(bone.id);
+      state.selectedBoneId = null;
+      updateUI();
+    }
+  };
+
+  // Skin info
+  const skinInfo = $('skinInfo');
+  if (bone.skin) {
+    skinInfo.innerHTML = `
+      <div style="font-size:11px;color:#888;margin-bottom:4px;">
+        Region ${bone.skin.sw}×${bone.skin.sh} px<br>
+        Offset (${bone.skin.offsetX.toFixed(1)}, ${bone.skin.offsetY.toFixed(1)})
+      </div>
+      <button id="btnClearSkin" class="danger">Clear Skin</button>
+    `;
+    $('btnClearSkin').onclick = () => { bone.skin = null; updateUI(); };
+  } else {
+    skinInfo.innerHTML = '<div class="placeholder">No skin attached. Use Skin mode to draw a region.</div>';
+  }
+}
+
+function collectDescendants(boneId) {
+  const out = new Set();
+  function recurse(id) {
+    for (const b of state.bones) {
+      if (b.parentId === id && !out.has(b.id)) {
+        out.add(b.id);
+        recurse(b.id);
+      }
+    }
+  }
+  recurse(boneId);
+  return out;
+}
+
+function drawAnimSelect() {
+  const sel = $('animSelect');
+  const cur = state.currentAnimationId;
+  sel.innerHTML = '<option value="">— none —</option>';
+  for (const a of state.animations) {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = a.name;
+    if (a.id === cur) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  const anim = state.animations.find(a => a.id === cur);
+  $('animDur').value = anim ? anim.duration : 2;
+}
+
+function updateHelpText() {
+  let text = '';
+  if (state.mode === 'bone') {
+    text = '<b>Bone Mode</b><br>' +
+      '• Drag empty area: create new bone (child of selected, if any)<br>' +
+      '• Drag bone end: rotate / resize<br>' +
+      '• Drag bone start: move<br>' +
+      '• Click bone body: select<br>' +
+      '• Delete: remove selected bone<br>' +
+      '• Alt-drag / right-drag / wheel: pan / zoom';
+  } else if (state.mode === 'skin') {
+    text = '<b>Skin Mode</b><br>' +
+      '• Select a bone, then drag a rectangle on the image to attach that region to the bone';
+  } else if (state.mode === 'animate') {
+    text = '<b>Animate Mode</b><br>' +
+      '• Drag bone end: rotate (creates / updates keyframe at current time)<br>' +
+      '• Drag root start: translate<br>' +
+      '• K: add keyframe • Click timeline to scrub • Space: play / stop';
+  }
+  $('helpText').innerHTML = text;
+}
+
+function updateStatus() {
+  let s = '';
+  if (state.mode === 'bone') s = 'Bone Mode';
+  else if (state.mode === 'skin') s = 'Skin Mode';
+  else if (state.mode === 'animate') s = 'Animate Mode';
+  if (state.isPlaying) s += ' (playing)';
+  if (state.bones.length > 0) s += ` · ${state.bones.length} bone${state.bones.length > 1 ? 's' : ''}`;
+  $('status').textContent = s;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
+}
+function escapeAttr(s) {
+  return String(s).replace(/["&<>]/g, ch => ({ '"': '&quot;', '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
+}
+
+// ============= MODE BUTTONS =============
+for (const id of ['modeBone', 'modeSkin', 'modeAnim']) {
+  $(id).addEventListener('click', () => {
+    state.mode = $(id).dataset.mode;
+    document.querySelectorAll('#toolbar [data-mode]').forEach(b => b.classList.toggle('active', b.id === id));
+    if (state.isPlaying) stopPlayback();
+    updateUI();
+  });
+}
+
+// ============= IMAGE LOAD =============
+$('imgUpload').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    loadImage(ev.target.result);
+  };
+  reader.readAsDataURL(file);
+});
+
+function loadImage(dataUrl) {
+  const img = new Image();
+  img.onload = () => {
+    state.image = img;
+    state.imageData = dataUrl;
+    // Reset view to fit image
+    fitView();
+    updateUI();
+  };
+  img.src = dataUrl;
+}
+
+function fitView() {
+  if (!state.image) return;
+  const container = canvas.parentElement;
+  const w = container.clientWidth, h = container.clientHeight;
+  const margin = 60;
+  const sx = (w - margin * 2) / state.image.width;
+  const sy = (h - margin * 2) / state.image.height;
+  state.view.scale = Math.min(sx, sy, 1);
+  state.view.x = 0; state.view.y = 0;
+}
+
+// ============= ANIMATION CONTROLS =============
+$('newAnimBtn').addEventListener('click', () => {
+  const name = prompt('Animation name?', 'animation' + (state.animations.length + 1));
+  if (!name) return;
+  const anim = { id: genId('anim'), name, duration: 2, tracks: {} };
+  state.animations.push(anim);
+  state.currentAnimationId = anim.id;
+  state.currentTime = 0;
+  updateUI();
+});
+
+$('animSelect').addEventListener('change', () => {
+  state.currentAnimationId = $('animSelect').value || null;
+  state.currentTime = 0;
+  updateUI();
+});
+
+$('animDur').addEventListener('input', () => {
+  const anim = state.animations.find(a => a.id === state.currentAnimationId);
+  if (anim) {
+    anim.duration = Math.max(0.1, parseFloat($('animDur').value) || 0.1);
+    if (state.currentTime > anim.duration) state.currentTime = anim.duration;
+    drawTimeline();
+  }
+});
+
+$('addKfBtn').addEventListener('click', () => {
+  if (!state.selectedBoneId || !state.currentAnimationId) {
+    alert('Select an animation and a bone first.');
+    return;
+  }
+  addKeyframe(state.selectedBoneId, state.currentTime);
+  drawTimeline();
+});
+
+$('delKfBtn').addEventListener('click', () => {
+  if (!state.selectedBoneId || !state.currentAnimationId) return;
+  removeKeyframe(state.selectedBoneId, state.currentTime);
+  drawTimeline();
+});
+
+$('playBtn').addEventListener('click', startPlayback);
+$('stopBtn').addEventListener('click', stopPlayback);
+
+function startPlayback() {
+  if (!state.currentAnimationId) {
+    alert('Select an animation to play.');
+    return;
+  }
+  // Switch to animate mode for playback
+  state.mode = 'animate';
+  document.querySelectorAll('#toolbar [data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === 'animate'));
+  state.isPlaying = true;
+  state.playStartTime = performance.now() - state.currentTime * 1000;
+  requestAnimationFrame(playLoop);
+  updateUI();
+}
+
+function stopPlayback() {
+  state.isPlaying = false;
+  updateUI();
+}
+
+function playLoop() {
+  if (!state.isPlaying) return;
+  const anim = state.animations.find(a => a.id === state.currentAnimationId);
+  if (!anim) { state.isPlaying = false; updateUI(); return; }
+  const elapsed = (performance.now() - state.playStartTime) / 1000;
+  state.currentTime = elapsed % anim.duration;
+  $('timeDisplay').textContent = state.currentTime.toFixed(2) + ' s';
+  render();
+  drawTimeline();
+  if (state.isPlaying) requestAnimationFrame(playLoop);
+}
+
+// ============= EXPORT / IMPORT =============
+$('exportBtn').addEventListener('click', () => {
+  const data = {
+    version: 1,
+    image: state.imageData,
+    imageWidth: state.image ? state.image.width : 0,
+    imageHeight: state.image ? state.image.height : 0,
+    bones: state.bones.map(b => ({
+      id: b.id, name: b.name, parentId: b.parentId,
+      x: b.x, y: b.y, angle: b.angle, length: b.length,
+      skin: b.skin ? { ...b.skin } : null,
+    })),
+    animations: state.animations.map(a => ({
+      id: a.id, name: a.name, duration: a.duration,
+      tracks: JSON.parse(JSON.stringify(a.tracks)),
+    })),
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '2d-animator-project.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+$('importJson').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      loadProject(data);
+    } catch (err) {
+      alert('Invalid JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  // Reset value so re-importing same file works
+  e.target.value = '';
+});
+
+function loadProject(data) {
+  state.bones = (data.bones || []).map(b => ({
+    id: b.id, name: b.name, parentId: b.parentId || null,
+    x: b.x, y: b.y, angle: b.angle, length: b.length,
+    skin: b.skin || null,
+  }));
+  state.animations = (data.animations || []).map(a => ({
+    id: a.id, name: a.name, duration: a.duration,
+    tracks: a.tracks || {},
+  }));
+  state.selectedBoneId = null;
+  state.currentAnimationId = state.animations[0]?.id || null;
+  state.currentTime = 0;
+  state.isPlaying = false;
+  if (data.image) {
+    loadImage(data.image);
+  } else {
+    state.image = null;
+    state.imageData = null;
+    updateUI();
+  }
+}
+
+$('clearBtn').addEventListener('click', () => {
+  if (!confirm('Clear all bones, skins, and animations? Image is kept.')) return;
+  state.bones = [];
+  state.animations = [];
+  state.selectedBoneId = null;
+  state.currentAnimationId = null;
+  state.currentTime = 0;
+  state.isPlaying = false;
+  updateUI();
+});
+
+// ============= INIT =============
+window.addEventListener('resize', () => {
+  render();
+  drawTimeline();
+});
+
+updateUI();
+render();
+</script>
+</body>
+</html>

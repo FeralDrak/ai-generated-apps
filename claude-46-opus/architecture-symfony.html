@@ -1,0 +1,2258 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Symfony Architect · Prépa entretien Backend</title>
+<style>
+  :root {
+    --bg: #0b0d14;
+    --bg-2: #111524;
+    --bg-3: #171c30;
+    --panel: #141a2c;
+    --panel-2: #1b2239;
+    --border: #262e4a;
+    --border-2: #334070;
+    --text: #e8ecf6;
+    --muted: #8a93b2;
+    --muted-2: #6b7494;
+    --accent: #7c5cff;
+    --accent-2: #00d4ff;
+    --accent-3: #ff6ec4;
+    --success: #2ee6a8;
+    --warn: #ffcc4d;
+    --danger: #ff6b6b;
+    --code-bg: #0a0d1a;
+    --shadow: 0 20px 60px rgba(0,0,0,.45);
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1100px 600px at 85% -10%, rgba(124,92,255,.18), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(0,212,255,.12), transparent 60%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  a { color: var(--accent-2); text-decoration: none; }
+  button { font-family: inherit; }
+  ::selection { background: rgba(124,92,255,.45); color: #fff; }
+
+  /* ---------- LAYOUT ---------- */
+  .app {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+  }
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(20,26,44,.9), rgba(11,13,20,.9));
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 22px 18px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 26px;
+  }
+  .brand-logo {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: conic-gradient(from 200deg, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
+    display: grid; place-items: center;
+    font-weight: 800;
+    color: #0b0d14;
+    box-shadow: 0 8px 30px rgba(124,92,255,.35);
+  }
+  .brand-title { font-weight: 800; font-size: 16px; letter-spacing: .2px; }
+  .brand-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+  .nav { display: flex; flex-direction: column; gap: 4px; }
+  .nav button {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid transparent;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all .18s ease;
+  }
+  .nav button:hover { color: var(--text); background: rgba(255,255,255,.03); }
+  .nav button.active {
+    background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(0,212,255,.08));
+    color: var(--text);
+    border-color: rgba(124,92,255,.35);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+  }
+  .nav .ico { font-size: 15px; width: 20px; text-align: center; }
+
+  .progress-card {
+    margin-top: auto;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(180deg, rgba(124,92,255,.08), rgba(0,212,255,.04));
+  }
+  .progress-card h4 { margin: 0 0 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .bar { height: 8px; background: rgba(255,255,255,.06); border-radius: 10px; overflow: hidden; }
+  .bar > span {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width .4s ease;
+    width: 0%;
+  }
+  .progress-card .meta {
+    display: flex; justify-content: space-between;
+    font-size: 11.5px; color: var(--muted); margin-top: 6px;
+  }
+
+  .main { padding: 32px 42px 80px; max-width: 1200px; }
+  header.page {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 26px;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  header.page h1 {
+    margin: 0;
+    font-size: 30px;
+    letter-spacing: -.3px;
+    background: linear-gradient(135deg, #fff, #a8b2d1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header.page p { color: var(--muted); margin: 6px 0 0; max-width: 640px; font-size: 14px; }
+  .view { display: none; animation: fade .35s ease; }
+  .view.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- COMMON ---------- */
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: linear-gradient(180deg, var(--panel), var(--bg-2));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute; inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+  }
+  .card h3 { margin: 0 0 6px; font-size: 17px; letter-spacing: -.1px; }
+  .card p { color: var(--muted); font-size: 13.5px; margin: 0; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border-2);
+    color: var(--muted);
+    background: rgba(255,255,255,.02);
+    text-transform: uppercase; letter-spacing: .6px;
+  }
+  .chip.solid { background: linear-gradient(135deg, rgba(124,92,255,.2), rgba(0,212,255,.08)); color: #d8e0ff; border-color: rgba(124,92,255,.4); }
+  .chip.ok { color: var(--success); border-color: rgba(46,230,168,.35); background: rgba(46,230,168,.08); }
+  .chip.warn { color: var(--warn); border-color: rgba(255,204,77,.35); background: rgba(255,204,77,.08); }
+  .chip.danger { color: var(--danger); border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.08); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #5b3dff);
+    color: #fff;
+    border: 0;
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(124,92,255,.35);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(124,92,255,.45); }
+  .btn.ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border-2);
+    box-shadow: none;
+  }
+  .btn.ghost:hover { background: rgba(255,255,255,.04); }
+  .btn.sm { padding: 7px 12px; font-size: 12.5px; }
+
+  pre.code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.6;
+    font-family: "JetBrains Mono","Fira Code",Consolas,monospace;
+    color: #cfd6f0;
+    margin: 10px 0 0;
+  }
+  pre.code .k { color: #c792ea; }
+  pre.code .s { color: #c3e88d; }
+  pre.code .n { color: #82aaff; }
+  pre.code .c { color: #6b7494; font-style: italic; }
+  pre.code .f { color: #ffcb6b; }
+  pre.code .v { color: #f78c6c; }
+
+  /* ---------- DASHBOARD ---------- */
+  .hero {
+    position: relative;
+    border-radius: 18px;
+    padding: 34px 32px;
+    background:
+      radial-gradient(600px 300px at 90% 0%, rgba(255,110,196,.15), transparent 60%),
+      radial-gradient(500px 260px at 0% 100%, rgba(0,212,255,.15), transparent 60%),
+      linear-gradient(135deg, #1a2142, #0f1428);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .hero h2 {
+    margin: 0 0 10px;
+    font-size: 28px;
+    letter-spacing: -.4px;
+  }
+  .hero p { color: var(--muted); max-width: 640px; margin: 0 0 18px; font-size: 14px; }
+  .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 22px; }
+  .stat {
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.02);
+  }
+  .stat .label { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .6px; }
+  .stat .value { font-weight: 800; font-size: 22px; margin-top: 4px; background: linear-gradient(135deg,#fff,#9aa5c9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 28px 0 14px;
+  }
+  .section-title h2 { font-size: 18px; margin: 0; letter-spacing: -.2px; }
+  .section-title .sub { color: var(--muted); font-size: 12.5px; }
+
+  .card.clickable { cursor: pointer; transition: transform .18s ease, border-color .18s ease; }
+  .card.clickable:hover { transform: translateY(-3px); border-color: var(--border-2); }
+
+  /* ---------- CONCEPT EXPLORER ---------- */
+  .concept-layout {
+    display: grid;
+    grid-template-columns: 290px 1fr;
+    gap: 18px;
+  }
+  .concept-list {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    padding: 10px;
+    height: fit-content;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+  .concept-list h4 {
+    margin: 10px 10px 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--muted);
+  }
+  .concept-list button {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text);
+    padding: 9px 11px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: background .15s, border-color .15s;
+  }
+  .concept-list button:hover { background: rgba(255,255,255,.03); }
+  .concept-list button.active {
+    background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(0,212,255,.08));
+    border-color: rgba(124,92,255,.35);
+  }
+  .concept-list button .tick { font-size: 11px; color: var(--success); }
+
+  .concept-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, var(--panel), var(--bg-2));
+    padding: 26px 28px;
+    min-height: 420px;
+  }
+  .concept-panel h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: -.3px;}
+  .concept-panel .tagline { color: var(--muted); font-size: 13.5px; margin-bottom: 14px; }
+  .concept-panel h4 { margin: 20px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .7px; color: var(--accent-2); }
+  .concept-panel p { font-size: 14px; color: #d2d9f2; }
+  .concept-panel ul { padding-left: 18px; color: #d2d9f2; font-size: 14px; }
+  .concept-panel li { margin-bottom: 4px; }
+  .concept-panel .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+  .pros, .cons {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,.02);
+  }
+  .pros h5 { margin: 0 0 6px; color: var(--success); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; }
+  .cons h5 { margin: 0 0 6px; color: var(--danger); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; }
+  .pros ul, .cons ul { margin: 0; font-size: 13px; }
+
+  .diagram {
+    border: 1px dashed var(--border-2);
+    background: rgba(0,0,0,.25);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 12px;
+    overflow-x: auto;
+  }
+  .diagram svg { width: 100%; height: auto; display: block; }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+
+  .concept-actions {
+    display: flex; justify-content: space-between; gap: 10px; margin-top: 22px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+
+  /* ---------- QUIZ ---------- */
+  .quiz-box {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    padding: 28px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .quiz-meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 12.5px; margin-bottom: 10px; }
+  .quiz-bar { height: 6px; background: rgba(255,255,255,.06); border-radius: 8px; overflow: hidden; margin-bottom: 22px; }
+  .quiz-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 0; transition: width .35s ease; }
+  .quiz-q { font-size: 18px; margin-bottom: 16px; font-weight: 600; }
+  .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+  .quiz-opt {
+    text-align: left;
+    background: var(--bg-3);
+    color: var(--text);
+    padding: 13px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all .15s ease;
+  }
+  .quiz-opt:hover { border-color: var(--border-2); background: rgba(255,255,255,.04); }
+  .quiz-opt.correct { background: rgba(46,230,168,.13); border-color: rgba(46,230,168,.5); color: #c7ffe5; }
+  .quiz-opt.wrong { background: rgba(255,107,107,.13); border-color: rgba(255,107,107,.5); color: #ffd6d6; }
+  .quiz-opt:disabled { cursor: default; }
+  .quiz-explain {
+    margin-top: 16px;
+    padding: 13px 14px;
+    border-radius: 10px;
+    border-left: 3px solid var(--accent-2);
+    background: rgba(0,212,255,.06);
+    font-size: 13.5px;
+    color: #d9e7ff;
+    display: none;
+  }
+  .quiz-explain.show { display: block; }
+  .quiz-result {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .quiz-result .score {
+    font-size: 56px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* ---------- FLASHCARDS ---------- */
+  .flash-stage { perspective: 1400px; max-width: 680px; margin: 0 auto; }
+  .flashcard {
+    position: relative;
+    height: 320px;
+    transform-style: preserve-3d;
+    transition: transform .7s cubic-bezier(.2,.8,.2,1);
+    cursor: pointer;
+  }
+  .flashcard.flip { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    border-radius: 16px;
+    padding: 30px;
+    display: flex; flex-direction: column; justify-content: center;
+    border: 1px solid var(--border);
+  }
+  .face.front {
+    background: linear-gradient(135deg, #1b2239, #121827);
+    text-align: center;
+    align-items: center;
+  }
+  .face.front h3 {
+    margin: 0 0 8px; font-size: 24px; letter-spacing: -.2px;
+    background: linear-gradient(135deg, #fff, #aeb7d9);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .face.front p { color: var(--muted); margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; }
+  .face.back {
+    transform: rotateY(180deg);
+    background: linear-gradient(135deg, #162044, #0f1a34);
+  }
+  .face.back h4 { margin: 0 0 8px; color: var(--accent-2); font-size: 12.5px; text-transform: uppercase; }
+  .face.back p { margin: 0; color: #dde4fb; font-size: 14px; }
+
+  .flash-controls {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 18px; max-width: 680px; margin-left: auto; margin-right: auto;
+  }
+  .flash-counter { color: var(--muted); font-size: 13px; }
+
+  /* ---------- LAB (Architecture scenarios) ---------- */
+  .scenario-list { display: grid; gap: 14px; }
+  .scenario {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    padding: 18px 20px;
+  }
+  .scenario h3 { margin: 0 0 4px; font-size: 16px; }
+  .scenario p { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
+  .scenario .reveal {
+    margin-top: 10px;
+    display: none;
+    border-top: 1px dashed var(--border-2);
+    padding-top: 12px;
+    font-size: 13.5px;
+    color: #d4dcf7;
+  }
+  .scenario .reveal.show { display: block; }
+  .scenario .reveal h5 { margin: 10px 0 4px; color: var(--accent-2); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; }
+
+  /* ---------- INTERVIEW MODE ---------- */
+  .interview-grid { display: grid; gap: 14px; }
+  .qa {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    padding: 18px 20px;
+  }
+  .qa summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14.5px;
+    list-style: none;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .qa summary::-webkit-details-marker { display: none; }
+  .qa summary::before {
+    content: "▸";
+    color: var(--accent-2);
+    transition: transform .2s ease;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .qa[open] summary::before { transform: rotate(90deg); }
+  .qa .a {
+    margin-top: 10px;
+    color: #d2d9f2;
+    font-size: 13.5px;
+    padding-left: 20px;
+    border-left: 2px solid var(--border-2);
+  }
+
+  /* ---------- TOAST ---------- */
+  .toast-host {
+    position: fixed;
+    bottom: 22px; right: 22px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 99;
+  }
+  .toast {
+    background: rgba(15,18,30,.95);
+    border: 1px solid var(--border-2);
+    padding: 12px 14px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    animation: slideIn .3s ease;
+    min-width: 240px;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+  /* Responsive */
+  @media (max-width: 960px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; flex-direction: row; align-items: center; gap: 12px; overflow-x: auto; padding: 12px; }
+    .brand { margin: 0; }
+    .nav { flex-direction: row; }
+    .progress-card { display: none; }
+    .main { padding: 22px 18px 60px; }
+    .stats { grid-template-columns: repeat(2,1fr); }
+    .concept-layout { grid-template-columns: 1fr; }
+    .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
+    .grid.cols-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">SA</div>
+      <div>
+        <div class="brand-title">Symfony Architect</div>
+        <div class="brand-sub">Prépa entretien backend</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-view="dashboard" class="active"><span class="ico">🏠</span> Dashboard</button>
+      <button data-view="concepts"><span class="ico">📚</span> Concepts</button>
+      <button data-view="patterns"><span class="ico">🏗️</span> Patterns</button>
+      <button data-view="symfony"><span class="ico">⚡</span> Symfony Core</button>
+      <button data-view="scaling"><span class="ico">📈</span> Scalabilité</button>
+      <button data-view="lab"><span class="ico">🧪</span> Cas pratiques</button>
+      <button data-view="quiz"><span class="ico">🧠</span> Quiz</button>
+      <button data-view="flashcards"><span class="ico">🎴</span> Flashcards</button>
+      <button data-view="interview"><span class="ico">💬</span> Q&amp;R entretien</button>
+      <button data-view="cheatsheet"><span class="ico">📋</span> Cheatsheet</button>
+    </nav>
+    <div class="progress-card">
+      <h4>Ta progression</h4>
+      <div class="bar"><span id="progBar"></span></div>
+      <div class="meta"><span id="progLabel">0 / 0</span><span id="progPct">0%</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ========== DASHBOARD ========== -->
+    <section class="view active" id="view-dashboard">
+      <div class="hero">
+        <span class="chip solid">🎯 Mode entretien</span>
+        <h2 style="margin-top:14px">Designer l'architecture d'un grand système Symfony.</h2>
+        <p>Une app ludique, structurée et dense pour maîtriser les concepts clés qu'un senior PHP/Symfony doit savoir défendre : DDD, Hexagonal, CQRS, Messenger, scalabilité, patterns… Lis, révise, teste-toi, apprends.</p>
+        <div class="hero-actions">
+          <button class="btn" data-go="concepts">📚 Démarrer le parcours</button>
+          <button class="btn ghost" data-go="quiz">🧠 Passer un quiz</button>
+          <button class="btn ghost" data-go="interview">💬 Questions types</button>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Concepts</div><div class="value" id="statConcepts">0</div></div>
+          <div class="stat"><div class="label">Lus</div><div class="value" id="statRead">0</div></div>
+          <div class="stat"><div class="label">Score quiz</div><div class="value" id="statQuiz">—</div></div>
+          <div class="stat"><div class="label">Flashcards</div><div class="value" id="statFlash">0</div></div>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <h2>Par où commencer ?</h2>
+        <span class="sub">Les quatre piliers d'un bon architecte backend</span>
+      </div>
+      <div class="grid cols-4">
+        <div class="card clickable" data-go="concepts"><span class="chip">📐 Fondations</span><h3 style="margin-top:10px">Architectures</h3><p>Hexagonal, Clean, Onion, DDD, Layered.</p></div>
+        <div class="card clickable" data-go="patterns"><span class="chip">🧩 Patterns</span><h3 style="margin-top:10px">CQRS, Event Sourcing</h3><p>Les patterns qui reviennent en entretien.</p></div>
+        <div class="card clickable" data-go="symfony"><span class="chip">⚡ Framework</span><h3 style="margin-top:10px">Symfony in depth</h3><p>DI, Messenger, Events, Doctrine, Cache.</p></div>
+        <div class="card clickable" data-go="scaling"><span class="chip">📈 Production</span><h3 style="margin-top:10px">Scalabilité</h3><p>Queues, cache, BDD, observabilité.</p></div>
+      </div>
+
+      <div class="section-title">
+        <h2>Continue ta lancée</h2>
+        <span class="sub">Dernières actions recommandées</span>
+      </div>
+      <div class="grid cols-3">
+        <div class="card clickable" data-go="lab"><span class="chip solid">🧪 Hands-on</span><h3 style="margin-top:10px">Cas pratiques</h3><p>« Architecte un système de paiement », « Design un feed social »… prépare ton raisonnement.</p></div>
+        <div class="card clickable" data-go="flashcards"><span class="chip solid">🎴 Mémo</span><h3 style="margin-top:10px">Révision éclair</h3><p>Flashcards pour ancrer les notions essentielles avant l'oral.</p></div>
+        <div class="card clickable" data-go="cheatsheet"><span class="chip solid">📋 Antisèche</span><h3 style="margin-top:10px">Cheatsheet finale</h3><p>Les réflexes à avoir en tête dans la salle d'entretien.</p></div>
+      </div>
+    </section>
+
+    <!-- ========== CONCEPTS ========== -->
+    <section class="view" id="view-concepts">
+      <header class="page">
+        <div>
+          <h1>📚 Concepts fondamentaux</h1>
+          <p>Les architectures qu'on attend qu'un senior sache expliquer, illustrer et critiquer en entretien. Clique sur une fiche pour la lire, elle sera marquée comme lue.</p>
+        </div>
+        <button class="btn ghost sm" id="resetProgress">↺ Réinitialiser</button>
+      </header>
+      <div class="concept-layout">
+        <div class="concept-list" id="conceptList"></div>
+        <div class="concept-panel" id="conceptPanel"></div>
+      </div>
+    </section>
+
+    <!-- ========== PATTERNS ========== -->
+    <section class="view" id="view-patterns">
+      <header class="page">
+        <div>
+          <h1>🏗️ Patterns d'architecture</h1>
+          <p>Les patterns tactiques et stratégiques à connaître : DDD, CQRS, Event Sourcing, Saga, Repository, etc. Chacun vient avec son cas d'usage, son code Symfony et ses pièges.</p>
+        </div>
+      </header>
+      <div class="concept-layout">
+        <div class="concept-list" id="patternList"></div>
+        <div class="concept-panel" id="patternPanel"></div>
+      </div>
+    </section>
+
+    <!-- ========== SYMFONY CORE ========== -->
+    <section class="view" id="view-symfony">
+      <header class="page">
+        <div>
+          <h1>⚡ Symfony en profondeur</h1>
+          <p>Les composants qu'un architecte Symfony doit maîtriser sur le bout des doigts. Focus sur le pourquoi autant que le comment.</p>
+        </div>
+      </header>
+      <div class="concept-layout">
+        <div class="concept-list" id="symfonyList"></div>
+        <div class="concept-panel" id="symfonyPanel"></div>
+      </div>
+    </section>
+
+    <!-- ========== SCALING ========== -->
+    <section class="view" id="view-scaling">
+      <header class="page">
+        <div>
+          <h1>📈 Scalabilité & production</h1>
+          <p>Ce qui distingue un dev d'un architecte : savoir faire tenir la charge, rester observable et résilient quand ça chauffe.</p>
+        </div>
+      </header>
+      <div class="concept-layout">
+        <div class="concept-list" id="scalingList"></div>
+        <div class="concept-panel" id="scalingPanel"></div>
+      </div>
+    </section>
+
+    <!-- ========== LAB ========== -->
+    <section class="view" id="view-lab">
+      <header class="page">
+        <div>
+          <h1>🧪 Cas pratiques</h1>
+          <p>Scénarios type entretien : pose le problème, réfléchis à voix haute, puis déploie la réponse. Apprends à structurer ton raisonnement.</p>
+        </div>
+      </header>
+      <div class="scenario-list" id="scenarioList"></div>
+    </section>
+
+    <!-- ========== QUIZ ========== -->
+    <section class="view" id="view-quiz">
+      <header class="page">
+        <div>
+          <h1>🧠 Quiz interactif</h1>
+          <p>15 questions pour tester ta maîtrise. Chaque réponse est expliquée.</p>
+        </div>
+        <button class="btn ghost sm" id="quizRestart">↺ Recommencer</button>
+      </header>
+      <div class="quiz-box" id="quizBox"></div>
+    </section>
+
+    <!-- ========== FLASHCARDS ========== -->
+    <section class="view" id="view-flashcards">
+      <header class="page">
+        <div>
+          <h1>🎴 Flashcards</h1>
+          <p>Révise en mode mémorisation. Clique sur la carte pour la retourner, utilise ← → pour naviguer.</p>
+        </div>
+      </header>
+      <div class="flash-stage">
+        <div class="flashcard" id="flashcard">
+          <div class="face front">
+            <p>Question</p>
+            <h3 id="flashFront">—</h3>
+          </div>
+          <div class="face back">
+            <h4>Réponse</h4>
+            <p id="flashBack">—</p>
+          </div>
+        </div>
+      </div>
+      <div class="flash-controls">
+        <button class="btn ghost sm" id="flashPrev">← Précédent</button>
+        <span class="flash-counter" id="flashCounter">1 / 1</span>
+        <button class="btn sm" id="flashNext">Suivant →</button>
+      </div>
+    </section>
+
+    <!-- ========== INTERVIEW ========== -->
+    <section class="view" id="view-interview">
+      <header class="page">
+        <div>
+          <h1>💬 Questions d'entretien</h1>
+          <p>Les questions classiques que tu vas entendre : chaque réponse est structurée pour t'inspirer une réponse solide, pas à réciter.</p>
+        </div>
+      </header>
+      <div class="interview-grid" id="interviewList"></div>
+    </section>
+
+    <!-- ========== CHEATSHEET ========== -->
+    <section class="view" id="view-cheatsheet">
+      <header class="page">
+        <div>
+          <h1>📋 Cheatsheet finale</h1>
+          <p>À relire 30 min avant l'entretien. Les réflexes et formules clés.</p>
+        </div>
+      </header>
+      <div class="grid cols-2" id="cheatGrid"></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast-host" id="toastHost"></div>
+
+<script>
+/* ============================================================
+   DATA
+============================================================ */
+
+const CONCEPTS = [
+  {
+    id: "layered",
+    title: "Architecture en couches",
+    tag: "Classique",
+    tagline: "La base historique : présentation / métier / persistance.",
+    body: `Le modèle en couches (N-tier) sépare une application en couches horizontales qui ne communiquent qu'avec la couche immédiatement inférieure. En Symfony, ça correspond typiquement à <b>Controller → Service → Repository → Doctrine</b>.`,
+    keys: [
+      "Séparation des responsabilités (UI, métier, data)",
+      "Dépendances unidirectionnelles vers le bas",
+      "Facile à comprendre, facile à livrer",
+      "Risque : fuite du métier dans les contrôleurs ou dans Doctrine",
+    ],
+    diagram: svgLayered(),
+    pros: ["Simple, familier à toute l'équipe", "Mise en place rapide", "Bon default pour petites et moyennes apps"],
+    cons: ["Couplage fort à l'ORM si mal découplé", "Peu testable à l'unité sans abstraction", "Peu adapté aux domaines complexes"],
+    code: `<span class="c">// Controller → Service → Repository</span>
+<span class="k">final class</span> <span class="n">CreateOrderController</span> <span class="k">extends</span> <span class="n">AbstractController</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(
+    <span class="k">private readonly</span> <span class="n">OrderService</span> $orders
+  ) {}
+
+  <span class="k">public function</span> <span class="f">__invoke</span>(<span class="n">Request</span> $req): <span class="n">JsonResponse</span> {
+    $id = $this->orders-><span class="f">place</span>($req->toArray());
+    <span class="k">return</span> $this-><span class="f">json</span>([<span class="s">'id'</span> => $id], <span class="v">201</span>);
+  }
+}`,
+  },
+  {
+    id: "hexagonal",
+    title: "Architecture hexagonale",
+    tag: "Ports & Adapters",
+    tagline: "Isoler le domaine, tout le reste est un adaptateur.",
+    body: `L'hexagonale (Alistair Cockburn, 2005) place le <b>domaine au centre</b>. Le monde extérieur (HTTP, BDD, queues, emails…) entre uniquement via des <b>ports</b> (interfaces) et des <b>adaptateurs</b> (implémentations). Résultat : le cœur métier ne dépend de rien, il est pur, rapide à tester, et on peut changer Doctrine pour MongoDB sans toucher une ligne de métier.`,
+    keys: [
+      "Inversion de dépendances : le domaine définit les interfaces",
+      "Ports entrants (use cases) et ports sortants (persistance, HTTP client…)",
+      "Adaptateurs primaires : contrôleurs, CLI, workers",
+      "Adaptateurs secondaires : DoctrineRepository, HttpClient, Mailer",
+    ],
+    diagram: svgHexagonal(),
+    pros: ["Domaine testable sans framework", "Changement de techno périphérique sans douleur", "Force une vraie séparation"],
+    cons: ["Plus de code / boilerplate", "Courbe d'apprentissage", "Overkill pour un CRUD simple"],
+    code: `<span class="c">// Port sortant défini dans le domaine</span>
+<span class="k">namespace</span> <span class="n">App\\Domain\\Order</span>;
+
+<span class="k">interface</span> <span class="n">OrderRepository</span> {
+  <span class="k">public function</span> <span class="f">save</span>(<span class="n">Order</span> $order): <span class="k">void</span>;
+  <span class="k">public function</span> <span class="f">byId</span>(<span class="n">OrderId</span> $id): ?<span class="n">Order</span>;
+}
+
+<span class="c">// Adaptateur infrastructure</span>
+<span class="k">namespace</span> <span class="n">App\\Infrastructure\\Doctrine</span>;
+
+<span class="k">final class</span> <span class="n">DoctrineOrderRepository</span> <span class="k">implements</span> <span class="n">OrderRepository</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(<span class="k">private</span> <span class="n">EntityManagerInterface</span> $em) {}
+  <span class="k">public function</span> <span class="f">save</span>(<span class="n">Order</span> $o): <span class="k">void</span> { $this->em-><span class="f">persist</span>($o); $this->em-><span class="f">flush</span>(); }
+  <span class="k">public function</span> <span class="f">byId</span>(<span class="n">OrderId</span> $id): ?<span class="n">Order</span> { <span class="k">return</span> $this->em-><span class="f">find</span>(<span class="n">Order</span>::<span class="k">class</span>, (<span class="k">string</span>)$id); }
+}`,
+  },
+  {
+    id: "clean",
+    title: "Clean Architecture",
+    tag: "Uncle Bob",
+    tagline: "Les dépendances pointent toujours vers l'intérieur.",
+    body: `Clean Architecture (Robert C. Martin) est une généralisation du hexagonal et de l'onion. Elle impose une règle simple : <b>aucune dépendance ne doit aller d'un anneau intérieur vers un anneau extérieur</b>. Au centre : les entités. Puis les use cases, puis les adapters, puis les frameworks (Symfony, Doctrine…).`,
+    keys: [
+      "Entities (business rules) → Use Cases → Interface Adapters → Frameworks",
+      "Inversion via interfaces aux frontières",
+      "Le framework est un <b>detail</b>, pas un partenaire",
+      "Symfony devient simple plomberie (HTTP ↔ Use Case)",
+    ],
+    diagram: svgClean(),
+    pros: ["Très testable", "Résilient au changement de stack", "Aligné avec DDD"],
+    cons: ["Verbeux", "Mapping DTO ↔ entité répétitif", "Mal compris → complexité gratuite"],
+    code: `<span class="c">// Use Case input/output</span>
+<span class="k">final class</span> <span class="n">PlaceOrderInput</span> { <span class="k">public</span> <span class="k">string</span> $customerId; <span class="k">public</span> <span class="k">array</span> $items; }
+<span class="k">final class</span> <span class="n">PlaceOrderOutput</span> { <span class="k">public</span> <span class="k">string</span> $orderId; }
+
+<span class="k">final class</span> <span class="n">PlaceOrder</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(
+    <span class="k">private</span> <span class="n">OrderRepository</span> $orders,
+    <span class="k">private</span> <span class="n">CustomerRepository</span> $customers,
+    <span class="k">private</span> <span class="n">Clock</span> $clock,
+  ) {}
+  <span class="k">public function</span> <span class="f">execute</span>(<span class="n">PlaceOrderInput</span> $in): <span class="n">PlaceOrderOutput</span> { <span class="c">/* ... */</span> }
+}`,
+  },
+  {
+    id: "ddd",
+    title: "Domain-Driven Design",
+    tag: "Stratégique & tactique",
+    tagline: "Modéliser en parlant la langue du métier.",
+    body: `DDD (Eric Evans) attaque les systèmes complexes par le <b>domaine</b>. Stratégiquement, on découpe en <b>Bounded Contexts</b> (un vocabulaire = un contexte). Tactiquement, on modélise avec <b>Entities</b> (identité stable), <b>Value Objects</b> (égalité par valeur, immuables), <b>Aggregates</b> (racine qui garantit les invariants), <b>Domain Events</b> et <b>Domain Services</b>.`,
+    keys: [
+      "<b>Ubiquitous language</b> partagé entre dev et métier",
+      "Aggregate = frontière de consistance transactionnelle",
+      "1 transaction = 1 agrégat (règle d'or)",
+      "Bounded Context = 1 modèle, 1 équipe, 1 service potentiel",
+      "Context map : partnership, shared kernel, ACL, conformist…",
+    ],
+    diagram: svgDDD(),
+    pros: ["Alignement métier fort", "Complexité maîtrisée par contexte", "Base idéale pour micro-services"],
+    cons: ["Nécessite l'accès aux experts métier", "Overkill pour domaine simple", "Coûteux en analyse en amont"],
+    code: `<span class="c">// Value Object</span>
+<span class="k">final class</span> <span class="n">Money</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(<span class="k">public readonly</span> <span class="k">int</span> $cents, <span class="k">public readonly</span> <span class="k">string</span> $currency) {
+    <span class="k">if</span> ($cents &lt; <span class="v">0</span>) <span class="k">throw new</span> \\<span class="n">InvalidArgumentException</span>(<span class="s">'negative'</span>);
+  }
+  <span class="k">public function</span> <span class="f">add</span>(<span class="n">Money</span> $o): <span class="k">self</span> { <span class="c">/* same currency */</span> <span class="k">return new</span> <span class="k">self</span>($this->cents + $o->cents, $this->currency); }
+}
+
+<span class="c">// Aggregate root</span>
+<span class="k">final class</span> <span class="n">Order</span> {
+  <span class="k">private array</span> $items = [];
+  <span class="k">public function</span> <span class="f">addItem</span>(<span class="n">ProductId</span> $p, <span class="k">int</span> $qty): <span class="k">void</span> {
+    <span class="k">if</span> ($qty &lt;= <span class="v">0</span>) <span class="k">throw new</span> <span class="n">InvalidQuantity</span>();
+    $this->items[] = <span class="k">new</span> <span class="n">OrderItem</span>($p, $qty);
+  }
+}`,
+  },
+  {
+    id: "microservices",
+    title: "Microservices vs Monolithe",
+    tag: "Déploiement",
+    tagline: "Choisir la bonne granularité, pas la bonne mode.",
+    body: `Le choix n'est pas "moderne vs legacy" mais <b>une question d'équipe et de couplage</b>. Le monolithe modulaire est souvent la meilleure première étape. On sort les services quand des frontières sont <b>prouvées stables</b>, quand des équipes veulent déployer indépendamment, ou quand un sous-système a des contraintes spécifiques (scale, techno, SLA).`,
+    keys: [
+      "Monolithe modulaire = bundles / contexts avec dépendances contrôlées",
+      "Microservice = 1 base de données par service, communication par contrats",
+      "Synchrones : REST/gRPC · Asynchrones : events via broker",
+      "Le coût réel = ops, observabilité, compat inter-services",
+    ],
+    diagram: svgMicro(),
+    pros: ["Scale et deploy indépendants", "Isolation des pannes", "Choix techno par service"],
+    cons: ["Complexité ops énorme", "Transactions distribuées douloureuses", "Debug difficile, latence réseau partout"],
+    code: `<span class="c">// Communication async : un service publie, l'autre réagit</span>
+<span class="k">final class</span> <span class="n">OrderPlaced</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(<span class="k">public</span> <span class="k">string</span> $orderId, <span class="k">public</span> <span class="k">int</span> $amountCents) {}
+}
+
+<span class="c">// Symfony Messenger transport AMQP/Kafka</span>
+<span class="c"># config/packages/messenger.yaml</span>
+framework:
+  messenger:
+    transports:
+      events: <span class="s">'%env(MESSENGER_TRANSPORT_DSN)%'</span>
+    routing:
+      <span class="s">'App\\Event\\OrderPlaced'</span>: events`,
+  },
+  {
+    id: "cqrs",
+    title: "CQRS",
+    tag: "Command Query",
+    tagline: "Séparer ce qui écrit de ce qui lit.",
+    body: `CQRS sépare <b>Commands</b> (intention de modifier l'état, pas de retour métier) et <b>Queries</b> (lecture, zéro effet de bord). On peut pousser la séparation jusqu'à avoir <b>deux modèles de données</b> : un optimisé écriture (normalisé) et un optimisé lecture (dénormalisé, projections). En Symfony, les <b>command bus</b> et <b>query bus</b> sont implémentés avec Messenger.`,
+    keys: [
+      "1 Command = 1 handler, ne retourne pas de données",
+      "1 Query = 1 handler, pur, caché si besoin",
+      "Projections mises à jour via events",
+      "N'implique PAS forcément Event Sourcing",
+    ],
+    diagram: svgCQRS(),
+    pros: ["Modèles spécialisés = performances", "Scale écriture/lecture séparément", "Clair pour le métier"],
+    cons: ["Consistance éventuelle côté lecture", "Complexité de maintenance (2 modèles)", "Debug plus complexe"],
+    code: `<span class="c">// Command + Handler via Messenger</span>
+<span class="k">final class</span> <span class="n">PlaceOrder</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(<span class="k">public</span> <span class="k">string</span> $customerId, <span class="k">public array</span> $lines) {}
+}
+
+#[<span class="n">AsMessageHandler</span>]
+<span class="k">final class</span> <span class="n">PlaceOrderHandler</span> {
+  <span class="k">public function</span> <span class="f">__invoke</span>(<span class="n">PlaceOrder</span> $cmd): <span class="k">void</span> { <span class="c">/* ... */</span> }
+}
+
+<span class="c">// Dispatch</span>
+$commandBus-><span class="f">dispatch</span>(<span class="k">new</span> <span class="n">PlaceOrder</span>($customerId, $lines));`,
+  },
+  {
+    id: "event-sourcing",
+    title: "Event Sourcing",
+    tag: "Ultime",
+    tagline: "Stocker les faits, pas l'état.",
+    body: `Plutôt que de persister l'état courant d'une entité, on persiste la <b>suite d'événements</b> qui y ont mené. L'état est rejoué à la demande depuis l'event store. Permet un <b>historique parfait</b>, de <b>rejouer</b> la logique, et de créer de nouvelles projections rétroactivement. Généralement combiné avec CQRS.`,
+    keys: [
+      "Source de vérité : le log d'événements immuable",
+      "Snapshots pour éviter de replayer trop loin",
+      "Versionning des events = enjeu critique",
+      "Parfait pour audit, compliance, comptabilité",
+    ],
+    diagram: svgES(),
+    pros: ["Audit trail natif", "Temps-voyageur (rejouer à date X)", "Découplage CQRS total"],
+    cons: ["Courbe d'apprentissage très forte", "Migration d'events = cauchemar", "Requêtes ad-hoc impossibles sans projection"],
+    code: `<span class="c">// On append des events au lieu d'update</span>
+<span class="k">final class</span> <span class="n">BankAccount</span> {
+  <span class="k">private int</span> $balance = <span class="v">0</span>;
+  <span class="k">private array</span> $pendingEvents = [];
+
+  <span class="k">public function</span> <span class="f">withdraw</span>(<span class="k">int</span> $amount): <span class="k">void</span> {
+    <span class="k">if</span> ($this->balance &lt; $amount) <span class="k">throw new</span> <span class="n">InsufficientFunds</span>();
+    $this-><span class="f">recordThat</span>(<span class="k">new</span> <span class="n">MoneyWithdrawn</span>($amount));
+  }
+
+  <span class="k">private function</span> <span class="f">apply</span>(<span class="n">MoneyWithdrawn</span> $e): <span class="k">void</span> { $this->balance -= $e->amount; }
+}`,
+  },
+  {
+    id: "saga",
+    title: "Saga / Process Manager",
+    tag: "Distributed",
+    tagline: "Orchestrer un workflow qui traverse plusieurs services.",
+    body: `Dans un système distribué, les transactions ACID ne passent plus les frontières de service. La <b>Saga</b> gère une suite d'étapes, chacune avec sa <b>compensation</b> en cas d'échec. Deux styles : <b>orchestration</b> (un coordinateur central envoie les commandes) ou <b>chorégraphie</b> (chaque service écoute les events des autres).`,
+    keys: [
+      "Pas de rollback global : compensations explicites",
+      "Orchestration = lisible, couplage au coordinateur",
+      "Chorégraphie = découplée, dure à suivre",
+      "Idempotence obligatoire côté handlers",
+    ],
+    diagram: svgSaga(),
+    pros: ["Survit aux pannes partielles", "Alignée avec les microservices", "Workflow métier explicite"],
+    cons: ["Difficile à tester de bout en bout", "Consistance éventuelle", "Designer les compensations = non trivial"],
+    code: `<span class="c">// Orchestration d'une commande e-commerce</span>
+<span class="k">final class</span> <span class="n">CheckoutSaga</span> {
+  <span class="k">public function</span> <span class="f">handle</span>(<span class="n">OrderPlaced</span> $e): <span class="k">void</span> {
+    <span class="k">try</span> {
+      $this->payment-><span class="f">charge</span>($e);       <span class="c">// étape 1</span>
+      $this->stock-><span class="f">reserve</span>($e);         <span class="c">// étape 2</span>
+      $this->ship-><span class="f">create</span>($e);             <span class="c">// étape 3</span>
+    } <span class="k">catch</span> (\\<span class="n">Throwable</span> $ex) {
+      $this-><span class="f">compensate</span>($e);                <span class="c">// refund + release</span>
+    }
+  }
+}`,
+  },
+];
+
+const PATTERNS = [
+  {
+    id: "repository",
+    title: "Repository Pattern",
+    tag: "Persistance",
+    tagline: "Une collection d'agrégats, pas une couche d'accès SQL.",
+    body: `Un vrai repository <b>ressemble à une collection en mémoire</b>. Il expose des méthodes métier (<code>byId</code>, <code>ofCustomer</code>, <code>save</code>) et cache complètement Doctrine. Ce n'est PAS un DAO : exit les <code>findByCreatedAtBetweenAndStatusIn()</code>. Les requêtes complexes passent par des <b>Specification</b> ou une query bus côté lecture.`,
+    keys: [
+      "Interface dans le domaine, implémentation dans l'infra",
+      "Retourne des agrégats, pas des DTO",
+      "Évite la fuite de QueryBuilder dans les services",
+      "Pour les lectures multi-table, utilise une classe query dédiée (CQRS)",
+    ],
+    diagram: svgRepo(),
+    pros: ["Teste le domaine avec un repo en mémoire", "Isole Doctrine", "Clarté du contrat"],
+    cons: ["Tentation de tout mettre dedans", "Pas toujours 1:1 avec les besoins lecture"],
+    code: `<span class="k">interface</span> <span class="n">Orders</span> {
+  <span class="k">public function</span> <span class="f">save</span>(<span class="n">Order</span> $o): <span class="k">void</span>;
+  <span class="k">public function</span> <span class="f">byId</span>(<span class="n">OrderId</span> $id): <span class="n">Order</span>;
+  <span class="k">public function</span> <span class="f">pendingOlderThan</span>(\\<span class="n">DateTimeImmutable</span> $t): <span class="k">iterable</span>;
+}`,
+  },
+  {
+    id: "specification",
+    title: "Specification",
+    tag: "Query",
+    tagline: "Encapsuler une règle métier réutilisable.",
+    body: `Une Specification représente une <b>règle booléenne</b> (<code>isSatisfiedBy(Order)</code>). Elle peut être combinée (AND/OR/NOT) et traduite en critère Doctrine. Très utile pour éviter la duplication de règles (<i>« un client VIP est un client avec ≥3 commandes dans l'année »</i>).`,
+    keys: [
+      "Combinable, réutilisable, testable",
+      "Peut vivre dans le domaine et être traduite en SQL côté infra",
+      "Excellente alternative aux méthodes repository qui explosent",
+    ],
+    pros: ["Règle métier ré-exploitable partout", "Séparation claire du 'quoi' et du 'comment'", "Testable sans BDD"],
+    cons: ["Complexité ajoutée", "Mapping vers QueryBuilder parfois verbeux"],
+    code: `<span class="k">interface</span> <span class="n">Specification</span> { <span class="k">public function</span> <span class="f">isSatisfiedBy</span>(<span class="k">object</span> $x): <span class="k">bool</span>; }
+
+<span class="k">final class</span> <span class="n">IsVipCustomer</span> <span class="k">implements</span> <span class="n">Specification</span> {
+  <span class="k">public function</span> <span class="f">isSatisfiedBy</span>(<span class="k">object</span> $x): <span class="k">bool</span> {
+    <span class="k">return</span> $x <span class="k">instanceof</span> <span class="n">Customer</span> && <span class="f">count</span>($x-><span class="f">ordersLastYear</span>()) >= <span class="v">3</span>;
+  }
+}`,
+  },
+  {
+    id: "factory",
+    title: "Factory",
+    tag: "Création",
+    tagline: "Centraliser la création d'agrégats complexes.",
+    body: `Quand un agrégat a plusieurs invariants ou dépendances externes à la création (générateur d'ID, clock…), on utilise une Factory. Ça libère le constructeur, rend les tests plus simples, et laisse le domaine pur.`,
+    keys: [
+      "Retourne toujours un agrégat dans un état valide",
+      "Peut être statique si pas de dépendance",
+      "Sert aussi à reconstruire depuis un snapshot",
+    ],
+    pros: ["Constructeurs propres", "Force la validité", "Injecte les services transversaux (clock, id gen)"],
+    cons: ["Un peu plus de classes", "Mal utilisée = fuite de logique métier"],
+    code: `<span class="k">final class</span> <span class="n">OrderFactory</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(<span class="k">private</span> <span class="n">Clock</span> $clock, <span class="k">private</span> <span class="n">IdGenerator</span> $ids) {}
+  <span class="k">public function</span> <span class="f">create</span>(<span class="n">CustomerId</span> $c, <span class="k">array</span> $lines): <span class="n">Order</span> {
+    <span class="k">return new</span> <span class="n">Order</span>(
+      $this->ids-><span class="f">next</span>(),
+      $c,
+      $lines,
+      $this->clock-><span class="f">now</span>()
+    );
+  }
+}`,
+  },
+  {
+    id: "decorator",
+    title: "Decorator (Symfony)",
+    tag: "DI",
+    tagline: "Ajouter un comportement sans toucher à l'existant.",
+    body: `Symfony supporte nativement la <b>décoration de service</b> via la clé <code>decorates</code>. Idéal pour ajouter du cache, du logging, une circuit-breaker, des métriques autour d'un service existant, sans hériter ni modifier l'original.`,
+    keys: [
+      "Principe ouvert/fermé appliqué",
+      "Peut être empilé (cache → logging → real)",
+      "Très puissant pour observabilité",
+    ],
+    pros: ["Compose sans hériter", "Inversion du principe OCP respectée", "Ajout transparent de cross-cutting concerns"],
+    cons: ["Ordre de décoration à maîtriser", "Peut devenir magique si trop de couches"],
+    code: `<span class="c">// services.yaml</span>
+App\\Catalog\\CachedProductRepository:
+  decorates: App\\Catalog\\ProductRepositoryInterface
+  arguments: [<span class="s">'@.inner'</span>, <span class="s">'@cache.app'</span>]`,
+  },
+  {
+    id: "strategy",
+    title: "Strategy",
+    tag: "Behavioral",
+    tagline: "Un algo = une stratégie injectable.",
+    body: `Quand plusieurs variantes d'un algorithme coexistent (calcul de frais de port, moteur de promo, règles fiscales par pays…), on isole chaque variante dans une classe, toutes implémentant la même interface. Symfony tag les services pour les récupérer en <b>iterable</b> ou en <b>service locator</b>.`,
+    keys: [
+      "1 interface, N implémentations",
+      "Sélection par clé (pays, type, priorité…)",
+      "Évite les giga <code>switch</code> non maintenables",
+    ],
+    pros: ["Ajout de variantes sans modifier l'existant", "Chaque stratégie testée isolément", "Ordonnable via priorité"],
+    cons: ["Plus de classes", "Bonne nomenclature indispensable"],
+    code: `<span class="k">interface</span> <span class="n">ShippingStrategy</span> {
+  <span class="k">public function</span> <span class="f">supports</span>(<span class="n">Order</span> $o): <span class="k">bool</span>;
+  <span class="k">public function</span> <span class="f">cost</span>(<span class="n">Order</span> $o): <span class="n">Money</span>;
+}
+
+<span class="c">#[AutoconfigureTag('app.shipping')]</span>
+<span class="k">final class</span> <span class="n">StandardShipping</span> <span class="k">implements</span> <span class="n">ShippingStrategy</span> { <span class="c">/* ... */</span> }
+
+<span class="k">final class</span> <span class="n">ShippingCalculator</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(
+    #[<span class="n">TaggedIterator</span>(<span class="s">'app.shipping'</span>)] <span class="k">private iterable</span> $strategies
+  ) {}
+}`,
+  },
+  {
+    id: "outbox",
+    title: "Transactional Outbox",
+    tag: "Reliability",
+    tagline: "Garantir que si l'écriture passe, l'event est publié.",
+    body: `Le pattern résout un problème tordu : <b>écrire en BDD + publier un event est une double écriture qui n'est pas atomique</b>. Solution : dans la même transaction que l'agrégat, on écrit l'event dans une table <code>outbox</code>. Un worker lit cette table et publie vers le broker. Symfony Messenger fournit ce comportement via le transport Doctrine.`,
+    keys: [
+      "Résout le problème de dual-write",
+      "Atomique car même transaction",
+      "Le relay doit être idempotent",
+    ],
+    diagram: svgOutbox(),
+    pros: ["Fiable face aux crashes", "Simple avec Messenger transport doctrine", "Au moins une fois garanti"],
+    cons: ["Latence entre écriture et publication", "Nécessite un nettoyage de la table", "At least once → idempotence obligatoire"],
+    code: `<span class="c"># transport doctrine = outbox natif Symfony</span>
+framework:
+  messenger:
+    transports:
+      async: <span class="s">'doctrine://default?queue_name=outbox'</span>
+    routing:
+      <span class="s">'App\\Event\\OrderPlaced'</span>: async`,
+  },
+  {
+    id: "anticorruption",
+    title: "Anti-Corruption Layer",
+    tag: "DDD stratégique",
+    tagline: "Protéger ton modèle d'un voisin hostile.",
+    body: `Quand on intègre un système externe legacy ou un autre bounded context avec un modèle différent, on ne laisse pas ses concepts polluer le nôtre. L'<b>ACL</b> est une couche de traduction qui parle au voisin et retourne des objets <b>natifs à notre domaine</b>.`,
+    keys: [
+      "Entre bounded contexts ou face à un legacy",
+      "Traduit le vocabulaire et les formats",
+      "Souvent implémenté avec Adapter + DTO",
+    ],
+    pros: ["Protège le modèle central", "Isole les changements du voisin", "Rend le legacy supportable"],
+    cons: ["Double mapping à maintenir", "Peut cacher des incompréhensions métier"],
+    code: `<span class="k">final class</span> <span class="n">LegacyCrmAdapter</span> <span class="k">implements</span> <span class="n">CustomerReader</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(<span class="k">private</span> <span class="n">LegacyCrmClient</span> $crm) {}
+  <span class="k">public function</span> <span class="f">byId</span>(<span class="n">CustomerId</span> $id): <span class="n">Customer</span> {
+    $raw = $this->crm-><span class="f">getClient</span>((<span class="k">string</span>)$id);            <span class="c">// format legacy</span>
+    <span class="k">return new</span> <span class="n">Customer</span>(                                  <span class="c">// objet domaine</span>
+      <span class="k">new</span> <span class="n">CustomerId</span>($raw[<span class="s">'CL_ID'</span>]),
+      <span class="k">new</span> <span class="n">Email</span>($raw[<span class="s">'CL_MAIL'</span>]),
+    );
+  }
+}`,
+  },
+  {
+    id: "domain-events",
+    title: "Domain Events",
+    tag: "DDD",
+    tagline: "Le domaine annonce ce qui s'est passé, pas ce qu'il faut faire.",
+    body: `Un <b>domain event</b> est un fait immuable du passé (<code>OrderPlaced</code>, <code>PaymentRefused</code>). Il est émis par l'agrégat, collecté pendant la transaction, et dispatché après commit pour déclencher des effets (email, projection, autre bounded context…). À ne pas confondre avec les events techniques de Symfony (kernel.request).`,
+    keys: [
+      "Nom au passé, immuable, sérialisable",
+      "Émis par l'agrégat, dispatché après flush",
+      "N'a pas connaissance de ses consommateurs",
+    ],
+    pros: ["Découplage fort", "Effets en cascade maîtrisés", "Porte d'entrée naturelle pour ES"],
+    cons: ["Ordre d'exécution à surveiller", "Debug plus complexe", "Nécessite une bonne discipline de nommage"],
+    code: `<span class="k">final class</span> <span class="n">Order</span> {
+  <span class="k">private array</span> $events = [];
+  <span class="k">public function</span> <span class="f">place</span>(): <span class="k">void</span> {
+    $this->status = <span class="n">Status</span>::<span class="v">Placed</span>;
+    $this->events[] = <span class="k">new</span> <span class="n">OrderPlaced</span>($this->id, $this->total);
+  }
+  <span class="k">public function</span> <span class="f">pullEvents</span>(): <span class="k">array</span> { $e = $this->events; $this->events = []; <span class="k">return</span> $e; }
+}`,
+  },
+];
+
+const SYMFONY = [
+  {
+    id: "di",
+    title: "Dependency Injection",
+    tag: "Container",
+    tagline: "Le cœur de Symfony : composer au lieu d'instancier.",
+    body: `Le container Symfony est un catalogue de services compilé. L'autowiring lit les types pour injecter automatiquement. Pour maîtriser le DIC, il faut comprendre : <b>services publics vs privés</b>, <b>tags</b>, <b>compiler passes</b>, <b>décoration</b>, <b>factories</b>, <b>service locators</b>, <b>bindings</b>, et <b>attributs PHP 8</b> (<code>#[Autowire]</code>, <code>#[AsTaggedItem]</code>).`,
+    keys: [
+      "Services = par défaut privés & autowire : le standard",
+      "Tags = grouper des services pour les itérer",
+      "Compiler pass = injecter à la compilation du container",
+      "Bindings par argument pour paramètres scalaires",
+      "Lazy services pour casser les cycles",
+    ],
+    pros: ["Testabilité native", "Configuration compilée = perf", "Attributs PHP 8 = code expressif"],
+    cons: ["Magie au début", "Mal utilisé → service god object", "Cycles de dépendances possibles"],
+    code: `<span class="c"># services.yaml</span>
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+  App\\:
+    resource: <span class="s">'../src/'</span>
+
+<span class="c">// Tag + iterator</span>
+<span class="k">final class</span> <span class="n">Pipeline</span> {
+  <span class="k">public function</span> <span class="f">__construct</span>(
+    #[<span class="n">AutowireIterator</span>(<span class="s">'app.step'</span>)] <span class="k">private iterable</span> $steps
+  ) {}
+}`,
+  },
+  {
+    id: "messenger",
+    title: "Symfony Messenger",
+    tag: "Bus & Queue",
+    tagline: "Un bus pour les gouverner tous.",
+    body: `Messenger fournit un message bus (<i>command</i>, <i>query</i>, <i>event</i>) avec transports sync ou async (Doctrine, AMQP, Redis, SQS, Kafka…). C'est la clé de voûte pour mettre en place CQRS, les jobs, la résilience et l'outbox. Tu peux avoir <b>plusieurs bus</b> (<code>command.bus</code>, <code>query.bus</code>, <code>event.bus</code>) avec des middlewares différents.`,
+    keys: [
+      "Middleware : validation, transaction Doctrine, logging, retry",
+      "Routing par message vers le bon transport",
+      "Retry strategy exponentiel + failure transport",
+      "Stamps pour ajouter des métadonnées (tenant, correlation id…)",
+    ],
+    pros: ["Découplage parfait", "Retry & DLQ intégrés", "Unifie sync et async"],
+    cons: ["Nombreux concepts à maîtriser", "Debug plus complexe qu'un simple service", "Risque de sur-ingénierie"],
+    code: `framework:
+  messenger:
+    buses:
+      command.bus:
+        middleware:
+          - validation
+          - doctrine_transaction
+      query.bus: ~
+      event.bus:
+        default_middleware: allow_no_handlers
+    transports:
+      async: <span class="s">'%env(MESSENGER_DSN)%'</span>
+      failed: <span class="s">'doctrine://default?queue_name=failed'</span>
+    routing:
+      <span class="s">'App\\Command\\*'</span>: async`,
+  },
+  {
+    id: "events",
+    title: "Event Dispatcher",
+    tag: "Observer",
+    tagline: "Écouter et réagir aux étapes du kernel… et du domaine.",
+    body: `Le composant EventDispatcher propose un observer pattern typé. Deux usages à bien distinguer : les <b>events techniques</b> (kernel.request, kernel.controller, kernel.exception) pour brancher de la plomberie, et <b>les events domaine</b> (<code>OrderPlaced</code>) qu'on préfère aujourd'hui dispatcher via Messenger pour bénéficier de l'asynchrone et du retry.`,
+    keys: [
+      "Listener vs Subscriber (classe qui s'auto-enregistre)",
+      "Propagation stoppable",
+      "Bien séparer framework-events et domain-events",
+    ],
+    pros: ["Intégré à Symfony", "Simple à brancher", "Idéal pour hook-points"],
+    cons: ["Synchrone → attention au coût", "Mauvaise abstraction pour domain events à scale"],
+    code: `<span class="c">#[AsEventListener(event: KernelEvents::EXCEPTION)]</span>
+<span class="k">final class</span> <span class="n">ApiExceptionListener</span> {
+  <span class="k">public function</span> <span class="f">__invoke</span>(<span class="n">ExceptionEvent</span> $event): <span class="k">void</span> {
+    <span class="k">if</span> ($event-><span class="f">getThrowable</span>() <span class="k">instanceof</span> <span class="n">DomainException</span>) {
+      $event-><span class="f">setResponse</span>(<span class="k">new</span> <span class="n">JsonResponse</span>([<span class="s">'error'</span> => <span class="s">'domain'</span>], <span class="v">422</span>));
+    }
+  }
+}`,
+  },
+  {
+    id: "doctrine",
+    title: "Doctrine ORM",
+    tag: "Data",
+    tagline: "Unit of Work + Identity Map : comprendre pour maîtriser.",
+    body: `Doctrine applique un <b>Unit of Work</b> : il trace les entités gérées et calcule le diff au flush. Une Identity Map garantit qu'un même ID = même objet. En entretien, tu dois pouvoir parler de : <b>lazy loading</b>, <b>N+1</b>, <b>EXTRA_LAZY</b> sur les collections, <b>DQL vs QueryBuilder vs SQL natif</b>, <b>second level cache</b>, <b>clearing</b> en batch, <b>read-only</b>.`,
+    keys: [
+      "Flush = calcul de diff → une transaction SQL",
+      "N+1 à diagnostiquer avec le profiler",
+      "<code>fetch: EAGER</code> = rarement une bonne idée",
+      "Batch : <code>clear()</code> toutes les 100/500 entités",
+      "<code>@ReadOnly</code> pour les lectures de masse",
+    ],
+    pros: ["Productivité énorme", "Gestion de la persistance transparente", "Outils (migrations, schema)"],
+    cons: ["Surprise N+1", "Peu adapté aux requêtes analytiques", "Peut cacher des soucis de perf"],
+    code: `<span class="c">// Éviter N+1</span>
+$qb = $this->repo-><span class="f">createQueryBuilder</span>(<span class="s">'o'</span>)
+  -><span class="f">leftJoin</span>(<span class="s">'o.items'</span>, <span class="s">'i'</span>)-><span class="f">addSelect</span>(<span class="s">'i'</span>)
+  -><span class="f">leftJoin</span>(<span class="s">'o.customer'</span>, <span class="s">'c'</span>)-><span class="f">addSelect</span>(<span class="s">'c'</span>)
+  -><span class="f">where</span>(<span class="s">'o.status = :s'</span>)-><span class="f">setParameter</span>(<span class="s">'s'</span>, <span class="s">'placed'</span>);
+
+<span class="c">// Batch insert</span>
+<span class="k">foreach</span> ($rows <span class="k">as</span> $i => $row) {
+  $em-><span class="f">persist</span>(<span class="n">Order</span>::<span class="f">fromRow</span>($row));
+  <span class="k">if</span> ($i % <span class="v">200</span> === <span class="v">0</span>) { $em-><span class="f">flush</span>(); $em-><span class="f">clear</span>(); }
+}`,
+  },
+  {
+    id: "http-kernel",
+    title: "HTTP Kernel & Lifecycle",
+    tag: "Fondation",
+    tagline: "La boucle que tout Symfony suit pour chaque requête.",
+    body: `Quand Symfony reçoit une requête, il passe par une séquence d'events : <b>kernel.request</b> → résolution du contrôleur → <b>kernel.controller</b> → appel → <b>kernel.view</b> si retour non-Response → <b>kernel.response</b> → <b>kernel.terminate</b>. Connaître cette boucle permet d'injecter du comportement aux bons moments : sécurité, cache HTTP, sérialisation API, logs.`,
+    keys: [
+      "kernel.request = firewall, locale, routing",
+      "kernel.view = transformer une valeur de retour en Response",
+      "kernel.terminate = après envoi (side-effects qui peuvent attendre)",
+      "ControllerResolver + ArgumentResolver = comment Symfony remplit tes paramètres",
+    ],
+    pros: ["Extensibilité à chaque étape", "Découplé de l'app", "Permet de faire HttpCache native (reverse proxy)"],
+    cons: ["Beaucoup d'events → complexité", "Événements synchrones impactent le temps de réponse"],
+    code: `<span class="c">// Argument resolver custom : mapper une entité depuis URL</span>
+<span class="k">final class</span> <span class="n">OrderArgumentResolver</span> <span class="k">implements</span> <span class="n">ValueResolverInterface</span> {
+  <span class="k">public function</span> <span class="f">resolve</span>(<span class="n">Request</span> $r, <span class="n">ArgumentMetadata</span> $arg): <span class="k">iterable</span> {
+    <span class="k">if</span> ($arg-><span class="f">getType</span>() !== <span class="n">Order</span>::<span class="k">class</span>) <span class="k">return</span> [];
+    <span class="k">yield</span> $this->orders-><span class="f">byId</span>(<span class="k">new</span> <span class="n">OrderId</span>($r-><span class="f">get</span>(<span class="s">'id'</span>)));
+  }
+}`,
+  },
+  {
+    id: "security",
+    title: "Security component",
+    tag: "Auth",
+    tagline: "Authentifier ≠ autoriser.",
+    body: `Security sépare <b>authentification</b> (qui es-tu ? via des Authenticators) et <b>autorisation</b> (as-tu le droit ? via des Voters + Access Decision Manager). Le Firewall configure le flow par zone d'URL. Pour un contrôle d'accès fin métier, on privilégie les <b>Voters</b> qui reçoivent le subject (ex : "est-ce que ce user peut éditer cette Order ?").`,
+    keys: [
+      "Authenticator = session, JWT, API token, OAuth…",
+      "Voter = logique métier pour un attribut sur un sujet",
+      "Access decision strategy : affirmative, unanimous, consensus",
+      "PasswordHasher = migrations de hash transparentes",
+    ],
+    pros: ["Voters = contrôle d'accès métier propre", "Multi-firewalls par zone", "Hasher algo migratable"],
+    cons: ["Config dense", "Authenticators custom = boilerplate", "Attention aux fuites d'autorisation dans les contrôleurs"],
+    code: `<span class="k">final class</span> <span class="n">OrderVoter</span> <span class="k">extends</span> <span class="n">Voter</span> {
+  <span class="k">protected function</span> <span class="f">supports</span>(<span class="k">string</span> $attr, <span class="k">mixed</span> $subj): <span class="k">bool</span> {
+    <span class="k">return</span> $subj <span class="k">instanceof</span> <span class="n">Order</span> && <span class="k">in_array</span>($attr, [<span class="s">'VIEW'</span>, <span class="s">'EDIT'</span>]);
+  }
+  <span class="k">protected function</span> <span class="f">voteOnAttribute</span>(<span class="k">string</span> $attr, <span class="k">mixed</span> $order, <span class="n">TokenInterface</span> $t): <span class="k">bool</span> {
+    $user = $t-><span class="f">getUser</span>();
+    <span class="k">return</span> $order-><span class="f">owner</span>()-><span class="f">equals</span>($user-><span class="f">id</span>());
+  }
+}`,
+  },
+  {
+    id: "cache",
+    title: "Cache component",
+    tag: "Perf",
+    tagline: "PSR-6, PSR-16, tags et HTTP Cache.",
+    body: `Symfony Cache expose des adapters pour tout : APCu, Redis, Filesystem, Memcached. Les <b>tags</b> permettent l'invalidation groupée (essentiel). Ne pas confondre avec le <b>HTTP Cache</b> (reverse-proxy), qui lui s'appuie sur les headers Cache-Control / ETag / Vary. En prod, tu combines souvent les deux.`,
+    keys: [
+      "PSR-6 (items) vs PSR-16 (simple)",
+      "Invalidation par tag = la vraie killer feature",
+      "Stampede protection avec <code>->get()</code> callback",
+      "HTTP Cache en frontal (Varnish, Symfony HttpCache, Fastly, Cloudfront)",
+    ],
+    pros: ["Adapters interchangeables", "Tags → invalidation propre", "Lock contre le dogpile"],
+    cons: ["Clé de cache = enjeu de correctness", "Sérialisation PHP = surprises", "Versioning à penser"],
+    code: `$user = $cache-><span class="f">get</span>(<span class="s">'user.'</span>.$id, <span class="k">function</span> (<span class="n">ItemInterface</span> $item) <span class="k">use</span> ($id) {
+  $item-><span class="f">expiresAfter</span>(<span class="v">3600</span>);
+  $item-><span class="f">tag</span>([<span class="s">'users'</span>, <span class="s">'user-'</span>.$id]);
+  <span class="k">return</span> $this->repo-><span class="f">byId</span>($id);
+});
+
+<span class="c">// Invalidation</span>
+$cache-><span class="f">invalidateTags</span>([<span class="s">'user-'</span>.$id]);`,
+  },
+  {
+    id: "bundles",
+    title: "Bundles & modularité",
+    tag: "Organisation",
+    tagline: "Découper un gros monolithe sans le transformer en pile de spaghetti.",
+    body: `Un bundle est une unité Symfony autonome avec son container, ses routes, ses services. Dans un gros système, on peut structurer en <b>monolithe modulaire</b> : un dossier par bounded context, dépendances strictement définies, Compiler Pass ou <code>deptrac</code> pour verrouiller les frontières. C'est souvent plus sage que 30 microservices prématurés.</p>`,
+    keys: [
+      "1 contexte = 1 dossier = 1 public API restreinte",
+      "Interdire les use cross-context via <b>Deptrac</b>",
+      "Bundles tiers pour fournir des capacités réutilisables",
+      "Chaque bundle expose une Configuration et des services taggués",
+    ],
+    pros: ["Étape naturelle avant microservices", "Réduit le coût ops", "Force la discipline d'architecture"],
+    cons: ["Discipline humaine requise", "Couplage à l'infra partagée (BDD, cache)"],
+    code: `<span class="c">// deptrac.yaml</span>
+deptrac:
+  layers:
+    - { name: Catalog, collectors: [{ type: directory, regex: src/Catalog/.* }] }
+    - { name: Order, collectors: [{ type: directory, regex: src/Order/.* }] }
+  ruleset:
+    Order: [Catalog]
+    Catalog: []`,
+  },
+];
+
+const SCALING = [
+  {
+    id: "caching",
+    title: "Stratégies de cache",
+    tag: "Perf",
+    tagline: "Cache bien placé > machine plus grosse.",
+    body: `Plusieurs niveaux : <b>HTTP</b> (CDN, reverse proxy), <b>application</b> (Symfony Cache, Redis), <b>base</b> (query cache, second level). Chaque niveau a son TTL et son invalidation. Savoir où poser le cache, c'est savoir lire son trafic : 80% des hits concernent 20% des données (Pareto).`,
+    keys: [
+      "Cache-aside : le service lit d'abord le cache, sinon la BDD puis remplit",
+      "Write-through : chaque écriture met à jour cache + BDD",
+      "Stale-while-revalidate pour pages publiques",
+      "ETag + 304 Not Modified : économise bande passante",
+    ],
+    pros: ["Gain de latence énorme", "Soulage la BDD", "Gratuit en lecture"],
+    cons: ["Invalidation = problème #2 en info", "Stale data si mal géré", "Debug plus dur"],
+  },
+  {
+    id: "async",
+    title: "Tout ce qui peut être async doit l'être",
+    tag: "Async",
+    tagline: "Une requête HTTP courte = un utilisateur heureux.",
+    body: `Tout travail qui n'a pas besoin d'être synchrone avec la réponse : <b>envois d'emails</b>, <b>génération de PDF</b>, <b>webhooks sortants</b>, <b>indexation Elastic</b>, <b>thumbnails</b>… passe en message asynchrone avec Messenger. Les workers (<code>bin/console messenger:consume</code>) tournent dans leur conteneur / pod dédié avec autoscale par longueur de queue.`,
+    keys: [
+      "Transport doctrine = simple, mais bas volume",
+      "AMQP/RabbitMQ = plus robuste",
+      "SQS/Kafka = cloud / haut volume",
+      "Retry exponential + failure transport",
+      "Idempotence côté handler (deduplication key)",
+    ],
+    pros: ["Réponse HTTP rapide", "Découplage, résilience", "Scale par queue"],
+    cons: ["Complexité ops", "Consistance éventuelle", "Observabilité = must"],
+  },
+  {
+    id: "db-scale",
+    title: "Base de données à l'échelle",
+    tag: "Database",
+    tagline: "Indexes, read replicas, puis sharding en dernier recours.",
+    body: `Ordre habituel : 1) <b>indexes et requêtes</b> (profiler, EXPLAIN), 2) <b>pool de connexions</b> + lecture seule, 3) <b>read replicas</b> (routing selon read/write), 4) <b>partitioning</b> logique (par tenant, par date), 5) <b>sharding</b> si vraiment nécessaire. Chaque étape a un coût de complexité croissant.`,
+    keys: [
+      "Doctrine peut router sur replicas via <code>primary</code> / <code>replicas</code> DBAL config",
+      "Partitioning natif MySQL/PostgreSQL par range",
+      "Shard key = choix très engageant",
+      "Connection pool : PgBouncer ou ProxySQL",
+    ],
+    pros: ["Scale horizontale possible", "Soulage la master", "Isolation par tenant"],
+    cons: ["Réplication lag", "Routing à gérer", "Sharding = rupture de l'atomicité globale"],
+  },
+  {
+    id: "observability",
+    title: "Observabilité (Logs, Metrics, Traces)",
+    tag: "Prod",
+    tagline: "Si tu ne le mesures pas, ça n'existe pas.",
+    body: `Trois piliers : <b>Logs</b> (ce qui s'est passé), <b>Métriques</b> (combien, à quel taux), <b>Traces</b> distribuées (le chemin d'une requête entre services). Monolog pour les logs, Prometheus ou OpenTelemetry pour métriques/traces. Tagger chaque requête avec un <b>correlation id</b> (<code>x-request-id</code>) et le propager dans les messages.`,
+    keys: [
+      "Log structurés (JSON) + niveau approprié",
+      "Métriques RED (Rate, Errors, Duration)",
+      "Métriques USE (Utilization, Saturation, Errors) côté infra",
+      "OpenTelemetry PHP = traces distribuées standard",
+      "Alerting sur SLO, pas sur la CPU",
+    ],
+    pros: ["Debug prod possible", "Détection proactive", "Base pour SRE / SLO"],
+    cons: ["Coût de stockage", "Volume de logs explosif si non filtré", "Instrumentation à maintenir"],
+  },
+  {
+    id: "resilience",
+    title: "Résilience & fault tolerance",
+    tag: "Prod",
+    tagline: "Les dépendances tombent. Prépare-toi.",
+    body: `Patterns à connaître : <b>timeout</b> partout (jamais d'appel externe sans), <b>retry</b> avec backoff exponentiel et jitter, <b>circuit breaker</b> pour couper net une dépendance qui flambe, <b>bulkhead</b> pour isoler des pools, <b>fallback</b> gracieux, <b>rate limiter</b> Symfony (<code>RateLimiterFactory</code>) pour se protéger soi-même.`,
+    keys: [
+      "Pas de retry sur erreur non idempotente",
+      "Circuit breaker ≠ retry, les deux se combinent",
+      "Symfony RateLimiter fournit token bucket et sliding window",
+      "Chaos engineering pour tester les fallbacks",
+    ],
+    pros: ["Survie face aux pannes partielles", "Meilleur SLA perçu", "Protège les dépendances en aval"],
+    cons: ["Complexité ajoutée", "Faux positifs possibles", "Nécessite de l'observabilité pour tuner"],
+  },
+];
+
+const SCENARIOS = [
+  {
+    id: "s1",
+    title: "🛒 Architecture d'un e-commerce à 10M de visites/mois",
+    q: "On te demande de concevoir le backend. Quels choix et quels trade-offs ?",
+    answer: `
+<h5>1. Découper en bounded contexts</h5>
+<p>Catalogue, Panier, Checkout, Paiement, Commandes, Livraison, Stock, Compte. Chaque contexte = frontière claire, vocabulaire propre, équipe possible.</p>
+<h5>2. Par défaut : monolithe modulaire Symfony</h5>
+<p>Un seul repo, des bundles ou dossiers par contexte, Deptrac pour verrouiller. On extrait un microservice seulement si un contexte le justifie (Paiement : PCI DSS, SLA différent).</p>
+<h5>3. CQRS léger</h5>
+<p>Command bus pour toutes les écritures (Messenger + middleware transactional). Query services dédiés pour les listings et les dashboards, avec cache Redis et projections.</p>
+<h5>4. Async partout où possible</h5>
+<p>Email, facture PDF, indexation Elasticsearch du catalogue, notifications : via Messenger sur RabbitMQ. Transport doctrine pour l'outbox.</p>
+<h5>5. Lecture catalogue</h5>
+<p>Cache HTTP en CDN (produits, fiches, catégories) + cache Redis tagué. TTL + invalidation par tag au changement produit.</p>
+<h5>6. Paiement = anti-corruption</h5>
+<p>Adapter pour Stripe/Adyen. Idempotence key obligatoire. Webhook → Messenger → saga de confirmation.</p>
+<h5>7. Observabilité</h5>
+<p>OpenTelemetry avec Jaeger/Grafana, métriques RED par use case, logs structurés JSON + correlation id.</p>
+<h5>8. Ce qu'il faut dire en entretien</h5>
+<p>« Je commence toujours par le monolithe modulaire. Je ne paie pas le coût des microservices tant que les frontières ne sont pas stables et qu'aucun goulot ne le justifie. »</p>
+`,
+  },
+  {
+    id: "s2",
+    title: "📱 Feed social d'actualités",
+    q: "Concevoir un feed personnalisé pour 500k utilisateurs actifs/jour. Lectures >> écritures.",
+    answer: `
+<h5>Lecture = problème principal</h5>
+<p>Deux stratégies : <b>fan-out on write</b> (on pousse le post dans le feed de chaque follower à la publication) ou <b>fan-out on read</b> (on calcule le feed à la demande).</p>
+<h5>Compromis réaliste</h5>
+<p>Hybride : fan-out on write pour les comptes normaux, fan-out on read pour les comptes avec >100k followers (sinon l'écriture explose).</p>
+<h5>Stockage du feed</h5>
+<p>Redis (liste ou sorted set) par utilisateur, TTL contrôlé. Source de vérité en PostgreSQL.</p>
+<h5>Pipeline</h5>
+<p>PostMessage command → handler → persist post + dispatch <code>PostPublished</code> event → worker de fan-out qui push dans Redis de chaque follower. Async obligatoire via Messenger.</p>
+<h5>API</h5>
+<p>GET /feed renvoie depuis Redis, fallback sur une query materialisée si cache vide. Pagination par curseur (pas par offset).</p>
+<h5>Ce qui impressionne</h5>
+<p>Reconnaître le trade-off fan-out write/read et savoir l'adapter selon la distribution des followers.</p>
+`,
+  },
+  {
+    id: "s3",
+    title: "💳 Système de paiement robuste",
+    q: "Gérer les paiements avec retry, idempotence, webhooks et réconciliation comptable.",
+    answer: `
+<h5>Principes non-négociables</h5>
+<ul>
+<li><b>Idempotence</b> sur chaque appel : clé générée côté nous, renvoyée aux PSP.</li>
+<li><b>Transactional outbox</b> pour garantir qu'un <code>PaymentCaptured</code> émis en BDD est aussi publié.</li>
+<li><b>Webhooks signés</b> validés avant traitement, stockés bruts en base pour audit.</li>
+</ul>
+<h5>Modélisation</h5>
+<p>Aggregate <b>Payment</b> avec state machine : Pending → Authorized → Captured / Failed / Refunded. Transitions contrôlées par l'agrégat, pas par les services.</p>
+<h5>Event Sourcing ?</h5>
+<p>Pertinent ici : audit trail natif, reconstruction possible, conformité facile. Trade-off : courbe de maintenance. À proposer <b>si l'équipe est à l'aise avec le pattern</b>, sinon outbox + table historique suffit.</p>
+<h5>Réconciliation</h5>
+<p>Job nocturne qui cross-check avec les rapports du PSP. Toute divergence = alerte + ticket humain. Ne jamais "corriger silencieusement".</p>
+<h5>Entretien bonus</h5>
+<p>Parler de <b>saga de checkout</b> avec compensation (si la capture échoue après réservation stock, on libère le stock).</p>
+`,
+  },
+  {
+    id: "s4",
+    title: "📊 Rapport analytics sur 200M de lignes",
+    q: "Un endpoint doit renvoyer des stats agrégées sur une très grosse table Doctrine. Il rame.",
+    answer: `
+<h5>Diagnostic</h5>
+<p>Doctrine et son ORM sont inadaptés aux requêtes analytiques. Bypass l'ORM et passe en <b>SQL natif via DBAL</b>, ou mieux : déporte les lectures dans une <b>base analytique</b> (read replica + pre-agregation).</p>
+<h5>Leviers dans l'ordre</h5>
+<ul>
+<li>Indexes ciblés sur les colonnes filtrées (+ EXPLAIN).</li>
+<li>Requêtes pré-agrégées matérialisées (vue matérialisée PostgreSQL, ou table dédiée alimentée par un event listener).</li>
+<li>Cache du résultat avec TTL court et invalidation par tag.</li>
+<li>Pagination par curseur pour éviter les gros offset.</li>
+<li>Si volume > quelques centaines de M : ClickHouse / BigQuery pour l'analytique pure.</li>
+</ul>
+<h5>Architecturalement</h5>
+<p>Côté écriture : Doctrine + PostgreSQL classique. Côté lecture analytique : projection dédiée consommée via events → ClickHouse. C'est du CQRS appliqué.</p>
+<h5>À retenir</h5>
+<p>Savoir dire « <b>Doctrine n'est pas un reporting engine</b> » est en soi un marqueur de maturité.</p>
+`,
+  },
+  {
+    id: "s5",
+    title: "🔁 Migration d'un monolithe legacy vers du Symfony moderne",
+    q: "On hérite d'un gros PHP 5.6 spaghettis. Comment on s'en sort sans tout casser ?",
+    answer: `
+<h5>Stratégie : Strangler Fig (Martin Fowler)</h5>
+<p>On ne réécrit pas, on étouffe. Un reverse proxy (Nginx, Traefik) route progressivement les URL vers la nouvelle app Symfony. Ancien et nouveau cohabitent derrière la même porte.</p>
+<h5>Étapes</h5>
+<ul>
+<li>1. Mettre un reverse proxy devant (si pas déjà).</li>
+<li>2. Créer l'app Symfony vide, branchée sur la même BDD (lecture only au départ).</li>
+<li>3. Réécrire les endpoints un par un, les plus simples et les plus critiques en premier.</li>
+<li>4. Partager la BDD le temps nécessaire, puis séparer par sous-schéma.</li>
+<li>5. Introduire un Anti-Corruption Layer pour parler au legacy côté business logic.</li>
+</ul>
+<h5>Pièges à éviter</h5>
+<ul>
+<li>Le big bang rewrite. <b>Jamais.</b></li>
+<li>Laisser la vieille app muter le schéma sans que la nouvelle le sache.</li>
+<li>Ne pas mesurer le coverage des endpoints migrés.</li>
+</ul>
+<h5>Argument pour l'entretien</h5>
+<p>« Je ne propose jamais un rewrite complet à un recruteur. Je propose un strangler fig, en chiffrant le ROI par endpoint migré. »</p>
+`,
+  },
+];
+
+const QUIZ = [
+  {
+    q: "Dans une architecture hexagonale, une interface Repository est définie où ?",
+    opts: [
+      "Dans src/Infrastructure/Doctrine",
+      "Dans le domaine (src/Domain)",
+      "Dans src/Controller pour que le contrôleur la voie",
+      "Dans un bundle tiers dédié",
+    ],
+    a: 1,
+    x: "L'inversion de dépendance veut que le domaine déclare son besoin (l'interface), et l'infrastructure fournit l'implémentation. Ce n'est jamais l'inverse."
+  },
+  {
+    q: "Règle d'or des Aggregates en DDD :",
+    opts: [
+      "Un agrégat contient toujours plus de 3 entités",
+      "Une transaction = un seul agrégat modifié",
+      "Les agrégats ne peuvent pas émettre d'events",
+      "Un agrégat doit être persisté en NoSQL",
+    ],
+    a: 1,
+    x: "Pour garantir la cohérence et éviter les verrous distribués, on limite une transaction à un seul agrégat. Les effets multi-agrégats passent par events + éventuel process manager."
+  },
+  {
+    q: "À quoi sert le Transactional Outbox pattern ?",
+    opts: [
+      "Réduire la taille des entités Doctrine",
+      "Gérer les uploads de fichiers",
+      "Garantir l'atomicité entre écriture BDD et publication d'event",
+      "Compresser les messages RabbitMQ",
+    ],
+    a: 2,
+    x: "C'est la solution au problème de dual-write : on écrit l'event dans une table outbox dans la même transaction que la modification, un relay se charge ensuite de publier."
+  },
+  {
+    q: "Dans CQRS, un handler de Command doit :",
+    opts: [
+      "Retourner l'objet modifié pour que le contrôleur l'affiche",
+      "Renvoyer des DTOs de lecture optimisés",
+      "Ne rien retourner (l'intention est de modifier l'état)",
+      "Exécuter toutes les queries aussi",
+    ],
+    a: 2,
+    x: "Une command exprime une intention de modifier l'état, sans valeur de retour métier. Les lectures passent par le query bus."
+  },
+  {
+    q: "Pourquoi préférer un monolithe modulaire à des microservices au début d'un projet ?",
+    opts: [
+      "Parce que les microservices sont toujours plus lents",
+      "Parce que les frontières stables ne sont pas encore connues",
+      "Parce que Symfony ne supporte pas les microservices",
+      "Parce que Docker coûte trop cher",
+    ],
+    a: 1,
+    x: "Extraire un microservice prématurément, c'est se condamner à recomposer la frontière plus tard. Le monolithe modulaire permet d'apprendre avant de payer le coût ops."
+  },
+  {
+    q: "Un Voter Symfony sert à :",
+    opts: [
+      "Authentifier un utilisateur par token",
+      "Hacher un mot de passe avec bcrypt",
+      "Décider si un user a le droit d'une action sur un sujet donné",
+      "Configurer un firewall",
+    ],
+    a: 2,
+    x: "Les Voters font de l'autorisation fine sur un sujet (souvent un objet métier). Ils sont séparés des Authenticators qui, eux, font l'authentification."
+  },
+  {
+    q: "Un problème N+1 dans Doctrine se résout typiquement par :",
+    opts: [
+      "Augmenter la RAM PHP",
+      "Ajouter des joins avec addSelect dans le QueryBuilder",
+      "Mettre toutes les relations en EAGER par défaut",
+      "Utiliser MongoDB",
+    ],
+    a: 1,
+    x: "On passe à des fetch-join explicites pour charger les relations nécessaires en une requête, sans passer en EAGER global qui est pire."
+  },
+  {
+    q: "Que fait le middleware doctrine_transaction dans Messenger ?",
+    opts: [
+      "Encode les messages en JSON",
+      "Enveloppe chaque handler dans une transaction BDD",
+      "Compresse les payloads",
+      "Signe chaque message cryptographiquement",
+    ],
+    a: 1,
+    x: "Il commence une transaction avant le handler et la commit en sortie. Si le handler throw, rollback automatique."
+  },
+  {
+    q: "La Anti-Corruption Layer sert à :",
+    opts: [
+      "Chiffrer les données sensibles",
+      "Protéger l'app des virus",
+      "Isoler ton modèle d'un voisin externe au vocabulaire différent",
+      "Faire du rate limiting",
+    ],
+    a: 2,
+    x: "L'ACL traduit entre deux modèles, typiquement pour intégrer un legacy ou un service tiers sans laisser ses concepts infecter ton domaine."
+  },
+  {
+    q: "En Event Sourcing, l'état courant d'un agrégat est :",
+    opts: [
+      "Stocké tel quel en base et mis à jour à chaque changement",
+      "Reconstruit en rejouant la liste des events passés",
+      "Calculé uniquement la nuit",
+      "Toujours en cache Redis",
+    ],
+    a: 1,
+    x: "En ES, la source de vérité est le log d'events. L'état courant est dérivé par replay (accéléré par snapshots)."
+  },
+  {
+    q: "Symfony RateLimiter est utile pour :",
+    opts: [
+      "Limiter la vitesse du JavaScript",
+      "Brider les connexions SSH",
+      "Throttler un endpoint, une action métier ou un consumer",
+      "Réduire la taille des images",
+    ],
+    a: 2,
+    x: "Token bucket ou sliding window, il s'applique par clé (IP, userId, email…) sur une action quelconque du code."
+  },
+  {
+    q: "Dans une saga d'orchestration, si une étape échoue, on :",
+    opts: [
+      "Rollback toutes les autres étapes via une transaction distribuée",
+      "Exécute des compensations explicites pour annuler les effets",
+      "Redémarre tous les services",
+      "Ignore l'échec et avance",
+    ],
+    a: 1,
+    x: "Dans un système distribué, les transactions ACID ne traversent plus les services. On programme des compensations métier (refund, release stock…)."
+  },
+  {
+    q: "Pourquoi décorer un service en Symfony plutôt qu'en hériter ?",
+    opts: [
+      "L'héritage n'existe pas en PHP 8",
+      "Pour respecter l'Open/Closed Principle et composer plusieurs aspects",
+      "La décoration est plus rapide au runtime",
+      "Pour gagner de l'espace disque",
+    ],
+    a: 1,
+    x: "La décoration permet d'empiler des comportements (cache → logging → métriques → service réel) sans modifier l'original."
+  },
+  {
+    q: "Dans un système Symfony, les Domain Events sont idéalement :",
+    opts: [
+      "Dispatchés synchronement par l'EventDispatcher pendant la transaction",
+      "Collectés par l'agrégat, puis dispatchés après le flush (souvent via Messenger)",
+      "Écrits dans un fichier texte",
+      "Envoyés directement aux frontaux en WebSocket",
+    ],
+    a: 1,
+    x: "L'agrégat accumule ses events, le handler de command les récupère après la persistance et les dispatche, ce qui permet le traitement async et la fiabilité."
+  },
+  {
+    q: "Le principal risque quand on introduit CQRS :",
+    opts: [
+      "Casser la compatibilité PHP",
+      "Créer une consistance éventuelle sur les lectures, donc UX à penser",
+      "Perdre toutes les données",
+      "Devoir utiliser GraphQL obligatoirement",
+    ],
+    a: 1,
+    x: "Les projections de lecture peuvent être à jour avec un léger délai. L'UI et l'UX doivent l'anticiper (optimistic updates, polling, etc.)."
+  },
+];
+
+const FLASHCARDS = [
+  { q: "Bounded Context", a: "Frontière d'un modèle cohérent : dans cette zone, un mot a un seul sens. Chaque contexte peut devenir un service, une équipe, un module." },
+  { q: "Aggregate Root", a: "Entité qui garde les invariants d'un cluster d'objets et constitue la seule porte d'entrée pour modifier le cluster." },
+  { q: "Value Object", a: "Objet immuable défini par sa valeur, pas par une identité. Ex : Money, Email, OrderId." },
+  { q: "Port vs Adapter", a: "Le port est l'interface déclarée par le domaine. L'adapter est l'implémentation qui connecte une techno concrète." },
+  { q: "Règle transactionnelle DDD", a: "Une transaction modifie un seul agrégat. Les effets inter-agrégats passent par events." },
+  { q: "Command vs Query", a: "Command change l'état sans retour métier. Query lit l'état sans effet de bord. Les deux ne partagent pas forcément le même modèle." },
+  { q: "Event Sourcing", a: "Stocker la liste des faits qui ont mené à l'état plutôt que l'état lui-même. L'état est rejoué sur demande." },
+  { q: "Transactional Outbox", a: "Écrire l'event dans une table outbox dans la même transaction SQL que l'agrégat, puis un relay publie. Résout le dual-write." },
+  { q: "Saga", a: "Workflow distribué fait d'étapes + compensations pour se passer de transactions ACID inter-services." },
+  { q: "Anti-Corruption Layer", a: "Couche de traduction qui protège ton modèle d'un voisin dont le vocabulaire diffère (legacy, autre contexte)." },
+  { q: "Strangler Fig", a: "Stratégie de migration progressive : un proxy réécrit la route, l'ancienne et la nouvelle app cohabitent, la nouvelle absorbe l'ancienne peu à peu." },
+  { q: "Symfony Messenger bus", a: "Un bus de messages (command/query/event), middleware-driven, transport sync ou async. Base de CQRS et du async." },
+  { q: "Unit of Work Doctrine", a: "Doctrine garde un registre des entités gérées et calcule le diff au flush pour générer les SQL nécessaires." },
+  { q: "N+1 problem", a: "1 requête pour la liste + N requêtes pour chaque relation lazy. Se résout avec fetch-join ciblé, pas avec EAGER global." },
+  { q: "Voter Symfony", a: "Composant d'autorisation fine : décide si un user peut effectuer une action sur un sujet métier donné." },
+  { q: "Circuit breaker", a: "Couper les appels à une dépendance qui flambe pour éviter d'aggraver la panne. Se réouvre après une période de test." },
+  { q: "Idempotence", a: "Une opération peut être rejouée N fois et produire le même résultat. Indispensable pour les retries et l'at-least-once delivery." },
+  { q: "Cache-aside", a: "Le service lit d'abord le cache ; s'il miss, va en BDD et remplit le cache. Pattern par défaut." },
+  { q: "Monolithe modulaire", a: "Une seule base de code déployée en un bloc, mais découpée en modules avec frontières verrouillées. Meilleur pas intermédiaire avant microservices." },
+  { q: "SLI / SLO / SLA", a: "SLI = indicateur mesuré. SLO = objectif interne. SLA = engagement contractuel. Toujours définir SLI/SLO avant d'optimiser." },
+];
+
+const INTERVIEW_QA = [
+  {
+    q: "Comment découperais-tu un projet Symfony de taille conséquente ?",
+    a: `Je commence par identifier les <b>bounded contexts</b> avec le métier : ce sont les zones où le vocabulaire est cohérent. Chaque contexte devient un dossier ou un bundle, avec une frontière verrouillée (Deptrac, code review, compiler pass). Par défaut : monolithe modulaire. Je n'extrais un microservice que quand une frontière est stable, qu'une contrainte technique le justifie (scale, SLA, techno) et que l'équipe peut assumer le coût ops.`,
+  },
+  {
+    q: "Quelle différence entre hexagonal, onion et clean architecture ?",
+    a: `Elles partagent la même idée : <b>le domaine au centre, les dépendances pointent vers l'intérieur</b>. L'hexagonale (Cockburn) insiste sur <i>ports & adapters</i>. L'onion (Palermo) met l'accent sur les couches concentriques. La clean (Martin) généralise avec 4 anneaux (entities, use cases, interface adapters, frameworks). En pratique, on mélange : on parle souvent de <i>clean hexagonal</i>.`,
+  },
+  {
+    q: "Quand introduire CQRS et quand c'est une mauvaise idée ?",
+    a: `<b>Bonne idée</b> : quand écriture et lecture ont des besoins très différents (dashboard vs transactions), quand on veut scale séparément, ou quand les règles métier d'écriture sont complexes et mériteraient leur propre modèle. <b>Mauvaise idée</b> : CRUD simple, petit projet, équipe qui n'a jamais vu le pattern, ou quand la consistance éventuelle sur les lectures est inacceptable côté produit.`,
+  },
+  {
+    q: "Comment tu garantis qu'un event est publié après une écriture BDD ?",
+    a: `Avec le <b>Transactional Outbox</b>. Dans la même transaction que la modification de l'agrégat, j'écris l'event en base (table outbox). Un relay lit cette table et publie vers le broker. Symfony Messenger le fait nativement avec le transport Doctrine. Combinaison : atomicité + at-least-once, avec handlers idempotents.`,
+  },
+  {
+    q: "Explique le principe d'idempotence et pourquoi c'est critique.",
+    a: `Une opération idempotente produit le même résultat qu'on l'exécute 1 ou N fois. C'est critique parce que les systèmes distribués garantissent presque toujours <i>at least once</i>, donc un handler peut recevoir deux fois le même message (retry, reprise après crash…). J'utilise une <b>clé d'idempotence</b> (UUID de la command), un stockage de dédup (Redis, table dédiée), et je vérifie avant d'exécuter.`,
+  },
+  {
+    q: "Comment tu structures une application Symfony pour la testabilité ?",
+    a: `Je sépare le domaine du framework. Le domaine n'a aucune dépendance à Symfony/Doctrine : testable en unitaire pur, sans boot de kernel. Les use cases (command handlers) sont testés avec des repositories in-memory. Je garde des <b>tests d'intégration</b> ciblés sur les adapters (Doctrine, HTTP client, Messenger). Et des <b>tests fonctionnels</b> end-to-end sur quelques scénarios critiques. Pyramide classique : beaucoup d'unit, moyen d'intégration, peu de e2e.`,
+  },
+  {
+    q: "Comment tu déboguerais un endpoint lent en prod ?",
+    a: `Par ordre : 1) <b>observabilité</b> — je regarde les traces (OpenTelemetry), les métriques RED par endpoint, les logs structurés avec correlation id ; 2) je profile avec Blackfire ou symfony profiler sur staging ; 3) je vérifie les classiques — N+1 Doctrine, requête non-indexée, appel HTTP externe sans timeout, cache qui miss ; 4) je mesure <b>avant</b> de changer. Jamais d'optimisation à l'aveugle.`,
+  },
+  {
+    q: "Comment gérer les transactions entre services dans une archi distribuée ?",
+    a: `On ne peut pas (raisonnablement). On abandonne les transactions ACID inter-services et on utilise des <b>sagas</b> : chaque étape a sa compensation. Soit en orchestration (un coordinateur central pilote), soit en chorégraphie (chaque service réagit aux events des autres). Je combine avec : idempotence, outbox, et retries bien pensés.`,
+  },
+  {
+    q: "Doctrine ORM ou DBAL ? Quand choisir quoi ?",
+    a: `<b>ORM</b> pour les écritures métier avec agrégats : Unit of Work, identity map, events, validations. <b>DBAL</b> pour les lectures massives, les rapports, les requêtes analytiques et tout ce qui mérite une requête SQL optimisée. Typiquement : command side en ORM, query side en DBAL avec DTO. C'est d'ailleurs une forme légère de CQRS.`,
+  },
+  {
+    q: "Ton avis sur la réécriture totale d'un legacy ?",
+    a: `C'est presque toujours une mauvaise idée. Je propose systématiquement un <b>Strangler Fig</b> : on intercale un reverse proxy, on réécrit les endpoints un par un dans une nouvelle app Symfony, on partage temporairement la BDD, on isole avec un ACL, on mesure. Un big bang rewrite coûte deux fois plus cher qu'estimé, casse la confiance métier, et reproduit rarement les subtilités du legacy.`,
+  },
+  {
+    q: "Comment tu sécurises un endpoint API Symfony ?",
+    a: `Trois niveaux : <b>authentification</b> via un Authenticator (JWT, API Key, OAuth selon contexte), <b>autorisation</b> via des Voters qui reçoivent le sujet métier, <b>validation d'entrée</b> avec le composant Validator + DTO d'entrée. J'ajoute : rate limiting par IP/user, CORS strict, HTTPS uniquement, headers de sécurité (CSP, HSTS). Et je <b>log toutes les tentatives</b> d'accès refusées.`,
+  },
+  {
+    q: "Comment tu gères un import de 10M de lignes ?",
+    a: `Jamais en synchrone. Je stream le fichier (pas de <code>file_get_contents</code>), je batch à 200/500 lignes avec <code>flush + clear</code> Doctrine entre chaque, je dispatche via Messenger si le traitement est lourd. Idempotence via clé par ligne. Reprise sur erreur avec un curseur de progression persisté. Et je mesure le memory_get_usage en boucle pour détecter les fuites.`,
+  },
+];
+
+const CHEATS = [
+  { t: "📐 Fondations", items: [
+    "Hexagonal = ports côté domaine, adapters côté infra. Dépendances vers le domaine uniquement.",
+    "DDD = ubiquitous language, bounded contexts, aggregates, value objects, domain events.",
+    "Clean Architecture = règle de dépendance qui pointe vers l'intérieur. Framework = detail.",
+    "1 transaction = 1 agrégat. Le reste passe par events.",
+  ]},
+  { t: "🧩 Patterns", items: [
+    "CQRS = séparer écritures et lectures, pas forcément 2 bases.",
+    "Event Sourcing = stocker les faits, pas l'état. Combiné avec CQRS.",
+    "Saga = orchestration + compensations pour le distribué.",
+    "Outbox = garantie d'atomicité écriture + event.",
+    "Anti-Corruption Layer = traduction entre contextes hétérogènes.",
+  ]},
+  { t: "⚡ Symfony", items: [
+    "Messenger = bus + transports + middlewares. Base de CQRS et async.",
+    "Voters pour l'autorisation métier, Authenticators pour l'auth.",
+    "Doctrine UoW : flush = calcul de diff. Attention N+1.",
+    "Décoration de service > héritage pour cross-cutting concerns.",
+    "Deptrac pour verrouiller les frontières d'un monolithe modulaire.",
+  ]},
+  { t: "📈 Production", items: [
+    "Observabilité = Logs + Metrics + Traces avec correlation id.",
+    "Pas d'appel externe sans timeout + retry + circuit breaker.",
+    "Cache-aside par défaut, invalidation par tag, stampede protection.",
+    "RateLimiter Symfony pour protéger les endpoints coûteux.",
+    "RED (rate/errors/duration) côté app, USE côté infra.",
+  ]},
+  { t: "🧠 Réflexes entretien", items: [
+    "Commence par le monolithe modulaire, pas par des microservices.",
+    "Justifie chaque pattern par un problème concret, jamais par la mode.",
+    "Pense en trade-offs : rien n'est gratuit.",
+    "Mesure avant d'optimiser. Observe avant de refactorer.",
+    "Strangler Fig > Big Bang Rewrite. Toujours.",
+  ]},
+  { t: "🎯 Anti-buzzwords", items: [
+    "Ne dis pas « microservices » sans dire « pourquoi ».",
+    "Ne dis pas « event sourcing » si t'es pas prêt à gérer le versioning d'events.",
+    "Ne dis pas « clean archi » si t'as pas d'exemple concret à montrer.",
+    "Ne dis pas « scalable » sans métrique derrière.",
+    "Ne dis pas « best practices » : dis les contraintes qui t'y mènent.",
+  ]},
+];
+
+/* ============================================================
+   DIAGRAMS (SVG helpers)
+============================================================ */
+
+function svgLayered() {
+  return `<svg viewBox="0 0 520 220" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="lg1" x1="0" x2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#00d4ff"/></linearGradient></defs>
+    ${layer(30, 30, "Presentation (Controllers, CLI, API)")}
+    ${layer(30, 80, "Application (Services, Use Cases)")}
+    ${layer(30, 130, "Domain (Entities, Business Rules)")}
+    ${layer(30, 180, "Infrastructure (Doctrine, HTTP, Cache)")}
+  </svg>`;
+  function layer(x, y, label) {
+    return `<rect x="${x}" y="${y}" width="460" height="38" rx="8" fill="url(#lg1)" opacity=".18" stroke="#7c5cff" stroke-opacity=".45"/>
+            <text x="${x+16}" y="${y+24}" font-size="13" fill="#e8ecf6" font-family="Inter">${label}</text>`;
+  }
+}
+function svgHexagonal() {
+  return `<svg viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="280,30 460,110 460,220 280,300 100,220 100,110" fill="rgba(124,92,255,.12)" stroke="#7c5cff"/>
+    <text x="280" y="155" text-anchor="middle" font-size="16" fill="#e8ecf6" font-weight="700">Domain</text>
+    <text x="280" y="180" text-anchor="middle" font-size="12" fill="#8a93b2">Pure, no framework</text>
+    <g font-size="11" fill="#00d4ff">
+      <text x="50" y="115">HTTP → Port</text>
+      <text x="50" y="215">CLI → Port</text>
+      <text x="420" y="115">Port → Doctrine</text>
+      <text x="420" y="215">Port → Messenger</text>
+    </g>
+  </svg>`;
+}
+function svgClean() {
+  return `<svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="200" cy="160" r="150" fill="none" stroke="#334070"/>
+    <circle cx="200" cy="160" r="110" fill="none" stroke="#334070"/>
+    <circle cx="200" cy="160" r="70" fill="none" stroke="#334070"/>
+    <circle cx="200" cy="160" r="35" fill="rgba(124,92,255,.2)" stroke="#7c5cff"/>
+    <text x="200" y="165" text-anchor="middle" font-size="12" fill="#e8ecf6">Entities</text>
+    <text x="200" y="100" text-anchor="middle" font-size="11" fill="#8a93b2">Use Cases</text>
+    <text x="200" y="55" text-anchor="middle" font-size="11" fill="#8a93b2">Interface Adapters</text>
+    <text x="200" y="20" text-anchor="middle" font-size="11" fill="#8a93b2">Frameworks &amp; Drivers</text>
+  </svg>`;
+}
+function svgDDD() {
+  return `<svg viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg">
+    ${ctx(30, 40, "Catalog")}
+    ${ctx(210, 40, "Orders")}
+    ${ctx(390, 40, "Shipping")}
+    <line x1="150" y1="90" x2="210" y2="90" stroke="#00d4ff" stroke-dasharray="4 3"/>
+    <line x1="330" y1="90" x2="390" y2="90" stroke="#00d4ff" stroke-dasharray="4 3"/>
+    <text x="280" y="180" text-anchor="middle" font-size="12" fill="#8a93b2">Bounded contexts reliés par une context map</text>
+  </svg>`;
+  function ctx(x,y,n) {
+    return `<rect x="${x}" y="${y}" width="120" height="100" rx="10" fill="rgba(0,212,255,.08)" stroke="#00d4ff"/>
+            <text x="${x+60}" y="${y+55}" text-anchor="middle" font-size="14" fill="#e8ecf6" font-weight="600">${n}</text>
+            <text x="${x+60}" y="${y+75}" text-anchor="middle" font-size="11" fill="#8a93b2">Aggregate(s)</text>`;
+  }
+}
+function svgMicro() {
+  return `<svg viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
+    ${svc(30,60,"Orders")} ${svc(170,60,"Payment")} ${svc(310,60,"Shipping")} ${svc(450,60,"Inventory")}
+    <rect x="30" y="160" width="540" height="30" rx="8" fill="rgba(255,110,196,.1)" stroke="#ff6ec4"/>
+    <text x="300" y="180" text-anchor="middle" font-size="12" fill="#e8ecf6">Message broker (AMQP / Kafka)</text>
+    ${['90','230','370','510'].map(x=>`<line x1="${x}" y1="130" x2="${x}" y2="160" stroke="#ff6ec4" stroke-dasharray="3 2"/>`).join('')}
+  </svg>`;
+  function svc(x,y,n) {
+    return `<rect x="${x}" y="${y}" width="120" height="70" rx="10" fill="rgba(124,92,255,.12)" stroke="#7c5cff"/>
+            <text x="${x+60}" y="${y+30}" text-anchor="middle" font-size="13" fill="#e8ecf6" font-weight="600">${n}</text>
+            <text x="${x+60}" y="${y+50}" text-anchor="middle" font-size="10" fill="#8a93b2">1 DB privée</text>`;
+  }
+}
+function svgCQRS() {
+  return `<svg viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="30" y="40" width="140" height="60" rx="8" fill="rgba(46,230,168,.1)" stroke="#2ee6a8"/>
+    <text x="100" y="75" text-anchor="middle" font-size="13" fill="#e8ecf6">Command bus</text>
+    <rect x="30" y="120" width="140" height="60" rx="8" fill="rgba(0,212,255,.1)" stroke="#00d4ff"/>
+    <text x="100" y="155" text-anchor="middle" font-size="13" fill="#e8ecf6">Query bus</text>
+    <rect x="240" y="40" width="140" height="60" rx="8" fill="rgba(124,92,255,.1)" stroke="#7c5cff"/>
+    <text x="310" y="75" text-anchor="middle" font-size="13" fill="#e8ecf6">Write model</text>
+    <rect x="240" y="120" width="140" height="60" rx="8" fill="rgba(124,92,255,.1)" stroke="#7c5cff"/>
+    <text x="310" y="155" text-anchor="middle" font-size="13" fill="#e8ecf6">Read model</text>
+    <rect x="430" y="75" width="110" height="70" rx="8" fill="rgba(255,204,77,.08)" stroke="#ffcc4d"/>
+    <text x="485" y="115" text-anchor="middle" font-size="12" fill="#e8ecf6">Projections</text>
+    <line x1="170" y1="70" x2="240" y2="70" stroke="#2ee6a8"/>
+    <line x1="170" y1="150" x2="240" y2="150" stroke="#00d4ff"/>
+    <line x1="380" y1="70" x2="430" y2="95" stroke="#ffcc4d" stroke-dasharray="3 2"/>
+    <line x1="430" y1="125" x2="380" y2="150" stroke="#ffcc4d" stroke-dasharray="3 2"/>
+  </svg>`;
+}
+function svgES() {
+  return `<svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg">
+    ${ev(20,60,"OrderCreated")} ${ev(160,60,"ItemAdded")} ${ev(300,60,"Paid")} ${ev(440,60,"Shipped")}
+    <line x1="20" y1="160" x2="540" y2="160" stroke="#7c5cff" stroke-dasharray="4 3"/>
+    <text x="280" y="180" text-anchor="middle" font-size="12" fill="#8a93b2">Event log immuable (source de vérité)</text>
+  </svg>`;
+  function ev(x,y,n) {
+    return `<rect x="${x}" y="${y}" width="120" height="55" rx="8" fill="rgba(124,92,255,.14)" stroke="#7c5cff"/>
+            <text x="${x+60}" y="${y+32}" text-anchor="middle" font-size="12" fill="#e8ecf6">${n}</text>`;
+  }
+}
+function svgSaga() {
+  return `<svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg">
+    ${step(20,70,"Order")} ${step(160,70,"Payment")} ${step(300,70,"Stock")} ${step(440,70,"Shipping")}
+    <line x1="120" y1="100" x2="160" y2="100" stroke="#00d4ff"/>
+    <line x1="260" y1="100" x2="300" y2="100" stroke="#00d4ff"/>
+    <line x1="400" y1="100" x2="440" y2="100" stroke="#00d4ff"/>
+    <text x="280" y="170" text-anchor="middle" font-size="11" fill="#8a93b2">Compensations au retour si une étape échoue</text>
+  </svg>`;
+  function step(x,y,n) {
+    return `<rect x="${x}" y="${y}" width="100" height="60" rx="10" fill="rgba(0,212,255,.1)" stroke="#00d4ff"/>
+            <text x="${x+50}" y="${y+35}" text-anchor="middle" font-size="13" fill="#e8ecf6">${n}</text>`;
+  }
+}
+function svgRepo() {
+  return `<svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg">
+    <rect x="30" y="40" width="140" height="90" rx="10" fill="rgba(124,92,255,.12)" stroke="#7c5cff"/>
+    <text x="100" y="80" text-anchor="middle" font-size="13" fill="#e8ecf6">Use Case</text>
+    <text x="100" y="100" text-anchor="middle" font-size="11" fill="#8a93b2">depends on</text>
+    <rect x="210" y="40" width="160" height="90" rx="10" fill="rgba(46,230,168,.08)" stroke="#2ee6a8"/>
+    <text x="290" y="80" text-anchor="middle" font-size="13" fill="#e8ecf6">OrderRepository</text>
+    <text x="290" y="100" text-anchor="middle" font-size="11" fill="#8a93b2">interface (domain)</text>
+    <rect x="410" y="40" width="130" height="90" rx="10" fill="rgba(0,212,255,.08)" stroke="#00d4ff"/>
+    <text x="475" y="80" text-anchor="middle" font-size="13" fill="#e8ecf6">Doctrine</text>
+    <text x="475" y="100" text-anchor="middle" font-size="11" fill="#8a93b2">implements</text>
+    <line x1="170" y1="85" x2="210" y2="85" stroke="#8a93b2"/>
+    <line x1="370" y1="85" x2="410" y2="85" stroke="#8a93b2"/>
+  </svg>`;
+}
+function svgOutbox() {
+  return `<svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="40" width="150" height="110" rx="10" fill="rgba(124,92,255,.12)" stroke="#7c5cff"/>
+    <text x="95" y="75" text-anchor="middle" font-size="13" fill="#e8ecf6">Aggregate</text>
+    <text x="95" y="95" text-anchor="middle" font-size="11" fill="#8a93b2">SQL transaction</text>
+    <text x="95" y="125" text-anchor="middle" font-size="11" fill="#8a93b2">+ outbox row</text>
+    <rect x="210" y="55" width="140" height="80" rx="10" fill="rgba(255,204,77,.1)" stroke="#ffcc4d"/>
+    <text x="280" y="100" text-anchor="middle" font-size="13" fill="#e8ecf6">Relay / worker</text>
+    <rect x="390" y="55" width="140" height="80" rx="10" fill="rgba(0,212,255,.1)" stroke="#00d4ff"/>
+    <text x="460" y="100" text-anchor="middle" font-size="13" fill="#e8ecf6">Broker</text>
+    <line x1="170" y1="95" x2="210" y2="95" stroke="#8a93b2"/>
+    <line x1="350" y1="95" x2="390" y2="95" stroke="#8a93b2"/>
+  </svg>`;
+}
+
+/* ============================================================
+   STATE / RENDER
+============================================================ */
+
+const storage = {
+  key: "symfony-architect-v1",
+  load() { try { return JSON.parse(localStorage.getItem(this.key)) || {}; } catch { return {}; } },
+  save(s) { localStorage.setItem(this.key, JSON.stringify(s)); },
+};
+
+const state = Object.assign({ read: {}, quizScore: null, viewed: 0 }, storage.load());
+function persist() { storage.save(state); updateProgress(); }
+
+function totalItems() {
+  return CONCEPTS.length + PATTERNS.length + SYMFONY.length + SCALING.length;
+}
+function readItems() {
+  return Object.values(state.read).filter(Boolean).length;
+}
+function updateProgress() {
+  const total = totalItems();
+  const done = readItems();
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById("progBar").style.width = pct + "%";
+  document.getElementById("progLabel").textContent = `${done} / ${total}`;
+  document.getElementById("progPct").textContent = pct + "%";
+  document.getElementById("statConcepts").textContent = total;
+  document.getElementById("statRead").textContent = done;
+  document.getElementById("statQuiz").textContent = state.quizScore != null ? `${state.quizScore}/${QUIZ.length}` : "—";
+  document.getElementById("statFlash").textContent = FLASHCARDS.length;
+}
+
+function markRead(id) {
+  if (!state.read[id]) { state.read[id] = true; persist(); toast("✓ Fiche lue !"); }
+}
+
+function toast(msg) {
+  const host = document.getElementById("toastHost");
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(()=> el.remove(), 2500);
+}
+
+/* ---------- Nav ---------- */
+const navBtns = document.querySelectorAll("#nav button");
+navBtns.forEach(b => b.addEventListener("click", () => switchView(b.dataset.view)));
+document.querySelectorAll("[data-go]").forEach(el => el.addEventListener("click", () => switchView(el.dataset.go)));
+
+function switchView(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-" + name)?.classList.add("active");
+  navBtns.forEach(b => b.classList.toggle("active", b.dataset.view === name));
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ---------- Generic concept explorer ---------- */
+function renderExplorer(listEl, panelEl, items, stateKeyPrefix) {
+  let current = items[0]?.id;
+
+  const renderList = () => {
+    listEl.innerHTML = "";
+    const h = document.createElement("h4"); h.textContent = "Fiches"; listEl.appendChild(h);
+    items.forEach(it => {
+      const b = document.createElement("button");
+      b.innerHTML = `<span>${it.title}</span>${state.read[stateKeyPrefix + it.id] ? '<span class="tick">●</span>' : ''}`;
+      b.classList.toggle("active", it.id === current);
+      b.addEventListener("click", () => { current = it.id; render(); });
+      listEl.appendChild(b);
+    });
+  };
+
+  const renderPanel = () => {
+    const it = items.find(x => x.id === current);
+    if (!it) return;
+    panelEl.innerHTML = "";
+    const chips = [`<span class="chip solid">${it.tag}</span>`].join(" ");
+    panelEl.innerHTML = `
+      ${chips}
+      <h2 style="margin-top:10px">${it.title}</h2>
+      <div class="tagline">${it.tagline}</div>
+      <p>${it.body}</p>
+      <h4>Points clés</h4>
+      <ul>${it.keys.map(k=>`<li>${k}</li>`).join("")}</ul>
+      ${it.diagram ? `<h4>Visuel</h4><div class="diagram">${it.diagram}</div>` : ""}
+      ${(it.pros && it.cons) ? `
+        <div class="two-col">
+          <div class="pros"><h5>✓ Avantages</h5><ul>${it.pros.map(p=>`<li>${p}</li>`).join("")}</ul></div>
+          <div class="cons"><h5>✗ Inconvénients</h5><ul>${it.cons.map(p=>`<li>${p}</li>`).join("")}</ul></div>
+        </div>
+      ` : ""}
+      ${it.code ? `<h4>Exemple Symfony</h4><pre class="code">${it.code}</pre>` : ""}
+      <div class="concept-actions">
+        <button class="btn ghost sm" id="prevBtn">← Précédent</button>
+        <button class="btn sm" id="readBtn">${state.read[stateKeyPrefix + it.id] ? "✓ Déjà lue" : "Marquer comme lue"}</button>
+        <button class="btn ghost sm" id="nextBtn">Suivant →</button>
+      </div>
+    `;
+    document.getElementById("prevBtn").onclick = () => shift(-1);
+    document.getElementById("nextBtn").onclick = () => shift(1);
+    document.getElementById("readBtn").onclick = () => {
+      markRead(stateKeyPrefix + it.id);
+      render();
+    };
+  };
+
+  const shift = (d) => {
+    const idx = items.findIndex(x => x.id === current);
+    const n = (idx + d + items.length) % items.length;
+    current = items[n].id;
+    render();
+  };
+
+  const render = () => { renderList(); renderPanel(); };
+  render();
+}
+
+/* ---------- Concepts / Patterns / Symfony / Scaling ---------- */
+renderExplorer(document.getElementById("conceptList"), document.getElementById("conceptPanel"), CONCEPTS, "c.");
+renderExplorer(document.getElementById("patternList"), document.getElementById("patternPanel"), PATTERNS, "p.");
+renderExplorer(document.getElementById("symfonyList"), document.getElementById("symfonyPanel"), SYMFONY, "s.");
+renderExplorer(document.getElementById("scalingList"), document.getElementById("scalingPanel"), SCALING, "x.");
+
+/* ---------- Reset ---------- */
+document.getElementById("resetProgress").addEventListener("click", () => {
+  if (!confirm("Réinitialiser toute ta progression ?")) return;
+  state.read = {}; state.quizScore = null;
+  persist();
+  // Re-render explorers
+  renderExplorer(document.getElementById("conceptList"), document.getElementById("conceptPanel"), CONCEPTS, "c.");
+  renderExplorer(document.getElementById("patternList"), document.getElementById("patternPanel"), PATTERNS, "p.");
+  renderExplorer(document.getElementById("symfonyList"), document.getElementById("symfonyPanel"), SYMFONY, "s.");
+  renderExplorer(document.getElementById("scalingList"), document.getElementById("scalingPanel"), SCALING, "x.");
+  toast("Progression effacée");
+});
+
+/* ---------- Scenarios ---------- */
+const scList = document.getElementById("scenarioList");
+SCENARIOS.forEach(s => {
+  const el = document.createElement("div");
+  el.className = "scenario";
+  el.innerHTML = `
+    <h3>${s.title}</h3>
+    <p><em>${s.q}</em></p>
+    <button class="btn sm">💡 Voir l'approche</button>
+    <div class="reveal">${s.answer}</div>
+  `;
+  el.querySelector("button").addEventListener("click", (e) => {
+    const r = el.querySelector(".reveal");
+    const shown = r.classList.toggle("show");
+    e.target.textContent = shown ? "▲ Masquer" : "💡 Voir l'approche";
+  });
+  scList.appendChild(el);
+});
+
+/* ---------- Quiz ---------- */
+const quizBox = document.getElementById("quizBox");
+let quizState = { idx: 0, score: 0, answered: false };
+
+function renderQuiz() {
+  if (quizState.idx >= QUIZ.length) {
+    const pct = Math.round(quizState.score / QUIZ.length * 100);
+    const msg = pct >= 80 ? "🏆 Excellent ! Tu es prêt pour l'entretien." :
+                pct >= 60 ? "💪 Solide. Révise encore 2-3 fiches et ce sera parfait." :
+                            "🔁 Retourne sur les concepts, puis retente.";
+    quizBox.innerHTML = `
+      <div class="quiz-result">
+        <div class="score">${quizState.score}/${QUIZ.length}</div>
+        <p>${msg}</p>
+        <button class="btn" id="restartBtn">↺ Recommencer</button>
+      </div>
+    `;
+    document.getElementById("restartBtn").onclick = () => { quizState = { idx: 0, score: 0, answered: false }; renderQuiz(); };
+    state.quizScore = quizState.score; persist();
+    return;
+  }
+  const q = QUIZ[quizState.idx];
+  const prog = Math.round(quizState.idx / QUIZ.length * 100);
+  quizBox.innerHTML = `
+    <div class="quiz-meta"><span>Question ${quizState.idx+1} / ${QUIZ.length}</span><span>Score : ${quizState.score}</span></div>
+    <div class="quiz-bar"><span style="width:${prog}%"></span></div>
+    <div class="quiz-q">${q.q}</div>
+    <div class="quiz-options">
+      ${q.opts.map((o,i) => `<button class="quiz-opt" data-i="${i}">${o}</button>`).join("")}
+    </div>
+    <div class="quiz-explain" id="explain"></div>
+    <div style="margin-top:18px; text-align:right"><button class="btn" id="quizNext" style="display:none">Suivant →</button></div>
+  `;
+  const opts = quizBox.querySelectorAll(".quiz-opt");
+  opts.forEach(btn => btn.addEventListener("click", () => {
+    if (quizState.answered) return;
+    quizState.answered = true;
+    const chosen = +btn.dataset.i;
+    opts.forEach((b,i) => {
+      b.disabled = true;
+      if (i === q.a) b.classList.add("correct");
+      else if (i === chosen) b.classList.add("wrong");
+    });
+    if (chosen === q.a) quizState.score++;
+    const ex = document.getElementById("explain");
+    ex.innerHTML = `<b>${chosen === q.a ? "✓ Bonne réponse." : "✗ Pas tout à fait."}</b> ${q.x}`;
+    ex.classList.add("show");
+    const next = document.getElementById("quizNext");
+    next.style.display = "inline-flex";
+    next.onclick = () => { quizState.idx++; quizState.answered = false; renderQuiz(); };
+  }));
+}
+renderQuiz();
+document.getElementById("quizRestart").addEventListener("click", () => { quizState = { idx: 0, score: 0, answered: false }; renderQuiz(); });
+
+/* ---------- Flashcards ---------- */
+let flashIdx = 0;
+const flashcard = document.getElementById("flashcard");
+const flashFront = document.getElementById("flashFront");
+const flashBack = document.getElementById("flashBack");
+const flashCounter = document.getElementById("flashCounter");
+
+function renderFlash() {
+  const f = FLASHCARDS[flashIdx];
+  flashFront.textContent = f.q;
+  flashBack.textContent = f.a;
+  flashCounter.textContent = `${flashIdx+1} / ${FLASHCARDS.length}`;
+  flashcard.classList.remove("flip");
+}
+flashcard.addEventListener("click", () => flashcard.classList.toggle("flip"));
+document.getElementById("flashPrev").addEventListener("click", () => {
+  flashIdx = (flashIdx - 1 + FLASHCARDS.length) % FLASHCARDS.length; renderFlash();
+});
+document.getElementById("flashNext").addEventListener("click", () => {
+  flashIdx = (flashIdx + 1) % FLASHCARDS.length; renderFlash();
+});
+document.addEventListener("keydown", (e) => {
+  if (!document.getElementById("view-flashcards").classList.contains("active")) return;
+  if (e.key === "ArrowRight") { flashIdx = (flashIdx + 1) % FLASHCARDS.length; renderFlash(); }
+  else if (e.key === "ArrowLeft") { flashIdx = (flashIdx - 1 + FLASHCARDS.length) % FLASHCARDS.length; renderFlash(); }
+  else if (e.key === " ") { e.preventDefault(); flashcard.classList.toggle("flip"); }
+});
+renderFlash();
+
+/* ---------- Interview ---------- */
+const iList = document.getElementById("interviewList");
+INTERVIEW_QA.forEach(qa => {
+  const d = document.createElement("details");
+  d.className = "qa";
+  d.innerHTML = `<summary>${qa.q}</summary><div class="a">${qa.a}</div>`;
+  iList.appendChild(d);
+});
+
+/* ---------- Cheatsheet ---------- */
+const cheatGrid = document.getElementById("cheatGrid");
+CHEATS.forEach(c => {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <h3>${c.t}</h3>
+    <ul style="padding-left:18px; margin-top:10px; color:#d2d9f2; font-size:13.5px;">
+      ${c.items.map(x=>`<li style="margin-bottom:6px">${x}</li>`).join("")}
+    </ul>
+  `;
+  cheatGrid.appendChild(card);
+});
+
+/* ---------- Boot ---------- */
+updateProgress();
+</script>
+</body>
+</html>

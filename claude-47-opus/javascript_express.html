@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Express Mastery — Prep entretien fullstack</title>
+<style>
+  :root {
+    --bg: #0b0f0c;
+    --bg-elev: #131a16;
+    --bg-elev-2: #1a2420;
+    --border: #2a3a32;
+    --text: #e8f0ea;
+    --text-dim: #8fa899;
+    --accent: #4ade80;
+    --accent-glow: #6ee7a5;
+    --accent-soft: rgba(74, 222, 128, 0.12);
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --info: #60a5fa;
+    --danger: #f87171;
+    --code-bg: #0a100c;
+    --keyword: #ff7ab6;
+    --string: #a5e075;
+    --comment: #6a7e72;
+    --type: #7dd3fc;
+    --func: #fbbf24;
+    --number: #fb923c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(at 15% 0%, rgba(74, 222, 128, 0.07) 0px, transparent 50%),
+      radial-gradient(at 85% 100%, rgba(96, 165, 250, 0.05) 0px, transparent 50%);
+    line-height: 1.6;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--bg-elev);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .logo { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .logo h1 {
+    font-size: 22px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-glow) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; letter-spacing: -0.5px;
+  }
+  .logo p { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  .nav { list-style: none; }
+  .nav-section {
+    padding: 14px 24px 6px; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1.2px; color: var(--text-dim); font-weight: 700;
+  }
+  .nav-item {
+    padding: 9px 24px; cursor: pointer; font-size: 13.5px;
+    color: var(--text-dim); border-left: 3px solid transparent;
+    transition: all 0.15s; display: flex; align-items: center; gap: 10px;
+  }
+  .nav-item:hover { color: var(--text); background: var(--bg-elev-2); }
+  .nav-item.active {
+    color: var(--accent); background: var(--accent-soft);
+    border-left-color: var(--accent); font-weight: 600;
+  }
+  .nav-item .num {
+    font-size: 10px; background: var(--bg-elev-2); padding: 2px 6px;
+    border-radius: 4px; min-width: 22px; text-align: center;
+  }
+  .nav-item.active .num { background: var(--accent); color: #0a100c; }
+
+  /* Main */
+  .main { padding: 40px 56px; max-width: 1100px; overflow-x: hidden; }
+  .section { display: none; animation: fadeIn 0.3s ease-out; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  h2 {
+    font-size: 32px; font-weight: 800; margin-bottom: 8px;
+    letter-spacing: -0.8px;
+  }
+  h2 .tag {
+    font-size: 11px; vertical-align: middle; margin-left: 10px;
+    padding: 4px 10px; background: var(--accent-soft);
+    color: var(--accent); border-radius: 999px; font-weight: 600;
+  }
+  .lead { color: var(--text-dim); font-size: 16px; margin-bottom: 32px; max-width: 760px; }
+
+  h3 {
+    font-size: 20px; font-weight: 700; margin: 32px 0 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h3::before {
+    content: ''; width: 3px; height: 18px; background: var(--accent); border-radius: 2px;
+  }
+  h4 { font-size: 15px; font-weight: 700; margin: 20px 0 8px; color: var(--text); }
+  p { margin-bottom: 12px; color: #c8d2cc; }
+  ul, ol { margin: 8px 0 16px 22px; color: #c8d2cc; }
+  li { margin-bottom: 6px; }
+
+  /* Code */
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 20px; overflow-x: auto;
+    margin: 14px 0; font-size: 13.5px; line-height: 1.65;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    position: relative;
+  }
+  pre::before {
+    content: attr(data-lang); position: absolute; top: 8px; right: 12px;
+    font-size: 10px; color: var(--text-dim); letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  code { font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; }
+  p code, li code, td code {
+    background: var(--bg-elev-2); padding: 1px 6px; border-radius: 4px;
+    font-size: 12.5px; color: var(--accent-glow); border: 1px solid var(--border);
+  }
+  .k { color: var(--keyword); }
+  .s { color: var(--string); }
+  .c { color: var(--comment); font-style: italic; }
+  .t { color: var(--type); }
+  .f { color: var(--func); }
+  .n { color: var(--number); }
+  .p { color: var(--text-dim); }
+
+  /* Cards */
+  .card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 22px; margin: 14px 0;
+  }
+  .card.callout-info { border-left: 3px solid var(--info); }
+  .card.callout-warn { border-left: 3px solid var(--warn); }
+  .card.callout-ok { border-left: 3px solid var(--ok); }
+  .card.callout-danger { border-left: 3px solid var(--danger); }
+  .card .label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .callout-info .label { color: var(--info); }
+  .callout-warn .label { color: var(--warn); }
+  .callout-ok .label { color: var(--ok); }
+  .callout-danger .label { color: var(--danger); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* Table */
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-elev); border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th, td {
+    padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+  }
+  th { background: var(--bg-elev-2); font-weight: 700; color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  tr:last-child td { border-bottom: none; }
+
+  /* HTTP method badges */
+  .method {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+    margin-right: 6px;
+  }
+  .method.get { background: rgba(96, 165, 250, 0.2); color: var(--info); }
+  .method.post { background: rgba(74, 222, 128, 0.2); color: var(--ok); }
+  .method.put { background: rgba(251, 191, 36, 0.2); color: var(--warn); }
+  .method.delete { background: rgba(248, 113, 113, 0.2); color: var(--danger); }
+  .method.patch { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+  .method.use { background: rgba(125, 211, 252, 0.2); color: var(--type); }
+
+  /* Diagram - middleware pipeline */
+  .pipeline {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin: 20px 0; padding: 22px; background: var(--bg-elev);
+    border: 1px solid var(--border); border-radius: 12px;
+  }
+  .pipe-node {
+    flex: 1; min-width: 120px; padding: 12px 14px;
+    background: var(--bg-elev-2); border: 1px solid var(--border);
+    border-radius: 8px; text-align: center; font-size: 12.5px;
+    position: relative;
+  }
+  .pipe-node.req { border-color: var(--info); color: var(--info); }
+  .pipe-node.mw { border-color: var(--accent); color: var(--accent); }
+  .pipe-node.handler { border-color: var(--warn); color: var(--warn); }
+  .pipe-node.res { border-color: var(--ok); color: var(--ok); }
+  .pipe-arrow { color: var(--text-dim); font-size: 18px; }
+  .pipe-label { font-size: 10px; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Quiz */
+  .quiz-card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px; margin: 16px 0;
+  }
+  .quiz-q { font-size: 17px; font-weight: 600; margin-bottom: 18px; }
+  .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+  .quiz-option {
+    padding: 14px 18px; background: var(--bg-elev-2); border: 1.5px solid var(--border);
+    border-radius: 10px; cursor: pointer; transition: all 0.15s;
+    font-size: 14px; display: flex; align-items: center; gap: 12px;
+  }
+  .quiz-option:hover:not(.disabled) { border-color: var(--accent); transform: translateX(2px); }
+  .quiz-option.correct { border-color: var(--ok); background: rgba(74, 222, 128, 0.1); }
+  .quiz-option.wrong { border-color: var(--danger); background: rgba(248, 113, 113, 0.1); }
+  .quiz-option.disabled { cursor: default; }
+  .quiz-option .letter {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--bg); display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 700;
+    border: 1px solid var(--border);
+  }
+  .quiz-option.correct .letter { background: var(--ok); color: #0a100c; border-color: var(--ok); }
+  .quiz-option.wrong .letter { background: var(--danger); color: #0a100c; border-color: var(--danger); }
+  .quiz-explain {
+    margin-top: 16px; padding: 14px 16px;
+    background: var(--bg-elev-2); border-radius: 8px;
+    border-left: 3px solid var(--info); font-size: 13.5px; display: none;
+  }
+  .quiz-explain.show { display: block; animation: fadeIn 0.3s; }
+  .quiz-controls {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 20px;
+  }
+  .btn {
+    padding: 10px 20px; background: var(--accent); color: #0a100c;
+    border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+    font-size: 14px; transition: all 0.15s;
+  }
+  .btn:hover { background: var(--accent-glow); transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn.ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn.ghost:hover { color: var(--text); border-color: var(--text-dim); background: var(--bg-elev-2); }
+
+  .quiz-progress {
+    height: 6px; background: var(--bg-elev-2); border-radius: 3px;
+    overflow: hidden; margin-bottom: 24px;
+  }
+  .quiz-progress-bar {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+    transition: width 0.3s; border-radius: 3px;
+  }
+  .quiz-score {
+    text-align: center; padding: 40px;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .quiz-score .score-num {
+    font-size: 56px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent-glow));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Q&A interview */
+  .qa-item {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 10px; margin: 10px 0; overflow: hidden;
+  }
+  .qa-q {
+    padding: 16px 20px; cursor: pointer; font-weight: 600;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; transition: background 0.15s; font-size: 14.5px;
+  }
+  .qa-q:hover { background: var(--bg-elev-2); }
+  .qa-q .toggle { color: var(--accent); font-size: 20px; transition: transform 0.2s; }
+  .qa-item.open .toggle { transform: rotate(45deg); }
+  .qa-a {
+    padding: 0 20px; max-height: 0; overflow: hidden;
+    transition: max-height 0.3s, padding 0.3s; color: #c8d2cc;
+    border-top: 1px solid transparent;
+  }
+  .qa-item.open .qa-a {
+    padding: 16px 20px; max-height: 1400px;
+    border-top-color: var(--border);
+  }
+  .qa-a pre { margin: 10px 0; }
+
+  /* Playground */
+  .playground {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin: 16px 0;
+  }
+  @media (max-width: 900px) { .playground { grid-template-columns: 1fr; } }
+  .playground .panel {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .playground .panel-header {
+    padding: 10px 16px; background: var(--bg-elev-2);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-dim); font-weight: 700; border-bottom: 1px solid var(--border);
+  }
+  .playground .panel-body { padding: 0; }
+  .playground pre { margin: 0; border: none; border-radius: 0; }
+  .req-builder { padding: 16px; }
+  .req-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .req-row select, .req-row input {
+    padding: 8px 10px; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .req-row select { width: 100px; }
+  .req-row input { flex: 1; }
+  .log {
+    padding: 14px 16px; font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; color: #c8d2cc; min-height: 180px;
+    max-height: 280px; overflow-y: auto;
+    background: var(--code-bg);
+  }
+  .log .l-mw { color: var(--accent); }
+  .log .l-route { color: var(--warn); }
+  .log .l-res { color: var(--info); }
+  .log .l-err { color: var(--danger); }
+  .log .l-time { color: var(--text-dim); margin-right: 8px; }
+
+  /* Stack badges */
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .badge {
+    padding: 4px 10px; background: var(--bg-elev-2);
+    border: 1px solid var(--border); border-radius: 6px;
+    font-size: 11px; color: var(--text-dim);
+  }
+  .badge strong { color: var(--accent); }
+
+  .footer-nav {
+    display: flex; justify-content: space-between; margin-top: 48px;
+    padding-top: 24px; border-top: 1px solid var(--border);
+  }
+  .footer-nav button {
+    padding: 10px 16px; background: var(--bg-elev); color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; font-size: 13px; transition: all 0.15s;
+  }
+  .footer-nav button:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+  .footer-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a4a42; }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: relative; height: auto; }
+    .main { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <h1>Express Mastery</h1>
+      <p>Préparation entretien fullstack</p>
+    </div>
+    <ul class="nav" id="nav">
+      <li class="nav-section">Fondamentaux</li>
+      <li class="nav-item active" data-target="intro"><span class="num">01</span> Qu'est-ce qu'Express ?</li>
+      <li class="nav-item" data-target="setup"><span class="num">02</span> App & Serveur</li>
+      <li class="nav-item" data-target="routing"><span class="num">03</span> Routing</li>
+      <li class="nav-item" data-target="middleware"><span class="num">04</span> Middleware</li>
+      <li class="nav-item" data-target="reqres"><span class="num">05</span> req &amp; res</li>
+
+      <li class="nav-section">Patterns</li>
+      <li class="nav-item" data-target="router"><span class="num">06</span> Router modulaire</li>
+      <li class="nav-item" data-target="params"><span class="num">07</span> Params, Query, Body</li>
+      <li class="nav-item" data-target="errors"><span class="num">08</span> Gestion d'erreurs</li>
+      <li class="nav-item" data-target="async"><span class="num">09</span> Async/await</li>
+
+      <li class="nav-section">Production</li>
+      <li class="nav-item" data-target="security"><span class="num">10</span> Sécurité</li>
+      <li class="nav-item" data-target="perf"><span class="num">11</span> Performance</li>
+      <li class="nav-item" data-target="ecosystem"><span class="num">12</span> Écosystème</li>
+      <li class="nav-item" data-target="compare"><span class="num">13</span> Express vs autres</li>
+
+      <li class="nav-section">Pratique</li>
+      <li class="nav-item" data-target="playground"><span class="num">14</span> Playground pipeline</li>
+      <li class="nav-item" data-target="interview"><span class="num">15</span> Q&amp;A entretien</li>
+      <li class="nav-item" data-target="quiz"><span class="num">16</span> Quiz</li>
+    </ul>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+
+    <!-- 01 INTRO -->
+    <section class="section active" id="intro">
+      <h2>Qu'est-ce qu'Express ? <span class="tag">01 — Fondamentaux</span></h2>
+      <p class="lead">Express est un framework web <strong>minimaliste, non-opinionated et middleware-driven</strong> pour Node.js. Il ne fait presque rien tout seul — c'est précisément sa force.</p>
+
+      <div class="badges">
+        <span class="badge">v<strong>4.x</strong> stable</span>
+        <span class="badge">v<strong>5.x</strong> stable depuis 2024</span>
+        <span class="badge"><strong>~3 KB</strong> de surface API</span>
+        <span class="badge">Sponsor : <strong>OpenJS Foundation</strong></span>
+      </div>
+
+      <h3>Le mental model</h3>
+      <p>Une application Express est essentiellement une <strong>pile de middlewares</strong> qui transforment ou répondent à un objet <code>req</code> (Request) avant de produire un <code>res</code> (Response). Tout est middleware, y compris les routes.</p>
+
+      <div class="pipeline">
+        <div class="pipe-node req">HTTP Request<div class="pipe-label">client</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node mw">logger<div class="pipe-label">middleware</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node mw">json parser<div class="pipe-label">middleware</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node mw">auth<div class="pipe-label">middleware</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node handler">/users/:id<div class="pipe-label">route handler</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node res">res.json()<div class="pipe-label">réponse</div></div>
+      </div>
+
+      <h3>Pourquoi Express dans une stack moderne ?</h3>
+      <ul>
+        <li><strong>Standard de facto</strong> de l'écosystème Node.js (Nest, Strapi, et d'autres tournent dessus).</li>
+        <li><strong>Surface API minuscule</strong> : 5 méthodes principales (<code>use</code>, <code>get</code>, <code>post</code>, <code>listen</code>, <code>Router</code>) suffisent à 80% des cas.</li>
+        <li><strong>Composabilité</strong> via middlewares — la même API gère logging, auth, validation, fichiers statiques, etc.</li>
+        <li><strong>Liberté totale</strong> : aucune opinion sur ORM, validation, structure de dossiers, DI.</li>
+      </ul>
+
+      <div class="card callout-warn">
+        <div class="label">⚠ À retenir pour l'entretien</div>
+        <p>Express est <strong>non-opinionated</strong> (contrairement à NestJS ou Adonis). Cela veut dire qu'on construit l'architecture soi-même : c'est une force pour les petits projets, et une faiblesse pour les gros (d'où l'apparition de frameworks au-dessus).</p>
+      </div>
+
+      <h3>Hello World</h3>
+      <pre data-lang="js"><code><span class="k">const</span> express = <span class="f">require</span>(<span class="s">'express'</span>);
+<span class="k">const</span> app = <span class="f">express</span>();
+
+app.<span class="f">get</span>(<span class="s">'/'</span>, (req, res) =&gt; {
+  res.<span class="f">send</span>(<span class="s">'Hello World!'</span>);
+});
+
+app.<span class="f">listen</span>(<span class="n">3000</span>, () =&gt; <span class="t">console</span>.<span class="f">log</span>(<span class="s">'http://localhost:3000'</span>));</code></pre>
+    </section>
+
+    <!-- 02 SETUP -->
+    <section class="section" id="setup">
+      <h2>Application &amp; Serveur <span class="tag">02 — Fondamentaux</span></h2>
+      <p class="lead">Comprendre la différence entre l'<strong>app Express</strong> et le <strong>serveur HTTP de Node</strong> est un classique d'entretien.</p>
+
+      <h3>app n'est pas un serveur</h3>
+      <p>Quand tu fais <code>express()</code>, tu obtiens une <strong>fonction</strong> (oui, une fonction !) qui est aussi un objet avec des méthodes. Cette fonction est compatible avec la signature attendue par <code>http.createServer()</code> : <code>(req, res) =&gt; ...</code>.</p>
+
+      <pre data-lang="js"><code><span class="k">const</span> http = <span class="f">require</span>(<span class="s">'http'</span>);
+<span class="k">const</span> express = <span class="f">require</span>(<span class="s">'express'</span>);
+
+<span class="k">const</span> app = <span class="f">express</span>();           <span class="c">// app est une fonction (req, res, next)</span>
+
+<span class="c">// Forme courte (Express crée le serveur en interne) :</span>
+app.<span class="f">listen</span>(<span class="n">3000</span>);
+
+<span class="c">// Forme longue, utile pour HTTPS, WebSockets, tests :</span>
+<span class="k">const</span> server = http.<span class="f">createServer</span>(app);
+server.<span class="f">listen</span>(<span class="n">3000</span>);</code></pre>
+
+      <div class="card callout-info">
+        <div class="label">💡 Pourquoi ça compte ?</div>
+        <p>Pour <strong>brancher Socket.io</strong>, faire du <strong>HTTPS</strong>, ou tester avec <strong>supertest</strong> sans démarrer un vrai port, tu passes <code>app</code> directement — pas <code>app.listen()</code>.</p>
+      </div>
+
+      <h3>Structure d'un projet typique</h3>
+      <pre data-lang="text"><code>my-api/
+├── src/
+│   ├── app.js          <span class="c"># crée et configure l'app, export module.exports = app</span>
+│   ├── server.js       <span class="c"># import app, app.listen(PORT)</span>
+│   ├── routes/
+│   │   ├── users.js
+│   │   └── auth.js
+│   ├── middlewares/
+│   │   ├── auth.js
+│   │   └── errorHandler.js
+│   ├── controllers/
+│   └── services/
+├── tests/
+└── package.json</code></pre>
+
+      <h3>app.set() & app.locals</h3>
+      <table>
+        <tr><th>API</th><th>Rôle</th><th>Exemple</th></tr>
+        <tr><td><code>app.set(k, v)</code></td><td>Config interne (view engine, trust proxy...)</td><td><code>app.set('trust proxy', 1)</code></td></tr>
+        <tr><td><code>app.locals</code></td><td>Variables globales accessibles partout (incl. templates)</td><td><code>app.locals.appName = 'MyApp'</code></td></tr>
+        <tr><td><code>res.locals</code></td><td>Variables limitées à la requête en cours</td><td><code>res.locals.user = currentUser</code></td></tr>
+      </table>
+    </section>
+
+    <!-- 03 ROUTING -->
+    <section class="section" id="routing">
+      <h2>Routing <span class="tag">03 — Fondamentaux</span></h2>
+      <p class="lead">Définir comment l'app répond à une combinaison <strong>URL + méthode HTTP</strong>. C'est le 80% de ce que tu écris.</p>
+
+      <h3>Méthodes HTTP</h3>
+      <pre data-lang="js"><code>app.<span class="f">get</span>(<span class="s">'/users'</span>, handler);       <span class="c">// GET /users</span>
+app.<span class="f">post</span>(<span class="s">'/users'</span>, handler);      <span class="c">// POST /users</span>
+app.<span class="f">put</span>(<span class="s">'/users/:id'</span>, handler);   <span class="c">// PUT /users/42</span>
+app.<span class="f">patch</span>(<span class="s">'/users/:id'</span>, handler); <span class="c">// PATCH /users/42</span>
+app.<span class="f">delete</span>(<span class="s">'/users/:id'</span>, handler);<span class="c">// DELETE /users/42</span>
+
+app.<span class="f">all</span>(<span class="s">'/admin/*'</span>, requireAdmin);<span class="c">// toutes méthodes sur ce path</span></code></pre>
+
+      <h3>Path patterns</h3>
+      <table>
+        <tr><th>Pattern</th><th>Match</th></tr>
+        <tr><td><code>/users</code></td><td>Exact</td></tr>
+        <tr><td><code>/users/:id</code></td><td>Paramètre nommé → <code>req.params.id</code></td></tr>
+        <tr><td><code>/users/:id/posts/:postId</code></td><td>Plusieurs params</td></tr>
+        <tr><td><code>/files/*</code></td><td>Wildcard (Express 4 : <code>*</code>, Express 5 : <code>{*splat}</code>)</td></tr>
+        <tr><td><code>/ab?cd</code></td><td><code>acd</code> ou <code>abcd</code> (Express 4 seulement)</td></tr>
+        <tr><td><code>/.+\\.(jpg|png)$/</code></td><td>Regex</td></tr>
+      </table>
+
+      <div class="card callout-warn">
+        <div class="label">⚠ Breaking change Express 5</div>
+        <p>Express 5 remplace <code>path-to-regexp</code> v0.x par v8. Les wildcards <code>*</code> deviennent <code>{*name}</code>, les groupes optionnels <code>(...)?</code> sont supprimés. Si tu vois <code>TypeError: Missing parameter name</code> au démarrage après un upgrade, c'est ça.</p>
+      </div>
+
+      <h3>app.route() — chaining</h3>
+      <pre data-lang="js"><code>app.<span class="f">route</span>(<span class="s">'/users/:id'</span>)
+  .<span class="f">get</span>((req, res) =&gt; res.<span class="f">json</span>(getUser(req.params.id)))
+  .<span class="f">put</span>((req, res) =&gt; res.<span class="f">json</span>(updateUser(req.params.id, req.body)))
+  .<span class="f">delete</span>((req, res) =&gt; { deleteUser(req.params.id); res.<span class="f">sendStatus</span>(<span class="n">204</span>); });</code></pre>
+
+      <h3>Ordre de matching</h3>
+      <p>Les routes sont évaluées <strong>dans l'ordre de déclaration</strong>. La première qui matche gagne (sauf si elle appelle <code>next()</code>). Conséquence : route spécifique <strong>avant</strong> route générique.</p>
+      <pre data-lang="js"><code><span class="c">// ✅ BON</span>
+app.<span class="f">get</span>(<span class="s">'/users/me'</span>, handler);     <span class="c">// matché en premier</span>
+app.<span class="f">get</span>(<span class="s">'/users/:id'</span>, handler);
+
+<span class="c">// ❌ MAUVAIS — /users/me ne sera jamais atteint</span>
+app.<span class="f">get</span>(<span class="s">'/users/:id'</span>, handler);   <span class="c">// :id = "me"</span>
+app.<span class="f">get</span>(<span class="s">'/users/me'</span>, handler);</code></pre>
+    </section>
+
+    <!-- 04 MIDDLEWARE -->
+    <section class="section" id="middleware">
+      <h2>Middleware <span class="tag">04 — Fondamentaux</span></h2>
+      <p class="lead">Le concept central d'Express. <strong>Tout est middleware</strong>, y compris les routes et la gestion d'erreur.</p>
+
+      <h3>Signature</h3>
+      <pre data-lang="js"><code><span class="k">function</span> <span class="f">middleware</span>(req, res, next) {
+  <span class="c">// 1. Lire/modifier req</span>
+  <span class="c">// 2. Lire/modifier res</span>
+  <span class="c">// 3. Soit appeler next() pour passer au suivant</span>
+  <span class="c">//    Soit terminer la réponse avec res.send/json/end</span>
+  <span class="f">next</span>();
+}</code></pre>
+
+      <div class="card callout-danger">
+        <div class="label">🔥 La règle d'or</div>
+        <p>Chaque requête doit produire <strong>exactement une réponse</strong>. Soit tu appelles <code>next()</code>, soit tu termines avec <code>res.send/json/end/redirect</code> — <strong>jamais les deux</strong>. Sinon : <code>Error: Cannot set headers after they are sent to the client</code>.</p>
+      </div>
+
+      <h3>Les 5 types de middleware</h3>
+      <table>
+        <tr><th>Type</th><th>Signature</th><th>Exemple</th></tr>
+        <tr><td>Application-level</td><td><code>app.use(fn)</code></td><td><code>app.use(logger)</code></td></tr>
+        <tr><td>Router-level</td><td><code>router.use(fn)</code></td><td>Sur un sous-Router</td></tr>
+        <tr><td>Route-level</td><td><code>app.get(path, fn)</code></td><td>Handler de route</td></tr>
+        <tr><td>Error-handling</td><td><code>(err, req, res, next)</code></td><td>4 args = erreur</td></tr>
+        <tr><td>Built-in / 3rd-party</td><td>—</td><td><code>express.json()</code>, <code>cors()</code></td></tr>
+      </table>
+
+      <h3>Ordre = TOUT</h3>
+      <pre data-lang="js"><code>app.<span class="f">use</span>(<span class="f">logger</span>());          <span class="c">// 1. log toute requête</span>
+app.<span class="f">use</span>(express.<span class="f">json</span>());     <span class="c">// 2. parse JSON → req.body</span>
+app.<span class="f">use</span>(<span class="f">cors</span>());             <span class="c">// 3. CORS headers</span>
+app.<span class="f">use</span>(<span class="s">'/api'</span>, requireAuth); <span class="c">// 4. auth seulement sur /api/*</span>
+app.<span class="f">use</span>(<span class="s">'/api'</span>, apiRoutes);   <span class="c">// 5. routes API</span>
+app.<span class="f">use</span>(notFoundHandler);    <span class="c">// 6. 404 catch-all</span>
+app.<span class="f">use</span>(errorHandler);       <span class="c">// 7. erreurs (4 args)</span></code></pre>
+
+      <h3>Mounter un middleware sur un chemin</h3>
+      <pre data-lang="js"><code><span class="c">// Appliqué partout :</span>
+app.<span class="f">use</span>(logger);
+
+<span class="c">// Appliqué seulement aux URLs commençant par /api :</span>
+app.<span class="f">use</span>(<span class="s">'/api'</span>, apiMiddleware);
+
+<span class="c">// Plusieurs middlewares en chaîne sur une route :</span>
+app.<span class="f">post</span>(<span class="s">'/posts'</span>, requireAuth, validatePost, createPost);</code></pre>
+
+      <h3>Middleware "usine"</h3>
+      <p>Pattern très répandu : une fonction qui retourne un middleware, pour le paramétrer.</p>
+      <pre data-lang="js"><code><span class="k">function</span> <span class="f">requireRole</span>(role) {
+  <span class="k">return</span> (req, res, next) =&gt; {
+    <span class="k">if</span> (req.user?.role !== role) <span class="k">return</span> res.<span class="f">sendStatus</span>(<span class="n">403</span>);
+    <span class="f">next</span>();
+  };
+}
+
+app.<span class="f">delete</span>(<span class="s">'/admin/users/:id'</span>, <span class="f">requireRole</span>(<span class="s">'admin'</span>), deleteUser);</code></pre>
+    </section>
+
+    <!-- 05 REQ RES -->
+    <section class="section" id="reqres">
+      <h2>req &amp; res <span class="tag">05 — Fondamentaux</span></h2>
+      <p class="lead">Les deux objets que tu manipules à chaque handler. Express enrichit ceux de Node natif.</p>
+
+      <h3>Propriétés clés de req</h3>
+      <table>
+        <tr><th>Propriété</th><th>Description</th></tr>
+        <tr><td><code>req.params</code></td><td>Params de l'URL : <code>/users/:id</code> → <code>{ id: '42' }</code></td></tr>
+        <tr><td><code>req.query</code></td><td>Query string : <code>?page=2</code> → <code>{ page: '2' }</code> (toujours string !)</td></tr>
+        <tr><td><code>req.body</code></td><td>Body parsé (nécessite <code>express.json()</code> ou <code>urlencoded()</code>)</td></tr>
+        <tr><td><code>req.headers</code></td><td>Headers de la requête (en lowercase)</td></tr>
+        <tr><td><code>req.cookies</code></td><td>Nécessite <code>cookie-parser</code></td></tr>
+        <tr><td><code>req.method</code></td><td><code>'GET'</code>, <code>'POST'</code>, ...</td></tr>
+        <tr><td><code>req.path</code></td><td>Path sans query string</td></tr>
+        <tr><td><code>req.ip</code></td><td>IP du client (cf. <code>trust proxy</code>)</td></tr>
+        <tr><td><code>req.protocol</code></td><td><code>'http'</code> ou <code>'https'</code></td></tr>
+        <tr><td><code>req.get(name)</code></td><td>Lit un header : <code>req.get('Content-Type')</code></td></tr>
+        <tr><td><code>req.accepts(type)</code></td><td>Négociation de contenu</td></tr>
+      </table>
+
+      <h3>Méthodes clés de res</h3>
+      <table>
+        <tr><th>Méthode</th><th>Effet</th></tr>
+        <tr><td><code>res.send(data)</code></td><td>Envoie réponse (string, Buffer, object → JSON)</td></tr>
+        <tr><td><code>res.json(obj)</code></td><td>Envoie du JSON (force Content-Type)</td></tr>
+        <tr><td><code>res.status(code)</code></td><td>Set le status, retourne <code>res</code> (chainable)</td></tr>
+        <tr><td><code>res.sendStatus(code)</code></td><td>Status + body = nom du status (<code>204</code> → <code>"No Content"</code>)</td></tr>
+        <tr><td><code>res.redirect([code,] url)</code></td><td>Redirection (302 par défaut)</td></tr>
+        <tr><td><code>res.set(field, val)</code></td><td>Set un header</td></tr>
+        <tr><td><code>res.cookie(name, val, opts)</code></td><td>Set un cookie</td></tr>
+        <tr><td><code>res.clearCookie(name)</code></td><td>Efface un cookie</td></tr>
+        <tr><td><code>res.sendFile(path)</code></td><td>Stream un fichier</td></tr>
+        <tr><td><code>res.download(path)</code></td><td>Force le téléchargement</td></tr>
+        <tr><td><code>res.render(view, locals)</code></td><td>Render un template (Pug, EJS...)</td></tr>
+        <tr><td><code>res.end()</code></td><td>Termine sans body (méthode Node native)</td></tr>
+      </table>
+
+      <h3>Chaining typique</h3>
+      <pre data-lang="js"><code>res
+  .<span class="f">status</span>(<span class="n">201</span>)
+  .<span class="f">set</span>(<span class="s">'X-Request-Id'</span>, req.id)
+  .<span class="f">cookie</span>(<span class="s">'session'</span>, token, { httpOnly: <span class="k">true</span>, secure: <span class="k">true</span> })
+  .<span class="f">json</span>({ id: user.id, name: user.name });</code></pre>
+
+      <div class="card callout-info">
+        <div class="label">💡 Piège fréquent</div>
+        <p><code>req.query</code> et <code>req.params</code> contiennent <strong>toujours des strings</strong>. <code>req.query.page</code> sur <code>?page=2</code> donne <code>'2'</code>, pas <code>2</code>. Tu dois parser/valider toi-même (zod, joi, parseInt...).</p>
+      </div>
+    </section>
+
+    <!-- 06 ROUTER -->
+    <section class="section" id="router">
+      <h2>Router modulaire <span class="tag">06 — Patterns</span></h2>
+      <p class="lead"><code>express.Router()</code> = une mini-app qui peut être montée sur un préfixe. <strong>L'outil de modularisation principal</strong>.</p>
+
+      <h3>Pattern de base</h3>
+      <pre data-lang="js"><code><span class="c">// routes/users.js</span>
+<span class="k">const</span> router = express.<span class="f">Router</span>();
+
+router.<span class="f">use</span>(requireAuth);                <span class="c">// s'applique à toutes les routes du router</span>
+
+router.<span class="f">get</span>(<span class="s">'/'</span>, listUsers);            <span class="c">// GET  /users</span>
+router.<span class="f">get</span>(<span class="s">'/:id'</span>, getUser);            <span class="c">// GET  /users/:id</span>
+router.<span class="f">post</span>(<span class="s">'/'</span>, createUser);          <span class="c">// POST /users</span>
+
+module.exports = router;
+
+<span class="c">// app.js</span>
+<span class="k">const</span> usersRouter = <span class="f">require</span>(<span class="s">'./routes/users'</span>);
+app.<span class="f">use</span>(<span class="s">'/users'</span>, usersRouter);</code></pre>
+
+      <h3>Nesting</h3>
+      <p>Un Router peut monter d'autres Routers : composition sans limite.</p>
+      <pre data-lang="js"><code>app.<span class="f">use</span>(<span class="s">'/api/v1'</span>, v1Router);
+v1Router.<span class="f">use</span>(<span class="s">'/users'</span>, usersRouter);
+v1Router.<span class="f">use</span>(<span class="s">'/posts'</span>, postsRouter);
+<span class="c">// → GET /api/v1/users/:id</span></code></pre>
+
+      <h3>mergeParams</h3>
+      <p>Par défaut, un sous-router <strong>ne voit pas</strong> les params du parent. Active <code>mergeParams</code> pour les hériter.</p>
+      <pre data-lang="js"><code><span class="c">// /users/:userId/posts/:postId</span>
+<span class="k">const</span> postsRouter = express.<span class="f">Router</span>({ mergeParams: <span class="k">true</span> });
+
+postsRouter.<span class="f">get</span>(<span class="s">'/:postId'</span>, (req, res) =&gt; {
+  <span class="c">// req.params.userId est dispo grâce à mergeParams</span>
+  res.<span class="f">json</span>({ user: req.params.userId, post: req.params.postId });
+});
+
+usersRouter.<span class="f">use</span>(<span class="s">'/:userId/posts'</span>, postsRouter);</code></pre>
+
+      <h3>router.param() — hook sur un param</h3>
+      <p>S'exécute une fois quand un param est présent dans la route. Pratique pour préchargement.</p>
+      <pre data-lang="js"><code>router.<span class="f">param</span>(<span class="s">'userId'</span>, <span class="k">async</span> (req, res, next, id) =&gt; {
+  <span class="k">try</span> {
+    req.user = <span class="k">await</span> User.<span class="f">findById</span>(id);
+    <span class="k">if</span> (!req.user) <span class="k">return</span> res.<span class="f">sendStatus</span>(<span class="n">404</span>);
+    <span class="f">next</span>();
+  } <span class="k">catch</span> (err) { <span class="f">next</span>(err); }
+});
+
+router.<span class="f">get</span>(<span class="s">'/users/:userId'</span>, (req, res) =&gt; res.<span class="f">json</span>(req.user));</code></pre>
+    </section>
+
+    <!-- 07 PARAMS -->
+    <section class="section" id="params">
+      <h2>Params, Query, Body <span class="tag">07 — Patterns</span></h2>
+      <p class="lead">Les trois sources d'entrée d'une requête HTTP, et comment Express les expose.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>req.params</h4>
+          <p>Variables nommées dans le path. Toujours <strong>string</strong>.</p>
+          <pre data-lang="js"><code><span class="c">// Route : /users/:id</span>
+<span class="c">// URL   : /users/42</span>
+req.params.id <span class="c">// '42'</span></code></pre>
+        </div>
+        <div class="card">
+          <h4>req.query</h4>
+          <p>Tout ce qui suit le <code>?</code>. Parsé par <strong>qs</strong> (nested objects ok).</p>
+          <pre data-lang="js"><code><span class="c">// URL : ?page=2&amp;filter[role]=admin</span>
+req.query.page          <span class="c">// '2'</span>
+req.query.filter.role   <span class="c">// 'admin'</span></code></pre>
+        </div>
+        <div class="card">
+          <h4>req.body (JSON)</h4>
+          <p>Nécessite <code>express.json()</code> en amont.</p>
+          <pre data-lang="js"><code>app.<span class="f">use</span>(express.<span class="f">json</span>({ limit: <span class="s">'1mb'</span> }));
+
+app.<span class="f">post</span>(<span class="s">'/users'</span>, (req, res) =&gt; {
+  req.body.name <span class="c">// 'Alice'</span>
+});</code></pre>
+        </div>
+        <div class="card">
+          <h4>req.body (form-urlencoded)</h4>
+          <p>Pour formulaires HTML classiques.</p>
+          <pre data-lang="js"><code>app.<span class="f">use</span>(express.<span class="f">urlencoded</span>({ extended: <span class="k">true</span> }));</code></pre>
+        </div>
+      </div>
+
+      <h3>Multipart / fichiers</h3>
+      <p>Express ne parse pas le multipart nativement. Use <strong>multer</strong> :</p>
+      <pre data-lang="js"><code><span class="k">const</span> multer = <span class="f">require</span>(<span class="s">'multer'</span>);
+<span class="k">const</span> upload = <span class="f">multer</span>({ dest: <span class="s">'uploads/'</span> });
+
+app.<span class="f">post</span>(<span class="s">'/avatar'</span>, upload.<span class="f">single</span>(<span class="s">'file'</span>), (req, res) =&gt; {
+  req.file       <span class="c">// { filename, path, mimetype, size, ... }</span>
+  req.body.title <span class="c">// autres champs du formulaire</span>
+});</code></pre>
+
+      <h3>Validation</h3>
+      <p>Express n'a <strong>pas de validation built-in</strong>. Choix typiques : zod, joi, express-validator, yup. Pattern recommandé : un middleware de validation par route.</p>
+      <pre data-lang="js"><code><span class="k">const</span> { z } = <span class="f">require</span>(<span class="s">'zod'</span>);
+
+<span class="k">const</span> userSchema = z.<span class="f">object</span>({
+  name: z.<span class="f">string</span>().<span class="f">min</span>(<span class="n">2</span>),
+  email: z.<span class="f">string</span>().<span class="f">email</span>(),
+  age: z.<span class="f">number</span>().<span class="f">int</span>().<span class="f">min</span>(<span class="n">18</span>),
+});
+
+<span class="k">const</span> <span class="f">validate</span> = (schema) =&gt; (req, res, next) =&gt; {
+  <span class="k">const</span> result = schema.<span class="f">safeParse</span>(req.body);
+  <span class="k">if</span> (!result.success) <span class="k">return</span> res.<span class="f">status</span>(<span class="n">400</span>).<span class="f">json</span>(result.error);
+  req.body = result.data;
+  <span class="f">next</span>();
+};
+
+app.<span class="f">post</span>(<span class="s">'/users'</span>, <span class="f">validate</span>(userSchema), createUser);</code></pre>
+    </section>
+
+    <!-- 08 ERRORS -->
+    <section class="section" id="errors">
+      <h2>Gestion d'erreurs <span class="tag">08 — Patterns</span></h2>
+      <p class="lead">Un middleware d'erreur a <strong>4 arguments</strong> au lieu de 3. C'est ainsi qu'Express le reconnaît.</p>
+
+      <h3>L'error-handling middleware</h3>
+      <pre data-lang="js"><code><span class="c">// ⚠ DOIT être déclaré APRÈS toutes les routes</span>
+app.<span class="f">use</span>((err, req, res, next) =&gt; {
+  <span class="t">console</span>.<span class="f">error</span>(err);
+  res.<span class="f">status</span>(err.status || <span class="n">500</span>).<span class="f">json</span>({
+    error: err.message || <span class="s">'Internal Server Error'</span>,
+  });
+});</code></pre>
+
+      <h3>Comment "lever" une erreur</h3>
+      <p>Tu n'utilises <strong>jamais throw</strong> dans un callback async sans le rattraper, sinon Express ne le verra pas. Tu passes l'erreur à <code>next()</code>.</p>
+      <pre data-lang="js"><code>app.<span class="f">get</span>(<span class="s">'/users/:id'</span>, (req, res, next) =&gt; {
+  User.<span class="f">findById</span>(req.params.id)
+    .<span class="f">then</span>(user =&gt; {
+      <span class="k">if</span> (!user) {
+        <span class="k">const</span> err = <span class="k">new</span> <span class="t">Error</span>(<span class="s">'Not found'</span>);
+        err.status = <span class="n">404</span>;
+        <span class="k">return</span> <span class="f">next</span>(err);          <span class="c">// → saute aux error handlers</span>
+      }
+      res.<span class="f">json</span>(user);
+    })
+    .<span class="f">catch</span>(next);                  <span class="c">// idiome classique</span>
+});</code></pre>
+
+      <h3>Express 4 vs 5 : async</h3>
+      <div class="card callout-ok">
+        <div class="label">✅ Express 5</div>
+        <p>Une fonction <code>async</code> dont la promise <strong>rejette</strong> est <strong>automatiquement</strong> envoyée au middleware d'erreur. Plus besoin de wrapper.</p>
+      </div>
+      <div class="card callout-warn">
+        <div class="label">⚠ Express 4</div>
+        <p>Une promise rejetée dans un handler async <strong>n'est pas attrapée</strong>. Tu dois wrapper ou utiliser <code>express-async-errors</code>.</p>
+      </div>
+
+      <pre data-lang="js"><code><span class="c">// Wrapper "asyncHandler" classique en Express 4 :</span>
+<span class="k">const</span> <span class="f">ah</span> = (fn) =&gt; (req, res, next) =&gt; <span class="f">Promise</span>.<span class="f">resolve</span>(<span class="f">fn</span>(req, res, next)).<span class="f">catch</span>(next);
+
+app.<span class="f">get</span>(<span class="s">'/users/:id'</span>, <span class="f">ah</span>(<span class="k">async</span> (req, res) =&gt; {
+  <span class="k">const</span> user = <span class="k">await</span> User.<span class="f">findById</span>(req.params.id);
+  <span class="k">if</span> (!user) <span class="k">throw</span> Object.<span class="f">assign</span>(<span class="k">new</span> <span class="t">Error</span>(<span class="s">'Not found'</span>), { status: <span class="n">404</span> });
+  res.<span class="f">json</span>(user);
+}));</code></pre>
+
+      <h3>404 catch-all</h3>
+      <p>Placé <strong>juste avant</strong> le error handler, après toutes les routes.</p>
+      <pre data-lang="js"><code>app.<span class="f">use</span>((req, res, next) =&gt; {
+  res.<span class="f">status</span>(<span class="n">404</span>).<span class="f">json</span>({ error: <span class="s">'Not Found'</span> });
+});</code></pre>
+    </section>
+
+    <!-- 09 ASYNC -->
+    <section class="section" id="async">
+      <h2>Async / await <span class="tag">09 — Patterns</span></h2>
+      <p class="lead">Le piège n°1 d'Express en entretien. Sache exactement comment async se comporte selon la version.</p>
+
+      <h3>Le piège classique</h3>
+      <pre data-lang="js"><code><span class="c">// Express 4 — DANGER 💥</span>
+app.<span class="f">get</span>(<span class="s">'/data'</span>, <span class="k">async</span> (req, res) =&gt; {
+  <span class="k">const</span> data = <span class="k">await</span> <span class="f">fetchData</span>();   <span class="c">// si ça reject... ?</span>
+  res.<span class="f">json</span>(data);
+});
+<span class="c">// → UnhandledPromiseRejection, la requête pend pour toujours,</span>
+<span class="c">// → le client timeout côté Nginx/ELB, fuite de descripteurs.</span></code></pre>
+
+      <h3>Solutions</h3>
+      <ol>
+        <li><strong>Upgrade vers Express 5</strong> — supporte async nativement.</li>
+        <li><strong>Wrap chaque handler</strong> avec <code>asyncHandler</code> ou <code>express-async-handler</code>.</li>
+        <li><strong>Mettre <code>require('express-async-errors')</code></strong> tout en haut du fichier — patch global qui rend Express 4 async-safe.</li>
+        <li><strong>Try/catch + next(err)</strong> explicite dans chaque handler.</li>
+      </ol>
+
+      <pre data-lang="js"><code><span class="c">// Option 3 — la plus discrète :</span>
+<span class="f">require</span>(<span class="s">'express-async-errors'</span>);          <span class="c">// monkey-patch global</span>
+<span class="k">const</span> express = <span class="f">require</span>(<span class="s">'express'</span>);
+
+app.<span class="f">get</span>(<span class="s">'/data'</span>, <span class="k">async</span> (req, res) =&gt; {
+  res.<span class="f">json</span>(<span class="k">await</span> <span class="f">fetchData</span>());        <span class="c">// reject → error middleware ✅</span>
+});</code></pre>
+
+      <div class="card callout-info">
+        <div class="label">💡 Question type entretien</div>
+        <p>« Que se passe-t-il si tu fais <code>throw new Error()</code> dans un handler async d'Express 4 sans wrapper ? »<br><br>
+        Réponse : la promise rejette, Express ne le voit pas (il ne fait pas <code>.catch</code> sur le retour du handler), le middleware d'erreur n'est pas appelé, et Node lève un <code>UnhandledPromiseRejection</code>. Le client reste pendu jusqu'au timeout.</p>
+      </div>
+    </section>
+
+    <!-- 10 SECURITY -->
+    <section class="section" id="security">
+      <h2>Sécurité <span class="tag">10 — Production</span></h2>
+      <p class="lead">Express en prod sans hardening = surface d'attaque maximale. Le mini-checklist à connaître.</p>
+
+      <h3>Le starter "prod-grade"</h3>
+      <pre data-lang="js"><code><span class="k">const</span> express      = <span class="f">require</span>(<span class="s">'express'</span>);
+<span class="k">const</span> helmet       = <span class="f">require</span>(<span class="s">'helmet'</span>);          <span class="c">// headers sécurité</span>
+<span class="k">const</span> cors         = <span class="f">require</span>(<span class="s">'cors'</span>);            <span class="c">// CORS</span>
+<span class="k">const</span> rateLimit    = <span class="f">require</span>(<span class="s">'express-rate-limit'</span>);
+<span class="k">const</span> compression  = <span class="f">require</span>(<span class="s">'compression'</span>);     <span class="c">// gzip</span>
+<span class="k">const</span> morgan       = <span class="f">require</span>(<span class="s">'morgan'</span>);          <span class="c">// access logs</span>
+
+<span class="k">const</span> app = <span class="f">express</span>();
+
+app.<span class="f">set</span>(<span class="s">'trust proxy'</span>, <span class="n">1</span>);                     <span class="c">// derrière nginx/ELB</span>
+app.<span class="f">disable</span>(<span class="s">'x-powered-by'</span>);                    <span class="c">// cache le fingerprint</span>
+
+app.<span class="f">use</span>(<span class="f">helmet</span>());
+app.<span class="f">use</span>(<span class="f">cors</span>({ origin: process.env.WEB_ORIGIN, credentials: <span class="k">true</span> }));
+app.<span class="f">use</span>(<span class="f">compression</span>());
+app.<span class="f">use</span>(<span class="f">morgan</span>(<span class="s">'combined'</span>));
+app.<span class="f">use</span>(express.<span class="f">json</span>({ limit: <span class="s">'1mb'</span> }));      <span class="c">// limite la taille</span>
+app.<span class="f">use</span>(<span class="f">rateLimit</span>({ windowMs: <span class="n">60</span>_<span class="n">000</span>, max: <span class="n">100</span> }));</code></pre>
+
+      <h3>Sécurité par sujet</h3>
+      <table>
+        <tr><th>Risque</th><th>Mitigation</th></tr>
+        <tr><td>XSS via templates</td><td>Échapper par défaut (Pug, EJS le font); ne pas utiliser <code>!{}</code> ou <code>&lt;%-%&gt;</code> sans précaution</td></tr>
+        <tr><td>CSRF (cookies de session)</td><td><code>csurf</code> (deprecated) ou same-site strict cookies + custom header</td></tr>
+        <tr><td>Headers manquants</td><td><code>helmet</code> (CSP, HSTS, X-Frame-Options...)</td></tr>
+        <tr><td>NoSQL injection</td><td><code>express-mongo-sanitize</code>, valider types avec zod</td></tr>
+        <tr><td>Brute force</td><td><code>express-rate-limit</code> + <code>express-slow-down</code></td></tr>
+        <tr><td>Payload énorme → DoS</td><td><code>express.json({ limit: '1mb' })</code></td></tr>
+        <tr><td>HPP (HTTP Param Pollution)</td><td><code>hpp</code> middleware</td></tr>
+        <tr><td>Secrets en clair</td><td><code>dotenv</code> + ne JAMAIS commit <code>.env</code></td></tr>
+        <tr><td>Cookies non-sécurisés</td><td><code>httpOnly: true, secure: true, sameSite: 'lax'</code></td></tr>
+        <tr><td>Auth</td><td>JWT signé (HS256+) ou sessions Redis avec <code>express-session</code></td></tr>
+      </table>
+
+      <div class="card callout-danger">
+        <div class="label">🔥 trust proxy</div>
+        <p>Si ton app est derrière un proxy (nginx, ELB, Cloudflare) sans <code>app.set('trust proxy', 1)</code> :</p>
+        <ul>
+          <li><code>req.ip</code> retourne l'IP du proxy, pas du client</li>
+          <li><code>req.protocol</code> retourne <code>'http'</code> même en HTTPS</li>
+          <li>Le rate-limiter limite <strong>tout le monde sur la même IP</strong> (celle du LB)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 11 PERF -->
+    <section class="section" id="perf">
+      <h2>Performance <span class="tag">11 — Production</span></h2>
+      <p class="lead">Express n'est pas le plus rapide, mais beaucoup de problèmes viennent de patterns naïfs, pas du framework.</p>
+
+      <h3>Quick wins</h3>
+      <ul>
+        <li><strong>Compression</strong> : <code>compression()</code> middleware → divise la bande passante texte par ~5.</li>
+        <li><strong>NODE_ENV=production</strong> : désactive logs de stack en clair, active des optimisations internes (templates, cache view).</li>
+        <li><strong>Cluster / PM2</strong> : Node mono-thread → un process par CPU. <code>pm2 start app.js -i max</code>.</li>
+        <li><strong>Keep-Alive</strong> : déjà activé par défaut, mais vérifier le timeout côté LB.</li>
+        <li><strong>Streaming</strong> : pour gros fichiers, <code>res.sendFile</code> ou un <code>Readable.pipe(res)</code> au lieu de tout charger en mémoire.</li>
+      </ul>
+
+      <h3>Pièges courants</h3>
+      <div class="card callout-warn">
+        <div class="label">⚠ Synchronous I/O</div>
+        <p><code>fs.readFileSync</code>, <code>JSON.parse</code> de fichier énorme, <code>bcrypt.hashSync</code> → <strong>bloquent l'event loop</strong>. Toute requête en cours attend. Toujours préférer les versions async ou <code>worker_threads</code>.</p>
+      </div>
+
+      <div class="card callout-warn">
+        <div class="label">⚠ Middleware lourd appliqué globalement</div>
+        <p><code>app.use(parseHugeBody)</code> exécute le parser pour <strong>chaque</strong> requête, même <code>GET /health</code>. Mount-le sur le path concerné : <code>app.use('/upload', parseHugeBody)</code>.</p>
+      </div>
+
+      <h3>Profilage</h3>
+      <pre data-lang="js"><code>app.<span class="f">use</span>((req, res, next) =&gt; {
+  <span class="k">const</span> start = process.<span class="f">hrtime</span>.<span class="f">bigint</span>();
+  res.<span class="f">on</span>(<span class="s">'finish'</span>, () =&gt; {
+    <span class="k">const</span> ms = <span class="t">Number</span>(process.<span class="f">hrtime</span>.<span class="f">bigint</span>() - start) / <span class="n">1e6</span>;
+    <span class="t">console</span>.<span class="f">log</span>(<span class="s">`</span>${req.method}<span class="s"> </span>${req.path}<span class="s"> </span>${res.statusCode}<span class="s"> </span>${ms.<span class="f">toFixed</span>(<span class="n">1</span>)}<span class="s">ms`</span>);
+  });
+  <span class="f">next</span>();
+});</code></pre>
+    </section>
+
+    <!-- 12 ECOSYSTEM -->
+    <section class="section" id="ecosystem">
+      <h2>Écosystème <span class="tag">12 — Production</span></h2>
+      <p class="lead">Les packages que tu verras dans 90% des projets Express, classés par usage.</p>
+
+      <h3>Le starter pack</h3>
+      <table>
+        <tr><th>Package</th><th>Rôle</th><th>Catégorie</th></tr>
+        <tr><td><code>express</code></td><td>Le framework</td><td>Core</td></tr>
+        <tr><td><code>cors</code></td><td>Cross-Origin Resource Sharing</td><td>Sécu</td></tr>
+        <tr><td><code>helmet</code></td><td>Headers de sécurité</td><td>Sécu</td></tr>
+        <tr><td><code>morgan</code></td><td>Access logs</td><td>Obs</td></tr>
+        <tr><td><code>pino-http</code></td><td>Logger JSON ultra-rapide (alternative)</td><td>Obs</td></tr>
+        <tr><td><code>compression</code></td><td>gzip/brotli</td><td>Perf</td></tr>
+        <tr><td><code>cookie-parser</code></td><td>Parse cookies → <code>req.cookies</code></td><td>Body</td></tr>
+        <tr><td><code>express-session</code></td><td>Sessions serveur (Redis/Mongo store)</td><td>Auth</td></tr>
+        <tr><td><code>passport</code></td><td>Stratégies d'auth (local, OAuth, JWT)</td><td>Auth</td></tr>
+        <tr><td><code>jsonwebtoken</code></td><td>Sign/verify JWT</td><td>Auth</td></tr>
+        <tr><td><code>bcrypt</code> / <code>argon2</code></td><td>Hash de mots de passe</td><td>Auth</td></tr>
+        <tr><td><code>multer</code></td><td>Upload multipart</td><td>Body</td></tr>
+        <tr><td><code>express-rate-limit</code></td><td>Rate limiting</td><td>Sécu</td></tr>
+        <tr><td><code>express-validator</code> / <code>zod</code></td><td>Validation</td><td>Body</td></tr>
+        <tr><td><code>dotenv</code></td><td>Charge <code>.env</code></td><td>Config</td></tr>
+        <tr><td><code>supertest</code></td><td>Tests HTTP sans port</td><td>Test</td></tr>
+        <tr><td><code>nodemon</code> / <code>tsx</code></td><td>Hot reload dev</td><td>DX</td></tr>
+      </table>
+
+      <h3>Test typique avec supertest</h3>
+      <pre data-lang="js"><code><span class="k">const</span> request = <span class="f">require</span>(<span class="s">'supertest'</span>);
+<span class="k">const</span> app = <span class="f">require</span>(<span class="s">'../src/app'</span>);
+
+<span class="f">test</span>(<span class="s">'GET /users/42'</span>, <span class="k">async</span> () =&gt; {
+  <span class="k">const</span> res = <span class="k">await</span> <span class="f">request</span>(app).<span class="f">get</span>(<span class="s">'/users/42'</span>);
+  <span class="f">expect</span>(res.status).<span class="f">toBe</span>(<span class="n">200</span>);
+  <span class="f">expect</span>(res.body.id).<span class="f">toBe</span>(<span class="s">'42'</span>);
+});</code></pre>
+    </section>
+
+    <!-- 13 COMPARE -->
+    <section class="section" id="compare">
+      <h2>Express vs autres <span class="tag">13 — Production</span></h2>
+      <p class="lead">Connaître les alternatives = bonus en entretien. Tu sais quand Express est le bon choix… et quand non.</p>
+
+      <h3>Comparatif</h3>
+      <table>
+        <tr><th>Framework</th><th>Style</th><th>Async</th><th>TS</th><th>Perf relative</th><th>Quand le choisir ?</th></tr>
+        <tr><td><strong>Express 4</strong></td><td>Procédural, middleware</td><td>Manuel (wrapper)</td><td>Types via DefinitelyTyped</td><td>1x (baseline)</td><td>Legacy, stack stable, projet petit/moyen</td></tr>
+        <tr><td><strong>Express 5</strong></td><td>Idem</td><td>Natif</td><td>Idem</td><td>~1x</td><td>Mêmes cas, sans la dette async</td></tr>
+        <tr><td><strong>Fastify</strong></td><td>Plugin-based, schema-first</td><td>Natif</td><td>Excellent</td><td>2-3x</td><td>API perf-critical, validation JSON Schema, OpenAPI</td></tr>
+        <tr><td><strong>Koa</strong></td><td>Middleware async (ctx)</td><td>Natif (async/await)</td><td>Moyen</td><td>~1.5x</td><td>Code minimaliste, contrôle bas-niveau</td></tr>
+        <tr><td><strong>NestJS</strong></td><td>OOP, décorateurs, DI</td><td>Natif</td><td>First-class</td><td>~1x (tourne sur Express)</td><td>Gros backend, équipe Angular/Spring, monorepo</td></tr>
+        <tr><td><strong>Hono</strong></td><td>Edge-first, ultra léger</td><td>Natif</td><td>Excellent</td><td>3-5x</td><td>Cloudflare Workers, Bun, Deno, edge</td></tr>
+      </table>
+
+      <div class="card callout-info">
+        <div class="label">💡 Pitch d'entretien</div>
+        <p>« J'aime Express pour sa simplicité et son écosystème mature. Pour un projet plus structuré ou typé, je passerais à NestJS qui en réutilise le moteur. Pour de la perf critique ou des contrats JSON Schema, Fastify. Et pour de l'edge, Hono. »</p>
+      </div>
+
+      <h3>Express ↔ NestJS</h3>
+      <p>NestJS utilise Express sous le capot par défaut (ou Fastify en opt-in). Tu retrouves donc tout ce que tu sais d'Express (middlewares, req/res, statuts...) dans Nest, encapsulé derrière des décorateurs et un système d'injection de dépendances.</p>
+    </section>
+
+    <!-- 14 PLAYGROUND -->
+    <section class="section" id="playground">
+      <h2>Playground : pipeline de middleware <span class="tag">14 — Pratique</span></h2>
+      <p class="lead">Construis une requête, observe l'ordre exact dans lequel les middlewares s'exécutent. C'est le mental model qu'il faut avoir en entretien.</p>
+
+      <div class="playground">
+        <div class="panel">
+          <div class="panel-header">Le code de l'app simulée</div>
+          <pre data-lang="js" style="border-radius: 0; border: none; max-height: 420px;"><code><span class="k">const</span> app = <span class="f">express</span>();
+
+app.<span class="f">use</span>(<span class="f">logger</span>);          <span class="c">// MW1</span>
+app.<span class="f">use</span>(express.<span class="f">json</span>()); <span class="c">// MW2</span>
+app.<span class="f">use</span>(<span class="s">'/api'</span>, requireAuth); <span class="c">// MW3 (sur /api/*)</span>
+
+app.<span class="f">get</span>(<span class="s">'/health'</span>, (req, res) =&gt;
+  res.<span class="f">json</span>({ ok: <span class="k">true</span> }));
+
+app.<span class="f">get</span>(<span class="s">'/api/users/:id'</span>,
+  validateId, fetchUser, sendUser);
+
+app.<span class="f">post</span>(<span class="s">'/api/users'</span>,
+  validateBody, createUser);
+
+app.<span class="f">use</span>(notFound);        <span class="c">// catch 404</span>
+app.<span class="f">use</span>(errorHandler);    <span class="c">// catch erreurs</span></code></pre>
+        </div>
+        <div class="panel">
+          <div class="panel-header">Simule une requête</div>
+          <div class="req-builder">
+            <div class="req-row">
+              <select id="pgMethod">
+                <option>GET</option>
+                <option>POST</option>
+                <option>PUT</option>
+                <option>DELETE</option>
+              </select>
+              <input id="pgPath" value="/api/users/42" placeholder="/api/users/42">
+            </div>
+            <div class="req-row">
+              <input id="pgHeader" placeholder='Header: Authorization: Bearer xxx (vide = anonyme)'>
+            </div>
+            <button class="btn" id="pgSend">▶ Envoyer</button>
+          </div>
+          <div class="log" id="pgLog">
+            <div style="color: var(--text-dim)">Cliquer "Envoyer" pour exécuter le pipeline…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card callout-info">
+        <div class="label">💡 Essaie</div>
+        <ul>
+          <li><code>GET /health</code> sans token → passe (pas sous <code>/api</code>)</li>
+          <li><code>GET /api/users/42</code> sans token → bloqué par <code>requireAuth</code> (401)</li>
+          <li><code>GET /api/users/42</code> + header <code>Authorization: Bearer abc</code> → passe par tout le pipeline</li>
+          <li><code>GET /api/users/abc</code> + token → 400 (validateId échoue)</li>
+          <li><code>GET /nope</code> + token → 404 (not found handler)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 15 INTERVIEW Q&A -->
+    <section class="section" id="interview">
+      <h2>Q&amp;A entretien <span class="tag">15 — Pratique</span></h2>
+      <p class="lead">Les questions classiques qu'on pose sur Express en entretien fullstack. Clique pour révéler la réponse.</p>
+
+      <div id="qaList"></div>
+    </section>
+
+    <!-- 16 QUIZ -->
+    <section class="section" id="quiz">
+      <h2>Quiz <span class="tag">16 — Pratique</span></h2>
+      <p class="lead">12 questions pour valider ta préparation. Bonne chance !</p>
+      <div id="quizMount"></div>
+    </section>
+
+    <div class="footer-nav">
+      <button id="prevBtn">← Précédent</button>
+      <button id="nextBtn">Suivant →</button>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ----------------------------- NAV ----------------------------- */
+const navItems = document.querySelectorAll('.nav-item');
+const sections = document.querySelectorAll('.section');
+const order = Array.from(navItems).map(n => n.dataset.target);
+
+function goTo(id) {
+  navItems.forEach(n => n.classList.toggle('active', n.dataset.target === id));
+  sections.forEach(s => s.classList.toggle('active', s.id === id));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const idx = order.indexOf(id);
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === order.length - 1;
+}
+
+navItems.forEach(n => n.addEventListener('click', () => goTo(n.dataset.target)));
+document.getElementById('prevBtn').addEventListener('click', () => {
+  const cur = document.querySelector('.section.active').id;
+  const i = order.indexOf(cur);
+  if (i > 0) goTo(order[i - 1]);
+});
+document.getElementById('nextBtn').addEventListener('click', () => {
+  const cur = document.querySelector('.section.active').id;
+  const i = order.indexOf(cur);
+  if (i < order.length - 1) goTo(order[i + 1]);
+});
+goTo('intro');
+
+/* ----------------------------- PLAYGROUND ----------------------------- */
+const pgLog = document.getElementById('pgLog');
+
+function logLine(cls, text) {
+  const ts = new Date().toISOString().slice(11, 19);
+  const div = document.createElement('div');
+  div.innerHTML = `<span class="l-time">${ts}</span><span class="${cls}">${text}</span>`;
+  pgLog.appendChild(div);
+  pgLog.scrollTop = pgLog.scrollHeight;
+}
+
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+document.getElementById('pgSend').addEventListener('click', async () => {
+  pgLog.innerHTML = '';
+  const method = document.getElementById('pgMethod').value;
+  const path = document.getElementById('pgPath').value.trim() || '/';
+  const header = document.getElementById('pgHeader').value.trim();
+  const hasAuth = /authorization\s*:\s*Bearer\s+\S+/i.test(header);
+
+  logLine('l-route', `→ ${method} ${path}  [${hasAuth ? 'auth' : 'anon'}]`);
+  await sleep(180);
+
+  // MW1 logger
+  logLine('l-mw', '  ✓ MW1 logger        → next()');
+  await sleep(120);
+
+  // MW2 json parser (no-op pour GET sans body)
+  logLine('l-mw', `  ✓ MW2 express.json() → next() ${method === 'GET' ? '(no body)' : '(body parsé)'}`);
+  await sleep(120);
+
+  // MW3 requireAuth, mount /api
+  const underApi = path.startsWith('/api');
+  if (underApi) {
+    if (!hasAuth) {
+      logLine('l-err', '  ✗ MW3 requireAuth   → 401 Unauthorized');
+      await sleep(150);
+      logLine('l-res', '← HTTP 401 { "error": "missing token" }');
+      return;
+    }
+    logLine('l-mw', '  ✓ MW3 requireAuth   → next() (token ok, req.user = {...})');
+    await sleep(120);
+  } else {
+    logLine('l-mw', '  – MW3 requireAuth   skip (path ≠ /api/*)');
+    await sleep(80);
+  }
+
+  // route matching
+  let matched = null;
+  if (method === 'GET' && path === '/health') matched = 'GET /health';
+  else if (method === 'GET' && /^\/api\/users\/[^/]+$/.test(path)) matched = 'GET /api/users/:id';
+  else if (method === 'POST' && path === '/api/users') matched = 'POST /api/users';
+
+  if (!matched) {
+    logLine('l-err', '  ✗ aucune route ne matche');
+    await sleep(120);
+    logLine('l-mw', '  ✓ MW notFound       → 404');
+    logLine('l-res', '← HTTP 404 { "error": "Not Found" }');
+    return;
+  }
+
+  logLine('l-route', `  ⇒ route matched: ${matched}`);
+  await sleep(140);
+
+  if (matched === 'GET /health') {
+    logLine('l-res', '← HTTP 200 { "ok": true }');
+    return;
+  }
+
+  if (matched === 'GET /api/users/:id') {
+    const id = path.split('/').pop();
+    const isNumeric = /^\d+$/.test(id);
+    logLine('l-mw', `  ✓ validateId        id="${id}" ${isNumeric ? '→ next()' : '→ next(err)'}`);
+    await sleep(140);
+    if (!isNumeric) {
+      logLine('l-err', '  ✗ errorHandler attrape l\'erreur (status 400)');
+      logLine('l-res', '← HTTP 400 { "error": "id must be numeric" }');
+      return;
+    }
+    logLine('l-mw', '  ✓ fetchUser         → next()  (await DB)');
+    await sleep(220);
+    logLine('l-mw', '  ✓ sendUser          → res.json(user)');
+    logLine('l-res', `← HTTP 200 { "id": "${id}", "name": "Alice" }`);
+    return;
+  }
+
+  if (matched === 'POST /api/users') {
+    logLine('l-mw', '  ✓ validateBody      → next()');
+    await sleep(120);
+    logLine('l-mw', '  ✓ createUser        → res.status(201).json(...)');
+    logLine('l-res', '← HTTP 201 { "id": "43", "name": "..." }');
+  }
+});
+
+/* ----------------------------- Q&A ----------------------------- */
+const qaData = [
+  {
+    q: "Quelle est la différence entre app.use() et app.get() ?",
+    a: `<p><code>app.use()</code> monte un middleware pour <strong>toutes les méthodes HTTP</strong> sur un chemin (qui matche en préfixe par défaut).</p>
+    <p><code>app.get()</code> est une route : ne matche que <strong>GET</strong> et <strong>exactement</strong> le path.</p>
+    <pre data-lang="js"><code>app.<span class="f">use</span>(<span class="s">'/api'</span>, mw);     <span class="c">// matche /api, /api/x, /api/x/y, toutes méthodes</span>
+app.<span class="f">get</span>(<span class="s">'/api'</span>, h);      <span class="c">// matche seulement GET /api</span></code></pre>`
+  },
+  {
+    q: "Comment Express distingue un middleware d'erreur d'un middleware normal ?",
+    a: `<p>Au <strong>nombre d'arguments</strong>. Express inspecte <code>fn.length</code> : si c'est 4, le middleware est considéré comme un error-handler et n'est invoqué que si <code>next(err)</code> a été appelé en amont.</p>
+    <pre data-lang="js"><code><span class="k">function</span> <span class="f">errorHandler</span>(err, req, res, next) { <span class="c">/* 4 args */</span> }</code></pre>
+    <p>D'où l'importance de ne pas "oublier" un argument, même si tu ne l'utilises pas. Tu ne peux pas mettre <code>_</code> sans changer la signature.</p>`
+  },
+  {
+    q: "Que se passe-t-il si tu oublies d'appeler next() ?",
+    a: `<p>La requête se <strong>bloque indéfiniment</strong> jusqu'au timeout du client (ou du proxy). Aucune réponse n'est envoyée, aucun autre middleware n'est appelé. Le client voit éventuellement un 504 Gateway Timeout si elle passe par un reverse-proxy.</p>
+    <p>C'est un piège classique des middlewares conditionnels :</p>
+    <pre data-lang="js"><code>app.<span class="f">use</span>((req, res, next) =&gt; {
+  <span class="k">if</span> (req.user) <span class="f">next</span>();        <span class="c">// ✅</span>
+  <span class="c">// ❌ pas de else → si pas d'user, la requête pend</span>
+});</code></pre>`
+  },
+  {
+    q: "Différence entre req.params, req.query et req.body ?",
+    a: `<ul>
+      <li><code>req.params</code> : <strong>variables nommées dans le path</strong>. Route <code>/users/:id</code> + URL <code>/users/42</code> → <code>{id:'42'}</code>.</li>
+      <li><code>req.query</code> : <strong>tout ce qui suit le <code>?</code></strong>. URL <code>?page=2&amp;tag=js</code> → <code>{page:'2', tag:'js'}</code>.</li>
+      <li><code>req.body</code> : <strong>corps de la requête</strong>, parsé selon le Content-Type par <code>express.json()</code> ou <code>urlencoded()</code>. Vide par défaut.</li>
+    </ul>
+    <p>Les 3 contiennent uniquement des strings (ou objets de strings) — la validation de type est ta responsabilité.</p>`
+  },
+  {
+    q: "Comment Express gère les promesses rejetées dans un handler async ?",
+    a: `<p>Dépend de la version :</p>
+    <ul>
+      <li><strong>Express 4</strong> : <strong>ne les gère pas</strong>. Une promise rejetée n'atteint pas le middleware d'erreur. Le handler retourne, la promise reste unhandled. Solution : wrap avec <code>asyncHandler</code> ou utiliser <code>require('express-async-errors')</code>.</li>
+      <li><strong>Express 5</strong> : <strong>support natif</strong>. Une promise rejetée appelle automatiquement <code>next(err)</code>.</li>
+    </ul>`
+  },
+  {
+    q: "Quel est le rôle de express.Router() ?",
+    a: `<p>C'est une <strong>mini-app</strong> qu'on peut monter sur un préfixe. Elle a les mêmes méthodes (<code>.get</code>, <code>.use</code>, <code>.param</code>...) que l'app principale, mais est <strong>isolée</strong> et <strong>composable</strong>.</p>
+    <p>On l'utilise pour <strong>modulariser</strong> : un fichier par ressource (<code>routes/users.js</code>, <code>routes/auth.js</code>), monté sur l'app via <code>app.use('/users', usersRouter)</code>.</p>
+    <p>Ça permet aussi d'appliquer un middleware uniquement à ce sous-arbre.</p>`
+  },
+  {
+    q: "Pourquoi app.set('trust proxy', 1) est-il important en production ?",
+    a: `<p>Quand l'app est derrière un reverse-proxy (Nginx, ALB, Cloudflare...), les headers <code>X-Forwarded-For</code>, <code>X-Forwarded-Proto</code>, <code>X-Forwarded-Host</code> contiennent les vraies infos client. Sans <code>trust proxy</code>, Express ignore ces headers :</p>
+    <ul>
+      <li><code>req.ip</code> donne l'IP du proxy (toujours la même) → rate-limit globalement cassé</li>
+      <li><code>req.protocol</code> reste <code>'http'</code> même quand le client est en HTTPS</li>
+      <li>Les cookies <code>secure: true</code> ne se posent pas (Express croit qu'on n'est pas en HTTPS)</li>
+    </ul>
+    <p>La valeur <code>1</code> = "fais confiance à 1 proxy en amont". <code>true</code> = "fais confiance à tout", à éviter.</p>`
+  },
+  {
+    q: "Comment servir des fichiers statiques avec Express ?",
+    a: `<pre data-lang="js"><code>app.<span class="f">use</span>(express.<span class="f">static</span>(<span class="s">'public'</span>));
+<span class="c">// → GET /style.css cherche ./public/style.css</span>
+
+app.<span class="f">use</span>(<span class="s">'/assets'</span>, express.<span class="f">static</span>(<span class="s">'public'</span>, {
+  maxAge: <span class="s">'1y'</span>,         <span class="c">// Cache-Control</span>
+  etag: <span class="k">true</span>,
+  immutable: <span class="k">true</span>,
+}));</code></pre>
+    <p>En prod, on préfère souvent laisser nginx/CDN servir les fichiers statiques pour offload le process Node.</p>`
+  },
+  {
+    q: "Quelle est la différence entre res.send() et res.json() ?",
+    a: `<p><code>res.json(obj)</code> :</p>
+    <ul>
+      <li>Sérialise toujours en JSON (<code>JSON.stringify</code>)</li>
+      <li>Set <code>Content-Type: application/json</code> systématiquement</li>
+      <li>Gère <code>null</code>/<code>undefined</code> proprement</li>
+    </ul>
+    <p><code>res.send(data)</code> :</p>
+    <ul>
+      <li>Devine le type : string → HTML, Buffer → octet-stream, object/array → JSON</li>
+      <li>Set le Content-Type seulement s'il n'est pas déjà défini</li>
+    </ul>
+    <p>Convention : <code>res.json()</code> pour API, <code>res.send()</code> pour debug rapide ou HTML inline.</p>`
+  },
+  {
+    q: "Comment tester une app Express sans démarrer un serveur ?",
+    a: `<p>Avec <strong>supertest</strong>, qui peut prendre l'app comme argument et utilise un port éphémère en interne :</p>
+    <pre data-lang="js"><code><span class="k">const</span> request = <span class="f">require</span>(<span class="s">'supertest'</span>);
+<span class="k">const</span> app = <span class="f">require</span>(<span class="s">'./app'</span>);
+
+<span class="f">test</span>(<span class="s">'POST /login'</span>, <span class="k">async</span> () =&gt; {
+  <span class="k">const</span> res = <span class="k">await</span> <span class="f">request</span>(app)
+    .<span class="f">post</span>(<span class="s">'/login'</span>)
+    .<span class="f">send</span>({ email: <span class="s">'a@b.c'</span>, password: <span class="s">'xxx'</span> });
+  <span class="f">expect</span>(res.status).<span class="f">toBe</span>(<span class="n">200</span>);
+});</code></pre>
+    <p>D'où l'intérêt d'exporter <code>app</code> séparément du <code>app.listen()</code>.</p>`
+  },
+  {
+    q: "Express est-il monothread ?",
+    a: `<p>Express tourne dans Node.js, qui est <strong>single-threaded pour la JS</strong> (event loop) mais <strong>multi-thread pour l'I/O</strong> (libuv thread pool). Conséquences :</p>
+    <ul>
+      <li>Toutes les requêtes partagent <strong>un seul thread JS</strong>. Une opération CPU-bound (<code>JSON.parse</code> géant, regex complexe, crypto sync) bloque toutes les requêtes en cours.</li>
+      <li>Pour utiliser plusieurs cœurs : <code>cluster</code>, <code>worker_threads</code>, ou un process manager comme <code>pm2 -i max</code>.</li>
+    </ul>`
+  },
+  {
+    q: "Comment implémenterais-tu de l'authentification JWT dans Express ?",
+    a: `<pre data-lang="js"><code><span class="k">const</span> jwt = <span class="f">require</span>(<span class="s">'jsonwebtoken'</span>);
+
+<span class="c">// Login : signer un token</span>
+app.<span class="f">post</span>(<span class="s">'/login'</span>, <span class="k">async</span> (req, res) =&gt; {
+  <span class="k">const</span> user = <span class="k">await</span> <span class="f">authenticate</span>(req.body);
+  <span class="k">if</span> (!user) <span class="k">return</span> res.<span class="f">sendStatus</span>(<span class="n">401</span>);
+  <span class="k">const</span> token = jwt.<span class="f">sign</span>({ sub: user.id }, process.env.JWT_SECRET, { expiresIn: <span class="s">'1h'</span> });
+  res.<span class="f">json</span>({ token });
+});
+
+<span class="c">// Middleware : vérifier le token</span>
+<span class="k">function</span> <span class="f">requireAuth</span>(req, res, next) {
+  <span class="k">const</span> h = req.headers.authorization;
+  <span class="k">if</span> (!h?.<span class="f">startsWith</span>(<span class="s">'Bearer '</span>)) <span class="k">return</span> res.<span class="f">sendStatus</span>(<span class="n">401</span>);
+  <span class="k">try</span> {
+    req.user = jwt.<span class="f">verify</span>(h.<span class="f">slice</span>(<span class="n">7</span>), process.env.JWT_SECRET);
+    <span class="f">next</span>();
+  } <span class="k">catch</span> { res.<span class="f">sendStatus</span>(<span class="n">401</span>); }
+}
+
+app.<span class="f">use</span>(<span class="s">'/api'</span>, requireAuth);</code></pre>
+    <p>Pour du prod : préférer une lib comme <code>passport-jwt</code>, mettre le token en cookie httpOnly plutôt qu'en localStorage, et implémenter un mécanisme de refresh.</p>`
+  },
+  {
+    q: "Que fait exactement express.json() ?",
+    a: `<p>C'est un middleware (built-in depuis 4.16, anciennement <code>body-parser</code>) qui :</p>
+    <ol>
+      <li>Inspecte <code>Content-Type</code> de la requête</li>
+      <li>Si <code>application/json</code>, lit le stream <code>req</code>, accumule en buffer</li>
+      <li>Parse avec <code>JSON.parse</code> et stocke dans <code>req.body</code></li>
+      <li>Sinon, laisse <code>req.body</code> à <code>undefined</code> et passe à <code>next()</code></li>
+    </ol>
+    <p>Options utiles : <code>limit</code> (taille max, défaut 100kb), <code>strict</code> (refuse les non-objets), <code>type</code> (matcher de Content-Type custom).</p>`
+  },
+  {
+    q: "Comment fais-tu du CORS proprement ?",
+    a: `<pre data-lang="js"><code><span class="k">const</span> cors = <span class="f">require</span>(<span class="s">'cors'</span>);
+
+app.<span class="f">use</span>(<span class="f">cors</span>({
+  origin: process.env.WEB_ORIGIN,   <span class="c">// pas '*' avec credentials</span>
+  credentials: <span class="k">true</span>,                <span class="c">// permet cookies/Authorization</span>
+  methods: [<span class="s">'GET'</span>, <span class="s">'POST'</span>, <span class="s">'PUT'</span>, <span class="s">'DELETE'</span>],
+  allowedHeaders: [<span class="s">'Content-Type'</span>, <span class="s">'Authorization'</span>],
+  maxAge: <span class="n">86400</span>,                    <span class="c">// cache du preflight</span>
+}));</code></pre>
+    <p>Points clés : <code>credentials: true</code> est <strong>incompatible</strong> avec <code>origin: '*'</code>. Le navigateur envoie un <strong>preflight OPTIONS</strong> avant les requêtes non-simples, que <code>cors</code> gère automatiquement.</p>`
+  },
+];
+
+const qaList = document.getElementById('qaList');
+qaData.forEach((item, i) => {
+  const div = document.createElement('div');
+  div.className = 'qa-item';
+  div.innerHTML = `
+    <div class="qa-q"><span><span style="color: var(--text-dim); margin-right: 8px;">Q${i+1}.</span>${item.q}</span><span class="toggle">+</span></div>
+    <div class="qa-a">${item.a}</div>`;
+  div.querySelector('.qa-q').addEventListener('click', () => div.classList.toggle('open'));
+  qaList.appendChild(div);
+});
+
+/* ----------------------------- QUIZ ----------------------------- */
+const quizData = [
+  {
+    q: "Comment Express identifie un error-handling middleware ?",
+    options: [
+      "Par son nom (errorHandler)",
+      "Par son nombre d'arguments (4 : err, req, res, next)",
+      "Par un appel à app.error()",
+      "Par un décorateur @ErrorHandler",
+    ],
+    correct: 1,
+    explain: "Express inspecte fn.length. Une fonction à 4 paramètres est traitée comme un error handler et n'est appelée que si next(err) a été invoqué."
+  },
+  {
+    q: "Que vaut req.query.page pour l'URL /list?page=2 ?",
+    options: ["2 (number)", "'2' (string)", "undefined", "NaN"],
+    correct: 1,
+    explain: "req.query et req.params contiennent toujours des strings. Tu dois parser/valider toi-même (parseInt, zod, etc.)."
+  },
+  {
+    q: "Quel middleware est nécessaire pour avoir req.body sur un POST JSON ?",
+    options: [
+      "express.urlencoded()",
+      "body-parser uniquement",
+      "express.json()",
+      "Rien, c'est natif",
+    ],
+    correct: 2,
+    explain: "express.json() parse les requêtes avec Content-Type: application/json. Il est built-in depuis Express 4.16."
+  },
+  {
+    q: "Dans quel ordre ces middlewares doivent-ils être déclarés ?",
+    options: [
+      "errorHandler → routes → notFound",
+      "routes → errorHandler → notFound",
+      "routes → notFound → errorHandler",
+      "L'ordre n'a pas d'importance",
+    ],
+    correct: 2,
+    explain: "L'ordre compte ! D'abord les routes (pour matcher), puis le notFound (catch-all 404 si aucune route ne matche), puis l'errorHandler (qui doit être DERNIER pour attraper toutes les erreurs)."
+  },
+  {
+    q: "Que se passe-t-il avec ce code en Express 4 si fetchData() rejette ?",
+    code: `app.get('/x', async (req, res) => {\n  const d = await fetchData();\n  res.json(d);\n});`,
+    options: [
+      "L'errorHandler est appelé automatiquement",
+      "Le client reçoit un 500",
+      "UnhandledPromiseRejection, la requête pend jusqu'au timeout",
+      "Express crash et redémarre",
+    ],
+    correct: 2,
+    explain: "En Express 4, les promises rejetées dans un handler async ne sont PAS attrapées. Il faut wrapper avec asyncHandler, ou utiliser require('express-async-errors'), ou upgrade vers Express 5."
+  },
+  {
+    q: "À quoi sert app.set('trust proxy', 1) ?",
+    options: [
+      "Activer HTTPS",
+      "Faire confiance aux headers X-Forwarded-* d'un proxy en amont",
+      "Configurer un cache proxy",
+      "Bloquer les requêtes proxifiées",
+    ],
+    correct: 1,
+    explain: "Sans ça, req.ip retourne l'IP du proxy (pas du client), req.protocol reste 'http' même en HTTPS, et les cookies secure ne fonctionnent pas correctement derrière un LB."
+  },
+  {
+    q: "Quelle option ACTIVE le partage des paramètres entre Router parent et enfant ?",
+    options: [
+      "express.Router({ inherit: true })",
+      "express.Router({ mergeParams: true })",
+      "express.Router({ shareParams: true })",
+      "Activé par défaut",
+    ],
+    correct: 1,
+    explain: "Par défaut, un sous-Router ne voit pas les params du parent. mergeParams: true le permet, utile pour les routes imbriquées type /users/:userId/posts/:postId."
+  },
+  {
+    q: "Quelle est la différence entre app.use('/api', mw) et app.get('/api', mw) ?",
+    options: [
+      "Aucune différence",
+      "app.use matche en préfixe ET toutes méthodes ; app.get matche le path exact en GET seulement",
+      "app.use est plus rapide",
+      "app.get supporte les params, pas app.use",
+    ],
+    correct: 1,
+    explain: "app.use('/api', mw) matche /api, /api/x, /api/x/y... pour toutes les méthodes HTTP. app.get('/api', mw) matche uniquement GET /api exact."
+  },
+  {
+    q: "Comment terminer une requête sans body avec le bon status ?",
+    options: [
+      "res.send(204)",
+      "res.status(204)",
+      "res.sendStatus(204)",
+      "res.end(204)",
+    ],
+    correct: 2,
+    explain: "res.sendStatus(204) set le status ET envoie la réponse. res.status(204) ne fait que set le status sans envoyer (chainable). res.send(204) envoie '204' comme body !"
+  },
+  {
+    q: "Pourquoi exporter `app` séparément de `app.listen()` ?",
+    options: [
+      "Pour éviter des warnings npm",
+      "Pour pouvoir tester avec supertest sans port",
+      "C'est obligatoire en Express 5",
+      "Pour économiser de la mémoire",
+    ],
+    correct: 1,
+    explain: "supertest accepte une app Express directement et utilise un port éphémère interne. Cela permet de tester sans gérer le cycle de vie d'un vrai serveur."
+  },
+  {
+    q: "Que retourne express() ?",
+    options: [
+      "Un objet HTTP Server",
+      "Une instance de class App",
+      "Une fonction qui est aussi un objet avec des méthodes",
+      "Une Promise<App>",
+    ],
+    correct: 2,
+    explain: "express() retourne une fonction (req, res, next) — c'est ce qui permet à http.createServer(app) de fonctionner. Cette fonction a aussi des méthodes attachées (.use, .get, .listen...)."
+  },
+  {
+    q: "Comment passer une erreur à l'errorHandler depuis un middleware classique ?",
+    options: [
+      "throw new Error(...)",
+      "next(new Error(...))",
+      "res.error(...)",
+      "return Promise.reject(...)",
+    ],
+    correct: 1,
+    explain: "next(err) saute tous les middlewares normaux jusqu'au prochain error-handler (4 args). throw fonctionne seulement dans du code synchrone du handler — pas dans un callback async sans wrapper."
+  },
+];
+
+let quizState = { idx: 0, score: 0, answered: false };
+const quizMount = document.getElementById('quizMount');
+
+function renderQuiz() {
+  if (quizState.idx >= quizData.length) {
+    const pct = Math.round(quizState.score / quizData.length * 100);
+    let verdict = "Il reste du travail !";
+    if (pct >= 90) verdict = "Tu es prêt pour l'entretien ! 🎯";
+    else if (pct >= 70) verdict = "Bonne base, révise les sections où tu as flanché.";
+    else if (pct >= 50) verdict = "À mi-chemin — refais une passe sur middleware et async.";
+    quizMount.innerHTML = `
+      <div class="quiz-score">
+        <div class="score-num">${quizState.score}/${quizData.length}</div>
+        <h3 style="justify-content: center; border: none; padding-top: 8px;">${pct}%</h3>
+        <p style="margin-top: 12px;">${verdict}</p>
+        <button class="btn" id="quizRestart" style="margin-top: 20px;">Recommencer</button>
+      </div>`;
+    document.getElementById('quizRestart').addEventListener('click', () => {
+      quizState = { idx: 0, score: 0, answered: false };
+      renderQuiz();
+    });
+    return;
+  }
+
+  const q = quizData[quizState.idx];
+  const pct = quizState.idx / quizData.length * 100;
+  quizMount.innerHTML = `
+    <div class="quiz-progress"><div class="quiz-progress-bar" style="width: ${pct}%"></div></div>
+    <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">Question ${quizState.idx + 1} / ${quizData.length} · Score : ${quizState.score}</div>
+    <div class="quiz-card">
+      <div class="quiz-q">${q.q}</div>
+      ${q.code ? `<pre data-lang="js"><code>${q.code.replace(/</g,'&lt;')}</code></pre>` : ''}
+      <div class="quiz-options" id="qOpts">
+        ${q.options.map((o, i) => `
+          <div class="quiz-option" data-i="${i}">
+            <span class="letter">${String.fromCharCode(65+i)}</span>
+            <span>${o}</span>
+          </div>`).join('')}
+      </div>
+      <div class="quiz-explain" id="qExplain"><strong>💡 </strong>${q.explain}</div>
+      <div class="quiz-controls">
+        <div style="color: var(--text-dim); font-size: 13px;" id="qFeedback"></div>
+        <button class="btn" id="qNext" disabled>Suivant →</button>
+      </div>
+    </div>`;
+
+  const opts = quizMount.querySelectorAll('.quiz-option');
+  opts.forEach(opt => opt.addEventListener('click', () => {
+    if (quizState.answered) return;
+    quizState.answered = true;
+    const i = parseInt(opt.dataset.i);
+    const correct = i === q.correct;
+    if (correct) quizState.score++;
+    opts.forEach((o, j) => {
+      o.classList.add('disabled');
+      if (j === q.correct) o.classList.add('correct');
+      else if (j === i) o.classList.add('wrong');
+    });
+    document.getElementById('qExplain').classList.add('show');
+    document.getElementById('qFeedback').textContent = correct ? '✓ Bonne réponse !' : '✗ Mauvaise réponse';
+    document.getElementById('qFeedback').style.color = correct ? 'var(--ok)' : 'var(--danger)';
+    document.getElementById('qNext').disabled = false;
+  }));
+
+  document.getElementById('qNext').addEventListener('click', () => {
+    quizState.idx++;
+    quizState.answered = false;
+    renderQuiz();
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>

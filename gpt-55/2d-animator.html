@@ -1,0 +1,1586 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2D Animator</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101116;
+      --panel: #191b22;
+      --panel-2: #20242d;
+      --line: #303541;
+      --line-bright: #485062;
+      --text: #f4f1ea;
+      --muted: #aba99f;
+      --accent: #33c6a4;
+      --accent-2: #f1c75b;
+      --danger: #f06d62;
+      --ink: #111317;
+      --shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel-2);
+      color: var(--text);
+      min-height: 34px;
+      padding: 0 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      border-color: var(--line-bright);
+      background: #252a34;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.primary {
+      color: var(--ink);
+      background: var(--accent);
+      border-color: color-mix(in srgb, var(--accent), #ffffff 14%);
+      font-weight: 700;
+    }
+
+    button.warn {
+      color: var(--ink);
+      background: var(--accent-2);
+      border-color: color-mix(in srgb, var(--accent-2), #ffffff 16%);
+      font-weight: 700;
+    }
+
+    button.danger {
+      border-color: color-mix(in srgb, var(--danger), #ffffff 12%);
+      color: #ffe7e5;
+      background: color-mix(in srgb, var(--danger), transparent 72%);
+    }
+
+    button.icon {
+      width: 34px;
+      min-width: 34px;
+      padding: 0;
+      font-size: 17px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 54px 1fr 84px;
+      grid-template-columns: 260px minmax(0, 1fr) 300px;
+      grid-template-areas:
+        "top top top"
+        "left stage right"
+        "timeline timeline timeline";
+    }
+
+    .topbar {
+      grid-area: top;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #13151b;
+      min-width: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 180px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .mark {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(135deg, #33c6a4 0 49%, transparent 50%),
+        linear-gradient(315deg, #f1c75b 0 49%, #252a34 50%);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+    }
+
+    .top-actions,
+    .mode-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .top-actions {
+      margin-left: auto;
+    }
+
+    .mode-tabs {
+      padding: 3px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .mode-tabs button {
+      min-height: 30px;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .mode-tabs button.active {
+      color: var(--ink);
+      background: var(--accent);
+      font-weight: 800;
+    }
+
+    .panel {
+      min-width: 0;
+      overflow: auto;
+      background: var(--panel);
+      scrollbar-width: thin;
+      scrollbar-color: var(--line-bright) transparent;
+    }
+
+    .left {
+      grid-area: left;
+      border-right: 1px solid var(--line);
+    }
+
+    .right {
+      grid-area: right;
+      border-left: 1px solid var(--line);
+    }
+
+    .section {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 1.2;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .row > * {
+      min-width: 0;
+    }
+
+    .stack {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #12141a;
+      color: var(--text);
+      padding: 6px 8px;
+      outline: none;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+
+    .stage {
+      grid-area: stage;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.035) 25%, transparent 25% 75%, rgba(255,255,255,0.035) 75%),
+        linear-gradient(45deg, rgba(255,255,255,0.035) 25%, transparent 25% 75%, rgba(255,255,255,0.035) 75%);
+      background-position: 0 0, 16px 16px;
+      background-size: 32px 32px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    .empty {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      color: var(--muted);
+      padding: 24px;
+      text-align: center;
+    }
+
+    .empty-inner {
+      width: min(420px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(17, 19, 24, 0.86);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .empty strong {
+      display: block;
+      color: var(--text);
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .pill {
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 9px;
+      color: var(--muted);
+      background: #12141a;
+      font-size: 12px;
+    }
+
+    .bone-list,
+    .key-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .item {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #12141a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      cursor: pointer;
+    }
+
+    .item.selected {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 48%);
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.22);
+      flex: 0 0 auto;
+    }
+
+    .item-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .item-sub {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .timeline {
+      grid-area: timeline;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr) 300px;
+      align-items: stretch;
+      border-top: 1px solid var(--line);
+      background: #13151b;
+    }
+
+    .transport,
+    .track,
+    .stats {
+      padding: 12px;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .transport {
+      border-right: 1px solid var(--line);
+    }
+
+    .stats {
+      border-left: 1px solid var(--line);
+      justify-content: flex-end;
+    }
+
+    .track {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 10px;
+    }
+
+    .timeline-box {
+      position: relative;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #101218;
+      overflow: hidden;
+    }
+
+    .ticks {
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(90deg, transparent 0 23px, rgba(255,255,255,0.07) 24px);
+      opacity: 0.8;
+    }
+
+    .playhead {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--accent);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.35), 0 0 14px rgba(51,198,164,0.6);
+    }
+
+    .key-dot {
+      position: absolute;
+      top: 12px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #111317;
+      background: var(--accent-2);
+      transform: translateX(-50%);
+    }
+
+    .status {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      max-width: min(640px, calc(100% - 24px));
+      color: var(--text);
+      background: rgba(16, 18, 24, 0.86);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px 10px;
+      font-size: 12px;
+      pointer-events: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 980px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        min-height: 100vh;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto minmax(520px, 1fr) auto auto;
+        grid-template-areas:
+          "top"
+          "left"
+          "stage"
+          "right"
+          "timeline";
+      }
+
+      .topbar,
+      .top-actions,
+      .mode-tabs {
+        flex-wrap: wrap;
+      }
+
+      .brand {
+        min-width: 140px;
+      }
+
+      .left,
+      .right,
+      .transport,
+      .stats {
+        border: 0;
+      }
+
+      .timeline {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <span>2D Animator</span>
+      </div>
+      <div class="mode-tabs" role="tablist" aria-label="Modes">
+        <button type="button" class="active" data-mode="rig" title="Editer les os">Rig</button>
+        <button type="button" data-mode="pose" title="Poser le squelette">Pose</button>
+        <button type="button" data-mode="animate" title="Animer les keyframes">Anim</button>
+      </div>
+      <div class="top-actions">
+        <button type="button" id="uploadBtn" class="primary" title="Importer une image">Importer image</button>
+        <button type="button" id="importBtn" title="Importer un projet JSON">Importer JSON</button>
+        <button type="button" id="exportBtn" class="warn" title="Exporter le projet JSON">Exporter JSON</button>
+        <button type="button" id="resetBtn" class="danger" title="Nouveau projet">Reset</button>
+      </div>
+    </header>
+
+    <aside class="panel left">
+      <section class="section">
+        <h2>Outils</h2>
+        <div class="grid">
+          <button type="button" id="fitBtn" title="Centrer le canvas">Centrer</button>
+          <button type="button" id="newBoneBtn" title="Creer un os depuis l'os selectionne">Nouvel os enfant</button>
+          <button type="button" id="deleteBoneBtn" class="danger" title="Supprimer l'os selectionne">Supprimer os</button>
+        </div>
+      </section>
+      <section class="section">
+        <h2>Affichage</h2>
+        <div class="stack">
+          <label class="row"><input type="checkbox" id="showImage" checked> Image</label>
+          <label class="row"><input type="checkbox" id="showMesh"> Mesh</label>
+          <label class="row"><input type="checkbox" id="showSkeleton" checked> Squelette</label>
+          <label class="row"><input type="checkbox" id="showNames" checked> Noms</label>
+        </div>
+      </section>
+      <section class="section">
+        <h2>Mesh</h2>
+        <div class="stack">
+          <div class="field">
+            <label for="meshDensity">Densite</label>
+            <input id="meshDensity" type="range" min="8" max="38" value="22">
+          </div>
+          <button type="button" id="rebuildMeshBtn" title="Reconstruire le mesh">Reconstruire</button>
+        </div>
+      </section>
+      <section class="section">
+        <h2>Projet</h2>
+        <div class="stack">
+          <span class="pill" id="imageInfo">Aucune image</span>
+          <span class="pill" id="meshInfo">Mesh vide</span>
+          <span class="pill" id="savedInfo">Non exporte</span>
+        </div>
+      </section>
+    </aside>
+
+    <main class="stage" id="stage">
+      <canvas id="canvas" aria-label="Editeur 2D"></canvas>
+      <div class="empty" id="emptyState">
+        <div class="empty-inner">
+          <strong>Importer une image</strong>
+          <span>Le canvas garde l'image, le squelette, les poses et les keyframes dans le JSON.</span>
+        </div>
+      </div>
+      <div class="status" id="status">Pret.</div>
+    </main>
+
+    <aside class="panel right">
+      <section class="section">
+        <h2>Os</h2>
+        <div class="stack">
+          <input id="boneName" type="text" placeholder="Nom de l'os">
+          <div class="row">
+            <button type="button" id="renameBoneBtn">Renommer</button>
+            <button type="button" id="zeroPoseBtn">Pose zero</button>
+          </div>
+          <div class="bone-list" id="boneList"></div>
+        </div>
+      </section>
+      <section class="section">
+        <h2>Animation</h2>
+        <div class="stack">
+          <div class="row">
+            <button type="button" id="addKeyBtn" class="primary" title="Ajouter une keyframe">Keyframe</button>
+            <button type="button" id="deleteKeyBtn" class="danger" title="Supprimer la keyframe courante">Supprimer</button>
+          </div>
+          <div class="field">
+            <label for="durationInput">Frames</label>
+            <input id="durationInput" type="number" min="24" max="600" value="120">
+          </div>
+          <div class="key-list" id="keyList"></div>
+        </div>
+      </section>
+    </aside>
+
+    <footer class="timeline">
+      <div class="transport">
+        <button type="button" id="playBtn" class="icon" title="Lecture">▶</button>
+        <button type="button" id="prevKeyBtn" class="icon" title="Keyframe precedente">◀</button>
+        <button type="button" id="nextKeyBtn" class="icon" title="Keyframe suivante">▶</button>
+        <span class="pill" id="frameLabel">0 / 120</span>
+      </div>
+      <div class="track">
+        <span class="pill">0</span>
+        <div class="timeline-box" id="timelineBox">
+          <div class="ticks"></div>
+          <div id="keyDots"></div>
+          <div class="playhead" id="playhead"></div>
+        </div>
+        <span class="pill" id="durationLabel">120</span>
+      </div>
+      <div class="stats">
+        <input id="frameSlider" type="range" min="0" max="120" value="0" aria-label="Frame">
+      </div>
+    </footer>
+  </div>
+
+  <input id="imageInput" type="file" accept="image/*" hidden>
+  <input id="jsonInput" type="file" accept="application/json,.json" hidden>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const stage = document.getElementById('stage');
+    const emptyState = document.getElementById('emptyState');
+    const statusEl = document.getElementById('status');
+    const imageInput = document.getElementById('imageInput');
+    const jsonInput = document.getElementById('jsonInput');
+    const frameSlider = document.getElementById('frameSlider');
+    const timelineBox = document.getElementById('timelineBox');
+
+    const palette = ['#33c6a4', '#f1c75b', '#f06d62', '#6da9f0', '#d48df0', '#88cf65', '#f09362', '#7ad4e0'];
+
+    const state = {
+      image: null,
+      imageData: '',
+      bones: [],
+      selectedBoneId: null,
+      mode: 'rig',
+      showImage: true,
+      showMesh: false,
+      showSkeleton: true,
+      showNames: true,
+      meshDensity: 22,
+      mesh: { vertices: [], triangles: [], cols: 0, rows: 0 },
+      duration: 120,
+      frame: 0,
+      keyframes: [],
+      playing: false,
+      view: { x: 0, y: 0, scale: 1 },
+      drag: null,
+      dirty: false
+    };
+
+    function uid(prefix) {
+      return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function dist(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function angle(a, b) {
+      return Math.atan2(b.y - a.y, b.x - a.x);
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function angleLerp(a, b, t) {
+      let d = b - a;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      return a + d * t;
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function markDirty() {
+      state.dirty = true;
+      document.getElementById('savedInfo').textContent = 'Modifie';
+    }
+
+    function getBone(id) {
+      return state.bones.find((bone) => bone.id === id) || null;
+    }
+
+    function childrenOf(id) {
+      return state.bones.filter((bone) => bone.parent === id);
+    }
+
+    function resizeCanvas() {
+      const rect = stage.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      render();
+    }
+
+    function fitView() {
+      const rect = stage.getBoundingClientRect();
+      if (!state.image) {
+        state.view = { x: rect.width / 2, y: rect.height / 2, scale: 1 };
+        render();
+        return;
+      }
+      const margin = 52;
+      const scale = Math.min((rect.width - margin) / state.image.width, (rect.height - margin) / state.image.height);
+      state.view.scale = clamp(scale || 1, 0.04, 8);
+      state.view.x = (rect.width - state.image.width * state.view.scale) / 2;
+      state.view.y = (rect.height - state.image.height * state.view.scale) / 2;
+      render();
+    }
+
+    function worldToScreen(point) {
+      return {
+        x: state.view.x + point.x * state.view.scale,
+        y: state.view.y + point.y * state.view.scale
+      };
+    }
+
+    function screenToWorld(point) {
+      return {
+        x: (point.x - state.view.x) / state.view.scale,
+        y: (point.y - state.view.y) / state.view.scale
+      };
+    }
+
+    function pointerPos(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+    }
+
+    function buildMesh() {
+      if (!state.image) return;
+      const cols = state.meshDensity;
+      const rows = Math.max(6, Math.round(cols * state.image.height / state.image.width));
+      const vertices = [];
+      const triangles = [];
+      for (let y = 0; y <= rows; y += 1) {
+        for (let x = 0; x <= cols; x += 1) {
+          const px = (x / cols) * state.image.width;
+          const py = (y / rows) * state.image.height;
+          vertices.push({
+            x: px,
+            y: py,
+            weights: []
+          });
+        }
+      }
+      for (let y = 0; y < rows; y += 1) {
+        for (let x = 0; x < cols; x += 1) {
+          const a = y * (cols + 1) + x;
+          const b = a + 1;
+          const c = a + cols + 1;
+          const d = c + 1;
+          triangles.push([a, b, d], [a, d, c]);
+        }
+      }
+      state.mesh = { vertices, triangles, cols, rows };
+      recalcWeights();
+      updateInfo();
+      markDirty();
+    }
+
+    function pointToSegmentDistance(point, a, b) {
+      const vx = b.x - a.x;
+      const vy = b.y - a.y;
+      const wx = point.x - a.x;
+      const wy = point.y - a.y;
+      const len2 = vx * vx + vy * vy || 1;
+      const t = clamp((wx * vx + wy * vy) / len2, 0, 1);
+      const px = a.x + vx * t;
+      const py = a.y + vy * t;
+      return Math.hypot(point.x - px, point.y - py);
+    }
+
+    function recalcWeights() {
+      if (!state.mesh.vertices.length) return;
+      state.mesh.vertices.forEach((vertex) => {
+        const ranked = state.bones.map((bone) => {
+          const d = pointToSegmentDistance(vertex, bone.restStart, bone.restEnd);
+          const length = Math.max(20, bone.length || dist(bone.restStart, bone.restEnd));
+          const power = 1 / Math.pow(d / length + 0.18, 2);
+          return { id: bone.id, value: power };
+        }).sort((a, b) => b.value - a.value).slice(0, 4);
+        const total = ranked.reduce((sum, item) => sum + item.value, 0) || 1;
+        vertex.weights = ranked.map((item) => ({ id: item.id, w: item.value / total }));
+      });
+    }
+
+    function addBone(start, end, parent = null) {
+      const length = Math.max(8, dist(start, end));
+      const newBone = {
+        id: uid('bone'),
+        name: `Os ${state.bones.length + 1}`,
+        parent,
+        restStart: { ...start },
+        restEnd: { ...end },
+        length,
+        restAngle: angle(start, end),
+        pose: 0,
+        color: palette[state.bones.length % palette.length]
+      };
+      state.bones.push(newBone);
+      state.selectedBoneId = newBone.id;
+      recalcWeights();
+      ensureDefaultKeyframe();
+      updateUI();
+      markDirty();
+      return newBone;
+    }
+
+    function deleteSelectedBone() {
+      const selected = getBone(state.selectedBoneId);
+      if (!selected) return;
+      const ids = new Set([selected.id]);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        state.bones.forEach((bone) => {
+          if (bone.parent && ids.has(bone.parent) && !ids.has(bone.id)) {
+            ids.add(bone.id);
+            changed = true;
+          }
+        });
+      }
+      state.bones = state.bones.filter((bone) => !ids.has(bone.id));
+      state.keyframes.forEach((key) => {
+        ids.forEach((id) => delete key.pose[id]);
+      });
+      state.selectedBoneId = state.bones[0]?.id || null;
+      recalcWeights();
+      updateUI();
+      markDirty();
+    }
+
+    function createChildBone() {
+      const selected = getBone(state.selectedBoneId);
+      if (!selected) {
+        const center = state.image ? { x: state.image.width / 2, y: state.image.height / 2 } : { x: 100, y: 100 };
+        addBone(center, { x: center.x + 90, y: center.y }, null);
+        return;
+      }
+      const transforms = computePoseTransforms();
+      const posed = transforms.get(selected.id);
+      const start = selected.restEnd;
+      const baseAngle = selected.restAngle + selected.pose;
+      const end = {
+        x: start.x + Math.cos(baseAngle) * Math.max(36, selected.length * 0.74),
+        y: start.y + Math.sin(baseAngle) * Math.max(36, selected.length * 0.74)
+      };
+      if (posed) {
+        end.x = start.x + Math.cos(angle(posed.start, posed.end)) * Math.max(36, selected.length * 0.74);
+        end.y = start.y + Math.sin(angle(posed.start, posed.end)) * Math.max(36, selected.length * 0.74);
+      }
+      addBone(start, end, selected.id);
+    }
+
+    function computePoseTransforms(poseOverride = null) {
+      const transforms = new Map();
+      const byId = new Map(state.bones.map((bone) => [bone.id, bone]));
+      const visiting = new Set();
+      const resolve = (bone) => {
+        if (transforms.has(bone.id)) return transforms.get(bone.id);
+        if (visiting.has(bone.id)) return null;
+        visiting.add(bone.id);
+        const pose = poseOverride?.[bone.id] ?? bone.pose ?? 0;
+        let start = { ...bone.restStart };
+        let rotation = bone.restAngle + pose;
+        let parentRotation = 0;
+        if (bone.parent && byId.has(bone.parent)) {
+          const parent = resolve(byId.get(bone.parent));
+          if (parent) {
+            start = { ...parent.end };
+            parentRotation = parent.rotation;
+            rotation = parentRotation + (bone.restAngle - byId.get(bone.parent).restAngle) + pose;
+          }
+        }
+        const end = {
+          x: start.x + Math.cos(rotation) * bone.length,
+          y: start.y + Math.sin(rotation) * bone.length
+        };
+        const transform = { start, end, rotation, restRotation: bone.restAngle, pose };
+        transforms.set(bone.id, transform);
+        visiting.delete(bone.id);
+        return transform;
+      };
+      state.bones.forEach(resolve);
+      return transforms;
+    }
+
+    function transformVertex(vertex, transforms = computePoseTransforms()) {
+      if (!vertex.weights.length || !state.bones.length) return { x: vertex.x, y: vertex.y };
+      let x = 0;
+      let y = 0;
+      vertex.weights.forEach((weight) => {
+        const bone = getBone(weight.id);
+        const tr = transforms.get(weight.id);
+        if (!bone || !tr) {
+          x += vertex.x * weight.w;
+          y += vertex.y * weight.w;
+          return;
+        }
+        const restAngle = bone.restAngle;
+        const dx = vertex.x - bone.restStart.x;
+        const dy = vertex.y - bone.restStart.y;
+        const localX = Math.cos(-restAngle) * dx - Math.sin(-restAngle) * dy;
+        const localY = Math.sin(-restAngle) * dx + Math.cos(-restAngle) * dy;
+        const worldX = tr.start.x + Math.cos(tr.rotation) * localX - Math.sin(tr.rotation) * localY;
+        const worldY = tr.start.y + Math.sin(tr.rotation) * localX + Math.cos(tr.rotation) * localY;
+        x += worldX * weight.w;
+        y += worldY * weight.w;
+      });
+      return { x, y };
+    }
+
+    function drawTexturedTriangle(target, image, rest, posed) {
+      const x0 = rest[0].x;
+      const y0 = rest[0].y;
+      const x1 = rest[1].x;
+      const y1 = rest[1].y;
+      const x2 = rest[2].x;
+      const y2 = rest[2].y;
+      const u0 = posed[0].x;
+      const v0 = posed[0].y;
+      const u1 = posed[1].x;
+      const v1 = posed[1].y;
+      const u2 = posed[2].x;
+      const v2 = posed[2].y;
+      const det = x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1);
+      if (Math.abs(det) < 0.001) return;
+      const a = (u0 * (y1 - y2) + u1 * (y2 - y0) + u2 * (y0 - y1)) / det;
+      const c = (u0 * (x2 - x1) + u1 * (x0 - x2) + u2 * (x1 - x0)) / det;
+      const e = (u0 * (x1 * y2 - x2 * y1) + u1 * (x2 * y0 - x0 * y2) + u2 * (x0 * y1 - x1 * y0)) / det;
+      const b = (v0 * (y1 - y2) + v1 * (y2 - y0) + v2 * (y0 - y1)) / det;
+      const d = (v0 * (x2 - x1) + v1 * (x0 - x2) + v2 * (x1 - x0)) / det;
+      const f = (v0 * (x1 * y2 - x2 * y1) + v1 * (x2 * y0 - x0 * y2) + v2 * (x0 * y1 - x1 * y0)) / det;
+
+      target.save();
+      target.beginPath();
+      target.moveTo(u0, v0);
+      target.lineTo(u1, v1);
+      target.lineTo(u2, v2);
+      target.closePath();
+      target.clip();
+      target.transform(a, b, c, d, e, f);
+      target.drawImage(image, 0, 0);
+      target.restore();
+    }
+
+    function drawDeformedImage(transforms) {
+      if (!state.image) return;
+      if (!state.showImage) return;
+      if (!state.bones.length || !state.mesh.vertices.length) {
+        ctx.drawImage(state.image.element, 0, 0);
+        return;
+      }
+      const posed = state.mesh.vertices.map((vertex) => transformVertex(vertex, transforms));
+      state.mesh.triangles.forEach((tri) => {
+        const restTri = tri.map((index) => state.mesh.vertices[index]);
+        const poseTri = tri.map((index) => posed[index]);
+        drawTexturedTriangle(ctx, state.image.element, restTri, poseTri);
+      });
+    }
+
+    function drawMesh(transforms) {
+      if (!state.showMesh || !state.mesh.vertices.length) return;
+      const posed = state.mesh.vertices.map((vertex) => transformVertex(vertex, transforms));
+      ctx.save();
+      ctx.lineWidth = 1 / state.view.scale;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      state.mesh.triangles.forEach((tri) => {
+        const a = posed[tri[0]];
+        const b = posed[tri[1]];
+        const c = posed[tri[2]];
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.lineTo(c.x, c.y);
+        ctx.closePath();
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+
+    function drawSkeleton(transforms) {
+      if (!state.showSkeleton) return;
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const handleRadius = Math.max(5, 7 / state.view.scale);
+      state.bones.forEach((bone) => {
+        const tr = transforms.get(bone.id);
+        if (!tr) return;
+        const selected = bone.id === state.selectedBoneId;
+        ctx.lineWidth = (selected ? 8 : 5) / state.view.scale;
+        ctx.strokeStyle = selected ? '#ffffff' : 'rgba(0, 0, 0, 0.58)';
+        ctx.beginPath();
+        ctx.moveTo(tr.start.x, tr.start.y);
+        ctx.lineTo(tr.end.x, tr.end.y);
+        ctx.stroke();
+        ctx.lineWidth = (selected ? 4 : 3) / state.view.scale;
+        ctx.strokeStyle = bone.color;
+        ctx.beginPath();
+        ctx.moveTo(tr.start.x, tr.start.y);
+        ctx.lineTo(tr.end.x, tr.end.y);
+        ctx.stroke();
+        ctx.fillStyle = '#111317';
+        ctx.strokeStyle = bone.color;
+        ctx.lineWidth = 2 / state.view.scale;
+        ctx.beginPath();
+        ctx.arc(tr.start.x, tr.start.y, handleRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = selected ? '#ffffff' : bone.color;
+        ctx.beginPath();
+        ctx.arc(tr.end.x, tr.end.y, handleRadius * 0.95, 0, Math.PI * 2);
+        ctx.fill();
+        if (state.showNames) {
+          ctx.font = `${12 / state.view.scale}px Inter, sans-serif`;
+          ctx.fillStyle = '#f4f1ea';
+          ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+          ctx.lineWidth = 3 / state.view.scale;
+          ctx.strokeText(bone.name, tr.end.x + 10 / state.view.scale, tr.end.y - 8 / state.view.scale);
+          ctx.fillText(bone.name, tr.end.x + 10 / state.view.scale, tr.end.y - 8 / state.view.scale);
+        }
+      });
+      ctx.restore();
+    }
+
+    function render() {
+      const rect = stage.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.save();
+      ctx.translate(state.view.x, state.view.y);
+      ctx.scale(state.view.scale, state.view.scale);
+      const transforms = computePoseTransforms();
+      if (state.image) {
+        drawDeformedImage(transforms);
+        drawMesh(transforms);
+      }
+      drawSkeleton(transforms);
+      if (state.drag?.type === 'new-bone') {
+        ctx.lineWidth = 3 / state.view.scale;
+        ctx.strokeStyle = '#f1c75b';
+        ctx.beginPath();
+        ctx.moveTo(state.drag.start.x, state.drag.start.y);
+        ctx.lineTo(state.drag.current.x, state.drag.current.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+      emptyState.style.display = state.image ? 'none' : 'grid';
+    }
+
+    function findNearestBone(point, transforms = computePoseTransforms()) {
+      let best = null;
+      state.bones.forEach((bone) => {
+        const tr = transforms.get(bone.id);
+        if (!tr) return;
+        const endD = dist(point, tr.end);
+        const startD = dist(point, tr.start);
+        const segD = pointToSegmentDistance(point, tr.start, tr.end);
+        const radius = 13 / state.view.scale;
+        if (endD < radius && (!best || endD < best.distance)) best = { bone, part: 'end', distance: endD };
+        if (startD < radius && (!best || startD < best.distance)) best = { bone, part: 'start', distance: startD };
+        if (segD < radius && (!best || segD < best.distance)) best = { bone, part: 'body', distance: segD };
+      });
+      return best;
+    }
+
+    function findParentForPoint(point) {
+      const transforms = computePoseTransforms();
+      let best = null;
+      state.bones.forEach((bone) => {
+        const tr = transforms.get(bone.id);
+        const d = tr ? dist(point, tr.end) : Infinity;
+        if (d < 18 / state.view.scale && (!best || d < best.distance)) best = { bone, distance: d };
+      });
+      return best?.bone || null;
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      document.querySelectorAll('[data-mode]').forEach((button) => button.classList.toggle('active', button.dataset.mode === mode));
+      setStatus(mode === 'rig' ? 'Rig actif.' : mode === 'pose' ? 'Pose active.' : 'Animation active.');
+      render();
+    }
+
+    function setFrame(frame, applyPose = true) {
+      state.frame = clamp(Math.round(frame), 0, state.duration);
+      frameSlider.value = state.frame;
+      if (applyPose) applyAnimationPose(state.frame);
+      updateTimeline();
+      render();
+    }
+
+    function currentPoseSnapshot() {
+      const pose = {};
+      state.bones.forEach((bone) => {
+        pose[bone.id] = bone.pose || 0;
+      });
+      return pose;
+    }
+
+    function ensureDefaultKeyframe() {
+      if (!state.keyframes.length) {
+        state.keyframes.push({ frame: 0, pose: currentPoseSnapshot() });
+      }
+    }
+
+    function addKeyframe() {
+      ensureDefaultKeyframe();
+      const existing = state.keyframes.find((key) => key.frame === state.frame);
+      if (existing) {
+        existing.pose = currentPoseSnapshot();
+      } else {
+        state.keyframes.push({ frame: state.frame, pose: currentPoseSnapshot() });
+        state.keyframes.sort((a, b) => a.frame - b.frame);
+      }
+      updateUI();
+      markDirty();
+      setStatus(`Keyframe ${state.frame}.`);
+    }
+
+    function deleteCurrentKeyframe() {
+      state.keyframes = state.keyframes.filter((key) => key.frame !== state.frame || key.frame === 0);
+      updateUI();
+      markDirty();
+    }
+
+    function applyAnimationPose(frame) {
+      if (!state.keyframes.length) return;
+      const sorted = [...state.keyframes].sort((a, b) => a.frame - b.frame);
+      let prev = sorted[0];
+      let next = sorted[sorted.length - 1];
+      for (let i = 0; i < sorted.length; i += 1) {
+        if (sorted[i].frame <= frame) prev = sorted[i];
+        if (sorted[i].frame >= frame) {
+          next = sorted[i];
+          break;
+        }
+      }
+      const span = Math.max(1, next.frame - prev.frame);
+      const t = prev.frame === next.frame ? 0 : (frame - prev.frame) / span;
+      state.bones.forEach((bone) => {
+        const a = prev.pose[bone.id] ?? 0;
+        const b = next.pose[bone.id] ?? a;
+        bone.pose = angleLerp(a, b, t);
+      });
+      updateBoneForm();
+    }
+
+    function selectPrevNextKey(direction) {
+      if (!state.keyframes.length) return;
+      const sorted = [...state.keyframes].sort((a, b) => a.frame - b.frame);
+      const frames = sorted.map((key) => key.frame);
+      const next = direction < 0
+        ? [...frames].reverse().find((frame) => frame < state.frame) ?? frames[frames.length - 1]
+        : frames.find((frame) => frame > state.frame) ?? frames[0];
+      setFrame(next);
+    }
+
+    function updateTimeline() {
+      document.getElementById('frameLabel').textContent = `${state.frame} / ${state.duration}`;
+      document.getElementById('durationLabel').textContent = state.duration;
+      document.getElementById('playhead').style.left = `${(state.frame / state.duration) * 100}%`;
+      const keyDots = document.getElementById('keyDots');
+      keyDots.innerHTML = '';
+      state.keyframes.forEach((key) => {
+        const dot = document.createElement('button');
+        dot.className = 'key-dot';
+        dot.type = 'button';
+        dot.title = `Frame ${key.frame}`;
+        dot.style.left = `${(key.frame / state.duration) * 100}%`;
+        dot.addEventListener('click', () => setFrame(key.frame));
+        keyDots.appendChild(dot);
+      });
+    }
+
+    function updateBoneForm() {
+      const selected = getBone(state.selectedBoneId);
+      document.getElementById('boneName').value = selected?.name || '';
+    }
+
+    function updateInfo() {
+      document.getElementById('imageInfo').textContent = state.image ? `${state.image.width} x ${state.image.height}` : 'Aucune image';
+      document.getElementById('meshInfo').textContent = `${state.mesh.cols} x ${state.mesh.rows}`;
+    }
+
+    function updateUI() {
+      updateBoneForm();
+      updateInfo();
+      const boneList = document.getElementById('boneList');
+      boneList.innerHTML = '';
+      state.bones.forEach((bone) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = `item${bone.id === state.selectedBoneId ? ' selected' : ''}`;
+        item.innerHTML = `
+          <span class="swatch" style="background:${bone.color}"></span>
+          <span class="item-main">
+            <span class="item-title">${escapeHtml(bone.name)}</span>
+            <span class="item-sub">${bone.parent ? 'enfant' : 'racine'} · ${Math.round(bone.length)} px</span>
+          </span>
+        `;
+        item.addEventListener('click', () => {
+          state.selectedBoneId = bone.id;
+          updateUI();
+          render();
+        });
+        boneList.appendChild(item);
+      });
+
+      const keyList = document.getElementById('keyList');
+      keyList.innerHTML = '';
+      [...state.keyframes].sort((a, b) => a.frame - b.frame).forEach((key) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = `item${key.frame === state.frame ? ' selected' : ''}`;
+        item.innerHTML = `
+          <span class="swatch" style="background:#f1c75b"></span>
+          <span class="item-main">
+            <span class="item-title">Frame ${key.frame}</span>
+            <span class="item-sub">${Object.keys(key.pose).length} os</span>
+          </span>
+        `;
+        item.addEventListener('click', () => setFrame(key.frame));
+        keyList.appendChild(item);
+      });
+      updateTimeline();
+      render();
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[char]));
+    }
+
+    async function loadImageFromDataUrl(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve({ element: image, width: image.naturalWidth, height: image.naturalHeight });
+        image.onerror = reject;
+        image.src = dataUrl;
+      });
+    }
+
+    async function handleImageFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        state.imageData = reader.result;
+        state.image = await loadImageFromDataUrl(state.imageData);
+        state.bones = [];
+        state.selectedBoneId = null;
+        state.keyframes = [];
+        buildMesh();
+        fitView();
+        updateUI();
+        setStatus(file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function serializeProject() {
+      return {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        imageData: state.imageData,
+        image: state.image ? { width: state.image.width, height: state.image.height } : null,
+        duration: state.duration,
+        frame: state.frame,
+        meshDensity: state.meshDensity,
+        bones: state.bones.map((bone) => ({
+          id: bone.id,
+          name: bone.name,
+          parent: bone.parent,
+          restStart: bone.restStart,
+          restEnd: bone.restEnd,
+          length: bone.length,
+          restAngle: bone.restAngle,
+          pose: bone.pose,
+          color: bone.color
+        })),
+        keyframes: state.keyframes
+      };
+    }
+
+    function downloadJson() {
+      const data = JSON.stringify(serializeProject(), null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = '2d-animator-project.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+      state.dirty = false;
+      document.getElementById('savedInfo').textContent = 'JSON exporte';
+      setStatus('JSON exporte.');
+    }
+
+    async function importProject(file) {
+      if (!file) return;
+      const text = await file.text();
+      const data = JSON.parse(text);
+      state.imageData = data.imageData || '';
+      state.image = state.imageData ? await loadImageFromDataUrl(state.imageData) : null;
+      state.duration = Number(data.duration) || 120;
+      state.frame = clamp(Number(data.frame) || 0, 0, state.duration);
+      state.meshDensity = Number(data.meshDensity) || 22;
+      state.bones = (data.bones || []).map((bone, index) => ({
+        id: bone.id || uid('bone'),
+        name: bone.name || `Os ${index + 1}`,
+        parent: bone.parent || null,
+        restStart: bone.restStart || { x: 0, y: 0 },
+        restEnd: bone.restEnd || { x: 80, y: 0 },
+        length: bone.length || dist(bone.restStart || { x: 0, y: 0 }, bone.restEnd || { x: 80, y: 0 }),
+        restAngle: bone.restAngle ?? angle(bone.restStart || { x: 0, y: 0 }, bone.restEnd || { x: 80, y: 0 }),
+        pose: bone.pose || 0,
+        color: bone.color || palette[index % palette.length]
+      }));
+      state.keyframes = data.keyframes || [];
+      state.selectedBoneId = state.bones[0]?.id || null;
+      frameSlider.max = state.duration;
+      document.getElementById('durationInput').value = state.duration;
+      document.getElementById('meshDensity').value = state.meshDensity;
+      if (state.image) buildMesh();
+      fitView();
+      setFrame(state.frame);
+      updateUI();
+      state.dirty = false;
+      document.getElementById('savedInfo').textContent = 'JSON importe';
+      setStatus(file.name);
+    }
+
+    function rotateBoneTo(bone, target) {
+      const transforms = computePoseTransforms();
+      const tr = transforms.get(bone.id);
+      if (!tr) return;
+      const targetAngle = angle(tr.start, target);
+      if (bone.parent) {
+        const parentTr = transforms.get(bone.parent);
+        const parentBone = getBone(bone.parent);
+        const parentRotation = parentTr?.rotation || 0;
+        const restOffset = bone.restAngle - (parentBone?.restAngle || 0);
+        bone.pose = targetAngle - parentRotation - restOffset;
+      } else {
+        bone.pose = targetAngle - bone.restAngle;
+      }
+      markDirty();
+    }
+
+    function moveRootBone(bone, point) {
+      const dx = point.x - bone.restStart.x;
+      const dy = point.y - bone.restStart.y;
+      bone.restStart.x += dx;
+      bone.restStart.y += dy;
+      bone.restEnd.x += dx;
+      bone.restEnd.y += dy;
+      moveChildren(bone.id, dx, dy);
+      recalcWeights();
+      markDirty();
+    }
+
+    function moveChildren(parentId, deltaX, deltaY) {
+      childrenOf(parentId).forEach((child) => {
+        child.restStart.x += deltaX;
+        child.restStart.y += deltaY;
+        child.restEnd.x += deltaX;
+        child.restEnd.y += deltaY;
+        moveChildren(child.id, deltaX, deltaY);
+      });
+    }
+
+    function handlePointerDown(event) {
+      const screen = pointerPos(event);
+      const world = screenToWorld(screen);
+      const nearest = findNearestBone(world);
+      if (event.button === 1 || event.altKey || event.metaKey || event.ctrlKey) {
+        state.drag = { type: 'pan', startScreen: screen, view: { ...state.view } };
+        return;
+      }
+      if (nearest) {
+        state.selectedBoneId = nearest.bone.id;
+        updateUI();
+        if (state.mode === 'pose' || state.mode === 'animate') {
+          state.drag = { type: 'pose', boneId: nearest.bone.id };
+        } else if (nearest.part === 'start' && !nearest.bone.parent) {
+          state.drag = { type: 'move-root', boneId: nearest.bone.id };
+        } else if (nearest.part === 'end') {
+          state.drag = { type: 'edit-end', boneId: nearest.bone.id };
+        } else {
+          state.drag = { type: 'new-bone', start: { ...computePoseTransforms().get(nearest.bone.id).end }, current: world, parentId: nearest.bone.id };
+        }
+        render();
+        return;
+      }
+      if (state.mode === 'rig') {
+        const parent = findParentForPoint(world);
+        const start = parent ? { ...computePoseTransforms().get(parent.id).end } : world;
+        state.drag = { type: 'new-bone', start, current: world, parentId: parent?.id || null };
+      }
+    }
+
+    function handlePointerMove(event) {
+      const screen = pointerPos(event);
+      const world = screenToWorld(screen);
+      if (!state.drag) {
+        const nearest = findNearestBone(world);
+        canvas.style.cursor = nearest ? 'pointer' : state.mode === 'rig' ? 'crosshair' : 'default';
+        return;
+      }
+      if (state.drag.type === 'pan') {
+        state.view.x = state.drag.view.x + screen.x - state.drag.startScreen.x;
+        state.view.y = state.drag.view.y + screen.y - state.drag.startScreen.y;
+      }
+      if (state.drag.type === 'new-bone') {
+        state.drag.current = world;
+      }
+      if (state.drag.type === 'pose') {
+        const bone = getBone(state.drag.boneId);
+        if (bone) rotateBoneTo(bone, world);
+      }
+      if (state.drag.type === 'edit-end') {
+        const bone = getBone(state.drag.boneId);
+        if (bone) {
+          const previousEnd = { ...bone.restEnd };
+          bone.restEnd = { ...world };
+          bone.length = Math.max(8, dist(bone.restStart, bone.restEnd));
+          bone.restAngle = angle(bone.restStart, bone.restEnd);
+          moveChildren(bone.id, bone.restEnd.x - previousEnd.x, bone.restEnd.y - previousEnd.y);
+          recalcWeights();
+          markDirty();
+        }
+      }
+      if (state.drag.type === 'move-root') {
+        const bone = getBone(state.drag.boneId);
+        if (bone) moveRootBone(bone, world);
+      }
+      updateUI();
+      render();
+    }
+
+    function handlePointerUp() {
+      if (!state.drag) return;
+      if (state.drag.type === 'new-bone') {
+        if (dist(state.drag.start, state.drag.current) > 12 / state.view.scale) {
+          addBone(state.drag.start, state.drag.current, state.drag.parentId);
+          setStatus('Os cree.');
+        }
+      }
+      state.drag = null;
+      updateUI();
+      render();
+    }
+
+    function animate(timestamp) {
+      if (!animate.last) animate.last = timestamp;
+      const delta = timestamp - animate.last;
+      animate.last = timestamp;
+      if (state.playing) {
+        const fps = 30;
+        const nextFrame = (state.frame + delta / 1000 * fps) % (state.duration + 1);
+        setFrame(nextFrame);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function setDuration(value) {
+      state.duration = clamp(Number(value) || 120, 24, 600);
+      state.keyframes.forEach((key) => {
+        key.frame = clamp(key.frame, 0, state.duration);
+      });
+      frameSlider.max = state.duration;
+      state.frame = clamp(state.frame, 0, state.duration);
+      document.getElementById('durationInput').value = state.duration;
+      updateUI();
+      markDirty();
+    }
+
+    function bindEvents() {
+      window.addEventListener('resize', resizeCanvas);
+      canvas.addEventListener('pointerdown', handlePointerDown);
+      canvas.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+      canvas.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        const before = screenToWorld(pointerPos(event));
+        const zoom = Math.exp(-event.deltaY * 0.001);
+        state.view.scale = clamp(state.view.scale * zoom, 0.04, 10);
+        const after = worldToScreen(before);
+        const pointer = pointerPos(event);
+        state.view.x += pointer.x - after.x;
+        state.view.y += pointer.y - after.y;
+        render();
+      }, { passive: false });
+
+      document.querySelectorAll('[data-mode]').forEach((button) => {
+        button.addEventListener('click', () => setMode(button.dataset.mode));
+      });
+      document.getElementById('uploadBtn').addEventListener('click', () => imageInput.click());
+      document.getElementById('importBtn').addEventListener('click', () => jsonInput.click());
+      document.getElementById('exportBtn').addEventListener('click', downloadJson);
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        state.image = null;
+        state.imageData = '';
+        state.bones = [];
+        state.keyframes = [];
+        state.mesh = { vertices: [], triangles: [], cols: 0, rows: 0 };
+        state.selectedBoneId = null;
+        updateUI();
+        render();
+        setStatus('Projet vide.');
+      });
+      imageInput.addEventListener('change', (event) => handleImageFile(event.target.files[0]));
+      jsonInput.addEventListener('change', (event) => importProject(event.target.files[0]).catch((error) => setStatus(error.message)));
+      document.getElementById('fitBtn').addEventListener('click', fitView);
+      document.getElementById('newBoneBtn').addEventListener('click', createChildBone);
+      document.getElementById('deleteBoneBtn').addEventListener('click', deleteSelectedBone);
+      document.getElementById('rebuildMeshBtn').addEventListener('click', buildMesh);
+      document.getElementById('showImage').addEventListener('change', (event) => { state.showImage = event.target.checked; render(); });
+      document.getElementById('showMesh').addEventListener('change', (event) => { state.showMesh = event.target.checked; render(); });
+      document.getElementById('showSkeleton').addEventListener('change', (event) => { state.showSkeleton = event.target.checked; render(); });
+      document.getElementById('showNames').addEventListener('change', (event) => { state.showNames = event.target.checked; render(); });
+      document.getElementById('meshDensity').addEventListener('input', (event) => { state.meshDensity = Number(event.target.value); });
+      document.getElementById('renameBoneBtn').addEventListener('click', () => {
+        const selected = getBone(state.selectedBoneId);
+        if (!selected) return;
+        selected.name = document.getElementById('boneName').value.trim() || selected.name;
+        updateUI();
+        markDirty();
+      });
+      document.getElementById('zeroPoseBtn').addEventListener('click', () => {
+        state.bones.forEach((bone) => { bone.pose = 0; });
+        updateUI();
+        markDirty();
+      });
+      document.getElementById('addKeyBtn').addEventListener('click', addKeyframe);
+      document.getElementById('deleteKeyBtn').addEventListener('click', deleteCurrentKeyframe);
+      document.getElementById('durationInput').addEventListener('change', (event) => setDuration(event.target.value));
+      document.getElementById('playBtn').addEventListener('click', () => {
+        state.playing = !state.playing;
+        document.getElementById('playBtn').textContent = state.playing ? '⏸' : '▶';
+        animate.last = 0;
+      });
+      document.getElementById('prevKeyBtn').addEventListener('click', () => selectPrevNextKey(-1));
+      document.getElementById('nextKeyBtn').addEventListener('click', () => selectPrevNextKey(1));
+      frameSlider.addEventListener('input', (event) => setFrame(event.target.value));
+      timelineBox.addEventListener('pointerdown', (event) => {
+        const rect = timelineBox.getBoundingClientRect();
+        const ratio = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+        setFrame(ratio * state.duration);
+      });
+      window.addEventListener('keydown', (event) => {
+        if (event.target.matches('input')) return;
+        if (event.key === ' ') {
+          event.preventDefault();
+          document.getElementById('playBtn').click();
+        }
+        if (event.key === 'Delete' || event.key === 'Backspace') deleteSelectedBone();
+        if (event.key === 'k') addKeyframe();
+        if (event.key === '1') setMode('rig');
+        if (event.key === '2') setMode('pose');
+        if (event.key === '3') setMode('animate');
+      });
+    }
+
+    bindEvents();
+    resizeCanvas();
+    updateUI();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

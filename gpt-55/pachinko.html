@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pachinko des Failles</title>
+  <style>
+    :root {
+      --bg: #111318;
+      --panel: #181d24;
+      --panel-2: #202733;
+      --line: #303a49;
+      --ink: #f2f5ec;
+      --muted: #a9b0ba;
+      --green: #8adf99;
+      --amber: #f0c05a;
+      --red: #ef6f6c;
+      --cyan: #67cddc;
+      --violet: #a985e8;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 20% 12%, rgba(103, 205, 220, 0.14), transparent 24rem),
+        radial-gradient(circle at 85% 18%, rgba(240, 192, 90, 0.12), transparent 22rem),
+        linear-gradient(135deg, #111318, #151922 54%, #101418);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1440px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(260px, 320px) minmax(360px, 1fr) minmax(260px, 330px);
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .rail,
+    .right-rail {
+      min-height: calc(100vh - 28px);
+      background: linear-gradient(180deg, rgba(24, 29, 36, 0.96), rgba(15, 18, 23, 0.96));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 18px 45px var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .brand {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 2vw, 2rem);
+      letter-spacing: 0;
+      line-height: 1.05;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .section {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:last-child {
+      border-bottom: 0;
+    }
+
+    .section h2 {
+      margin: 0 0 12px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .stat {
+      min-height: 68px;
+      padding: 10px;
+      background: var(--panel-2);
+      border: 1px solid #344052;
+      border-radius: 8px;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    .hearts,
+    .balls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-height: 26px;
+      align-items: center;
+    }
+
+    .pip {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-grid;
+      place-items: center;
+      color: #15181d;
+      font-size: 0.72rem;
+      font-weight: 900;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.28);
+    }
+
+    .pip.heart {
+      background: var(--red);
+      clip-path: polygon(50% 88%, 18% 54%, 10% 34%, 16% 18%, 31% 12%, 50% 26%, 69% 12%, 84% 18%, 90% 34%, 82% 54%);
+    }
+
+    .pip.ball {
+      background: var(--cyan);
+    }
+
+    .bar {
+      height: 12px;
+      background: #11161d;
+      border: 1px solid #2d3644;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--green), var(--amber));
+      box-shadow: 0 0 16px rgba(138, 223, 153, 0.25);
+      transition: width 0.18s ease;
+    }
+
+    .objective-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .objective-line strong {
+      color: var(--ink);
+    }
+
+    .relic-list,
+    .log-list,
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .relic {
+      padding: 10px;
+      border: 1px solid #344052;
+      background: #1d2430;
+      border-radius: 8px;
+    }
+
+    .relic strong {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.93rem;
+    }
+
+    .relic small {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .log {
+      min-height: 32px;
+      padding: 8px 10px;
+      border-left: 3px solid var(--cyan);
+      background: rgba(103, 205, 220, 0.08);
+      color: #dbe8ea;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.86rem;
+      line-height: 1.3;
+    }
+
+    .log.warn {
+      border-left-color: var(--amber);
+      background: rgba(240, 192, 90, 0.09);
+    }
+
+    .log.bad {
+      border-left-color: var(--red);
+      background: rgba(239, 111, 108, 0.09);
+    }
+
+    .feature-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .feature-list li {
+      padding: 8px 9px;
+      background: #1d2430;
+      border: 1px solid #344052;
+      border-radius: 8px;
+    }
+
+    .game-column {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .topbar,
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(24, 29, 36, 0.95);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.25);
+    }
+
+    .topbar strong {
+      font-size: 0.98rem;
+    }
+
+    .topbar span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .icon-button,
+    .primary,
+    .secondary {
+      border: 1px solid #3b485b;
+      color: var(--ink);
+      background: #222b38;
+      border-radius: 8px;
+      min-height: 38px;
+      padding: 0 13px;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+
+    .icon-button {
+      width: 42px;
+      padding: 0;
+      font-weight: 800;
+    }
+
+    .primary {
+      background: linear-gradient(180deg, #496b4f, #2f4c39);
+      border-color: #6f9b76;
+      font-weight: 800;
+    }
+
+    .secondary {
+      background: #1f2631;
+    }
+
+    .icon-button:hover,
+    .primary:hover,
+    .secondary:hover {
+      transform: translateY(-1px);
+      border-color: #6d7f98;
+    }
+
+    .icon-button:disabled,
+    .primary:disabled,
+    .secondary:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 660px;
+      background: #0b0e12;
+      border: 1px solid #374356;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.45);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 660px;
+      background: #0b0e12;
+      cursor: crosshair;
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      top: 12px;
+      transform: translateX(-50%);
+      width: min(88%, 640px);
+      padding: 10px 14px;
+      background: rgba(14, 18, 24, 0.92);
+      border: 1px solid #46566b;
+      color: var(--ink);
+      border-radius: 8px;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.35);
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    .controls {
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .keycaps {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    kbd {
+      min-width: 28px;
+      min-height: 26px;
+      padding: 3px 8px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 6px;
+      border: 1px solid #3e4a5c;
+      color: var(--ink);
+      background: #202733;
+      font-size: 0.78rem;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.28);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(6, 8, 10, 0.78);
+      z-index: 20;
+    }
+
+    .overlay.open {
+      display: grid;
+    }
+
+    .modal {
+      width: min(960px, 100%);
+      max-height: min(90vh, 860px);
+      overflow: auto;
+      background: #171c24;
+      border: 1px solid #46566b;
+      border-radius: 8px;
+      box-shadow: 0 28px 90px rgba(0,0,0,0.6);
+    }
+
+    .modal-head {
+      padding: 20px 22px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: clamp(1.35rem, 2.4vw, 2rem);
+    }
+
+    .modal-head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .card {
+      min-height: 230px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 16px;
+      border: 1px solid #435166;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), transparent),
+        #1d2430;
+      border-radius: 8px;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      border-color: var(--amber);
+      transform: translateY(-2px);
+    }
+
+    .card .glyph {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(240, 192, 90, 0.15);
+      border: 1px solid rgba(240, 192, 90, 0.42);
+      color: var(--amber);
+      font-size: 1.6rem;
+      font-weight: 900;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .card small {
+      margin-top: auto;
+      color: var(--amber);
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .modal-actions {
+      padding: 0 16px 16px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    @media (max-width: 1120px) {
+      .app {
+        grid-template-columns: minmax(270px, 1fr) minmax(420px, 1.4fr);
+      }
+
+      .right-rail {
+        grid-column: 1 / -1;
+        min-height: 0;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        grid-template-columns: 1fr;
+        padding: 8px;
+      }
+
+      .rail,
+      .right-rail {
+        min-height: 0;
+      }
+
+      .canvas-wrap,
+      canvas {
+        min-height: 560px;
+      }
+
+      .topbar,
+      .controls {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .button-row {
+        justify-content: flex-start;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="rail">
+      <div class="brand">
+        <h1>Pachinko des Failles</h1>
+        <p class="subtitle">Un roguelike de trajectoires absurdes, de jackpots nerveux et de reliques qui cassent le plateau juste assez.</p>
+      </div>
+
+      <section class="section">
+        <h2>Run</h2>
+        <div class="stat-grid">
+          <div class="stat"><span>Profondeur</span><strong id="depth">1 / 8</strong></div>
+          <div class="stat"><span>Pièces</span><strong id="coins">0</strong></div>
+          <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+          <div class="stat"><span>Combo</span><strong id="combo">x1.00</strong></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Vies</h2>
+        <div class="hearts" id="hearts"></div>
+      </section>
+
+      <section class="section">
+        <h2>Billes</h2>
+        <div class="balls" id="balls"></div>
+      </section>
+
+      <section class="section">
+        <h2>Objectif de salle</h2>
+        <div class="objective-line"><span>Cible</span><strong id="target">120</strong></div>
+        <div class="bar"><div class="bar-fill" id="progress"></div></div>
+        <div class="objective-line"><span>Statut</span><strong id="status">Prêt</strong></div>
+      </section>
+
+      <section class="section">
+        <h2>Reliques</h2>
+        <div class="relic-list" id="relics"></div>
+      </section>
+    </aside>
+
+    <section class="game-column">
+      <div class="topbar">
+        <div>
+          <strong id="roomName">Atelier des Ressorts</strong><br>
+          <span id="roomRule">Atteins la cible avant d'épuiser tes billes.</span>
+        </div>
+        <div class="button-row">
+          <button class="icon-button" id="muteButton" title="Activer ou couper le son" aria-label="Activer ou couper le son">♪</button>
+          <button class="secondary" id="helpButton">Design</button>
+          <button class="primary" id="dropButton">Lancer</button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="game" width="900" height="980" aria-label="Plateau de pachinko roguelike"></canvas>
+        <div class="toast" id="toast"></div>
+      </div>
+
+      <div class="controls">
+        <div class="keycaps">
+          <kbd>Glisser</kbd><span>viser</span>
+          <kbd>Espace</kbd><span>lancer</span>
+          <kbd>A</kbd><kbd>D</kbd><span>nudges</span>
+          <kbd>R</kbd><span>rejouer</span>
+        </div>
+        <span id="hint">Choisis une colonne puis lâche une bille.</span>
+      </div>
+    </section>
+
+    <aside class="right-rail">
+      <section class="section">
+        <h2>Game design</h2>
+        <ul class="feature-list">
+          <li>Run de 8 salles: score cible, boss final et défaite par vies.</li>
+          <li>Chaque bille est une ressource: elle marque, déclenche les chevilles et peut créer des copies.</li>
+          <li>Les slots du bas changent à chaque salle: bonus, jackpot, drain, soin ou commerce.</li>
+          <li>Après une victoire, trois reliques aléatoires modifient la physique, l'économie ou le scoring.</li>
+          <li>Le joueur contrôle seulement le point de départ et deux nudges: faible contrôle, gros suspense.</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>Tâches réalisées</h2>
+        <ul class="feature-list">
+          <li>Moteur de collisions bille/chevilles/murs/slots.</li>
+          <li>Génération procédurale des salles et difficulté progressive.</li>
+          <li>Système roguelike: reliques, soins, multiplicateurs, boss et nouvelle run.</li>
+          <li>Interface complète: HUD, journal, aide design, overlay de récompense.</li>
+          <li>Feedback visuel et sonore synthétique sans dépendance externe.</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>Journal</h2>
+        <div class="log-list" id="log"></div>
+      </section>
+    </aside>
+  </main>
+
+  <div class="overlay open" id="choiceOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="overlayTitle">Pachinko des Failles</h2>
+        <p id="overlayText">Lance des billes dans un plateau procédural, atteins la cible de score, puis choisis une relique. Survis jusqu'à la profondeur 8.</p>
+      </div>
+      <div class="cards" id="choiceCards"></div>
+      <div class="modal-actions">
+        <button class="secondary" id="closeOverlay">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+
+      const els = {
+        depth: document.getElementById("depth"),
+        coins: document.getElementById("coins"),
+        score: document.getElementById("score"),
+        combo: document.getElementById("combo"),
+        hearts: document.getElementById("hearts"),
+        balls: document.getElementById("balls"),
+        target: document.getElementById("target"),
+        progress: document.getElementById("progress"),
+        status: document.getElementById("status"),
+        relics: document.getElementById("relics"),
+        roomName: document.getElementById("roomName"),
+        roomRule: document.getElementById("roomRule"),
+        hint: document.getElementById("hint"),
+        log: document.getElementById("log"),
+        toast: document.getElementById("toast"),
+        overlay: document.getElementById("choiceOverlay"),
+        overlayTitle: document.getElementById("overlayTitle"),
+        overlayText: document.getElementById("overlayText"),
+        choiceCards: document.getElementById("choiceCards"),
+        closeOverlay: document.getElementById("closeOverlay"),
+        dropButton: document.getElementById("dropButton"),
+        muteButton: document.getElementById("muteButton"),
+        helpButton: document.getElementById("helpButton")
+      };
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const board = {
+        left: 82,
+        right: W - 82,
+        top: 76,
+        bottom: H - 112,
+        slotY: H - 106
+      };
+
+      const colors = {
+        wall: "#38465a",
+        peg: "#d9e6e2",
+        bumper: "#f0c05a",
+        splitter: "#67cddc",
+        poison: "#ef6f6c",
+        red: "#ef6f6c",
+        green: "#8adf99",
+        amber: "#f0c05a",
+        gold: "#f4d278",
+        ghost: "#a985e8",
+        ball: "#f7fbff"
+      };
+
+      const roomNames = [
+        "Atelier des Ressorts",
+        "Comptoir des Rebonds",
+        "Pont des Coefficients",
+        "Archives Magnétiques",
+        "Serre des Billes Jumelles",
+        "Caisse des Drains",
+        "Dernier Flipper",
+        "Le Jackpot Vivant"
+      ];
+
+      const relicPool = [
+        { id: "extraBall", glyph: "+", name: "Sac de billes", rarity: "Commun", desc: "+1 bille au début de chaque salle.", apply: s => s.maxBalls += 1 },
+        { id: "heavy", glyph: "G", name: "Gravité lourde", rarity: "Commun", desc: "Les billes tombent plus vite et valent +12% de score.", apply: s => { s.gravityBonus += 0.05; s.scoreMult += 0.12; } },
+        { id: "soft", glyph: "R", name: "Caoutchouc tendre", rarity: "Commun", desc: "Les rebonds sont plus doux, mais chaque cheville donne +2.", apply: s => { s.bounceMod -= 0.05; s.pegBonus += 2; } },
+        { id: "magnet", glyph: "M", name: "Aimant discret", rarity: "Rare", desc: "Les slots bonus attirent légèrement les billes proches.", apply: s => s.magnet += 1 },
+        { id: "splitterBoost", glyph: "Y", name: "Graine jumelle", rarity: "Rare", desc: "La première cheville turquoise de chaque bille crée une copie.", apply: s => s.splitterPower += 1 },
+        { id: "lucky", glyph: "7", name: "Dé pipé", rarity: "Rare", desc: "Les slots jackpot deviennent plus fréquents.", apply: s => s.luck += 1 },
+        { id: "insurance", glyph: "I", name: "Police anti-drain", rarity: "Rare", desc: "Le premier drain de chaque salle rembourse une bille et 15 points.", apply: s => s.insurance += 1 },
+        { id: "combo", glyph: "x", name: "Tambour de combo", rarity: "Rare", desc: "Le combo monte plus vite et redescend moins.", apply: s => { s.comboGain += 0.035; s.comboDecay *= 0.82; } },
+        { id: "heal", glyph: "♥", name: "Potion de cuivre", rarity: "Epic", desc: "Soigne 1 vie immédiatement et ajoute +1 vie max.", apply: s => { s.maxLives += 1; s.lives = Math.min(s.maxLives, s.lives + 1); } },
+        { id: "coinRain", glyph: "$", name: "Pluie de pièces", rarity: "Epic", desc: "Chaque victoire donne +18 pièces et les slots or valent plus.", apply: s => { s.winCoins += 18; s.goldValue += 6; } },
+        { id: "focus", glyph: "O", name: "Lentille de départ", rarity: "Epic", desc: "La visée est plus précise et les nudges se rechargent plus vite.", apply: s => { s.aimFocus += 1; s.nudgeRecharge += 0.45; } },
+        { id: "overdrive", glyph: "!", name: "Moteur instable", rarity: "Légendaire", desc: "Chaque 12e cheville touchée déclenche un mini-jackpot.", apply: s => s.overdrive += 1 }
+      ];
+
+      const state = {
+        depth: 1,
+        maxDepth: 8,
+        maxLives: 4,
+        lives: 4,
+        maxBalls: 8,
+        ballsLeft: 8,
+        coins: 0,
+        score: 0,
+        target: 120,
+        combo: 1,
+        activeBalls: [],
+        pegs: [],
+        particles: [],
+        texts: [],
+        slots: [],
+        relics: [],
+        logs: [],
+        running: false,
+        choosing: false,
+        gameOver: false,
+        victory: false,
+        launcherX: W / 2,
+        aimVX: 0,
+        nudge: 2,
+        nudgeMax: 2,
+        nudgeTimer: 0,
+        muted: false,
+        messageTimer: 0,
+        scoreMult: 1,
+        gravityBonus: 0,
+        bounceMod: 0,
+        pegBonus: 0,
+        magnet: 0,
+        splitterPower: 0,
+        luck: 0,
+        insurance: 0,
+        insuranceUsed: false,
+        comboGain: 0.055,
+        comboDecay: 0.996,
+        maxCombo: 4,
+        winCoins: 20,
+        goldValue: 10,
+        aimFocus: 0,
+        nudgeRecharge: 1,
+        overdrive: 0,
+        hitCount: 0,
+        shake: 0,
+        lastTime: performance.now(),
+        hudPipSig: "",
+        hudRelicSig: ""
+      };
+
+      function rand(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function scoreForDepth(depth) {
+        return Math.floor(105 + depth * 65 + Math.pow(depth, 2) * 11);
+      }
+
+      function format(n) {
+        return Math.floor(n).toLocaleString("fr-FR");
+      }
+
+      function beep(freq, duration, type, gain) {
+        if (state.muted) return;
+        try {
+          if (!beep.audio) beep.audio = new (window.AudioContext || window.webkitAudioContext)();
+          const audio = beep.audio;
+          const osc = audio.createOscillator();
+          const amp = audio.createGain();
+          osc.type = type || "sine";
+          osc.frequency.setValueAtTime(freq, audio.currentTime);
+          amp.gain.setValueAtTime(gain || 0.04, audio.currentTime);
+          amp.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
+          osc.connect(amp).connect(audio.destination);
+          osc.start();
+          osc.stop(audio.currentTime + duration);
+        } catch (error) {
+          state.muted = true;
+        }
+      }
+
+      function log(text, tone) {
+        state.logs.unshift({ text, tone: tone || "info" });
+        state.logs = state.logs.slice(0, 6);
+        renderLog();
+      }
+
+      function toast(text, tone) {
+        els.toast.textContent = text;
+        els.toast.className = "toast visible";
+        if (tone) els.toast.style.borderColor = tone;
+        window.clearTimeout(toast.timer);
+        toast.timer = window.setTimeout(() => {
+          els.toast.classList.remove("visible");
+        }, 1800);
+      }
+
+      function renderLog() {
+        els.log.innerHTML = "";
+        state.logs.forEach(entry => {
+          const div = document.createElement("div");
+          div.className = `log ${entry.tone || ""}`;
+          div.textContent = entry.text;
+          els.log.appendChild(div);
+        });
+      }
+
+      function renderPips() {
+        els.hearts.innerHTML = "";
+        for (let i = 0; i < state.maxLives; i++) {
+          const p = document.createElement("span");
+          p.className = "pip heart";
+          p.style.opacity = i < state.lives ? "1" : "0.24";
+          els.hearts.appendChild(p);
+        }
+
+        els.balls.innerHTML = "";
+        for (let i = 0; i < state.maxBalls; i++) {
+          const p = document.createElement("span");
+          p.className = "pip ball";
+          p.style.opacity = i < state.ballsLeft ? "1" : "0.2";
+          p.textContent = i < state.ballsLeft ? "" : "×";
+          els.balls.appendChild(p);
+        }
+      }
+
+      function renderRelics() {
+        els.relics.innerHTML = "";
+        if (!state.relics.length) {
+          const empty = document.createElement("div");
+          empty.className = "relic";
+          empty.innerHTML = "<strong>Aucune relique</strong><small>Gagne une salle pour forger ton build.</small>";
+          els.relics.appendChild(empty);
+          return;
+        }
+
+        state.relics.forEach(relic => {
+          const div = document.createElement("div");
+          div.className = "relic";
+          div.innerHTML = `<strong><span>${relic.name}</span><span>${relic.glyph}</span></strong><small>${relic.desc}</small>`;
+          els.relics.appendChild(div);
+        });
+      }
+
+      function updateHud() {
+        els.depth.textContent = `${state.depth} / ${state.maxDepth}`;
+        els.coins.textContent = format(state.coins);
+        els.score.textContent = format(state.score);
+        els.combo.textContent = `x${state.combo.toFixed(2)}`;
+        els.target.textContent = format(state.target);
+        els.status.textContent = state.gameOver ? "Run terminée" : state.victory ? "Victoire" : state.choosing ? "Choix" : state.activeBalls.length ? "En cours" : "Prêt";
+        els.progress.style.width = `${clamp(state.score / state.target, 0, 1) * 100}%`;
+        els.roomName.textContent = roomNames[state.depth - 1] || "Faille inconnue";
+        els.roomRule.textContent = state.depth === state.maxDepth
+          ? "Boss: cible haute, plus de drains, jackpots explosifs."
+          : "Atteins la cible avant d'épuiser tes billes.";
+        els.hint.textContent = state.activeBalls.length
+          ? `Nudges disponibles: ${state.nudge.toFixed(1)}`
+          : state.ballsLeft > 0
+            ? "Glisse sur le plateau pour viser, puis lance."
+            : "Plus de billes: la salle va se résoudre.";
+        els.dropButton.disabled = state.activeBalls.length > 0 || state.ballsLeft <= 0 || state.choosing || state.gameOver || state.victory;
+        const pipSig = `${state.lives}/${state.maxLives}/${state.ballsLeft}/${state.maxBalls}`;
+        if (pipSig !== state.hudPipSig) {
+          state.hudPipSig = pipSig;
+          renderPips();
+        }
+        const relicSig = state.relics.map(relic => relic.id).join("|");
+        if (relicSig !== state.hudRelicSig) {
+          state.hudRelicSig = relicSig;
+          renderRelics();
+        }
+      }
+
+      function generateRoom() {
+        state.score = 0;
+        state.combo = 1;
+        state.ballsLeft = state.maxBalls;
+        state.activeBalls = [];
+        state.particles = [];
+        state.texts = [];
+        state.pegs = [];
+        state.slots = [];
+        state.target = scoreForDepth(state.depth);
+        if (state.depth === state.maxDepth) state.target = Math.floor(state.target * 1.28);
+        state.insuranceUsed = false;
+        state.hitCount = 0;
+        state.nudge = state.nudgeMax;
+
+        const rows = 8 + Math.min(5, state.depth);
+        const spacingY = (board.bottom - board.top - 120) / rows;
+        for (let r = 0; r < rows; r++) {
+          const count = 7 + (r % 2);
+          const spacingX = (board.right - board.left) / count;
+          for (let c = 0; c <= count; c++) {
+            const x = board.left + c * spacingX + (r % 2 ? spacingX * 0.5 : 0) + rand(-7, 7);
+            const y = board.top + 72 + r * spacingY + rand(-4, 4);
+            if (x < board.left + 22 || x > board.right - 22) continue;
+            let type = "basic";
+            const roll = Math.random();
+            const rareBoost = Math.min(0.18, state.depth * 0.012);
+            if (roll < 0.08 + rareBoost) type = "bumper";
+            if (roll > 0.87 - state.depth * 0.01) type = "gold";
+            if (roll > 0.93 - state.depth * 0.006) type = "splitter";
+            if (state.depth >= 3 && roll > 0.965) type = "ghost";
+            if (state.depth >= 4 && roll < 0.02 + state.depth * 0.006) type = "poison";
+            const radius = type === "bumper" ? 12 : type === "ghost" ? 10 : 8;
+            state.pegs.push({ x, y, radius, type, pulse: rand(0, Math.PI * 2), hits: 0 });
+          }
+        }
+
+        const slotTypes = makeSlots();
+        const slotCount = slotTypes.length;
+        const slotW = (board.right - board.left) / slotCount;
+        for (let i = 0; i < slotCount; i++) {
+          state.slots.push({
+            x: board.left + i * slotW,
+            y: board.slotY,
+            w: slotW,
+            h: 86,
+            type: slotTypes[i].type,
+            label: slotTypes[i].label,
+            color: slotTypes[i].color,
+            value: slotTypes[i].value
+          });
+        }
+
+        log(`Salle ${state.depth}: cible ${format(state.target)} points.`, "info");
+        updateHud();
+      }
+
+      function makeSlots() {
+        const base = [
+          { type: "score", label: "+25", value: 25, color: "#67cddc" },
+          { type: "score", label: "+45", value: 45, color: "#8adf99" },
+          { type: "gold", label: "OR", value: state.goldValue, color: "#f0c05a" },
+          { type: "bonus", label: "x2", value: 2, color: "#a985e8" },
+          { type: "drain", label: "DRAIN", value: -1, color: "#ef6f6c" },
+          { type: "score", label: "+35", value: 35, color: "#67cddc" },
+          { type: "heal", label: "VIE", value: 1, color: "#8adf99" },
+          { type: "jackpot", label: "777", value: 100, color: "#f4d278" }
+        ];
+
+        const slots = [];
+        const count = state.depth >= 6 ? 9 : 8;
+        for (let i = 0; i < count; i++) {
+          let candidate = pick(base);
+          if (state.luck && Math.random() < 0.18 * state.luck) candidate = base.find(s => s.type === "jackpot");
+          if (state.depth < 3 && candidate.type === "drain") candidate = base.find(s => s.type === "score" && s.value === 25);
+          if (state.depth === state.maxDepth && Math.random() < 0.18) candidate = base.find(s => s.type === "drain");
+          slots.push({ ...candidate });
+        }
+        slots[Math.floor(count / 2)] = { type: "jackpot", label: state.depth === state.maxDepth ? "BOSS" : "777", value: 110 + state.depth * 18, color: "#f4d278" };
+        return slots;
+      }
+
+      function launchBall() {
+        if (state.activeBalls.length || state.ballsLeft <= 0 || state.choosing || state.gameOver || state.victory) return;
+        const focus = state.aimFocus ? 0.55 : 1;
+        const vx = state.aimVX * 0.92 + rand(-0.25, 0.25) * focus;
+        state.ballsLeft -= 1;
+        state.activeBalls.push(makeBall(state.launcherX, board.top - 28, vx, 1.2, false));
+        state.running = true;
+        beep(420, 0.08, "triangle", 0.04);
+        updateHud();
+      }
+
+      function makeBall(x, y, vx, vy, clone) {
+        return {
+          x, y, vx, vy,
+          r: clone ? 8 : 10,
+          life: 0,
+          clone,
+          splitUsed: false,
+          trail: []
+        };
+      }
+
+      function nudge(dir) {
+        if (!state.activeBalls.length || state.nudge < 1) return;
+        state.nudge -= 1;
+        state.activeBalls.forEach(ball => {
+          ball.vx += dir * 2.4;
+          ball.vy *= 0.96;
+        });
+        state.shake = 8;
+        beep(dir > 0 ? 230 : 190, 0.07, "square", 0.025);
+        toast(dir > 0 ? "Nudge droite" : "Nudge gauche");
+        updateHud();
+      }
+
+      function addScore(points, x, y, label) {
+        const gained = Math.max(0, Math.round(points * state.combo * state.scoreMult));
+        state.score += gained;
+        state.texts.push({ x, y, text: label || `+${gained}`, life: 0.75, color: points >= 90 ? colors.gold : "#f2f5ec" });
+        if (points > 0) {
+          state.combo = clamp(state.combo + state.comboGain, 1, state.maxCombo);
+        }
+        updateHud();
+        if (state.score >= state.target && !state.victory) completeRoom();
+      }
+
+      function resolveSlot(ball, slot) {
+        if (slot.type === "drain") {
+          if (state.insurance && !state.insuranceUsed) {
+            state.insuranceUsed = true;
+            state.ballsLeft += 1;
+            addScore(15, ball.x, ball.y, "assuré");
+            log("La police anti-drain rembourse une bille.", "warn");
+            beep(270, 0.12, "triangle", 0.035);
+          } else {
+            state.combo = Math.max(1, state.combo * 0.72);
+            state.texts.push({ x: ball.x, y: ball.y, text: "drain", life: 0.8, color: colors.red });
+            log("Drain: combo réduit.", "bad");
+            beep(110, 0.18, "sawtooth", 0.035);
+          }
+        } else if (slot.type === "gold") {
+          state.coins += slot.value;
+          addScore(20 + slot.value, ball.x, ball.y, `+${slot.value} pièces`);
+          beep(640, 0.08, "triangle", 0.035);
+        } else if (slot.type === "bonus") {
+          state.combo = clamp(state.combo * slot.value, 1, state.maxCombo + 1);
+          addScore(35, ball.x, ball.y, `combo x${slot.value}`);
+          beep(520, 0.09, "sine", 0.04);
+        } else if (slot.type === "heal") {
+          if (state.lives < state.maxLives) state.lives += 1;
+          addScore(18, ball.x, ball.y, "+vie");
+          log("Une vie récupérée dans le slot vert.", "info");
+          beep(720, 0.12, "sine", 0.035);
+        } else if (slot.type === "jackpot") {
+          addScore(slot.value, ball.x, ball.y, slot.label);
+          state.shake = 14;
+          burst(ball.x, ball.y, slot.color, 28);
+          beep(880, 0.1, "triangle", 0.045);
+          setTimeout(() => beep(1180, 0.13, "triangle", 0.035), 75);
+        } else {
+          addScore(slot.value, ball.x, ball.y);
+          beep(480, 0.07, "sine", 0.025);
+        }
+      }
+
+      function hitPeg(ball, peg, nx, ny) {
+        const speed = Math.hypot(ball.vx, ball.vy);
+        const dot = ball.vx * nx + ball.vy * ny;
+        ball.vx -= 2 * dot * nx;
+        ball.vy -= 2 * dot * ny;
+        const bounce = 0.78 + state.bounceMod + (peg.type === "bumper" ? 0.24 : 0);
+        ball.vx = ball.vx * bounce + nx * 0.25;
+        ball.vy = ball.vy * bounce + ny * 0.25;
+        ball.vx += rand(-0.12, 0.12);
+        ball.vy += rand(-0.08, 0.08);
+        peg.hits += 1;
+        peg.pulse = 0;
+        state.hitCount += 1;
+
+        let points = 4 + state.pegBonus;
+        let text = null;
+        if (peg.type === "bumper") points = 18 + state.depth * 2;
+        if (peg.type === "gold") {
+          points = 12 + state.goldValue;
+          state.coins += 1;
+          text = "+1 pièce";
+        }
+        if (peg.type === "poison") {
+          points = 0;
+          state.combo = Math.max(1, state.combo - 0.22);
+          text = "combo -";
+        }
+        if (peg.type === "ghost") {
+          points = 24;
+          ball.vx *= 1.16;
+          ball.vy *= 1.08;
+          text = "phase";
+        }
+        if (peg.type === "splitter") {
+          points = 10;
+          if (!ball.splitUsed && (state.splitterPower || Math.random() < 0.4)) {
+            ball.splitUsed = true;
+            const clone = makeBall(ball.x + nx * 7, ball.y + ny * 7, -ball.vx * 0.8 + rand(-0.6, 0.6), ball.vy * 0.85, true);
+            clone.splitUsed = true;
+            state.activeBalls.push(clone);
+            text = "copie";
+            log("Une cheville turquoise divise la bille.", "info");
+            beep(760, 0.11, "triangle", 0.035);
+          }
+        }
+
+        if (state.overdrive && state.hitCount % 12 === 0) {
+          addScore(75, peg.x, peg.y - 10, "surchauffe");
+          burst(peg.x, peg.y, colors.amber, 18);
+          state.shake = 8;
+        }
+
+        if (points) addScore(points + speed * 0.8, peg.x, peg.y - 8, text);
+        else if (text) state.texts.push({ x: peg.x, y: peg.y - 8, text, life: 0.62, color: colors.red });
+        burst(peg.x, peg.y, pegColor(peg), peg.type === "bumper" ? 12 : 7);
+        beep(260 + points * 8 + Math.random() * 30, 0.045, peg.type === "bumper" ? "square" : "sine", 0.018);
+      }
+
+      function completeRoom() {
+        state.victory = true;
+        state.running = false;
+        state.coins += state.winCoins + state.depth * 5;
+        state.activeBalls = [];
+        state.shake = 18;
+        log(`Salle ${state.depth} gagnée. +${state.winCoins + state.depth * 5} pièces.`, "info");
+        toast("Salle nettoyée: choisis une relique", colors.green);
+        beep(700, 0.12, "triangle", 0.04);
+        setTimeout(() => beep(940, 0.14, "triangle", 0.035), 120);
+        setTimeout(() => {
+          if (state.depth >= state.maxDepth) showWin();
+          else showRelicChoice();
+        }, 800);
+        updateHud();
+      }
+
+      function failRoom() {
+        if (state.gameOver || state.victory) return;
+        state.lives -= 1;
+        log(`Salle perdue. Il reste ${Math.max(0, state.lives)} vie(s).`, "bad");
+        state.shake = 18;
+        beep(100, 0.22, "sawtooth", 0.04);
+        if (state.lives <= 0) {
+          showGameOver();
+        } else {
+          toast("Cible manquée: nouvelle salle, même profondeur", colors.red);
+          setTimeout(generateRoom, 900);
+        }
+        updateHud();
+      }
+
+      function showRelicChoice() {
+        state.choosing = true;
+        const choices = drawRelics(3);
+        els.overlayTitle.textContent = "Forge une relique";
+        els.overlayText.textContent = "Choisis une amélioration permanente pour cette run. La prochaine salle augmente la cible et ajoute des dangers.";
+        els.choiceCards.innerHTML = "";
+        choices.forEach(relic => {
+          const btn = document.createElement("button");
+          btn.className = "card";
+          btn.innerHTML = `<span class="glyph">${relic.glyph}</span><h3>${relic.name}</h3><p>${relic.desc}</p><small>${relic.rarity}</small>`;
+          btn.addEventListener("click", () => takeRelic(relic));
+          els.choiceCards.appendChild(btn);
+        });
+        els.closeOverlay.style.display = "none";
+        els.overlay.classList.add("open");
+      }
+
+      function drawRelics(count) {
+        const owned = new Set(state.relics.map(r => r.id));
+        const available = relicPool.filter(r => !owned.has(r.id) || ["extraBall", "heavy", "soft", "combo", "coinRain"].includes(r.id));
+        const choices = [];
+        while (choices.length < count && available.length) {
+          const rarityRoll = Math.random() + state.depth * 0.025;
+          let bucket = available.filter(r => r.rarity === "Commun");
+          if (rarityRoll > 0.56) bucket = available.filter(r => r.rarity === "Rare");
+          if (rarityRoll > 0.84) bucket = available.filter(r => r.rarity === "Epic");
+          if (rarityRoll > 1.02) bucket = available.filter(r => r.rarity === "Légendaire");
+          if (!bucket.length) bucket = available;
+          const relic = pick(bucket);
+          choices.push(relic);
+          available.splice(available.indexOf(relic), 1);
+        }
+        return choices;
+      }
+
+      function takeRelic(relic) {
+        state.relics.push(relic);
+        relic.apply(state);
+        state.depth += 1;
+        state.choosing = false;
+        state.victory = false;
+        els.overlay.classList.remove("open");
+        log(`Relique obtenue: ${relic.name}.`, "info");
+        generateRoom();
+      }
+
+      function showIntro() {
+        els.overlayTitle.textContent = "Pachinko des Failles";
+        els.overlayText.textContent = "Game design: roguelike court en 8 salles, billes limitées, score cible, slots dangereux et reliques cumulatives. Tâche: survivre à la variance en construisant un moteur de score.";
+        els.choiceCards.innerHTML = "";
+        [
+          ["1", "Viser", "Glisse sur le plateau pour déplacer le lanceur. Plus tu tires vers un côté, plus la bille part en biais."],
+          ["2", "Dépenser", "Chaque bille compte. Les drains ne marquent rien, les jackpots et combos peuvent sauver une salle entière."],
+          ["3", "Construire", "Après chaque salle gagnée, prends une relique. Certaines changent la physique, d'autres l'économie ou le scoring."]
+        ].forEach(item => {
+          const card = document.createElement("button");
+          card.className = "card";
+          card.innerHTML = `<span class="glyph">${item[0]}</span><h3>${item[1]}</h3><p>${item[2]}</p><small>Prêt à jouer</small>`;
+          card.addEventListener("click", () => {
+            els.overlay.classList.remove("open");
+            state.choosing = false;
+          });
+          els.choiceCards.appendChild(card);
+        });
+        els.closeOverlay.style.display = "";
+        els.overlay.classList.add("open");
+      }
+
+      function showDesign() {
+        const oldChoosing = state.choosing;
+        state.choosing = true;
+        els.overlayTitle.textContent = "Fonctionnalités et tâches";
+        els.overlayText.textContent = "Le prototype complet tient dans ce fichier HTML: Canvas, CSS, JS, génération procédurale et progression de run.";
+        els.choiceCards.innerHTML = "";
+        [
+          ["GD", "Fonctionnalités", "Objectifs de salle, slots à effets, reliques, combo, nudges, boss final, soins, drains, feedback visuel et sonore."],
+          ["UX", "Boucle de jeu", "Viser, lancer, regarder la bille résoudre le plateau, gagner ou perdre une vie, puis choisir une relique."],
+          ["JS", "Tâches dev", "Moteur physique, collision circulaire, génération des chevilles, gestion de run, HUD, overlay, responsive et tests navigateur."]
+        ].forEach(item => {
+          const card = document.createElement("button");
+          card.className = "card";
+          card.innerHTML = `<span class="glyph">${item[0]}</span><h3>${item[1]}</h3><p>${item[2]}</p><small>Documenté</small>`;
+          card.addEventListener("click", () => {});
+          els.choiceCards.appendChild(card);
+        });
+        els.closeOverlay.style.display = "";
+        els.overlay.classList.add("open");
+        els.closeOverlay.onclick = () => {
+          els.overlay.classList.remove("open");
+          state.choosing = oldChoosing;
+          els.closeOverlay.onclick = closeOverlay;
+        };
+      }
+
+      function showGameOver() {
+        state.gameOver = true;
+        state.choosing = true;
+        els.overlayTitle.textContent = "Run brisée";
+        els.overlayText.textContent = `Tu as atteint la profondeur ${state.depth} avec ${format(state.coins)} pièces. Nouvelle tentative?`;
+        els.choiceCards.innerHTML = "";
+        const card = document.createElement("button");
+        card.className = "card";
+        card.innerHTML = `<span class="glyph">R</span><h3>Recommencer</h3><p>Réinitialise la run avec un nouveau plateau, des reliques vierges et une cible fraîche.</p><small>Nouvelle run</small>`;
+        card.addEventListener("click", resetRun);
+        els.choiceCards.appendChild(card);
+        els.closeOverlay.style.display = "none";
+        els.overlay.classList.add("open");
+      }
+
+      function showWin() {
+        state.gameOver = true;
+        state.choosing = true;
+        els.overlayTitle.textContent = "Jackpot des Failles";
+        els.overlayText.textContent = `Victoire en profondeur 8 avec ${format(state.coins)} pièces et ${state.relics.length} reliques. La machine est cassée, élégamment.`;
+        els.choiceCards.innerHTML = "";
+        const card = document.createElement("button");
+        card.className = "card";
+        card.innerHTML = `<span class="glyph">★</span><h3>Nouvelle ascension</h3><p>Relance une run complète avec une nouvelle distribution de slots et chevilles.</p><small>Encore</small>`;
+        card.addEventListener("click", resetRun);
+        els.choiceCards.appendChild(card);
+        els.closeOverlay.style.display = "none";
+        els.overlay.classList.add("open");
+      }
+
+      function resetRun() {
+        Object.assign(state, {
+          depth: 1,
+          maxLives: 4,
+          lives: 4,
+          maxBalls: 8,
+          ballsLeft: 8,
+          coins: 0,
+          score: 0,
+          combo: 1,
+          activeBalls: [],
+          relics: [],
+          logs: [],
+          running: false,
+          choosing: false,
+          gameOver: false,
+          victory: false,
+          nudge: 2,
+          scoreMult: 1,
+          gravityBonus: 0,
+          bounceMod: 0,
+          pegBonus: 0,
+          magnet: 0,
+          splitterPower: 0,
+          luck: 0,
+          insurance: 0,
+          insuranceUsed: false,
+          comboGain: 0.055,
+          comboDecay: 0.996,
+          maxCombo: 4,
+          winCoins: 20,
+          goldValue: 10,
+          aimFocus: 0,
+          nudgeRecharge: 1,
+          overdrive: 0,
+          hitCount: 0
+        });
+        state.hudPipSig = "";
+        state.hudRelicSig = "";
+        els.overlay.classList.remove("open");
+        generateRoom();
+      }
+
+      function closeOverlay() {
+        els.overlay.classList.remove("open");
+        state.choosing = false;
+      }
+
+      function update(dt) {
+        const gravity = 0.24 + state.depth * 0.006 + state.gravityBonus;
+        const frame = clamp(dt * 60, 0.25, 7);
+        state.combo = clamp(state.combo * Math.pow(state.comboDecay, dt * 60), 1, state.maxCombo + 1);
+        state.nudgeTimer += dt * state.nudgeRecharge;
+        if (state.nudge < state.nudgeMax && state.nudgeTimer > 2.2) {
+          state.nudge = clamp(state.nudge + 0.25, 0, state.nudgeMax);
+          state.nudgeTimer = 0;
+        }
+        state.shake = Math.max(0, state.shake - dt * 30);
+
+        for (const ball of state.activeBalls) {
+          ball.life += dt;
+          ball.vy += gravity * frame;
+          applyMagnet(ball);
+          ball.x += ball.vx * frame;
+          ball.y += ball.vy * frame;
+          ball.trail.push({ x: ball.x, y: ball.y });
+          if (ball.trail.length > 12) ball.trail.shift();
+
+          if (ball.x - ball.r < board.left) {
+            ball.x = board.left + ball.r;
+            ball.vx = Math.abs(ball.vx) * 0.78;
+          }
+          if (ball.x + ball.r > board.right) {
+            ball.x = board.right - ball.r;
+            ball.vx = -Math.abs(ball.vx) * 0.78;
+          }
+          if (ball.y - ball.r < 28) {
+            ball.y = 28 + ball.r;
+            ball.vy = Math.abs(ball.vy) * 0.7;
+          }
+
+          for (const peg of state.pegs) {
+            const dx = ball.x - peg.x;
+            const dy = ball.y - peg.y;
+            const minD = ball.r + peg.radius;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < minD * minD) {
+              const d = Math.max(0.01, Math.sqrt(d2));
+              const nx = dx / d;
+              const ny = dy / d;
+              const overlap = minD - d;
+              ball.x += nx * overlap;
+              ball.y += ny * overlap;
+              hitPeg(ball, peg, nx, ny);
+            }
+          }
+        }
+
+        const remaining = [];
+        for (const ball of state.activeBalls) {
+          if (ball.y > board.slotY - 4) {
+            const slot = state.slots.find(s => ball.x >= s.x && ball.x < s.x + s.w) || state.slots[state.slots.length - 1];
+            resolveSlot(ball, slot);
+          } else if (ball.y < H + 60) {
+            remaining.push(ball);
+          }
+        }
+        state.activeBalls = remaining;
+
+        state.particles = state.particles.filter(p => {
+          p.life -= dt;
+          p.x += p.vx * frame;
+          p.y += p.vy * frame;
+          p.vy += 0.04 * frame;
+          return p.life > 0;
+        });
+        state.texts = state.texts.filter(t => {
+          t.life -= dt;
+          t.y -= dt * 32;
+          return t.life > 0;
+        });
+
+        if (!state.activeBalls.length && state.running && !state.victory && !state.gameOver) {
+          state.running = false;
+          if (state.ballsLeft <= 0 && state.score < state.target) {
+            setTimeout(failRoom, 360);
+          }
+        }
+        updateHud();
+      }
+
+      function applyMagnet(ball) {
+        if (!state.magnet) return;
+        const candidates = state.slots.filter(s => ["jackpot", "bonus", "gold", "heal"].includes(s.type));
+        for (const slot of candidates) {
+          const cx = slot.x + slot.w / 2;
+          const dy = board.slotY - ball.y;
+          const dx = cx - ball.x;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 190 && dy > 0) ball.vx += (dx / dist) * 0.012 * state.magnet;
+        }
+      }
+
+      function burst(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+          state.particles.push({
+            x, y,
+            vx: rand(-1.8, 1.8),
+            vy: rand(-2.1, 0.6),
+            r: rand(1.4, 3.6),
+            color,
+            life: rand(0.25, 0.7)
+          });
+        }
+      }
+
+      function pegColor(peg) {
+        if (peg.type === "bumper") return colors.bumper;
+        if (peg.type === "splitter") return colors.splitter;
+        if (peg.type === "poison") return colors.poison;
+        if (peg.type === "gold") return colors.gold;
+        if (peg.type === "ghost") return colors.ghost;
+        return colors.peg;
+      }
+
+      function draw() {
+        ctx.save();
+        ctx.clearRect(0, 0, W, H);
+        const sx = state.shake ? rand(-state.shake, state.shake) * 0.35 : 0;
+        const sy = state.shake ? rand(-state.shake, state.shake) * 0.35 : 0;
+        ctx.translate(sx, sy);
+        drawBackground();
+        drawBoard();
+        drawSlots();
+        drawPegs();
+        drawLauncher();
+        drawBalls();
+        drawParticles();
+        drawTexts();
+        ctx.restore();
+      }
+
+      function drawBackground() {
+        const grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, "#111720");
+        grad.addColorStop(0.55, "#0d1118");
+        grad.addColorStop(1, "#12151a");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.strokeStyle = "rgba(103, 205, 220, 0.08)";
+        ctx.lineWidth = 1;
+        for (let y = 40; y < H; y += 46) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(W, y + Math.sin(y * 0.02) * 16);
+          ctx.stroke();
+        }
+      }
+
+      function drawBoard() {
+        ctx.save();
+        ctx.strokeStyle = colors.wall;
+        ctx.lineWidth = 8;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(board.left, 42);
+        ctx.lineTo(board.left, board.bottom + 30);
+        ctx.moveTo(board.right, 42);
+        ctx.lineTo(board.right, board.bottom + 30);
+        ctx.stroke();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(242,245,236,0.12)";
+        ctx.strokeRect(board.left + 10, 42, board.right - board.left - 20, board.bottom + 28);
+        ctx.restore();
+      }
+
+      function drawSlots() {
+        state.slots.forEach(slot => {
+          ctx.save();
+          ctx.fillStyle = "#151a21";
+          ctx.strokeStyle = slot.color;
+          ctx.lineWidth = 2;
+          ctx.globalAlpha = 0.96;
+          roundRect(slot.x + 3, slot.y, slot.w - 6, slot.h, 8, true, true);
+          const grad = ctx.createLinearGradient(slot.x, slot.y, slot.x, slot.y + slot.h);
+          grad.addColorStop(0, slot.color + "55");
+          grad.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.fillStyle = grad;
+          roundRect(slot.x + 6, slot.y + 4, slot.w - 12, slot.h - 8, 6, true, false);
+          ctx.fillStyle = "#f2f5ec";
+          ctx.font = slot.label.length > 4 ? "700 15px Inter, sans-serif" : "800 20px Inter, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(slot.label, slot.x + slot.w / 2, slot.y + slot.h / 2);
+          ctx.restore();
+        });
+      }
+
+      function drawPegs() {
+        state.pegs.forEach(peg => {
+          peg.pulse += 0.035;
+          const pulse = Math.max(0, 1 - peg.pulse * 2.4);
+          ctx.save();
+          ctx.shadowColor = pegColor(peg);
+          ctx.shadowBlur = peg.type === "bumper" ? 14 : 6;
+          ctx.fillStyle = pegColor(peg);
+          ctx.globalAlpha = peg.type === "ghost" ? 0.72 : 1;
+          ctx.beginPath();
+          ctx.arc(peg.x, peg.y, peg.radius + pulse * 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "rgba(255,255,255,0.45)";
+          ctx.beginPath();
+          ctx.arc(peg.x - peg.radius * 0.25, peg.y - peg.radius * 0.32, Math.max(2, peg.radius * 0.28), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      function drawLauncher() {
+        const x = state.launcherX;
+        const y = board.top - 34;
+        ctx.save();
+        ctx.strokeStyle = "rgba(242,245,236,0.22)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(board.left + 24, y);
+        ctx.lineTo(board.right - 24, y);
+        ctx.stroke();
+
+        ctx.fillStyle = "#67cddc";
+        ctx.strokeStyle = "#d9f7ff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(103, 205, 220, 0.7)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x, y + 16);
+        ctx.lineTo(x + state.aimVX * 32, y + 66);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawBalls() {
+        state.activeBalls.forEach(ball => {
+          ctx.save();
+          for (let i = 0; i < ball.trail.length; i++) {
+            const t = ball.trail[i];
+            ctx.globalAlpha = i / ball.trail.length * 0.28;
+            ctx.fillStyle = ball.clone ? "#67cddc" : colors.ball;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, ball.r * (i / ball.trail.length), 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+          ctx.shadowColor = ball.clone ? "#67cddc" : "#ffffff";
+          ctx.shadowBlur = 16;
+          ctx.fillStyle = ball.clone ? "#a6f4ff" : colors.ball;
+          ctx.beginPath();
+          ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "rgba(0,0,0,0.18)";
+          ctx.beginPath();
+          ctx.arc(ball.x + ball.r * 0.28, ball.y + ball.r * 0.35, ball.r * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      function drawParticles() {
+        state.particles.forEach(p => {
+          ctx.save();
+          ctx.globalAlpha = clamp(p.life * 2, 0, 1);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      function drawTexts() {
+        state.texts.forEach(t => {
+          ctx.save();
+          ctx.globalAlpha = clamp(t.life * 1.8, 0, 1);
+          ctx.fillStyle = t.color;
+          ctx.strokeStyle = "rgba(0,0,0,0.55)";
+          ctx.lineWidth = 4;
+          ctx.font = "800 18px Inter, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.strokeText(t.text, t.x, t.y);
+          ctx.fillText(t.text, t.x, t.y);
+          ctx.restore();
+        });
+      }
+
+      function roundRect(x, y, w, h, r, fill, stroke) {
+        const radius = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + w, y, x + w, y + h, radius);
+        ctx.arcTo(x + w, y + h, x, y + h, radius);
+        ctx.arcTo(x, y + h, x, y, radius);
+        ctx.arcTo(x, y, x + w, y, radius);
+        ctx.closePath();
+        if (fill) ctx.fill();
+        if (stroke) ctx.stroke();
+      }
+
+      function loop(now) {
+        const dt = Math.min(0.12, (now - state.lastTime) / 1000 || 0.016);
+        state.lastTime = now;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      function pointerToBoard(event) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = W / rect.width;
+        const x = (event.clientX - rect.left) * scaleX;
+        return clamp(x, board.left + 28, board.right - 28);
+      }
+
+      canvas.addEventListener("pointermove", event => {
+        if (state.activeBalls.length || state.choosing || state.gameOver || state.victory) return;
+        const x = pointerToBoard(event);
+        state.launcherX = x;
+        state.aimVX = clamp((x - W / 2) / (W / 2), -1, 1) * 2.4;
+      });
+
+      canvas.addEventListener("pointerdown", event => {
+        if (state.activeBalls.length || state.choosing || state.gameOver || state.victory) return;
+        state.launcherX = pointerToBoard(event);
+        state.aimVX = clamp((state.launcherX - W / 2) / (W / 2), -1, 1) * 2.4;
+      });
+
+      canvas.addEventListener("pointerup", () => {
+        if (!state.choosing && !state.gameOver && !state.victory) launchBall();
+      });
+
+      window.addEventListener("keydown", event => {
+        if (event.code === "Space") {
+          event.preventDefault();
+          launchBall();
+        }
+        if (event.key.toLowerCase() === "a" || event.key === "ArrowLeft") nudge(-1);
+        if (event.key.toLowerCase() === "d" || event.key === "ArrowRight") nudge(1);
+        if (event.key.toLowerCase() === "r") resetRun();
+      });
+
+      els.dropButton.addEventListener("click", launchBall);
+      els.muteButton.addEventListener("click", () => {
+        state.muted = !state.muted;
+        els.muteButton.textContent = state.muted ? "×" : "♪";
+        toast(state.muted ? "Son coupé" : "Son activé");
+      });
+      els.helpButton.addEventListener("click", showDesign);
+      els.closeOverlay.addEventListener("click", closeOverlay);
+
+      generateRoom();
+      renderLog();
+      showIntro();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

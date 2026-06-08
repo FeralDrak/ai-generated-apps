@@ -1,0 +1,2173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chute d'Astres - Roguelike Pachinko</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f7efe3;
+      --muted: #b9bdc8;
+      --panel: rgba(17, 22, 29, 0.84);
+      --panel-strong: rgba(22, 29, 38, 0.95);
+      --line: rgba(255, 255, 255, 0.14);
+      --green: #55d68b;
+      --red: #ff6d65;
+      --gold: #f6c453;
+      --blue: #73c7ff;
+      --violet: #c79cff;
+      --cyan: #43e3d0;
+      --bg: #11161d;
+      --shadow: rgba(0, 0, 0, 0.42);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 18% 15%, rgba(115, 199, 255, 0.16), transparent 26%),
+        radial-gradient(circle at 88% 8%, rgba(246, 196, 83, 0.12), transparent 25%),
+        linear-gradient(145deg, #0d1017 0%, #161b22 45%, #14191e 100%);
+      letter-spacing: 0;
+      user-select: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.34);
+      background: rgba(255, 255, 255, 0.13);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .app {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(220px, 300px) minmax(380px, 1fr) minmax(230px, 320px);
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .brand {
+      display: grid;
+      gap: 4px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 24px;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 15px;
+      line-height: 1.2;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: #d8e7f8;
+    }
+
+    h3 {
+      font-size: 14px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat {
+      min-height: 68px;
+      display: grid;
+      align-content: center;
+      gap: 4px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .value {
+      font-size: 23px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .bar {
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      background: rgba(0, 0, 0, 0.28);
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 50%;
+      border-radius: inherit;
+      transition: width 0.22s ease;
+    }
+
+    .bar-fill.hp {
+      background: linear-gradient(90deg, #ff6d65, #f6c453);
+    }
+
+    .bar-fill.enemy {
+      background: linear-gradient(90deg, #c79cff, #ff6d65);
+    }
+
+    .bar-fill.shield {
+      background: linear-gradient(90deg, #43e3d0, #73c7ff);
+    }
+
+    .stack {
+      display: grid;
+      gap: 8px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 26px;
+      padding: 5px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.075);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .log {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 7px;
+      min-height: 120px;
+      max-height: 180px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .log p {
+      padding: 8px;
+      border-left: 3px solid rgba(115, 199, 255, 0.55);
+      border-radius: 6px;
+      color: #d9e2e8;
+      background: rgba(0, 0, 0, 0.18);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .board-wrap {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto minmax(360px, 1fr) auto;
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(10, 13, 18, 0.52);
+    }
+
+    .turn-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .orb-pick {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .orb-button {
+      width: 46px;
+      height: 42px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .orb-button.selected {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(246, 196, 83, 0.18) inset;
+    }
+
+    .orb-dot {
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    .canvas-shell {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 22%),
+        radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.12), transparent 28%);
+    }
+
+    #gameCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .aim-help {
+      position: absolute;
+      left: 50%;
+      top: 12px;
+      transform: translateX(-50%);
+      max-width: min(460px, calc(100% - 28px));
+      pointer-events: none;
+      padding: 8px 11px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      color: #eef7fb;
+      background: rgba(0, 0, 0, 0.32);
+      font-size: 13px;
+      text-align: center;
+      opacity: 0.92;
+    }
+
+    .bottom-controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+      background: rgba(10, 13, 18, 0.55);
+    }
+
+    .primary {
+      color: #1b1306;
+      border-color: rgba(246, 196, 83, 0.76);
+      background: linear-gradient(180deg, #ffe08a, #f6b84f);
+      font-weight: 800;
+    }
+
+    .danger {
+      border-color: rgba(255, 109, 101, 0.45);
+      background: rgba(255, 109, 101, 0.12);
+    }
+
+    .right-panel {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .enemy-card {
+      display: grid;
+      gap: 9px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .intent {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 9px;
+      border-radius: 8px;
+      background: rgba(255, 109, 101, 0.1);
+      border: 1px solid rgba(255, 109, 101, 0.24);
+    }
+
+    .intent-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #1b0908;
+      background: var(--red);
+      font-weight: 900;
+    }
+
+    .relic-grid,
+    .effect-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .relic {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 9px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .relic-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #10161d;
+      background: linear-gradient(145deg, #f6c453, #43e3d0);
+      font-weight: 900;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      z-index: 8;
+      padding: 18px;
+      background: rgba(6, 9, 13, 0.72);
+      backdrop-filter: blur(10px);
+    }
+
+    .screen.active {
+      display: grid;
+    }
+
+    .modal {
+      width: min(880px, 100%);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: var(--panel-strong);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55);
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .choice {
+      min-height: 154px;
+      display: grid;
+      align-content: start;
+      gap: 9px;
+      padding: 13px;
+      text-align: left;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .choice strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .choice small {
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .design-doc {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .design-doc ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: #dfe7ed;
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .design-doc li {
+      margin: 5px 0;
+    }
+
+    .footer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 9px;
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: 76px;
+      transform: translate(-50%, 18px);
+      z-index: 9;
+      pointer-events: none;
+      min-width: min(420px, calc(100% - 30px));
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      background: rgba(16, 22, 29, 0.92);
+      color: #f4f7fb;
+      opacity: 0;
+      text-align: center;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .kbd {
+      padding: 1px 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    @media (max-width: 980px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        min-height: 100vh;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(580px, 72vh) auto;
+      }
+
+      .sidebar,
+      .right-panel {
+        overflow: visible;
+      }
+
+      .choice-grid,
+      .design-doc {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .app {
+        padding: 8px;
+        gap: 8px;
+        grid-template-rows: auto minmax(520px, 78vh) auto;
+      }
+
+      .topbar,
+      .bottom-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      h1 {
+        font-size: 21px;
+      }
+
+      .value {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="panel sidebar">
+      <section class="brand">
+        <h1>Chute d'Astres</h1>
+        <p class="subtle">Roguelike pachinko tactique en une seule page.</p>
+      </section>
+
+      <section class="stats" aria-label="Statistiques de run">
+        <div class="stat">
+          <span class="label">Vie</span>
+          <strong class="value" id="hpText">42/42</strong>
+          <div class="bar"><div class="bar-fill hp" id="hpBar"></div></div>
+        </div>
+        <div class="stat">
+          <span class="label">Garde</span>
+          <strong class="value" id="shieldText">0</strong>
+          <div class="bar"><div class="bar-fill shield" id="shieldBar"></div></div>
+        </div>
+        <div class="stat">
+          <span class="label">Or</span>
+          <strong class="value" id="goldText">0</strong>
+        </div>
+        <div class="stat">
+          <span class="label">Etage</span>
+          <strong class="value" id="floorText">1/8</strong>
+        </div>
+      </section>
+
+      <section class="stack">
+        <div class="row">
+          <h2>Run</h2>
+          <span class="pill" id="roomType">Combat</span>
+        </div>
+        <p class="subtle" id="runHint">Choisissez une bille, visez la colonne, puis lâchez-la dans le plateau.</p>
+      </section>
+
+      <section class="stack">
+        <div class="row">
+          <h2>Journal</h2>
+          <button id="designButton" title="Voir le game design et la liste des tâches">Design</button>
+        </div>
+        <div class="log" id="log"></div>
+      </section>
+    </aside>
+
+    <section class="panel board-wrap" aria-label="Plateau de pachinko">
+      <header class="topbar">
+        <div class="turn-strip">
+          <span class="pill" id="phaseText">Preparation</span>
+          <span class="subtle" id="shotText">Tirs restants: 4</span>
+        </div>
+        <div class="orb-pick" id="orbPick"></div>
+      </header>
+
+      <div class="canvas-shell" id="canvasShell">
+        <canvas id="gameCanvas" width="900" height="1200"></canvas>
+        <div class="aim-help" id="aimHelp">Cliquez ou touchez la rampe du haut pour lâcher une bille.</div>
+        <div class="toast" id="toast"></div>
+        <section class="screen active" id="startScreen">
+          <div class="modal">
+            <div class="stack">
+              <span class="pill">Prototype complet HTML/CSS/JS</span>
+              <h1>Chute d'Astres</h1>
+              <p class="subtle">Un roguelike de pachinko: chaque bille traverse un plateau généré, accumule des collisions, tombe dans une poche, puis transforme son trajet en dégâts, garde, soins ou or. Battez huit salles, adaptez vos reliques, et survivez au Gardien du Puits.</p>
+            </div>
+            <div class="design-doc">
+              <div>
+                <h2>Fonctionnalités</h2>
+                <ul>
+                  <li>Plateau pachinko physique avec billes, pegs, bumpers, blocs cassables et poches de score.</li>
+                  <li>Boucle roguelike: combats, récompenses, boutique, événement, mini-boss et boss final.</li>
+                  <li>Trois types de billes: Forge, Source et Voile, chacune avec un effet de trajectoire.</li>
+                  <li>Reliques permanentes par run, modifiant dégâts, garde, soins, or, combos et multibilles.</li>
+                  <li>Ennemis avec intentions, boucliers, morsures lourdes, rage et boss à phases.</li>
+                  <li>Interface responsive, commandes souris/tactile/clavier, nouvelle run instantanée.</li>
+                </ul>
+              </div>
+              <div>
+                <h2>Tâches réalisées</h2>
+                <ul>
+                  <li>Définir les règles, l'économie et le rythme d'une run courte mais rejouable.</li>
+                  <li>Construire le moteur de collision 2D sans dépendance externe.</li>
+                  <li>Créer les écrans de départ, victoire, défaite, récompense, boutique et événement.</li>
+                  <li>Ajouter génération de salles, progression de difficulté et boss final.</li>
+                  <li>Ajouter effets visuels, sons synthétiques optionnels et feedback de combat.</li>
+                  <li>Vérifier que tout fonctionne depuis ce fichier unique.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="footer-actions">
+              <button id="closeDesignButton" style="display:none">Fermer</button>
+              <button id="startGameButton" class="primary">Commencer la run</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="choiceScreen">
+          <div class="modal">
+            <div class="row">
+              <div>
+                <h1 id="choiceTitle">Recompense</h1>
+                <p class="subtle" id="choiceSubtitle">Choisissez une amélioration pour la suite de la run.</p>
+              </div>
+              <span class="pill" id="choiceMeta">Salle 1</span>
+            </div>
+            <div class="choice-grid" id="choiceGrid"></div>
+            <div class="footer-actions" id="choiceActions"></div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="bottom-controls">
+        <div class="subtle" id="controlHint">Souris/tactile: viser et lâcher. <span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> changent de bille. <span class="kbd">Espace</span> lâche au centre.</div>
+        <div class="row">
+          <button id="endTurnButton">Finir le tour</button>
+          <button id="newRunButton" class="danger">Nouvelle run</button>
+        </div>
+      </footer>
+    </section>
+
+    <aside class="panel right-panel">
+      <section class="enemy-card">
+        <div class="row">
+          <h2 id="enemyName">Silence</h2>
+          <span class="pill" id="enemyTrait">-</span>
+        </div>
+        <div class="bar"><div class="bar-fill enemy" id="enemyBar"></div></div>
+        <div class="row">
+          <strong id="enemyHpText">0/0</strong>
+          <span class="subtle" id="enemyShieldText">Garde 0</span>
+        </div>
+        <div class="intent">
+          <div class="intent-mark" id="intentMark">!</div>
+          <div>
+            <h3 id="intentText">Aucune menace</h3>
+            <p class="subtle" id="intentDetail">La salle attend votre premier tir.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="stack">
+        <div class="row">
+          <h2>Effets actifs</h2>
+          <span class="pill" id="comboText">Combo 0</span>
+        </div>
+        <div class="effect-grid" id="effectGrid"></div>
+      </section>
+
+      <section class="stack">
+        <div class="row">
+          <h2>Reliques</h2>
+          <span class="pill" id="relicCount">0</span>
+        </div>
+        <div class="relic-grid" id="relicGrid"></div>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    "use strict";
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const shell = document.getElementById("canvasShell");
+
+    const ui = {
+      hpText: document.getElementById("hpText"),
+      hpBar: document.getElementById("hpBar"),
+      shieldText: document.getElementById("shieldText"),
+      shieldBar: document.getElementById("shieldBar"),
+      goldText: document.getElementById("goldText"),
+      floorText: document.getElementById("floorText"),
+      roomType: document.getElementById("roomType"),
+      runHint: document.getElementById("runHint"),
+      phaseText: document.getElementById("phaseText"),
+      shotText: document.getElementById("shotText"),
+      orbPick: document.getElementById("orbPick"),
+      aimHelp: document.getElementById("aimHelp"),
+      toast: document.getElementById("toast"),
+      log: document.getElementById("log"),
+      enemyName: document.getElementById("enemyName"),
+      enemyTrait: document.getElementById("enemyTrait"),
+      enemyBar: document.getElementById("enemyBar"),
+      enemyHpText: document.getElementById("enemyHpText"),
+      enemyShieldText: document.getElementById("enemyShieldText"),
+      intentMark: document.getElementById("intentMark"),
+      intentText: document.getElementById("intentText"),
+      intentDetail: document.getElementById("intentDetail"),
+      comboText: document.getElementById("comboText"),
+      effectGrid: document.getElementById("effectGrid"),
+      relicGrid: document.getElementById("relicGrid"),
+      relicCount: document.getElementById("relicCount"),
+      startScreen: document.getElementById("startScreen"),
+      choiceScreen: document.getElementById("choiceScreen"),
+      choiceTitle: document.getElementById("choiceTitle"),
+      choiceSubtitle: document.getElementById("choiceSubtitle"),
+      choiceMeta: document.getElementById("choiceMeta"),
+      choiceGrid: document.getElementById("choiceGrid"),
+      choiceActions: document.getElementById("choiceActions"),
+      startGameButton: document.getElementById("startGameButton"),
+      closeDesignButton: document.getElementById("closeDesignButton"),
+      endTurnButton: document.getElementById("endTurnButton"),
+      newRunButton: document.getElementById("newRunButton"),
+      designButton: document.getElementById("designButton"),
+      controlHint: document.getElementById("controlHint")
+    };
+
+    const W = 900;
+    const H = 1200;
+    const GRAVITY = 1120;
+    const RESTITUTION = 0.78;
+    const WALL_PAD = 28;
+
+    const palette = {
+      forge: "#f6c453",
+      source: "#43e3d0",
+      veil: "#c79cff",
+      peg: "#d8e7f8",
+      bumper: "#ff6d65",
+      block: "#73c7ff",
+      green: "#55d68b",
+      ink: "#f7efe3",
+      muted: "#96a3ad"
+    };
+
+    const orbTypes = [
+      {
+        id: "forge",
+        name: "Forge",
+        color: palette.forge,
+        desc: "+35% degats de poche, casse mieux les blocs.",
+        radius: 15,
+        mass: 1.2
+      },
+      {
+        id: "source",
+        name: "Source",
+        color: palette.source,
+        desc: "Soigne 1 par 5 collisions et donne plus de garde.",
+        radius: 14,
+        mass: 1
+      },
+      {
+        id: "veil",
+        name: "Voile",
+        color: palette.veil,
+        desc: "Bille plus lente, +1 combo par bumper touche.",
+        radius: 13,
+        mass: 0.82
+      }
+    ];
+
+    const relicPool = [
+      {
+        id: "magnet",
+        name: "Aimant lunaire",
+        icon: "M",
+        desc: "+1 tir par combat. Les poches faibles donnent aussi 2 garde.",
+        apply: state => state.maxShots += 1
+      },
+      {
+        id: "anvil",
+        name: "Enclume claire",
+        icon: "A",
+        desc: "Les billes Forge infligent +8 degats fixes.",
+        apply: state => state.forgeBonus += 8
+      },
+      {
+        id: "sprout",
+        name: "Graine de maree",
+        icon: "G",
+        desc: "Les soins des billes Source sont doubles.",
+        apply: state => state.sourceHealMult += 1
+      },
+      {
+        id: "mirror",
+        name: "Miroir fendu",
+        icon: "R",
+        desc: "Premier tir de chaque combat lance une seconde bille affaiblie.",
+        apply: state => state.hasMirror = true
+      },
+      {
+        id: "crown",
+        name: "Couronne de cuivre",
+        icon: "C",
+        desc: "+35% or gagne. Les boutiques baissent leurs prix.",
+        apply: state => state.goldMult += 0.35
+      },
+      {
+        id: "needle",
+        name: "Aiguille de verre",
+        icon: "V",
+        desc: "Chaque 12 collisions ajoute 6 degats.",
+        apply: state => state.comboNeedle += 6
+      },
+      {
+        id: "kite",
+        name: "Cerf-volant noir",
+        icon: "K",
+        desc: "Les billes Voile rebondissent plus fort et gagnent +2 degats par bumper.",
+        apply: state => {
+          state.veilBounce += 0.12;
+          state.veilBumperDamage += 2;
+        }
+      },
+      {
+        id: "shield",
+        name: "Charniere bleue",
+        icon: "B",
+        desc: "Debut de combat: gagne 5 garde.",
+        apply: state => state.startShield += 5
+      },
+      {
+        id: "lens",
+        name: "Lentille solaire",
+        icon: "L",
+        desc: "Les poches de degats valent +20%.",
+        apply: state => state.damageMult += 0.2
+      },
+      {
+        id: "hourglass",
+        name: "Sablier poli",
+        icon: "S",
+        desc: "Les ennemis attaquent avec -2 degats.",
+        apply: state => state.enemyAttackDown += 2
+      }
+    ];
+
+    const enemies = [
+      { name: "Racleur de cuivre", trait: "Griffes", hp: 48, attack: 7, shield: 0, reward: 14 },
+      { name: "Idole fissuree", trait: "Armure", hp: 58, attack: 6, shield: 9, reward: 16 },
+      { name: "Noue d'encre", trait: "Rage", hp: 64, attack: 8, shield: 0, reward: 18 },
+      { name: "Cribleur", trait: "Double", hp: 72, attack: 5, shield: 5, reward: 20 },
+      { name: "Gardien des poches", trait: "Mini-boss", hp: 96, attack: 11, shield: 12, reward: 28 },
+      { name: "Oracle oblique", trait: "Vol", hp: 86, attack: 10, shield: 4, reward: 24 },
+      { name: "Masse de nacre", trait: "Lourd", hp: 112, attack: 14, shield: 8, reward: 30 },
+      { name: "Gardien du Puits", trait: "Boss", hp: 165, attack: 13, shield: 18, reward: 60 }
+    ];
+
+    const eventPool = [
+      {
+        title: "Fontaine inclinee",
+        text: "Une eau brillante suit les clous du plateau.",
+        choices: [
+          { title: "Boire", desc: "Soignez 12 PV.", run: () => healPlayer(12, "La fontaine referme vos blessures.") },
+          { title: "Dorer une bille", desc: "Gagnez 18 or.", run: () => gainGold(18, "La bille ressort couverte de poussiere d'or.") },
+          { title: "Plonger la main", desc: "Perdez 5 PV, gagnez une relique.", run: () => { damagePlayer(5); awardRelic(randomRelic()); log("Le fond accroche votre main, puis relache une relique."); } }
+        ]
+      },
+      {
+        title: "Marchand sans comptoir",
+        text: "Une voix propose une transaction rapide.",
+        choices: [
+          { title: "Payer 14 or", desc: "Gagnez une relique aleatoire.", run: () => spendForRelic(14) },
+          { title: "Vendre une etincelle", desc: "Perdez 7 PV, gagnez 28 or.", run: () => { damagePlayer(7); gainGold(28, "La voix rit, mais paie comptant."); } },
+          { title: "Refuser", desc: "Passez sans risque.", run: () => log("Vous gardez vos ressources et avancez.") }
+        ]
+      },
+      {
+        title: "Atelier de clous",
+        text: "Le plateau suivant peut etre regle a votre avantage.",
+        choices: [
+          { title: "Resserrer", desc: "+2 tirs au prochain combat.", run: () => { state.bonusShotsNext += 2; log("Les clous se resserrent en un motif favorable."); } },
+          { title: "Polir", desc: "+25% degats au prochain combat.", run: () => { state.tempDamageBoost += 0.25; log("Les poches brillent d'un reflet dangereux."); } },
+          { title: "Piller", desc: "Gagnez 12 or.", run: () => gainGold(12, "Quelques vis rares finissent dans votre bourse.") }
+        ]
+      }
+    ];
+
+    const state = {
+      started: false,
+      phase: "menu",
+      floor: 1,
+      maxFloor: 8,
+      hp: 42,
+      maxHp: 42,
+      shield: 0,
+      gold: 0,
+      maxShots: 4,
+      shotsLeft: 4,
+      selectedOrb: "forge",
+      enemy: null,
+      board: null,
+      balls: [],
+      particles: [],
+      floaters: [],
+      relics: [],
+      usedRelicIds: new Set(),
+      roomType: "Combat",
+      lastShot: null,
+      runStats: { kills: 0, totalDamage: 0, bestCombo: 0 },
+      hasMirror: false,
+      mirrorUsed: false,
+      forgeBonus: 0,
+      sourceHealMult: 1,
+      goldMult: 1,
+      comboNeedle: 0,
+      veilBounce: 0,
+      veilBumperDamage: 0,
+      startShield: 0,
+      damageMult: 1,
+      enemyAttackDown: 0,
+      bonusShotsNext: 0,
+      tempDamageBoost: 0,
+      audioReady: false,
+      audio: null,
+      muted: false
+    };
+
+    function createBoard(seedPower = 1) {
+      const pegs = [];
+      const bumpers = [];
+      const blocks = [];
+      const rows = 10;
+      const gapX = 86;
+      const startY = 170;
+      for (let r = 0; r < rows; r += 1) {
+        const cols = r % 2 === 0 ? 8 : 9;
+        const y = startY + r * 78;
+        const offset = r % 2 === 0 ? 98 : 55;
+        for (let c = 0; c < cols; c += 1) {
+          const x = offset + c * gapX + rand(-9, 9);
+          const roll = Math.random();
+          if (roll < 0.09 + seedPower * 0.01) {
+            bumpers.push({ x, y, r: 18, pulse: 0 });
+          } else {
+            pegs.push({ x, y, r: 10, hit: 0 });
+          }
+        }
+      }
+
+      const blockCount = 4 + Math.floor(seedPower * 1.3);
+      for (let i = 0; i < blockCount; i += 1) {
+        blocks.push({
+          x: rand(130, 730),
+          y: rand(285, 760),
+          w: rand(44, 76),
+          h: 20,
+          hp: Math.ceil(rand(1, 2 + seedPower * 0.45)),
+          angle: rand(-0.25, 0.25),
+          flash: 0
+        });
+      }
+
+      const pockets = [
+        { label: "Garde", type: "shield", value: 9, x0: 0, x1: 128, color: palette.cyan },
+        { label: "12", type: "damage", value: 12, x0: 128, x1: 252, color: palette.blue },
+        { label: "20", type: "damage", value: 20, x0: 252, x1: 376, color: palette.gold },
+        { label: "Soin", type: "heal", value: 7, x0: 376, x1: 524, color: palette.green },
+        { label: "28", type: "damage", value: 28, x0: 524, x1: 648, color: palette.red },
+        { label: "Or", type: "gold", value: 12, x0: 648, x1: 772, color: palette.gold },
+        { label: "Crit", type: "damage", value: 36, x0: 772, x1: 900, color: palette.violet }
+      ];
+
+      return { pegs, bumpers, blocks, pockets, seedPower, shake: 0 };
+    }
+
+    function startRun() {
+      Object.assign(state, {
+        started: true,
+        phase: "aim",
+        floor: 1,
+        hp: 42,
+        maxHp: 42,
+        shield: 0,
+        gold: 12,
+        maxShots: 4,
+        shotsLeft: 4,
+        selectedOrb: "forge",
+        balls: [],
+        particles: [],
+        floaters: [],
+        relics: [],
+        usedRelicIds: new Set(),
+        lastShot: null,
+        runStats: { kills: 0, totalDamage: 0, bestCombo: 0 },
+        hasMirror: false,
+        mirrorUsed: false,
+        forgeBonus: 0,
+        sourceHealMult: 1,
+        goldMult: 1,
+        comboNeedle: 0,
+        veilBounce: 0,
+        veilBumperDamage: 0,
+        startShield: 0,
+        damageMult: 1,
+        enemyAttackDown: 0,
+        bonusShotsNext: 0,
+        tempDamageBoost: 0
+      });
+      ui.startScreen.classList.remove("active");
+      ui.choiceScreen.classList.remove("active");
+      addLogReset();
+      log("La run commence. Les poches changent de valeur a chaque salle.");
+      beginCombat();
+      updateUI();
+    }
+
+    function addLogReset() {
+      ui.log.innerHTML = "";
+    }
+
+    function beginCombat() {
+      state.roomType = getRoomType(state.floor);
+      state.board = createBoard(state.floor);
+      state.balls = [];
+      state.particles = [];
+      state.floaters = [];
+      state.lastShot = null;
+      state.mirrorUsed = false;
+      if (state.roomType === "Combat" || state.roomType === "Mini-boss" || state.roomType === "Boss") {
+        const template = enemies[Math.min(state.floor - 1, enemies.length - 1)];
+        const scale = 1 + (state.floor - 1) * 0.07;
+        state.enemy = {
+          name: template.name,
+          trait: template.trait,
+          hp: Math.round(template.hp * scale),
+          maxHp: Math.round(template.hp * scale),
+          attack: Math.round(template.attack * scale),
+          shield: template.shield,
+          reward: template.reward,
+          turn: 1
+        };
+        state.shield = Math.max(0, state.startShield);
+        state.shotsLeft = state.maxShots + state.bonusShotsNext;
+        state.bonusShotsNext = 0;
+        state.phase = "aim";
+        log(`${state.enemy.name} bloque le passage.`);
+      }
+      updateUI();
+    }
+
+    function getRoomType(floor) {
+      if (floor === 5) return "Mini-boss";
+      if (floor === 8) return "Boss";
+      if (floor === 3) return "Evenement";
+      if (floor === 6) return "Boutique";
+      return "Combat";
+    }
+
+    function advanceFloor() {
+      state.floor += 1;
+      state.tempDamageBoost = 0;
+      if (state.floor > state.maxFloor) {
+        showVictory();
+        return;
+      }
+      const room = getRoomType(state.floor);
+      if (room === "Boutique") {
+        showShop();
+      } else if (room === "Evenement") {
+        showEvent();
+      } else {
+        beginCombat();
+      }
+    }
+
+    function endTurn() {
+      if (!state.enemy || state.phase === "rolling" || state.phase === "menu") return;
+      enemyAction();
+      if (state.hp <= 0) {
+        showDefeat();
+        return;
+      }
+      state.shotsLeft = state.maxShots;
+      state.enemy.turn += 1;
+      state.phase = "aim";
+      log("Nouveau tour. Le plateau attend une autre trajectoire.");
+      updateUI();
+    }
+
+    function enemyAction() {
+      if (!state.enemy) return;
+      let amount = Math.max(1, state.enemy.attack - state.enemyAttackDown);
+      if (state.enemy.trait === "Rage" && state.enemy.hp < state.enemy.maxHp * 0.45) amount += 5;
+      if (state.enemy.trait === "Double" && state.enemy.turn % 2 === 0) amount += 6;
+      if (state.enemy.trait === "Boss" && state.enemy.hp < state.enemy.maxHp * 0.5) amount += 4;
+      damagePlayer(amount);
+      log(`${state.enemy.name} attaque pour ${amount}.`);
+    }
+
+    function damagePlayer(amount) {
+      let left = amount;
+      const blocked = Math.min(state.shield, left);
+      state.shield -= blocked;
+      left -= blocked;
+      if (left > 0) state.hp = Math.max(0, state.hp - left);
+      updateUI();
+    }
+
+    function healPlayer(amount, customText) {
+      const before = state.hp;
+      state.hp = Math.min(state.maxHp, state.hp + amount);
+      const gained = state.hp - before;
+      if (gained > 0) log(customText || `Vous recuperez ${gained} PV.`);
+      updateUI();
+    }
+
+    function gainGold(amount, customText) {
+      const gained = Math.max(0, Math.round(amount * state.goldMult));
+      state.gold += gained;
+      log(customText || `Vous gagnez ${gained} or.`);
+      updateUI();
+    }
+
+    function damageEnemy(amount, source = "La bille") {
+      if (!state.enemy) return;
+      let left = Math.max(0, Math.round(amount));
+      const blocked = Math.min(state.enemy.shield, left);
+      state.enemy.shield -= blocked;
+      left -= blocked;
+      if (left > 0) {
+        state.enemy.hp = Math.max(0, state.enemy.hp - left);
+        state.runStats.totalDamage += left;
+      }
+      if (left > 0 || blocked > 0) log(`${source} inflige ${left}${blocked ? ` (${blocked} absorbes)` : ""}.`);
+      if (state.enemy.hp <= 0) {
+        winCombat();
+      }
+      updateUI();
+    }
+
+    function winCombat() {
+      if (!state.enemy) return;
+      const reward = state.enemy.reward;
+      state.runStats.kills += 1;
+      gainGold(reward, `${state.enemy.name} tombe. +${Math.round(reward * state.goldMult)} or.`);
+      state.enemy = null;
+      state.phase = "reward";
+      state.balls = [];
+      setTimeout(() => showReward(), 450);
+    }
+
+    function showReward() {
+      if (state.floor >= state.maxFloor) {
+        showVictory();
+        return;
+      }
+      const relicOptions = drawRelicOptions(3);
+      showChoice({
+        title: "Recompense",
+        subtitle: "Choisissez une relique ou un repos avant la prochaine salle.",
+        meta: `Salle ${state.floor} terminee`,
+        choices: [
+          ...relicOptions.map(relic => ({
+            title: relic.name,
+            desc: relic.desc,
+            tag: "Relique",
+            run: () => {
+              awardRelic(relic);
+              advanceFloor();
+            }
+          })),
+          {
+            title: "Repos court",
+            desc: "Soignez 10 PV au lieu de prendre une relique.",
+            tag: "Soin",
+            run: () => {
+              healPlayer(10, "Le repos remet vos bras et vos nerfs en place.");
+              advanceFloor();
+            }
+          }
+        ],
+        actions: []
+      });
+    }
+
+    function showShop() {
+      state.roomType = "Boutique";
+      state.phase = "shop";
+      const priceMod = state.usedRelicIds.has("crown") ? 0.78 : 1;
+      const items = drawRelicOptions(3).map((relic, index) => ({
+        relic,
+        price: Math.round((24 + index * 8) * priceMod)
+      }));
+      showChoice({
+        title: "Boutique du Puits",
+        subtitle: "Achetez une relique ou soignez-vous, puis continuez.",
+        meta: `${state.gold} or`,
+        choices: [
+          ...items.map(item => ({
+            title: item.relic.name,
+            desc: `${item.relic.desc} Prix: ${item.price} or.`,
+            tag: "Achat",
+            disabled: state.gold < item.price,
+            run: () => {
+              if (state.gold < item.price) return;
+              state.gold -= item.price;
+              awardRelic(item.relic);
+              advanceFloor();
+            }
+          })),
+          {
+            title: "Bandages",
+            desc: "Soignez 16 PV. Prix: 16 or.",
+            tag: "Soin",
+            disabled: state.gold < 16,
+            run: () => {
+              if (state.gold < 16) return;
+              state.gold -= 16;
+              healPlayer(16, "Les bandages tiennent juste assez.");
+              advanceFloor();
+            }
+          }
+        ],
+        actions: [{ label: "Passer la boutique", run: () => advanceFloor() }]
+      });
+      updateUI();
+    }
+
+    function showEvent() {
+      state.roomType = "Evenement";
+      state.phase = "event";
+      const event = eventPool[Math.floor(Math.random() * eventPool.length)];
+      showChoice({
+        title: event.title,
+        subtitle: event.text,
+        meta: "Evenement",
+        choices: event.choices.map(choice => ({
+          title: choice.title,
+          desc: choice.desc,
+          tag: "Choix",
+          run: () => {
+            choice.run();
+            if (state.hp <= 0) showDefeat();
+            else advanceFloor();
+          }
+        })),
+        actions: []
+      });
+      updateUI();
+    }
+
+    function showVictory() {
+      state.phase = "victory";
+      state.roomType = "Victoire";
+      showChoice({
+        title: "Le Puits s'eteint",
+        subtitle: `Victoire en ${state.runStats.kills} combats. Degats totaux: ${state.runStats.totalDamage}. Meilleur combo: ${state.runStats.bestCombo}.`,
+        meta: "Run gagnee",
+        choices: [
+          { title: "Nouvelle run", desc: "Recommencer avec un plateau frais.", tag: "Restart", run: startRun },
+          { title: "Garder l'ecran", desc: "Observer le dernier plateau et les reliques.", tag: "Pause", run: () => ui.choiceScreen.classList.remove("active") },
+          { title: "Voir le design", desc: "Relire les fonctionnalites et taches du prototype.", tag: "Doc", run: showDesign }
+        ],
+        actions: []
+      });
+      updateUI();
+    }
+
+    function showDefeat() {
+      state.phase = "defeat";
+      state.roomType = "Defaite";
+      state.balls = [];
+      showChoice({
+        title: "La bille s'arrete",
+        subtitle: `Defaite a l'etage ${state.floor}. Degats totaux: ${state.runStats.totalDamage}. Meilleur combo: ${state.runStats.bestCombo}.`,
+        meta: "Run perdue",
+        choices: [
+          { title: "Nouvelle run", desc: "Retenter avec de nouveaux choix.", tag: "Restart", run: startRun },
+          { title: "Voir le design", desc: "Ouvrir la liste des fonctionnalites et taches.", tag: "Doc", run: showDesign },
+          { title: "Fermer", desc: "Rester sur le plateau actuel.", tag: "Pause", run: () => ui.choiceScreen.classList.remove("active") }
+        ],
+        actions: []
+      });
+      updateUI();
+    }
+
+    function showDesign() {
+      ui.closeDesignButton.style.display = state.started ? "inline-block" : "none";
+      ui.startScreen.classList.add("active");
+      ui.choiceScreen.classList.remove("active");
+    }
+
+    function showChoice(config) {
+      ui.startScreen.classList.remove("active");
+      ui.choiceScreen.classList.add("active");
+      ui.choiceTitle.textContent = config.title;
+      ui.choiceSubtitle.textContent = config.subtitle;
+      ui.choiceMeta.textContent = config.meta;
+      ui.choiceGrid.innerHTML = "";
+      ui.choiceActions.innerHTML = "";
+      config.choices.forEach(choice => {
+        const button = document.createElement("button");
+        button.className = "choice";
+        button.disabled = !!choice.disabled;
+        button.innerHTML = `<span class="pill">${choice.tag || "Choix"}</span><strong>${escapeHTML(choice.title)}</strong><small>${escapeHTML(choice.desc)}</small>`;
+        button.addEventListener("click", () => {
+          if (choice.disabled) return;
+          ui.choiceScreen.classList.remove("active");
+          choice.run();
+          updateUI();
+        });
+        ui.choiceGrid.appendChild(button);
+      });
+      (config.actions || []).forEach(action => {
+        const button = document.createElement("button");
+        button.textContent = action.label;
+        button.addEventListener("click", () => {
+          ui.choiceScreen.classList.remove("active");
+          action.run();
+          updateUI();
+        });
+        ui.choiceActions.appendChild(button);
+      });
+      updateUI();
+    }
+
+    function randomRelic() {
+      const available = relicPool.filter(relic => !state.usedRelicIds.has(relic.id));
+      return available.length ? available[Math.floor(Math.random() * available.length)] : relicPool[Math.floor(Math.random() * relicPool.length)];
+    }
+
+    function drawRelicOptions(count) {
+      const available = relicPool.filter(relic => !state.usedRelicIds.has(relic.id));
+      shuffle(available);
+      return available.slice(0, count);
+    }
+
+    function awardRelic(relic) {
+      if (!relic || state.usedRelicIds.has(relic.id)) {
+        gainGold(18, "Relique deja connue: elle se transforme en or.");
+        return;
+      }
+      state.relics.push(relic);
+      state.usedRelicIds.add(relic.id);
+      relic.apply(state);
+      log(`Relique obtenue: ${relic.name}.`);
+      updateUI();
+    }
+
+    function spendForRelic(price) {
+      if (state.gold < price) {
+        log("Pas assez d'or pour payer la voix.");
+        return;
+      }
+      state.gold -= price;
+      awardRelic(randomRelic());
+    }
+
+    function dropBall(x, orbId = state.selectedOrb, mirror = false) {
+      if (!state.started || state.phase !== "aim" || state.shotsLeft <= 0 || !state.enemy) return;
+      ensureAudio();
+      const orb = orbTypes.find(item => item.id === orbId) || orbTypes[0];
+      const clampedX = clamp(x, 70, W - 70);
+      const ball = {
+        x: clampedX,
+        y: 62,
+        vx: rand(-80, 80) + (clampedX - W / 2) * 0.15,
+        vy: 40,
+        r: orb.radius * (mirror ? 0.86 : 1),
+        color: orb.color,
+        type: orb.id,
+        mass: orb.mass,
+        collisions: 0,
+        bumpers: 0,
+        blocks: 0,
+        damageBonus: mirror ? -7 : 0,
+        life: 0,
+        trail: []
+      };
+      state.balls.push(ball);
+      state.phase = "rolling";
+      state.shotsLeft -= mirror ? 0 : 1;
+      state.lastShot = {
+        combo: 0,
+        damage: 0,
+        shield: 0,
+        heal: 0,
+        gold: 0,
+        orb: orb.id
+      };
+      playTone(180, 0.04, "triangle", 0.08);
+      if (!mirror && state.hasMirror && !state.mirrorUsed) {
+        state.mirrorUsed = true;
+        setTimeout(() => dropBall(clamp(clampedX + rand(-48, 48), 70, W - 70), orbId, true), 130);
+      }
+      updateUI();
+    }
+
+    function resolvePocket(ball) {
+      const pocket = state.board.pockets.find(item => ball.x >= item.x0 && ball.x < item.x1) || state.board.pockets[3];
+      let base = pocket.value;
+      let damage = 0;
+      let shield = 0;
+      let heal = 0;
+      let gold = 0;
+      const combo = ball.collisions + ball.bumpers * 2 + ball.blocks * 2;
+      state.runStats.bestCombo = Math.max(state.runStats.bestCombo, combo);
+
+      if (pocket.type === "damage") {
+        const forgeMult = ball.type === "forge" ? 1.35 : 1;
+        const tempMult = 1 + state.tempDamageBoost;
+        damage = Math.round((base + combo * 0.9 + ball.damageBonus) * state.damageMult * forgeMult * tempMult);
+      }
+      if (pocket.type === "shield") {
+        shield = base + Math.floor(combo * 0.5);
+        if (state.usedRelicIds.has("magnet")) shield += 2;
+      }
+      if (pocket.type === "heal") {
+        heal = base + Math.floor(combo / 8);
+      }
+      if (pocket.type === "gold") {
+        gold = base + Math.floor(combo / 6);
+        damage = Math.floor(combo * 0.35);
+      }
+
+      if (ball.type === "forge") {
+        damage += state.forgeBonus;
+      }
+      if (ball.type === "source") {
+        const sourceHeal = Math.floor(ball.collisions / 5) * state.sourceHealMult;
+        heal += sourceHeal;
+        shield += Math.floor(combo / 7);
+      }
+      if (ball.type === "veil") {
+        damage += ball.bumpers * state.veilBumperDamage;
+      }
+      if (state.comboNeedle > 0) {
+        damage += Math.floor(combo / 12) * state.comboNeedle;
+      }
+
+      state.shield += shield;
+      if (heal > 0) healPlayer(heal, `La poche ${pocket.label} rend ${heal} PV.`);
+      if (gold > 0) gainGold(gold, `La poche ${pocket.label} rapporte ${Math.round(gold * state.goldMult)} or.`);
+      if (damage > 0) damageEnemy(damage, `Poche ${pocket.label}`);
+      if (shield > 0) log(`Poche ${pocket.label}: +${shield} garde.`);
+      spawnFloater(ball.x, H - 115, `${pocket.label}`, pocket.color);
+      state.lastShot = { combo, damage, shield, heal, gold, orb: ball.type };
+      playTone(pocket.type === "damage" ? 260 : 360, 0.08, "sine", 0.08);
+
+      if (state.enemy && state.balls.length === 0) {
+        if (state.shotsLeft <= 0) {
+          setTimeout(endTurn, 560);
+        } else {
+          state.phase = "aim";
+        }
+      }
+      updateUI();
+    }
+
+    function update(dt) {
+      if (!state.board) return;
+      state.board.shake *= 0.9;
+      for (const peg of state.board.pegs) peg.hit = Math.max(0, peg.hit - dt * 5);
+      for (const bumper of state.board.bumpers) bumper.pulse = Math.max(0, bumper.pulse - dt * 4);
+      for (const block of state.board.blocks) block.flash = Math.max(0, block.flash - dt * 4);
+
+      for (let i = state.balls.length - 1; i >= 0; i -= 1) {
+        const ball = state.balls[i];
+        ball.life += dt;
+        ball.vy += GRAVITY * dt;
+        if (ball.type === "veil") ball.vy -= 70 * dt;
+        ball.x += ball.vx * dt;
+        ball.y += ball.vy * dt;
+        ball.vx *= 0.999;
+        ball.trail.push({ x: ball.x, y: ball.y });
+        if (ball.trail.length > 12) ball.trail.shift();
+
+        if (ball.x < WALL_PAD + ball.r) {
+          ball.x = WALL_PAD + ball.r;
+          ball.vx = Math.abs(ball.vx) * RESTITUTION;
+        }
+        if (ball.x > W - WALL_PAD - ball.r) {
+          ball.x = W - WALL_PAD - ball.r;
+          ball.vx = -Math.abs(ball.vx) * RESTITUTION;
+        }
+        if (ball.y < ball.r) {
+          ball.y = ball.r;
+          ball.vy = Math.abs(ball.vy) * 0.5;
+        }
+
+        for (const peg of state.board.pegs) {
+          collideCircle(ball, peg, peg.r, 1.02, () => {
+            peg.hit = 1;
+            ball.collisions += 1;
+            spawnParticles(peg.x, peg.y, palette.peg, 4);
+            playTone(450 + Math.random() * 90, 0.018, "sine", 0.025);
+          });
+        }
+
+        for (const bumper of state.board.bumpers) {
+          collideCircle(ball, bumper, bumper.r, 1.36 + (ball.type === "veil" ? state.veilBounce : 0), () => {
+            bumper.pulse = 1;
+            ball.bumpers += 1;
+            ball.collisions += ball.type === "veil" ? 2 : 1;
+            state.board.shake = 8;
+            spawnParticles(bumper.x, bumper.y, palette.bumper, 9);
+            playTone(180 + Math.random() * 80, 0.05, "square", 0.04);
+          });
+        }
+
+        for (let b = state.board.blocks.length - 1; b >= 0; b -= 1) {
+          const block = state.board.blocks[b];
+          if (collideBlock(ball, block)) {
+            const chip = ball.type === "forge" ? 2 : 1;
+            block.hp -= chip;
+            block.flash = 1;
+            ball.blocks += 1;
+            ball.collisions += 1;
+            spawnParticles(ball.x, ball.y, palette.block, 8);
+            playTone(120, 0.035, "sawtooth", 0.035);
+            if (block.hp <= 0) {
+              state.board.blocks.splice(b, 1);
+              gainGold(2, "Un bloc casse et libere 2 or.");
+            }
+          }
+        }
+
+        if (ball.y > H - 82) {
+          state.balls.splice(i, 1);
+          resolvePocket(ball);
+        } else if (ball.y > H + 80 || ball.life > 12) {
+          state.balls.splice(i, 1);
+          if (state.balls.length === 0) state.phase = state.shotsLeft > 0 ? "aim" : "enemy";
+        }
+      }
+
+      for (let i = state.particles.length - 1; i >= 0; i -= 1) {
+        const p = state.particles[i];
+        p.life -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 600 * dt;
+        if (p.life <= 0) state.particles.splice(i, 1);
+      }
+
+      for (let i = state.floaters.length - 1; i >= 0; i -= 1) {
+        const f = state.floaters[i];
+        f.life -= dt;
+        f.y -= 38 * dt;
+        if (f.life <= 0) state.floaters.splice(i, 1);
+      }
+
+      if (state.phase === "rolling" && state.balls.length === 0 && state.enemy) {
+        state.phase = state.shotsLeft > 0 ? "aim" : "enemy";
+        if (state.phase === "enemy") setTimeout(endTurn, 420);
+      }
+    }
+
+    function collideCircle(ball, target, radius, bounce, onHit) {
+      const dx = ball.x - target.x;
+      const dy = ball.y - target.y;
+      const dist = Math.hypot(dx, dy);
+      const min = ball.r + radius;
+      if (dist <= 0 || dist >= min) return false;
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const overlap = min - dist;
+      ball.x += nx * overlap;
+      ball.y += ny * overlap;
+      const dot = ball.vx * nx + ball.vy * ny;
+      if (dot < 0) {
+        ball.vx -= (1 + bounce) * dot * nx;
+        ball.vy -= (1 + bounce) * dot * ny;
+        ball.vx += rand(-24, 24);
+        onHit();
+      }
+      return true;
+    }
+
+    function collideBlock(ball, block) {
+      const cos = Math.cos(-block.angle);
+      const sin = Math.sin(-block.angle);
+      const dx = ball.x - block.x;
+      const dy = ball.y - block.y;
+      const lx = dx * cos - dy * sin;
+      const ly = dx * sin + dy * cos;
+      const hw = block.w / 2;
+      const hh = block.h / 2;
+      const cx = clamp(lx, -hw, hw);
+      const cy = clamp(ly, -hh, hh);
+      const ddx = lx - cx;
+      const ddy = ly - cy;
+      const distSq = ddx * ddx + ddy * ddy;
+      if (distSq > ball.r * ball.r) return false;
+      const dist = Math.sqrt(distSq) || 1;
+      const nxLocal = ddx / dist;
+      const nyLocal = ddy / dist;
+      const nx = nxLocal * cos + nyLocal * sin;
+      const ny = -nxLocal * sin + nyLocal * cos;
+      ball.x += nx * (ball.r - dist + 1);
+      ball.y += ny * (ball.r - dist + 1);
+      const dot = ball.vx * nx + ball.vy * ny;
+      if (dot < 0) {
+        ball.vx -= 1.8 * dot * nx;
+        ball.vy -= 1.8 * dot * ny;
+      }
+      return true;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      drawBackdrop();
+      if (state.board) {
+        const shakeX = rand(-state.board.shake, state.board.shake);
+        const shakeY = rand(-state.board.shake, state.board.shake);
+        ctx.save();
+        ctx.translate(shakeX, shakeY);
+        drawBoard();
+        ctx.restore();
+      }
+      drawParticles();
+      drawFloaters();
+      drawAim();
+    }
+
+    function drawBackdrop() {
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "#17202a");
+      grad.addColorStop(0.55, "#10171f");
+      grad.addColorStop(1, "#0c1116");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+      for (let y = 92; y < H; y += 74) {
+        ctx.beginPath();
+        ctx.moveTo(42, y);
+        ctx.lineTo(W - 42, y + Math.sin(y) * 8);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      roundRect(36, 34, W - 72, H - 74, 28);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.14)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    function drawBoard() {
+      drawPockets();
+      drawRails();
+      for (const peg of state.board.pegs) drawPeg(peg);
+      for (const bumper of state.board.bumpers) drawBumper(bumper);
+      for (const block of state.board.blocks) drawBlock(block);
+      for (const ball of state.balls) drawBall(ball);
+    }
+
+    function drawRails() {
+      ctx.save();
+      ctx.strokeStyle = "rgba(247,239,227,0.34)";
+      ctx.lineWidth = 8;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(WALL_PAD, 62);
+      ctx.quadraticCurveTo(56, 190, WALL_PAD, H - 110);
+      ctx.moveTo(W - WALL_PAD, 62);
+      ctx.quadraticCurveTo(W - 56, 190, W - WALL_PAD, H - 110);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPockets() {
+      const y = H - 95;
+      const h = 72;
+      for (const pocket of state.board.pockets) {
+        const w = pocket.x1 - pocket.x0;
+        ctx.fillStyle = "rgba(0,0,0,0.32)";
+        ctx.fillRect(pocket.x0, y, w, h);
+        ctx.fillStyle = pocket.color;
+        ctx.globalAlpha = 0.18;
+        ctx.fillRect(pocket.x0 + 3, y + 3, w - 6, h - 6);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = "rgba(255,255,255,0.22)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(pocket.x0, y, w, h);
+        ctx.fillStyle = "#f7efe3";
+        ctx.font = "800 22px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(pocket.label, pocket.x0 + w / 2, y + h / 2);
+      }
+    }
+
+    function drawPeg(peg) {
+      ctx.save();
+      ctx.translate(peg.x, peg.y);
+      const glow = peg.hit;
+      ctx.fillStyle = `rgba(216,231,248,${0.22 + glow * 0.28})`;
+      ctx.beginPath();
+      ctx.arc(0, 0, peg.r + 9 + glow * 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#d8e7f8";
+      ctx.beginPath();
+      ctx.arc(0, 0, peg.r + glow * 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(20,26,32,0.45)";
+      ctx.beginPath();
+      ctx.arc(-3, -3, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBumper(bumper) {
+      ctx.save();
+      ctx.translate(bumper.x, bumper.y);
+      const pulse = bumper.pulse;
+      ctx.fillStyle = `rgba(255,109,101,${0.18 + pulse * 0.24})`;
+      ctx.beginPath();
+      ctx.arc(0, 0, bumper.r + 16 + pulse * 12, 0, Math.PI * 2);
+      ctx.fill();
+      const grad = ctx.createRadialGradient(-7, -9, 3, 0, 0, bumper.r + 5);
+      grad.addColorStop(0, "#ffe08a");
+      grad.addColorStop(0.45, "#ff6d65");
+      grad.addColorStop(1, "#982f4d");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, bumper.r + pulse * 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.55)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawBlock(block) {
+      ctx.save();
+      ctx.translate(block.x, block.y);
+      ctx.rotate(block.angle);
+      ctx.fillStyle = block.flash > 0 ? "#f7efe3" : "rgba(115,199,255,0.72)";
+      roundRect(-block.w / 2, -block.h / 2, block.w, block.h, 6);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.38)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "rgba(7,12,17,0.7)";
+      ctx.font = "800 13px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(block.hp), 0, 0);
+      ctx.restore();
+    }
+
+    function drawBall(ball) {
+      ctx.save();
+      for (let i = 0; i < ball.trail.length; i += 1) {
+        const t = ball.trail[i];
+        ctx.globalAlpha = i / ball.trail.length * 0.22;
+        ctx.fillStyle = ball.color;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, ball.r * (i / ball.trail.length), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.translate(ball.x, ball.y);
+      const grad = ctx.createRadialGradient(-5, -7, 2, 0, 0, ball.r + 5);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.3, ball.color);
+      grad.addColorStop(1, "#10161d");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, ball.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.65)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      ctx.save();
+      for (const p of state.particles) {
+        ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawFloaters() {
+      ctx.save();
+      ctx.font = "800 20px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (const f of state.floaters) {
+        ctx.globalAlpha = clamp(f.life / f.maxLife, 0, 1);
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.fillText(f.text, f.x + 2, f.y + 2);
+        ctx.fillStyle = f.color;
+        ctx.fillText(f.text, f.x, f.y);
+      }
+      ctx.restore();
+    }
+
+    let pointerX = W / 2;
+    function drawAim() {
+      if (state.phase !== "aim" || ui.startScreen.classList.contains("active") || ui.choiceScreen.classList.contains("active")) return;
+      ctx.save();
+      ctx.strokeStyle = "rgba(246,196,83,0.55)";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 9]);
+      ctx.beginPath();
+      ctx.moveTo(pointerX, 48);
+      ctx.lineTo(pointerX, 150);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = orbTypes.find(item => item.id === state.selectedOrb).color;
+      ctx.beginPath();
+      ctx.arc(pointerX, 58, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i += 1) {
+        state.particles.push({
+          x,
+          y,
+          vx: rand(-150, 150),
+          vy: rand(-260, -40),
+          r: rand(2, 5),
+          color,
+          life: rand(0.22, 0.55),
+          maxLife: 0.55
+        });
+      }
+    }
+
+    function spawnFloater(x, y, text, color) {
+      state.floaters.push({ x, y, text, color, life: 1.1, maxLife: 1.1 });
+    }
+
+    function updateUI() {
+      ui.hpText.textContent = `${state.hp}/${state.maxHp}`;
+      ui.hpBar.style.width = `${clamp(state.hp / state.maxHp * 100, 0, 100)}%`;
+      ui.shieldText.textContent = String(state.shield);
+      ui.shieldBar.style.width = `${clamp(state.shield / 34 * 100, 0, 100)}%`;
+      ui.goldText.textContent = String(state.gold);
+      ui.floorText.textContent = `${Math.min(state.floor, state.maxFloor)}/${state.maxFloor}`;
+      ui.roomType.textContent = state.roomType;
+      ui.phaseText.textContent = phaseLabel(state.phase);
+      ui.shotText.textContent = `Tirs restants: ${state.shotsLeft}`;
+      ui.endTurnButton.disabled = !state.enemy || state.phase === "rolling" || state.phase === "menu";
+      ui.aimHelp.style.opacity = state.phase === "aim" && state.enemy ? "0.92" : "0";
+      ui.runHint.textContent = getRunHint();
+
+      if (state.enemy) {
+        ui.enemyName.textContent = state.enemy.name;
+        ui.enemyTrait.textContent = state.enemy.trait;
+        ui.enemyHpText.textContent = `${state.enemy.hp}/${state.enemy.maxHp}`;
+        ui.enemyShieldText.textContent = `Garde ${state.enemy.shield}`;
+        ui.enemyBar.style.width = `${clamp(state.enemy.hp / state.enemy.maxHp * 100, 0, 100)}%`;
+        const incoming = Math.max(1, state.enemy.attack - state.enemyAttackDown + intentBonus());
+        ui.intentMark.textContent = String(incoming);
+        ui.intentText.textContent = `Attaque ${incoming}`;
+        ui.intentDetail.textContent = state.enemy.trait === "Armure" ? "Regenere 3 garde apres son attaque." : "L'attaque part quand vos tirs sont epuises.";
+      } else {
+        ui.enemyName.textContent = "Aucun ennemi";
+        ui.enemyTrait.textContent = "-";
+        ui.enemyHpText.textContent = "0/0";
+        ui.enemyShieldText.textContent = "Garde 0";
+        ui.enemyBar.style.width = "0%";
+        ui.intentMark.textContent = "-";
+        ui.intentText.textContent = "Aucune menace";
+        ui.intentDetail.textContent = "Choisissez votre prochaine salle.";
+      }
+
+      const combo = state.lastShot ? state.lastShot.combo : 0;
+      ui.comboText.textContent = `Combo ${combo}`;
+      ui.effectGrid.innerHTML = "";
+      const effects = [
+        state.tempDamageBoost > 0 ? `Poches +${Math.round(state.tempDamageBoost * 100)}%` : null,
+        state.bonusShotsNext > 0 ? `Prochain combat +${state.bonusShotsNext} tirs` : null,
+        state.hasMirror ? "Miroir: double premier tir" : null,
+        state.damageMult > 1 ? `Degats x${state.damageMult.toFixed(2)}` : null
+      ].filter(Boolean);
+      if (!effects.length) effects.push("Aucun effet temporaire");
+      effects.forEach(text => {
+        const pill = document.createElement("span");
+        pill.className = "pill";
+        pill.textContent = text;
+        ui.effectGrid.appendChild(pill);
+      });
+
+      ui.relicGrid.innerHTML = "";
+      ui.relicCount.textContent = String(state.relics.length);
+      if (!state.relics.length) {
+        const empty = document.createElement("p");
+        empty.className = "subtle";
+        empty.textContent = "Aucune relique pour le moment.";
+        ui.relicGrid.appendChild(empty);
+      } else {
+        state.relics.forEach(relic => {
+          const item = document.createElement("div");
+          item.className = "relic";
+          item.innerHTML = `<div class="relic-icon">${escapeHTML(relic.icon)}</div><div><h3>${escapeHTML(relic.name)}</h3><p class="subtle">${escapeHTML(relic.desc)}</p></div>`;
+          ui.relicGrid.appendChild(item);
+        });
+      }
+
+      renderOrbButtons();
+    }
+
+    function renderOrbButtons() {
+      ui.orbPick.innerHTML = "";
+      orbTypes.forEach((orb, index) => {
+        const button = document.createElement("button");
+        button.className = `orb-button${state.selectedOrb === orb.id ? " selected" : ""}`;
+        button.title = `${orb.name}: ${orb.desc}`;
+        button.setAttribute("aria-label", `${orb.name}: ${orb.desc}`);
+        button.innerHTML = `<span class="orb-dot" style="color:${orb.color};background:${orb.color}"></span><span class="label">${index + 1}</span>`;
+        button.addEventListener("click", () => {
+          state.selectedOrb = orb.id;
+          updateUI();
+        });
+        ui.orbPick.appendChild(button);
+      });
+    }
+
+    function intentBonus() {
+      if (!state.enemy) return 0;
+      if (state.enemy.trait === "Rage" && state.enemy.hp < state.enemy.maxHp * 0.45) return 5;
+      if (state.enemy.trait === "Double" && state.enemy.turn % 2 === 0) return 6;
+      if (state.enemy.trait === "Boss" && state.enemy.hp < state.enemy.maxHp * 0.5) return 4;
+      return 0;
+    }
+
+    function getRunHint() {
+      if (state.phase === "menu") return "Lancez une run pour ouvrir le puits.";
+      if (state.phase === "aim") return "Visez une colonne. Le score depend de la poche et des collisions.";
+      if (state.phase === "rolling") return "La bille travaille. Les bumpers valent plus de combo.";
+      if (state.phase === "shop") return "Depensez l'or ou gardez-le pour la suite.";
+      if (state.phase === "event") return "Les evenements changent le rythme d'une run.";
+      if (state.phase === "reward") return "Une relique peut transformer toute la strategie.";
+      return "La run est terminee.";
+    }
+
+    function phaseLabel(phase) {
+      return {
+        menu: "Menu",
+        aim: "Visee",
+        rolling: "Bille en chute",
+        enemy: "Ennemi",
+        reward: "Recompense",
+        shop: "Boutique",
+        event: "Evenement",
+        victory: "Victoire",
+        defeat: "Defaite"
+      }[phase] || phase;
+    }
+
+    function log(text) {
+      const p = document.createElement("p");
+      p.textContent = text;
+      ui.log.prepend(p);
+      while (ui.log.children.length > 18) ui.log.removeChild(ui.log.lastChild);
+    }
+
+    function showToast(text) {
+      ui.toast.textContent = text;
+      ui.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => ui.toast.classList.remove("show"), 1600);
+    }
+
+    function resizeCanvasBacking() {
+      const rect = shell.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+    }
+
+    function toBoardX(clientX) {
+      const rect = canvas.getBoundingClientRect();
+      return clamp((clientX - rect.left) / rect.width * W, 55, W - 55);
+    }
+
+    function handlePointerMove(event) {
+      pointerX = toBoardX(event.clientX);
+    }
+
+    function handlePointerDown(event) {
+      if (ui.startScreen.classList.contains("active") || ui.choiceScreen.classList.contains("active")) return;
+      pointerX = toBoardX(event.clientX);
+      dropBall(pointerX);
+    }
+
+    function handleKey(event) {
+      if (event.key === "1" || event.key === "2" || event.key === "3") {
+        const orb = orbTypes[Number(event.key) - 1];
+        if (orb) {
+          state.selectedOrb = orb.id;
+          updateUI();
+        }
+      }
+      if (event.code === "Space") {
+        event.preventDefault();
+        dropBall(pointerX || W / 2);
+      }
+      if (event.key.toLowerCase() === "m") {
+        state.muted = !state.muted;
+        showToast(state.muted ? "Sons coupes" : "Sons actifs");
+      }
+    }
+
+    function ensureAudio() {
+      if (state.audioReady || state.muted) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        state.audio = new AudioContext();
+        state.audioReady = true;
+      } catch (error) {
+        state.muted = true;
+      }
+    }
+
+    function playTone(freq, duration, type, volume) {
+      if (!state.audioReady || state.muted || !state.audio) return;
+      const now = state.audio.currentTime;
+      const osc = state.audio.createOscillator();
+      const gain = state.audio.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.connect(gain);
+      gain.connect(state.audio.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    function shuffle(items) {
+      for (let i = items.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]];
+      }
+      return items;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function rand(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function escapeHTML(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function roundRect(x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
+    }
+
+    function loop(now) {
+      const dt = Math.min(0.033, (now - loop.last) / 1000 || 0.016);
+      loop.last = now;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    loop.last = performance.now();
+
+    window.addEventListener("resize", resizeCanvasBacking);
+    canvas.addEventListener("pointermove", handlePointerMove);
+    canvas.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKey);
+    ui.startGameButton.addEventListener("click", startRun);
+    ui.closeDesignButton.addEventListener("click", () => ui.startScreen.classList.remove("active"));
+    ui.newRunButton.addEventListener("click", startRun);
+    ui.endTurnButton.addEventListener("click", endTurn);
+    ui.designButton.addEventListener("click", showDesign);
+
+    resizeCanvasBacking();
+    state.board = createBoard(1);
+    updateUI();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

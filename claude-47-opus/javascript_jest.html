@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jest Mastery · Préparation entretien</title>
+<style>
+  :root {
+    --bg: #0b0d17;
+    --bg-2: #131626;
+    --surface: #1a1d2e;
+    --surface-2: #232742;
+    --border: #2d3252;
+    --text: #e6e9f2;
+    --muted: #9098b5;
+    --accent: #99425b;
+    --accent-2: #ff6b9d;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --code-bg: #0d1019;
+    --shadow: 0 8px 32px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 800px at 10% -10%, #1b1f3a 0%, transparent 60%),
+                radial-gradient(900px 700px at 110% 10%, #2a1a30 0%, transparent 55%),
+                var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  code, pre { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+
+  /* ===== TOPBAR ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(14px);
+    background: rgba(11,13,23,.7);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    max-width: 1400px; margin: 0 auto;
+    display: flex; align-items: center; gap: 1rem;
+    padding: .9rem 1.5rem;
+  }
+  .logo {
+    font-weight: 800; font-size: 1.15rem;
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .logo .blob {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #ff6b9d, #a78bfa);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(255,107,157,.4);
+    display: grid; place-items: center;
+    font-size: .85rem;
+  }
+  .nav {
+    display: flex; gap: .25rem; margin-left: 1rem;
+    flex-wrap: wrap;
+  }
+  .nav button {
+    background: transparent; color: var(--muted);
+    border: 1px solid transparent;
+    padding: .5rem .9rem; border-radius: 8px;
+    font: inherit; cursor: pointer;
+    transition: all .15s ease;
+  }
+  .nav button:hover { color: var(--text); background: var(--surface); }
+  .nav button.active {
+    color: var(--text);
+    background: var(--surface-2);
+    border-color: var(--border);
+  }
+  .progress-zone { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
+  .xp-pill {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: .4rem .75rem; border-radius: 999px;
+    font-size: .85rem; display: flex; align-items: center; gap: .4rem;
+  }
+  .xp-pill .star { color: var(--yellow); }
+  .streak { color: var(--accent-2); font-weight: 600; }
+
+  /* ===== LAYOUT ===== */
+  main {
+    max-width: 1400px; margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+  .view { display: none; animation: fade .3s ease; }
+  .view.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: .5rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.4rem; font-weight: 700; margin: 2rem 0 1rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: .5rem; }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 1.05rem; }
+
+  /* ===== HOME ===== */
+  .hero {
+    background: linear-gradient(135deg, rgba(255,107,157,.15), rgba(167,139,250,.1));
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: ""; position: absolute; right: -50px; top: -50px;
+    width: 250px; height: 250px;
+    background: radial-gradient(circle, rgba(255,107,157,.3), transparent 70%);
+    border-radius: 50%;
+  }
+  .hero h1 { font-size: 2.6rem; }
+  .hero p { color: var(--muted); max-width: 600px; font-size: 1.1rem; }
+  .hero .cta {
+    display: inline-flex; align-items: center; gap: .5rem;
+    margin-top: 1.5rem; padding: .8rem 1.5rem;
+    background: linear-gradient(135deg, #ff6b9d, #a78bfa);
+    color: #fff; border: none; border-radius: 10px;
+    font-weight: 600; cursor: pointer; font-size: 1rem;
+    box-shadow: 0 8px 24px rgba(255,107,157,.3);
+    transition: transform .15s ease;
+  }
+  .hero .cta:hover { transform: translateY(-2px); }
+
+  .grid {
+    display: grid; gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.5rem;
+    transition: all .2s ease; cursor: pointer;
+    position: relative;
+  }
+  .card:hover {
+    border-color: var(--accent-2);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+  }
+  .card .badge {
+    display: inline-block;
+    background: var(--surface-2); color: var(--muted);
+    padding: .15rem .5rem; border-radius: 6px;
+    font-size: .7rem; font-weight: 600;
+    margin-bottom: .75rem; letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .card.done .badge { background: rgba(74,222,128,.15); color: var(--green); }
+  .card h3 { font-size: 1.1rem; margin-bottom: .35rem; }
+  .card p { color: var(--muted); font-size: .9rem; }
+  .card .check {
+    position: absolute; top: 1rem; right: 1rem;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--green); display: none;
+    color: #0b0d17; font-weight: 800;
+    align-items: center; justify-content: center;
+    font-size: .8rem;
+  }
+  .card.done .check { display: flex; }
+
+  /* ===== LESSON ===== */
+  .lesson-header {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .back-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: .5rem .9rem;
+    border-radius: 8px; cursor: pointer; font: inherit;
+  }
+  .back-btn:hover { background: var(--surface-2); }
+  .lesson-content {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .lesson-content p { margin-bottom: 1rem; color: #cdd2e5; }
+  .lesson-content ul, .lesson-content ol { margin-left: 1.5rem; margin-bottom: 1rem; }
+  .lesson-content li { margin-bottom: .4rem; color: #cdd2e5; }
+  .lesson-content strong { color: var(--accent-2); font-weight: 600; }
+  .lesson-content em { color: var(--purple); font-style: normal; font-weight: 500; }
+
+  .callout {
+    border-left: 3px solid var(--accent-2);
+    background: rgba(255,107,157,.06);
+    padding: 1rem 1.25rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1rem 0;
+  }
+  .callout.warn { border-color: var(--yellow); background: rgba(251,191,36,.06); }
+  .callout.tip { border-color: var(--green); background: rgba(74,222,128,.06); }
+  .callout strong:first-child { display: block; margin-bottom: .25rem; }
+
+  pre.code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+    font-size: .88rem;
+    line-height: 1.55;
+    position: relative;
+  }
+  .code-label {
+    position: absolute; top: .5rem; right: .75rem;
+    font-size: .7rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .tok-kw { color: #c792ea; }
+  .tok-fn { color: #82aaff; }
+  .tok-str { color: #c3e88d; }
+  .tok-num { color: #f78c6c; }
+  .tok-com { color: #5c6370; font-style: italic; }
+  .tok-prop { color: #ffcb6b; }
+  .tok-op { color: #89ddff; }
+
+  code.inline {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    padding: .1rem .4rem;
+    border-radius: 5px;
+    font-size: .85em;
+    color: #ffcb6b;
+  }
+
+  .lesson-nav {
+    display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .lesson-nav button {
+    flex: 1; padding: .9rem 1.2rem;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    font: inherit; cursor: pointer; font-weight: 600;
+  }
+  .lesson-nav button.primary {
+    background: linear-gradient(135deg, #ff6b9d, #a78bfa);
+    border: none;
+  }
+  .lesson-nav button:disabled { opacity: .4; cursor: not-allowed; }
+  .lesson-nav button:not(:disabled):hover { transform: translateY(-1px); }
+
+  /* ===== QUIZ ===== */
+  .quiz-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 2rem;
+    max-width: 800px; margin: 0 auto;
+  }
+  .quiz-progress {
+    height: 6px; background: var(--surface-2);
+    border-radius: 999px; overflow: hidden; margin-bottom: 1.5rem;
+  }
+  .quiz-progress div {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b9d, #a78bfa);
+    transition: width .3s ease;
+  }
+  .quiz-question { font-size: 1.2rem; font-weight: 600; margin-bottom: 1.5rem; }
+  .answers { display: grid; gap: .6rem; }
+  .answer {
+    background: var(--bg-2); border: 1px solid var(--border);
+    padding: 1rem 1.2rem; border-radius: 10px;
+    cursor: pointer; transition: all .15s ease;
+    font: inherit; color: var(--text); text-align: left;
+    display: flex; align-items: center; gap: .75rem;
+  }
+  .answer:hover:not(:disabled) {
+    border-color: var(--accent-2);
+    background: var(--surface-2);
+  }
+  .answer .marker {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    display: grid; place-items: center;
+    font-size: .8rem; font-weight: 700; flex-shrink: 0;
+  }
+  .answer.correct { border-color: var(--green); background: rgba(74,222,128,.08); }
+  .answer.correct .marker { background: var(--green); color: #0b0d17; border-color: var(--green); }
+  .answer.wrong { border-color: var(--red); background: rgba(248,113,113,.08); }
+  .answer.wrong .marker { background: var(--red); color: #0b0d17; border-color: var(--red); }
+  .answer:disabled { cursor: not-allowed; }
+  .quiz-explain {
+    margin-top: 1.25rem;
+    background: var(--bg-2); border: 1px solid var(--border);
+    padding: 1rem 1.2rem; border-radius: 10px;
+    display: none;
+  }
+  .quiz-explain.show { display: block; animation: fade .3s ease; }
+  .quiz-explain strong { color: var(--accent-2); }
+
+  .quiz-result {
+    text-align: center;
+  }
+  .score-circle {
+    width: 160px; height: 160px;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent-2) calc(var(--p) * 1%), var(--surface-2) 0);
+    display: grid; place-items: center;
+    position: relative;
+  }
+  .score-circle::before {
+    content: ""; position: absolute; inset: 12px;
+    background: var(--surface); border-radius: 50%;
+  }
+  .score-circle .val { position: relative; font-size: 2.5rem; font-weight: 800; }
+
+  /* ===== FLASHCARDS ===== */
+  .flashcard-wrap { max-width: 700px; margin: 0 auto; }
+  .flashcard {
+    perspective: 1200px;
+    margin-bottom: 1rem;
+    height: 320px;
+  }
+  .flashcard-inner {
+    width: 100%; height: 100%;
+    transition: transform .6s;
+    transform-style: preserve-3d;
+    position: relative; cursor: pointer;
+  }
+  .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0;
+    border-radius: 16px; padding: 2rem;
+    backface-visibility: hidden;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    background: var(--surface); border: 1px solid var(--border);
+  }
+  .face.back { transform: rotateY(180deg); }
+  .face .term { font-size: 2rem; font-weight: 700; }
+  .face .definition { font-size: 1rem; line-height: 1.7; color: #cdd2e5; max-width: 100%; }
+  .face .definition code { background: var(--code-bg); padding: .1rem .4rem; border-radius: 4px; color: #ffcb6b; font-size: .9em; }
+  .flashcard-hint { text-align: center; color: var(--muted); font-size: .85rem; margin-bottom: 1rem; }
+  .flashcard-controls { display: flex; gap: .5rem; justify-content: center; }
+  .flashcard-controls button {
+    padding: .7rem 1.4rem; border-radius: 10px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; font: inherit;
+    font-weight: 600;
+  }
+  .flashcard-controls button:hover { background: var(--surface-2); }
+  .flashcard-controls .know { border-color: var(--green); color: var(--green); }
+  .flashcard-controls .know:hover { background: rgba(74,222,128,.1); }
+  .flashcard-controls .miss { border-color: var(--red); color: var(--red); }
+  .flashcard-controls .miss:hover { background: rgba(248,113,113,.1); }
+  .deck-info { text-align: center; color: var(--muted); margin-bottom: 1rem; font-size: .9rem; }
+
+  /* ===== CHEATSHEET ===== */
+  .sheet-grid {
+    display: grid; gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  }
+  .sheet-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem;
+  }
+  .sheet-card h3 {
+    color: var(--accent-2); font-size: 1rem;
+    margin-bottom: .75rem; letter-spacing: .02em;
+  }
+  .sheet-card pre.code { margin: 0; font-size: .82rem; }
+
+  /* ===== INTERVIEW Q ===== */
+  .qa-list { display: grid; gap: .75rem; }
+  .qa {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .qa summary {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem;
+  }
+  .qa summary::-webkit-details-marker { display: none; }
+  .qa summary::after {
+    content: "+"; color: var(--accent-2); font-size: 1.4rem; font-weight: 400;
+    transition: transform .2s;
+  }
+  .qa[open] summary::after { transform: rotate(45deg); }
+  .qa-body { padding: 0 1.25rem 1.25rem; color: #cdd2e5; }
+  .qa-body p { margin-bottom: .75rem; }
+  .qa-body pre.code { font-size: .82rem; }
+
+  /* ===== BADGES ===== */
+  .badges-row {
+    display: flex; gap: .75rem; flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .badge-item {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: .75rem 1rem; border-radius: 12px;
+    display: flex; align-items: center; gap: .6rem;
+    font-size: .9rem; opacity: .4;
+    transition: all .2s ease;
+  }
+  .badge-item.earned {
+    opacity: 1;
+    border-color: var(--accent-2);
+    background: linear-gradient(135deg, rgba(255,107,157,.12), rgba(167,139,250,.08));
+  }
+  .badge-item .ico { font-size: 1.4rem; }
+
+  /* Confetti */
+  .confetti {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 100; display: none;
+  }
+  .confetti.active { display: block; }
+
+  @media (max-width: 720px) {
+    .hero h1 { font-size: 1.8rem; }
+    .nav { width: 100%; order: 3; overflow-x: auto; }
+    .progress-zone { margin-left: auto; }
+    .lesson-content { padding: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">
+      <span class="blob">J</span>
+      <span>Jest Mastery</span>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-view="home" class="active">Accueil</button>
+      <button data-view="lessons">Leçons</button>
+      <button data-view="quiz">Quiz</button>
+      <button data-view="flashcards">Flashcards</button>
+      <button data-view="cheatsheet">Cheatsheet</button>
+      <button data-view="interview">Entretien</button>
+    </nav>
+    <div class="progress-zone">
+      <div class="xp-pill"><span class="star">★</span> <span id="xpVal">0</span> XP</div>
+      <div class="xp-pill">🔥 <span class="streak" id="streakVal">0</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- HOME -->
+  <section class="view active" id="view-home">
+    <div class="hero">
+      <h1>Maîtrise Jest pour ton entretien</h1>
+      <p>Une formation interactive et ciblée sur les spécificités de Jest que les recruteurs adorent tester chez les profils Fullstack React/Node.js. Mocks, async, snapshots, lifecycle… on couvre tout.</p>
+      <button class="cta" onclick="navigate('lessons')">Commencer les leçons →</button>
+    </div>
+
+    <h2>Ta progression</h2>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+      <div class="card" style="cursor:default;">
+        <div class="badge">Leçons</div>
+        <h3><span id="lessonsDone">0</span> / <span id="lessonsTotal">10</span></h3>
+        <p>Modules complétés</p>
+      </div>
+      <div class="card" style="cursor:default;">
+        <div class="badge">Quiz</div>
+        <h3 id="bestQuiz">—</h3>
+        <p>Meilleur score</p>
+      </div>
+      <div class="card" style="cursor:default;">
+        <div class="badge">Flashcards</div>
+        <h3><span id="cardsMastered">0</span> / <span id="cardsTotal">14</span></h3>
+        <p>Termes maîtrisés</p>
+      </div>
+      <div class="card" style="cursor:default;">
+        <div class="badge">XP Total</div>
+        <h3 id="xpTotal">0 XP</h3>
+        <p>Continue comme ça !</p>
+      </div>
+    </div>
+
+    <h2>Badges</h2>
+    <div class="badges-row" id="badgesRow"></div>
+
+    <h2>Démarrer rapidement</h2>
+    <div class="grid">
+      <div class="card" onclick="navigate('lessons')">
+        <div class="badge">📚 Apprendre</div>
+        <h3>10 leçons interactives</h3>
+        <p>De la structure d'un test aux mocks avancés et au testing async.</p>
+      </div>
+      <div class="card" onclick="navigate('quiz')">
+        <div class="badge">🎯 Tester</div>
+        <h3>Quiz d'entretien</h3>
+        <p>12 questions piochées dans les vraies questions techniques.</p>
+      </div>
+      <div class="card" onclick="navigate('flashcards')">
+        <div class="badge">⚡ Réviser</div>
+        <h3>Flashcards</h3>
+        <p>Mémorise les matchers, hooks et fonctions clés.</p>
+      </div>
+      <div class="card" onclick="navigate('cheatsheet')">
+        <div class="badge">📋 Référence</div>
+        <h3>Cheatsheet complet</h3>
+        <p>Tous les patterns prêts à copier-coller pour ton entretien.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LESSONS LIST -->
+  <section class="view" id="view-lessons">
+    <h1>Leçons</h1>
+    <p class="subtitle">Progresse de la base au niveau senior, à ton rythme.</p>
+    <div class="grid" id="lessonsList"></div>
+  </section>
+
+  <!-- LESSON DETAIL -->
+  <section class="view" id="view-lesson">
+    <div class="lesson-header">
+      <button class="back-btn" onclick="navigate('lessons')">← Retour</button>
+      <div>
+        <div style="color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.08em;" id="lessonStep">Leçon 1/10</div>
+        <h1 id="lessonTitle" style="font-size:1.6rem;">…</h1>
+      </div>
+    </div>
+    <div class="lesson-content" id="lessonContent"></div>
+    <div class="lesson-nav">
+      <button id="prevLesson">← Précédent</button>
+      <button id="completeLesson" class="primary">Marquer comme terminé (+50 XP)</button>
+      <button id="nextLesson">Suivant →</button>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="view" id="view-quiz">
+    <h1>Quiz d'entretien</h1>
+    <p class="subtitle">12 questions tirées de vrais entretiens Fullstack React/Node.</p>
+    <div class="quiz-card" id="quizCard"></div>
+  </section>
+
+  <!-- FLASHCARDS -->
+  <section class="view" id="view-flashcards">
+    <h1>Flashcards</h1>
+    <p class="subtitle">Clique pour retourner la carte. Marque-la pour suivre ta progression.</p>
+    <div class="flashcard-wrap" id="flashWrap"></div>
+  </section>
+
+  <!-- CHEATSHEET -->
+  <section class="view" id="view-cheatsheet">
+    <h1>Cheatsheet Jest</h1>
+    <p class="subtitle">Tout ce qu'il faut savoir, condensé. Idéal pour relire avant l'entretien.</p>
+    <div class="sheet-grid" id="sheetGrid"></div>
+  </section>
+
+  <!-- INTERVIEW Q&A -->
+  <section class="view" id="view-interview">
+    <h1>Questions d'entretien</h1>
+    <p class="subtitle">Les questions Jest les plus posées en entretien Fullstack, avec des réponses prêtes à dire.</p>
+    <div class="qa-list" id="qaList"></div>
+  </section>
+
+</main>
+
+<canvas class="confetti" id="confetti"></canvas>
+
+<script>
+/* =========================================================================
+   DATA
+   ========================================================================= */
+
+const LESSONS = [
+  {
+    id: 'intro',
+    title: 'Jest, qu\'est-ce que c\'est ?',
+    badge: 'Bases',
+    desc: 'Vue d\'ensemble du framework et de son écosystème.',
+    content: `
+      <p><strong>Jest</strong> est un framework de test JavaScript créé par Meta, devenu le standard de l'écosystème React/Node.js. Il regroupe en <em>un seul outil</em> ce qui était autrefois éclaté entre Mocha (runner), Chai (assertions), Sinon (mocks) et Istanbul (coverage).</p>
+      <h3>Ce qui rend Jest spécifique</h3>
+      <ul>
+        <li><strong>Zero-config</strong> : fonctionne hors de la boîte avec un projet React (CRA) ou Node basique.</li>
+        <li><strong>Tests parallèles</strong> : chaque fichier de test tourne dans son propre <em>worker</em> Node — isolation totale entre fichiers.</li>
+        <li><strong>Mocks intégrés</strong> : <code class="inline">jest.fn()</code>, <code class="inline">jest.mock()</code>, <code class="inline">jest.spyOn()</code> sans dépendance externe.</li>
+        <li><strong>Snapshot testing</strong> : capture une structure (DOM, objet) et alerte quand elle change.</li>
+        <li><strong>Coverage natif</strong> : <code class="inline">jest --coverage</code> et c'est fini.</li>
+        <li><strong>Watch mode intelligent</strong> : ne relance que les tests impactés par tes changements (via Git).</li>
+      </ul>
+      <div class="callout tip"><strong>💡 À retenir pour l'entretien</strong>Jest privilégie la <em>convention sur la configuration</em>. Tu peux livrer un test sans configurer un runner, un mock library et une lib d'assertions. C'est son principal argument vs Mocha + Chai + Sinon.</div>
+      <h3>Anatomie d'un test</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-com">// sum.test.js</span>
+<span class="tok-kw">const</span> sum = <span class="tok-fn">require</span>(<span class="tok-str">'./sum'</span>);
+
+<span class="tok-fn">describe</span>(<span class="tok-str">'sum()'</span>, () <span class="tok-op">=&gt;</span> {
+  <span class="tok-fn">test</span>(<span class="tok-str">'addition basique'</span>, () <span class="tok-op">=&gt;</span> {
+    <span class="tok-fn">expect</span>(<span class="tok-fn">sum</span>(<span class="tok-num">1</span>, <span class="tok-num">2</span>)).<span class="tok-prop">toBe</span>(<span class="tok-num">3</span>);
+  });
+});</pre>
+      <p><code class="inline">describe</code> groupe, <code class="inline">test</code> (alias <code class="inline">it</code>) déclare un cas, <code class="inline">expect</code> introduit une assertion. C'est <strong>la</strong> structure de base.</p>
+    `
+  },
+  {
+    id: 'matchers',
+    title: 'Les matchers : toBe, toEqual & co',
+    badge: 'Assertions',
+    desc: 'Le piège classique en entretien : toBe vs toEqual.',
+    content: `
+      <p>Les <strong>matchers</strong> sont les méthodes que tu chaînes après <code class="inline">expect()</code>. Connaître la nuance entre <code class="inline">toBe</code> et <code class="inline">toEqual</code> est <em>quasi systématiquement</em> demandé en entretien.</p>
+      <h3>Égalité : toBe vs toEqual</h3>
+      <ul>
+        <li><strong>toBe</strong> : égalité référentielle (<code class="inline">Object.is</code>). Pour les primitifs ou la même référence.</li>
+        <li><strong>toEqual</strong> : égalité structurelle (récursive). Pour les objets et les tableaux.</li>
+        <li><strong>toStrictEqual</strong> : comme <code class="inline">toEqual</code> mais plus strict — distingue <code class="inline">undefined</code> des props absentes, et vérifie les types/classes.</li>
+      </ul>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">expect</span>({ a: <span class="tok-num">1</span> }).<span class="tok-prop">toBe</span>({ a: <span class="tok-num">1</span> });        <span class="tok-com">// ❌ FAIL — pas la même réf</span>
+<span class="tok-fn">expect</span>({ a: <span class="tok-num">1</span> }).<span class="tok-prop">toEqual</span>({ a: <span class="tok-num">1</span> });     <span class="tok-com">// ✅ PASS</span>
+<span class="tok-fn">expect</span>({ a: <span class="tok-kw">undefined</span>, b: <span class="tok-num">2</span> }).<span class="tok-prop">toEqual</span>({ b: <span class="tok-num">2</span> });        <span class="tok-com">// ✅ PASS</span>
+<span class="tok-fn">expect</span>({ a: <span class="tok-kw">undefined</span>, b: <span class="tok-num">2</span> }).<span class="tok-prop">toStrictEqual</span>({ b: <span class="tok-num">2</span> });  <span class="tok-com">// ❌ FAIL</span></pre>
+      <h3>Les matchers les plus utilisés</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-com">// Vérités</span>
+<span class="tok-fn">expect</span>(val).<span class="tok-prop">toBeTruthy</span>();
+<span class="tok-fn">expect</span>(val).<span class="tok-prop">toBeFalsy</span>();
+<span class="tok-fn">expect</span>(val).<span class="tok-prop">toBeNull</span>();
+<span class="tok-fn">expect</span>(val).<span class="tok-prop">toBeUndefined</span>();
+<span class="tok-fn">expect</span>(val).<span class="tok-prop">toBeDefined</span>();
+
+<span class="tok-com">// Nombres</span>
+<span class="tok-fn">expect</span>(price).<span class="tok-prop">toBeGreaterThan</span>(<span class="tok-num">10</span>);
+<span class="tok-fn">expect</span>(price).<span class="tok-prop">toBeCloseTo</span>(<span class="tok-num">0.3</span>);  <span class="tok-com">// pour les floats</span>
+
+<span class="tok-com">// Strings & arrays</span>
+<span class="tok-fn">expect</span>(<span class="tok-str">'pizza'</span>).<span class="tok-prop">toMatch</span>(<span class="tok-str">/zz/</span>);
+<span class="tok-fn">expect</span>(arr).<span class="tok-prop">toContain</span>(<span class="tok-str">'item'</span>);
+<span class="tok-fn">expect</span>(arr).<span class="tok-prop">toHaveLength</span>(<span class="tok-num">3</span>);
+<span class="tok-fn">expect</span>(obj).<span class="tok-prop">toHaveProperty</span>(<span class="tok-str">'user.name'</span>, <span class="tok-str">'Alice'</span>);
+
+<span class="tok-com">// Exceptions — la fonction doit être passée en callback !</span>
+<span class="tok-fn">expect</span>(() <span class="tok-op">=&gt;</span> <span class="tok-fn">divide</span>(<span class="tok-num">1</span>, <span class="tok-num">0</span>)).<span class="tok-prop">toThrow</span>(<span class="tok-str">'division par zéro'</span>);
+
+<span class="tok-com">// Négation</span>
+<span class="tok-fn">expect</span>(val).<span class="tok-prop">not</span>.<span class="tok-prop">toBe</span>(<span class="tok-num">5</span>);</pre>
+      <div class="callout warn"><strong>⚠️ Piège classique</strong>Pour tester qu'une fonction throw, il faut l'<strong>envelopper</strong> dans un callback. Sinon l'exception est levée avant <code class="inline">expect</code> et le test crash.</div>
+    `
+  },
+  {
+    id: 'lifecycle',
+    title: 'Hooks de cycle de vie',
+    badge: 'Structure',
+    desc: 'beforeEach, afterAll & isolation des tests.',
+    content: `
+      <p>Jest fournit 4 hooks pour gérer le <em>setup/teardown</em> autour de tes tests. Bien les utiliser garantit que chaque test reste <strong>isolé</strong> et <strong>déterministe</strong>.</p>
+      <h3>Les 4 hooks</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">describe</span>(<span class="tok-str">'UserService'</span>, () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">let</span> db;
+
+  <span class="tok-fn">beforeAll</span>(<span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> {
+    <span class="tok-com">// 1× avant tous les tests du describe</span>
+    db = <span class="tok-kw">await</span> <span class="tok-fn">connectTestDb</span>();
+  });
+
+  <span class="tok-fn">afterAll</span>(<span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> {
+    <span class="tok-com">// 1× après tous les tests</span>
+    <span class="tok-kw">await</span> db.<span class="tok-fn">disconnect</span>();
+  });
+
+  <span class="tok-fn">beforeEach</span>(<span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> {
+    <span class="tok-com">// avant CHAQUE test → garantit l'isolation</span>
+    <span class="tok-kw">await</span> db.<span class="tok-fn">seed</span>(fixtures);
+  });
+
+  <span class="tok-fn">afterEach</span>(<span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> {
+    <span class="tok-com">// après CHAQUE test → nettoyage</span>
+    <span class="tok-kw">await</span> db.<span class="tok-fn">truncate</span>();
+  });
+
+  <span class="tok-fn">test</span>(<span class="tok-str">'crée un user'</span>, <span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> { <span class="tok-com">/* ... */</span> });
+});</pre>
+      <h3>Ordre d'exécution</h3>
+      <p>Pour <strong>chaque</strong> test : <code class="inline">beforeAll(outer)</code> → <code class="inline">beforeAll(inner)</code> → <code class="inline">beforeEach(outer)</code> → <code class="inline">beforeEach(inner)</code> → <strong>test</strong> → <code class="inline">afterEach(inner)</code> → <code class="inline">afterEach(outer)</code> → … → <code class="inline">afterAll</code> à la toute fin.</p>
+      <div class="callout tip"><strong>💡 Bonne pratique</strong>Utilise <code class="inline">beforeEach</code> pour <em>réinitialiser l'état</em> plutôt que <code class="inline">beforeAll</code>. Les tests deviennent indépendants : tu peux en lancer un seul (<code class="inline">test.only</code>) sans casser l'ordre.</div>
+      <h3>Reset des mocks</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">beforeEach</span>(() <span class="tok-op">=&gt;</span> {
+  jest.<span class="tok-fn">clearAllMocks</span>();    <span class="tok-com">// .mock.calls = []</span>
+  <span class="tok-com">// ou</span>
+  jest.<span class="tok-fn">resetAllMocks</span>();    <span class="tok-com">// + remet les implémentations à zéro</span>
+  <span class="tok-com">// ou</span>
+  jest.<span class="tok-fn">restoreAllMocks</span>();  <span class="tok-com">// + restaure les vraies implémentations (spyOn)</span>
+});</pre>
+      <p>Ou globalement via <code class="inline">jest.config.js</code> : <code class="inline">{ clearMocks: true }</code>.</p>
+    `
+  },
+  {
+    id: 'mock-fn',
+    title: 'jest.fn() — Mock functions',
+    badge: 'Mocks',
+    desc: 'Créer des fonctions espionnes pour observer les appels.',
+    content: `
+      <p>Une <strong>mock function</strong> (<code class="inline">jest.fn()</code>) est une fonction qui enregistre tout ce qu'elle reçoit : arguments, contexte, valeurs retournées, instances créées. C'est la brique de base du mocking dans Jest.</p>
+      <h3>Création et inspection</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-kw">const</span> callback = jest.<span class="tok-fn">fn</span>();
+
+<span class="tok-fn">callback</span>(<span class="tok-str">'a'</span>, <span class="tok-num">1</span>);
+<span class="tok-fn">callback</span>(<span class="tok-str">'b'</span>, <span class="tok-num">2</span>);
+
+<span class="tok-fn">expect</span>(callback).<span class="tok-prop">toHaveBeenCalled</span>();
+<span class="tok-fn">expect</span>(callback).<span class="tok-prop">toHaveBeenCalledTimes</span>(<span class="tok-num">2</span>);
+<span class="tok-fn">expect</span>(callback).<span class="tok-prop">toHaveBeenCalledWith</span>(<span class="tok-str">'a'</span>, <span class="tok-num">1</span>);
+<span class="tok-fn">expect</span>(callback).<span class="tok-prop">toHaveBeenLastCalledWith</span>(<span class="tok-str">'b'</span>, <span class="tok-num">2</span>);
+<span class="tok-fn">expect</span>(callback).<span class="tok-prop">toHaveBeenNthCalledWith</span>(<span class="tok-num">1</span>, <span class="tok-str">'a'</span>, <span class="tok-num">1</span>);
+
+<span class="tok-com">// Accès brut au registre des appels</span>
+callback.mock.calls;     <span class="tok-com">// [['a',1], ['b',2]]</span>
+callback.mock.results;   <span class="tok-com">// [{ type: 'return', value: undefined }, ...]</span></pre>
+      <h3>Contrôler ce que la mock retourne</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-kw">const</span> fetcher = jest.<span class="tok-fn">fn</span>()
+  .<span class="tok-fn">mockReturnValue</span>(<span class="tok-str">'default'</span>)
+  .<span class="tok-fn">mockReturnValueOnce</span>(<span class="tok-str">'first'</span>)
+  .<span class="tok-fn">mockReturnValueOnce</span>(<span class="tok-str">'second'</span>);
+
+<span class="tok-fn">fetcher</span>(); <span class="tok-com">// 'first'</span>
+<span class="tok-fn">fetcher</span>(); <span class="tok-com">// 'second'</span>
+<span class="tok-fn">fetcher</span>(); <span class="tok-com">// 'default'</span>
+
+<span class="tok-com">// Async</span>
+<span class="tok-kw">const</span> api = jest.<span class="tok-fn">fn</span>()
+  .<span class="tok-fn">mockResolvedValue</span>({ ok: <span class="tok-kw">true</span> })
+  .<span class="tok-fn">mockRejectedValueOnce</span>(<span class="tok-kw">new</span> <span class="tok-fn">Error</span>(<span class="tok-str">'fail'</span>));
+
+<span class="tok-com">// Implémentation custom</span>
+<span class="tok-kw">const</span> sum = jest.<span class="tok-fn">fn</span>((a, b) <span class="tok-op">=&gt;</span> a + b);</pre>
+      <h3>Cas d'usage classique : tester un callback</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">test</span>(<span class="tok-str">'forEach itère sur chaque élément'</span>, () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">const</span> spy = jest.<span class="tok-fn">fn</span>();
+  [<span class="tok-num">1</span>, <span class="tok-num">2</span>, <span class="tok-num">3</span>].<span class="tok-fn">forEach</span>(spy);
+
+  <span class="tok-fn">expect</span>(spy).<span class="tok-prop">toHaveBeenCalledTimes</span>(<span class="tok-num">3</span>);
+  <span class="tok-fn">expect</span>(spy.mock.calls[<span class="tok-num">0</span>][<span class="tok-num">0</span>]).<span class="tok-prop">toBe</span>(<span class="tok-num">1</span>);
+});</pre>
+      <div class="callout tip"><strong>💡 En entretien</strong>Sache distinguer <code class="inline">mockReturnValue</code> (sync) de <code class="inline">mockResolvedValue</code> (renvoie une Promise résolue) — c'est typiquement demandé sur du code Node async.</div>
+    `
+  },
+  {
+    id: 'mock-modules',
+    title: 'jest.mock() — Mocker des modules',
+    badge: 'Mocks',
+    desc: 'Remplacer un module entier (axios, fs, etc.) dans tes tests.',
+    content: `
+      <p><code class="inline">jest.mock()</code> remplace un module <em>entier</em> par une version mockée. C'est essentiel pour isoler ton code des dépendances externes (HTTP, BDD, FS).</p>
+      <h3>Mocking basique</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-com">// users.test.js</span>
+<span class="tok-kw">import</span> axios <span class="tok-kw">from</span> <span class="tok-str">'axios'</span>;
+<span class="tok-kw">import</span> { fetchUser } <span class="tok-kw">from</span> <span class="tok-str">'./users'</span>;
+
+jest.<span class="tok-fn">mock</span>(<span class="tok-str">'axios'</span>);  <span class="tok-com">// auto-mock : toutes les méthodes deviennent jest.fn()</span>
+
+<span class="tok-fn">test</span>(<span class="tok-str">'récupère un user'</span>, <span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> {
+  axios.get.<span class="tok-fn">mockResolvedValue</span>({ data: { id: <span class="tok-num">1</span>, name: <span class="tok-str">'Alice'</span> } });
+
+  <span class="tok-kw">const</span> user = <span class="tok-kw">await</span> <span class="tok-fn">fetchUser</span>(<span class="tok-num">1</span>);
+
+  <span class="tok-fn">expect</span>(axios.get).<span class="tok-prop">toHaveBeenCalledWith</span>(<span class="tok-str">'/api/users/1'</span>);
+  <span class="tok-fn">expect</span>(user.name).<span class="tok-prop">toBe</span>(<span class="tok-str">'Alice'</span>);
+});</pre>
+      <h3>Le hoisting de jest.mock</h3>
+      <div class="callout warn"><strong>⚠️ Magie babel-jest</strong>Jest <em>hoiste</em> les <code class="inline">jest.mock()</code> tout en haut du fichier, AVANT les <code class="inline">import</code>. C'est pour ça que tu peux écrire <code class="inline">jest.mock</code> sous les imports — au runtime, c'est l'inverse. Conséquence : tu <strong>ne peux pas</strong> référencer une variable hors-mock dans la factory (sauf si elle commence par <code class="inline">mock</code>).</div>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-com">// ❌ ReferenceError — fakeData n'existe pas encore au hoisting</span>
+<span class="tok-kw">const</span> fakeData = { id: <span class="tok-num">1</span> };
+jest.<span class="tok-fn">mock</span>(<span class="tok-str">'./db'</span>, () <span class="tok-op">=&gt;</span> ({ <span class="tok-fn">getUser</span>: () <span class="tok-op">=&gt;</span> fakeData }));
+
+<span class="tok-com">// ✅ OK — préfixe "mock"</span>
+<span class="tok-kw">const</span> mockData = { id: <span class="tok-num">1</span> };
+jest.<span class="tok-fn">mock</span>(<span class="tok-str">'./db'</span>, () <span class="tok-op">=&gt;</span> ({ <span class="tok-fn">getUser</span>: () <span class="tok-op">=&gt;</span> mockData }));</pre>
+      <h3>Mock partiel avec requireActual</h3>
+      <p>Pour ne remplacer qu'une partie d'un module et garder le reste réel :</p>
+      <pre class="code"><span class="code-label">JS</span>jest.<span class="tok-fn">mock</span>(<span class="tok-str">'./math'</span>, () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">const</span> actual = jest.<span class="tok-fn">requireActual</span>(<span class="tok-str">'./math'</span>);
+  <span class="tok-kw">return</span> {
+    ...actual,
+    <span class="tok-fn">random</span>: () <span class="tok-op">=&gt;</span> <span class="tok-num">0.42</span>,  <span class="tok-com">// on override juste celle-ci</span>
+  };
+});</pre>
+      <h3>Mocks manuels — dossier __mocks__</h3>
+      <p>Tu peux placer un mock partagé dans <code class="inline">__mocks__/axios.js</code> à côté de <code class="inline">node_modules</code>. Pour les modules npm, le mock est <em>auto-utilisé</em> dès <code class="inline">jest.mock('axios')</code>.</p>
+    `
+  },
+  {
+    id: 'spyon',
+    title: 'jest.spyOn() — Espionner sans casser',
+    badge: 'Mocks',
+    desc: 'La différence cruciale entre mock et spy.',
+    content: `
+      <p><code class="inline">jest.spyOn(obj, 'method')</code> crée un <strong>espion</strong> sur une méthode existante : par défaut, l'implémentation originale est conservée — tu observes les appels sans changer le comportement.</p>
+      <h3>spy vs mock</h3>
+      <ul>
+        <li><strong>jest.fn()</strong> : crée une fonction <em>from scratch</em>. Pas d'implémentation réelle.</li>
+        <li><strong>jest.spyOn()</strong> : enrobe une méthode <em>existante</em>. Tu gardes l'original ou tu peux le remplacer.</li>
+        <li><strong>jest.mock()</strong> : remplace un module entier (mocking automatique ou via factory).</li>
+      </ul>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-kw">const</span> calculator = {
+  <span class="tok-fn">add</span>: (a, b) <span class="tok-op">=&gt;</span> a + b,
+};
+
+<span class="tok-fn">test</span>(<span class="tok-str">'spy observe les appels'</span>, () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">const</span> spy = jest.<span class="tok-fn">spyOn</span>(calculator, <span class="tok-str">'add'</span>);
+
+  <span class="tok-fn">expect</span>(calculator.<span class="tok-fn">add</span>(<span class="tok-num">2</span>, <span class="tok-num">3</span>)).<span class="tok-prop">toBe</span>(<span class="tok-num">5</span>);  <span class="tok-com">// vraie impl</span>
+  <span class="tok-fn">expect</span>(spy).<span class="tok-prop">toHaveBeenCalledWith</span>(<span class="tok-num">2</span>, <span class="tok-num">3</span>);
+
+  spy.<span class="tok-fn">mockRestore</span>();  <span class="tok-com">// restaure l'original — essentiel !</span>
+});</pre>
+      <h3>Cas d'usage : espionner console.error</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">test</span>(<span class="tok-str">'log une erreur sans polluer la console'</span>, () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">const</span> errorSpy = jest.<span class="tok-fn">spyOn</span>(console, <span class="tok-str">'error'</span>).<span class="tok-fn">mockImplementation</span>();
+
+  <span class="tok-fn">runFailingCode</span>();
+
+  <span class="tok-fn">expect</span>(errorSpy).<span class="tok-prop">toHaveBeenCalledWith</span>(<span class="tok-fn">expect</span>.<span class="tok-fn">stringContaining</span>(<span class="tok-str">'Error'</span>));
+  errorSpy.<span class="tok-fn">mockRestore</span>();
+});</pre>
+      <div class="callout tip"><strong>💡 Réflexe entretien</strong>Si on te demande "comment teste-t-on qu'une fonction interne a été appelée sans changer son comportement ?" → <strong>spyOn</strong>. Si on te demande "comment isole-t-on un appel HTTP ?" → <strong>jest.mock</strong>.</div>
+    `
+  },
+  {
+    id: 'async',
+    title: 'Tests asynchrones',
+    badge: 'Async',
+    desc: 'async/await, resolves/rejects, et le piège du done.',
+    content: `
+      <p>Trois façons d'écrire un test async — l'ordre indique la <em>préférence moderne</em>.</p>
+      <h3>1. async/await (recommandé)</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">test</span>(<span class="tok-str">'fetch user'</span>, <span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">const</span> user = <span class="tok-kw">await</span> <span class="tok-fn">fetchUser</span>(<span class="tok-num">1</span>);
+  <span class="tok-fn">expect</span>(user.id).<span class="tok-prop">toBe</span>(<span class="tok-num">1</span>);
+});
+
+<span class="tok-com">// Tester un rejet</span>
+<span class="tok-fn">test</span>(<span class="tok-str">'fetch fails'</span>, <span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">await</span> <span class="tok-fn">expect</span>(<span class="tok-fn">fetchUser</span>(<span class="tok-num">999</span>)).<span class="tok-prop">rejects</span>.<span class="tok-prop">toThrow</span>(<span class="tok-str">'Not found'</span>);
+});</pre>
+      <h3>2. .resolves / .rejects</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">test</span>(<span class="tok-str">'fetch resolves'</span>, () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">return</span> <span class="tok-fn">expect</span>(<span class="tok-fn">fetchUser</span>(<span class="tok-num">1</span>)).<span class="tok-prop">resolves</span>.<span class="tok-prop">toHaveProperty</span>(<span class="tok-str">'id'</span>, <span class="tok-num">1</span>);
+  <span class="tok-com">// ⚠ N'OUBLIE PAS le \`return\` ou Jest ne saura pas qu'il faut attendre</span>
+});</pre>
+      <h3>3. callback "done" (legacy, à éviter)</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">test</span>(<span class="tok-str">'callback style'</span>, (done) <span class="tok-op">=&gt;</span> {
+  <span class="tok-fn">fetchUser</span>(<span class="tok-num">1</span>, (err, user) <span class="tok-op">=&gt;</span> {
+    <span class="tok-kw">try</span> {
+      <span class="tok-fn">expect</span>(user.id).<span class="tok-prop">toBe</span>(<span class="tok-num">1</span>);
+      <span class="tok-fn">done</span>();
+    } <span class="tok-kw">catch</span> (e) { <span class="tok-fn">done</span>(e); }
+  });
+});</pre>
+      <div class="callout warn"><strong>⚠️ Pièges fréquents</strong>
+        <ul style="margin-top:.5rem;">
+          <li>Oublier <code class="inline">await</code> ou <code class="inline">return</code> → le test passe alors qu'il devrait échouer.</li>
+          <li>Mélanger <code class="inline">done</code> et <code class="inline">async</code> → Jest crashe.</li>
+          <li>Oublier <code class="inline">expect.assertions(n)</code> dans un test où le rejet peut ne pas se déclencher.</li>
+        </ul>
+      </div>
+      <h3>expect.assertions — sécuriser les chemins async</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">test</span>(<span class="tok-str">'throw sur fetch invalide'</span>, <span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> {
+  <span class="tok-fn">expect</span>.<span class="tok-fn">assertions</span>(<span class="tok-num">1</span>);  <span class="tok-com">// garantit qu'au moins 1 expect est exécuté</span>
+  <span class="tok-kw">try</span> {
+    <span class="tok-kw">await</span> <span class="tok-fn">fetchUser</span>(<span class="tok-str">'bad'</span>);
+  } <span class="tok-kw">catch</span> (e) {
+    <span class="tok-fn">expect</span>(e.message).<span class="tok-prop">toMatch</span>(<span class="tok-str">/invalid/</span>);
+  }
+});</pre>
+    `
+  },
+  {
+    id: 'timers',
+    title: 'Fake timers — setTimeout, setInterval',
+    badge: 'Avancé',
+    desc: 'Tester du code avec délais sans attendre vraiment.',
+    content: `
+      <p>Jest peut remplacer les timers natifs par des versions <em>contrôlables</em>. Indispensable pour tester des debounces, polling, retries.</p>
+      <h3>Activation</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">beforeEach</span>(() <span class="tok-op">=&gt;</span> jest.<span class="tok-fn">useFakeTimers</span>());
+<span class="tok-fn">afterEach</span>(() <span class="tok-op">=&gt;</span> jest.<span class="tok-fn">useRealTimers</span>());
+
+<span class="tok-fn">test</span>(<span class="tok-str">'debounce attend 300ms'</span>, () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">const</span> callback = jest.<span class="tok-fn">fn</span>();
+  <span class="tok-kw">const</span> debounced = <span class="tok-fn">debounce</span>(callback, <span class="tok-num">300</span>);
+
+  <span class="tok-fn">debounced</span>();
+  <span class="tok-fn">expect</span>(callback).<span class="tok-prop">not</span>.<span class="tok-prop">toHaveBeenCalled</span>();
+
+  jest.<span class="tok-fn">advanceTimersByTime</span>(<span class="tok-num">300</span>);
+  <span class="tok-fn">expect</span>(callback).<span class="tok-prop">toHaveBeenCalledTimes</span>(<span class="tok-num">1</span>);
+});</pre>
+      <h3>API utile</h3>
+      <ul>
+        <li><code class="inline">jest.advanceTimersByTime(ms)</code> — avance d'un délai précis.</li>
+        <li><code class="inline">jest.runAllTimers()</code> — déclenche tous les timers en attente.</li>
+        <li><code class="inline">jest.runOnlyPendingTimers()</code> — n'exécute pas les timers créés par les timers exécutés (utile pour les boucles infinies).</li>
+        <li><code class="inline">jest.setSystemTime(date)</code> — fige <code class="inline">Date.now()</code> (avec <code class="inline">'modern'</code> timers).</li>
+      </ul>
+      <h3>Modern vs Legacy timers</h3>
+      <p>Depuis Jest 27, <code class="inline">useFakeTimers()</code> active le mode <strong>"modern"</strong> par défaut (basé sur <code class="inline">@sinonjs/fake-timers</code>) — il peut aussi mocker <code class="inline">Date</code>, <code class="inline">queueMicrotask</code>, etc.</p>
+      <div class="callout tip"><strong>💡 Pour Node/Express</strong>Très utile pour tester un retry exponentiel ou un cache TTL sans rendre les tests lents.</div>
+    `
+  },
+  {
+    id: 'snapshots',
+    title: 'Snapshot testing',
+    badge: 'React',
+    desc: 'Capturer une structure et alerter sur les changements.',
+    content: `
+      <p>Le <strong>snapshot testing</strong> capture une représentation sérialisée d'un output (DOM, objet, string) et la stocke dans un fichier <code class="inline">__snapshots__/*.snap</code>. À chaque run, Jest compare l'output au snapshot.</p>
+      <h3>Snapshot d'un composant React</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-kw">import</span> { render } <span class="tok-kw">from</span> <span class="tok-str">'@testing-library/react'</span>;
+
+<span class="tok-fn">test</span>(<span class="tok-str">'Button render'</span>, () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">const</span> { container } = <span class="tok-fn">render</span>(<span class="tok-op">&lt;</span>Button label=<span class="tok-str">"Save"</span> <span class="tok-op">/&gt;</span>);
+  <span class="tok-fn">expect</span>(container).<span class="tok-prop">toMatchSnapshot</span>();
+});</pre>
+      <p>Première exécution → le snapshot est créé. Runs suivants → comparaison. Si tu changes le composant volontairement, mets à jour avec <code class="inline">jest --updateSnapshot</code> (ou <code class="inline">-u</code>).</p>
+      <h3>Inline snapshots</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">expect</span>(<span class="tok-fn">formatUser</span>(user)).<span class="tok-prop">toMatchInlineSnapshot</span>(<span class="tok-str">\`
+  "Alice (alice@x.com)"
+\`</span>);</pre>
+      <p>Pratique : le snapshot vit dans le fichier de test. Idéal pour des petits outputs string/objet.</p>
+      <div class="callout warn"><strong>⚠️ Le piège des snapshots</strong>Ils encouragent à valider <em>n'importe quoi</em> sans réfléchir au contrat. Si tu mets à jour aveuglément avec <code class="inline">-u</code>, tu valides des régressions. Bonne pratique : <em>petits snapshots ciblés</em>, et review chaque modification.</div>
+      <h3>Property matchers — gérer les valeurs variables</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-fn">expect</span>(user).<span class="tok-prop">toMatchSnapshot</span>({
+  createdAt: <span class="tok-fn">expect</span>.<span class="tok-fn">any</span>(Date),
+  id: <span class="tok-fn">expect</span>.<span class="tok-fn">any</span>(String),
+});</pre>
+    `
+  },
+  {
+    id: 'react',
+    title: 'Tester du React avec Jest',
+    badge: 'React',
+    desc: 'Jest + React Testing Library — la combo standard.',
+    content: `
+      <p>Jest est le <em>runner</em>, <strong>React Testing Library (RTL)</strong> fournit les utilitaires de rendu et de requête. La philosophie : tester comme un utilisateur, pas l'implémentation.</p>
+      <h3>Exemple complet</h3>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-kw">import</span> { render, screen } <span class="tok-kw">from</span> <span class="tok-str">'@testing-library/react'</span>;
+<span class="tok-kw">import</span> userEvent <span class="tok-kw">from</span> <span class="tok-str">'@testing-library/user-event'</span>;
+<span class="tok-kw">import</span> Counter <span class="tok-kw">from</span> <span class="tok-str">'./Counter'</span>;
+
+<span class="tok-fn">test</span>(<span class="tok-str">'incrémente au clic'</span>, <span class="tok-kw">async</span> () <span class="tok-op">=&gt;</span> {
+  <span class="tok-kw">const</span> user = userEvent.<span class="tok-fn">setup</span>();
+  <span class="tok-fn">render</span>(<span class="tok-op">&lt;</span>Counter <span class="tok-op">/&gt;</span>);
+
+  <span class="tok-kw">const</span> btn = screen.<span class="tok-fn">getByRole</span>(<span class="tok-str">'button'</span>, { name: <span class="tok-str">/increment/i</span> });
+  <span class="tok-fn">expect</span>(screen.<span class="tok-fn">getByText</span>(<span class="tok-str">'Count: 0'</span>)).<span class="tok-prop">toBeInTheDocument</span>();
+
+  <span class="tok-kw">await</span> user.<span class="tok-fn">click</span>(btn);
+  <span class="tok-fn">expect</span>(screen.<span class="tok-fn">getByText</span>(<span class="tok-str">'Count: 1'</span>)).<span class="tok-prop">toBeInTheDocument</span>();
+});</pre>
+      <h3>Priorité des queries (RTL)</h3>
+      <ol>
+        <li><code class="inline">getByRole</code> — accessible, robuste</li>
+        <li><code class="inline">getByLabelText</code> — pour les inputs</li>
+        <li><code class="inline">getByPlaceholderText</code></li>
+        <li><code class="inline">getByText</code></li>
+        <li><em>(éviter)</em> <code class="inline">getByTestId</code> — dernier recours</li>
+      </ol>
+      <h3>get vs query vs find</h3>
+      <ul>
+        <li><strong>getBy</strong> : throw si rien trouvé. Pour assertion de présence.</li>
+        <li><strong>queryBy</strong> : retourne <code class="inline">null</code>. Pour assertion d'absence.</li>
+        <li><strong>findBy</strong> : <em>async</em>, attend l'apparition (max 1s). Pour du contenu chargé async.</li>
+      </ul>
+      <pre class="code"><span class="code-label">JS</span><span class="tok-com">// Présence</span>
+<span class="tok-fn">expect</span>(screen.<span class="tok-fn">getByText</span>(<span class="tok-str">'Welcome'</span>)).<span class="tok-prop">toBeInTheDocument</span>();
+<span class="tok-com">// Absence</span>
+<span class="tok-fn">expect</span>(screen.<span class="tok-fn">queryByText</span>(<span class="tok-str">'Error'</span>)).<span class="tok-prop">not</span>.<span class="tok-prop">toBeInTheDocument</span>();
+<span class="tok-com">// Async (après fetch par ex.)</span>
+<span class="tok-fn">expect</span>(<span class="tok-kw">await</span> screen.<span class="tok-fn">findByText</span>(<span class="tok-str">'User loaded'</span>)).<span class="tok-prop">toBeInTheDocument</span>();</pre>
+      <div class="callout tip"><strong>💡 Question piège</strong>"Pourquoi pas Enzyme ?" → RTL teste le DOM rendu (comme un utilisateur), Enzyme teste l'arbre de composants (couplage à l'implémentation). RTL est devenu le standard recommandé par l'équipe React.</div>
+    `
+  },
+];
+
+const QUIZ = [
+  {
+    q: 'Quelle est la différence entre `toBe` et `toEqual` ?',
+    answers: [
+      { t: '`toBe` compare la référence (`Object.is`), `toEqual` compare la structure récursivement', c: true },
+      { t: 'Aucune, ce sont des alias', c: false },
+      { t: '`toBe` est pour les strings, `toEqual` pour les nombres', c: false },
+      { t: '`toEqual` est déprécié depuis Jest 27', c: false },
+    ],
+    explain: '`toBe` utilise `Object.is` (identité). Pour comparer le contenu de deux objets ou tableaux distincts, il faut `toEqual` (ou `toStrictEqual` pour une comparaison encore plus stricte qui distingue les `undefined` explicites).'
+  },
+  {
+    q: 'Comment Jest gère-t-il les `jest.mock()` placés sous les imports ?',
+    answers: [
+      { t: 'Ils sont hoistés en haut du fichier par babel-jest, avant les imports', c: true },
+      { t: 'Ils sont ignorés si placés après les imports', c: false },
+      { t: 'Jest les exécute dans l\'ordre du fichier', c: false },
+      { t: 'Ils ne fonctionnent qu\'en CommonJS', c: false },
+    ],
+    explain: 'Le hoisting permet d\'écrire `jest.mock` sous les imports tout en garantissant que le mock est en place avant que les modules ne soient résolus. C\'est aussi pourquoi tu ne peux pas référencer une variable hors-mock dans la factory (sauf si son nom commence par `mock`).'
+  },
+  {
+    q: 'Tu veux espionner une méthode existante sans changer son comportement. Que choisis-tu ?',
+    answers: [
+      { t: '`jest.spyOn(obj, "method")`', c: true },
+      { t: '`jest.fn()`', c: false },
+      { t: '`jest.mock(obj)`', c: false },
+      { t: '`jest.replaceProperty(obj)`', c: false },
+    ],
+    explain: '`jest.spyOn` enveloppe la méthode existante en gardant l\'implémentation. Tu peux ensuite assert sur `.toHaveBeenCalled` et restaurer avec `.mockRestore()`. `jest.fn()` crée une fonction from scratch, sans comportement réel.'
+  },
+  {
+    q: 'Quel hook utilises-tu pour réinitialiser la base de données avant chaque test ?',
+    answers: [
+      { t: '`beforeEach`', c: true },
+      { t: '`beforeAll`', c: false },
+      { t: '`setup`', c: false },
+      { t: '`afterAll`', c: false },
+    ],
+    explain: '`beforeEach` garantit l\'isolation : chaque test démarre dans le même état. `beforeAll` ne s\'exécute qu\'une fois, ce qui crée des dépendances d\'ordre entre tests — anti-pattern.'
+  },
+  {
+    q: 'Pour tester qu\'une Promise est rejetée, quelle est la syntaxe la plus moderne ?',
+    answers: [
+      { t: '`await expect(fn()).rejects.toThrow(...)`', c: true },
+      { t: '`fn().catch(e => expect(e).toBe(...))`', c: false },
+      { t: '`expect(fn).toThrowAsync(...)`', c: false },
+      { t: '`fn(done)` avec callback', c: false },
+    ],
+    explain: '`.rejects` (et son pendant `.resolves`) sont les modificateurs officiels pour les Promises. Combiné avec `async/await`, c\'est le pattern moderne. N\'oublie pas le `await` !'
+  },
+  {
+    q: 'Que fait `jest.clearAllMocks()` ?',
+    answers: [
+      { t: 'Vide les `.mock.calls` et `.mock.results` de toutes les mocks, sans toucher aux implémentations', c: true },
+      { t: 'Supprime toutes les mocks du fichier', c: false },
+      { t: 'Restaure les implémentations originales des `spyOn`', c: false },
+      { t: 'Remet à zéro la couverture de code', c: false },
+    ],
+    explain: '`clearAllMocks` = juste l\'historique. `resetAllMocks` = + reset des implémentations (mockReturnValue, etc.). `restoreAllMocks` = + restaure les méthodes spyées à leur original.'
+  },
+  {
+    q: 'Tu testes un debounce de 500ms. Comment éviter d\'attendre vraiment ?',
+    answers: [
+      { t: '`jest.useFakeTimers()` puis `jest.advanceTimersByTime(500)`', c: true },
+      { t: '`await new Promise(r => setTimeout(r, 500))`', c: false },
+      { t: 'Passer `--timeout=600` à Jest', c: false },
+      { t: 'Le debounce ne peut pas être testé', c: false },
+    ],
+    explain: 'Les fake timers permettent de contrôler le temps. Sans eux, ton test devient lent et flaky. Pense à `useRealTimers()` en `afterEach` pour ne pas affecter d\'autres tests.'
+  },
+  {
+    q: 'Quelle query RTL doit-on privilégier pour cibler un bouton ?',
+    answers: [
+      { t: '`getByRole("button", { name: /save/i })`', c: true },
+      { t: '`getByTestId("save-button")`', c: false },
+      { t: '`container.querySelector(".btn-save")`', c: false },
+      { t: '`getByClassName("btn-save")`', c: false },
+    ],
+    explain: '`getByRole` est la plus proche de l\'expérience utilisateur (et accessible). `getByTestId` est un dernier recours quand rien d\'autre ne marche, car il couple le test à l\'implémentation.'
+  },
+  {
+    q: 'Quelle est la différence entre `queryByText` et `getByText` dans RTL ?',
+    answers: [
+      { t: '`queryByText` retourne null si absent, `getByText` throw — utilise `query` pour tester une absence', c: true },
+      { t: 'Aucune', c: false },
+      { t: '`queryByText` est async', c: false },
+      { t: '`queryByText` est obsolète', c: false },
+    ],
+    explain: 'Règle simple : `getBy*` pour vérifier la présence (throw aide à débugger), `queryBy*` pour vérifier l\'absence (`expect(...).not.toBeInTheDocument()`), `findBy*` pour attendre un élément async.'
+  },
+  {
+    q: 'Comment ne mocker qu\'une seule fonction d\'un module et garder le reste réel ?',
+    answers: [
+      { t: 'Utiliser `jest.requireActual()` dans la factory de `jest.mock`', c: true },
+      { t: 'C\'est impossible', c: false },
+      { t: 'Avec `jest.partialMock()`', c: false },
+      { t: 'En utilisant `jest.spyOn` sur le module entier', c: false },
+    ],
+    explain: '`jest.mock("./m", () => ({ ...jest.requireActual("./m"), foo: jest.fn() }))` — pattern très courant en pratique.'
+  },
+  {
+    q: 'À quoi sert `expect.assertions(n)` ?',
+    answers: [
+      { t: 'Garantir qu\'exactement `n` assertions ont été exécutées, utile dans les blocs catch async', c: true },
+      { t: 'Limiter le nombre d\'assertions par test', c: false },
+      { t: 'Compter les expects pour le coverage', c: false },
+      { t: 'C\'est une fonctionnalité dépréciée', c: false },
+    ],
+    explain: 'Dans un test async avec try/catch, si la Promise ne throw pas, le bloc catch n\'est jamais atteint et le test passe à tort. `expect.assertions(1)` te protège : il échoue si aucune assertion n\'a tourné.'
+  },
+  {
+    q: 'Que reproche-t-on souvent au snapshot testing ?',
+    answers: [
+      { t: 'On valide facilement n\'importe quoi avec `-u`, ce qui peut faire passer des régressions', c: true },
+      { t: 'C\'est trop lent', c: false },
+      { t: 'Ça ne fonctionne pas avec TypeScript', c: false },
+      { t: 'C\'est déprécié depuis Jest 28', c: false },
+    ],
+    explain: 'Le risque : mettre à jour un snapshot sans le relire = valider une régression. Mitigation : snapshots petits et ciblés, review systématique des diffs de fichiers `.snap`.'
+  },
+];
+
+const FLASHCARDS = [
+  { term: 'describe', def: 'Groupe des tests apparentés. Peut être imbriqué. Les hooks (<code>beforeEach</code>, etc.) déclarés dedans ne s\'appliquent qu\'à ce groupe.' },
+  { term: 'test / it', def: 'Déclare un cas de test. <code>it</code> est un alias historique de <code>test</code>. <code>test.only</code> isole un test, <code>test.skip</code> le saute, <code>test.each</code> paramétrise.' },
+  { term: 'toBe vs toEqual', def: '<code>toBe</code> = égalité référentielle (<code>Object.is</code>). <code>toEqual</code> = égalité structurelle récursive. Utilise <code>toEqual</code> pour les objets/arrays.' },
+  { term: 'toStrictEqual', def: 'Comme <code>toEqual</code> mais plus strict : distingue les <code>undefined</code> explicites des props absentes, et vérifie les types/classes.' },
+  { term: 'toMatchObject', def: 'Vérifie qu\'un objet <em>contient au moins</em> les props attendues. Pratique pour ne tester qu\'une partie d\'une grosse structure.' },
+  { term: 'jest.fn()', def: 'Crée une mock function from scratch. Enregistre les appels dans <code>.mock.calls</code>. Méthodes : <code>mockReturnValue</code>, <code>mockResolvedValue</code>, <code>mockImplementation</code>.' },
+  { term: 'jest.spyOn()', def: 'Crée un espion sur une méthode <em>existante</em>. Préserve l\'implémentation par défaut. <code>.mockRestore()</code> remet la méthode d\'origine.' },
+  { term: 'jest.mock()', def: 'Remplace un module entier. Auto-mock si pas de factory. Hoisté en haut du fichier par babel-jest, avant les imports.' },
+  { term: 'jest.requireActual()', def: 'Récupère le vrai module dans une factory de <code>jest.mock</code>. Permet le mock partiel : on override quelques exports, on garde le reste.' },
+  { term: 'beforeEach / afterEach', def: 'Tournent avant/après <em>chaque</em> test du <code>describe</code> courant. Garantissent l\'isolation. <code>beforeAll</code>/<code>afterAll</code> = 1× par bloc.' },
+  { term: 'clearMocks / resetMocks / restoreMocks', def: '<code>clear</code> = vide l\'historique. <code>reset</code> = + supprime les implémentations. <code>restore</code> = + restaure les méthodes spyées à leur original.' },
+  { term: '.resolves / .rejects', def: 'Modificateurs pour assertion sur Promises : <code>await expect(p).resolves.toBe(x)</code> ou <code>.rejects.toThrow(...)</code>.' },
+  { term: 'jest.useFakeTimers()', def: 'Remplace <code>setTimeout</code>, <code>setInterval</code>, <code>Date</code> par des versions contrôlables. Avance avec <code>advanceTimersByTime(ms)</code> ou <code>runAllTimers()</code>.' },
+  { term: 'toMatchSnapshot()', def: 'Capture une représentation sérialisée dans un fichier <code>.snap</code>. Compare aux runs suivants. Mise à jour avec <code>jest -u</code>.' },
+];
+
+const CHEAT = [
+  {
+    title: '🧪 Structure de base',
+    code: `describe('Calculator', () => {
+  let calc;
+
+  beforeAll(() => { /* 1× avant tout */ });
+  afterAll(() => { /* 1× après tout */ });
+  beforeEach(() => { calc = new Calculator(); });
+  afterEach(() => { jest.clearAllMocks(); });
+
+  test('adds two numbers', () => {
+    expect(calc.add(1, 2)).toBe(3);
+  });
+
+  test.skip('skipped', () => {});
+  test.only('only this', () => {});
+  test.each([[1,1,2],[2,3,5]])(
+    'adds %i + %i = %i',
+    (a, b, exp) => expect(a+b).toBe(exp)
+  );
+});`
+  },
+  {
+    title: '✅ Matchers essentiels',
+    code: `// Égalité
+expect(x).toBe(y);          // référence
+expect(x).toEqual(y);       // structure
+expect(x).toStrictEqual(y); // + types
+
+// Truthy
+expect(x).toBeTruthy();
+expect(x).toBeNull();
+expect(x).toBeDefined();
+
+// Nombres
+expect(n).toBeGreaterThan(5);
+expect(n).toBeCloseTo(0.3);
+
+// Strings / Arrays
+expect(s).toMatch(/regex/);
+expect(arr).toContain(item);
+expect(arr).toHaveLength(3);
+expect(obj).toHaveProperty('a.b', 1);
+
+// Errors
+expect(() => fn()).toThrow(/msg/);
+
+// Negation
+expect(x).not.toBe(5);`
+  },
+  {
+    title: '🎭 Mocks',
+    code: `// Mock function
+const fn = jest.fn();
+fn.mockReturnValue(42);
+fn.mockReturnValueOnce(1);
+fn.mockResolvedValue({ ok: true });
+fn.mockImplementation((a, b) => a + b);
+
+// Assertions sur appels
+expect(fn).toHaveBeenCalled();
+expect(fn).toHaveBeenCalledTimes(2);
+expect(fn).toHaveBeenCalledWith('arg');
+expect(fn).toHaveBeenLastCalledWith(...);
+expect(fn).toHaveBeenNthCalledWith(1, ...);
+
+// Spy
+const spy = jest.spyOn(obj, 'method');
+spy.mockRestore();
+
+// Mock module
+jest.mock('axios');
+jest.mock('./db', () => ({
+  ...jest.requireActual('./db'),
+  getUser: jest.fn(),
+}));`
+  },
+  {
+    title: '⏱️ Async',
+    code: `// async/await (recommandé)
+test('resolves', async () => {
+  await expect(fetchUser(1)).resolves.toEqual({...});
+});
+
+test('rejects', async () => {
+  await expect(fetchUser('bad'))
+    .rejects.toThrow('Not found');
+});
+
+// expect.assertions
+test('throw garantit', async () => {
+  expect.assertions(1);
+  try { await fn(); }
+  catch (e) { expect(e.code).toBe(404); }
+});`
+  },
+  {
+    title: '⌛ Fake timers',
+    code: `beforeEach(() => jest.useFakeTimers());
+afterEach(() => jest.useRealTimers());
+
+test('setTimeout', () => {
+  const cb = jest.fn();
+  setTimeout(cb, 1000);
+
+  jest.advanceTimersByTime(999);
+  expect(cb).not.toHaveBeenCalled();
+
+  jest.advanceTimersByTime(1);
+  expect(cb).toHaveBeenCalled();
+});
+
+// Date
+jest.setSystemTime(new Date('2024-01-01'));
+
+// Autres helpers
+jest.runAllTimers();
+jest.runOnlyPendingTimers();`
+  },
+  {
+    title: '⚛️ React Testing Library',
+    code: `import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+test('button click', async () => {
+  const user = userEvent.setup();
+  render(<MyComp />);
+
+  // Queries — priorité décroissante :
+  screen.getByRole('button', { name: /save/i });
+  screen.getByLabelText('Email');
+  screen.getByPlaceholderText('Search');
+  screen.getByText('Welcome');
+  screen.getByTestId('foo'); // last resort
+
+  // get/query/find
+  screen.getByText(...);    // throw si absent
+  screen.queryByText(...);  // null si absent
+  await screen.findByText(...); // async
+
+  await user.click(button);
+  await user.type(input, 'hello');
+});`
+  },
+  {
+    title: '📸 Snapshots',
+    code: `// Snapshot externe (__snapshots__/*.snap)
+expect(rendered).toMatchSnapshot();
+
+// Inline snapshot
+expect(format(user)).toMatchInlineSnapshot(\`
+  "Alice (alice@x.com)"
+\`);
+
+// Avec property matchers
+expect(user).toMatchSnapshot({
+  createdAt: expect.any(Date),
+  id: expect.any(String),
+});
+
+// Mise à jour
+// $ jest -u  ou  jest --updateSnapshot`
+  },
+  {
+    title: '🛠️ Config & CLI',
+    code: `// package.json
+"scripts": {
+  "test": "jest",
+  "test:watch": "jest --watch",
+  "test:cov": "jest --coverage"
+}
+
+// jest.config.js
+module.exports = {
+  testEnvironment: 'jsdom', // ou 'node'
+  setupFilesAfterEach: ['<rootDir>/setup.js'],
+  clearMocks: true,
+  coverageThreshold: {
+    global: { lines: 80 }
+  },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1'
+  }
+};
+
+// CLI
+jest --watch       # watch mode
+jest path/to/file  # ciblé
+jest -t 'pattern'  # par nom de test
+jest --bail        # stop au 1er échec
+jest --coverage`
+  },
+];
+
+const QA = [
+  {
+    q: 'Quelle est la différence entre Jest et Mocha ?',
+    a: `<p>Jest est un framework <strong>tout-en-un</strong> (runner + assertions + mocks + coverage + snapshots), créé par Meta pour React. Mocha n\'est qu\'un runner ; il faut l\'associer à Chai (assertions), Sinon (mocks/spies), Istanbul (coverage).</p>
+<p>Avantages de Jest : zero-config, tests parallèles, snapshot testing, watch mode intelligent. Avantages de Mocha : plus flexible, plus modulaire, plus rapide sur certains workloads Node.</p>
+<p>En entretien : <em>"Pour un projet React/Node moderne, Jest est le standard de facto. Mocha reste pertinent quand on veut composer sa stack ou pour du Node pur historique."</em></p>`
+  },
+  {
+    q: 'Comment garantirais-tu qu\'un test reste isolé des autres ?',
+    a: `<p>Plusieurs leviers :</p>
+<ul>
+  <li><strong>beforeEach</strong> pour réinitialiser l\'état avant chaque test (pas <code class="inline">beforeAll</code>).</li>
+  <li><strong>jest.clearAllMocks()</strong> (ou <code class="inline">clearMocks: true</code> en config) pour vider l\'historique des mocks.</li>
+  <li><strong>jest.restoreAllMocks()</strong> pour rétablir les méthodes spyées.</li>
+  <li>Pas d\'état global muté entre tests (variables module-level).</li>
+  <li>Fichiers de test exécutés en parallèle dans des workers isolés — donc l\'isolation se joue surtout <em>à l\'intérieur d\'un même fichier</em>.</li>
+</ul>`
+  },
+  {
+    q: 'Tu fais un appel HTTP dans une fonction. Comment tu testes ça ?',
+    a: `<p>Trois approches courantes :</p>
+<ol>
+  <li><strong>Mock du client HTTP</strong> (axios, fetch) via <code class="inline">jest.mock</code>. Rapide et déterministe.</li>
+  <li><strong>nock</strong> ou <strong>msw</strong> pour intercepter les requêtes au niveau réseau. Plus réaliste.</li>
+  <li><strong>Test d\'intégration</strong> contre un serveur réel (Supertest pour Express).</li>
+</ol>
+<p>En unit test, on préfère le mock : <code class="inline">axios.get.mockResolvedValue({ data: ... })</code>. En intégration, MSW est devenu le standard côté frontend.</p>`
+  },
+  {
+    q: 'Comment tester un hook React personnalisé ?',
+    a: `<p>Avec <strong>@testing-library/react</strong>, qui expose <code class="inline">renderHook</code> et <code class="inline">act</code> :</p>
+<pre class="code">import { renderHook, act } from '@testing-library/react';
+import useCounter from './useCounter';
+
+test('useCounter', () => {
+  const { result } = renderHook(() => useCounter());
+  expect(result.current.count).toBe(0);
+
+  act(() => result.current.increment());
+  expect(result.current.count).toBe(1);
+});</pre>
+<p>Le <code class="inline">act()</code> garantit que tous les effets/updates sont flushés avant l\'assertion.</p>`
+  },
+  {
+    q: 'Que penses-tu du snapshot testing ?',
+    a: `<p>C\'est utile mais à doser. Bon pour : composants stables, outputs sérialisables (config, formatters). Mauvais quand : snapshots énormes (personne ne les relit), updates aveugles avec <code class="inline">-u</code>.</p>
+<p>Bonnes pratiques : snapshots <em>petits</em> et <em>ciblés</em>, review systématique des diffs <code class="inline">.snap</code>, property matchers pour les valeurs dynamiques (dates, IDs).</p>`
+  },
+  {
+    q: 'Qu\'est-ce que le code coverage ? Faut-il viser 100% ?',
+    a: `<p>Le coverage mesure le % de code exécuté par les tests (lignes, branches, functions, statements). Jest l\'expose avec <code class="inline">--coverage</code>.</p>
+<p><strong>100% n\'est pas un objectif.</strong> C\'est un indicateur, pas une preuve de qualité. Un test qui couvre une ligne sans assertion utile n\'apporte rien. Cibler 70-85% de coverage sur les chemins critiques (services, business logic) est souvent le bon équilibre. On peut configurer <code class="inline">coverageThreshold</code> en CI pour ne pas régresser.</p>`
+  },
+  {
+    q: 'Tests unitaires, intégration, e2e — où Jest s\'inscrit ?',
+    a: `<p>La <strong>pyramide de tests</strong> classique :</p>
+<ul>
+  <li><strong>Unit</strong> (beaucoup) : Jest seul, fonctions pures, hooks, services isolés.</li>
+  <li><strong>Intégration</strong> (moins) : Jest + Supertest (API Express), Jest + RTL avec MSW (UI + API mockée).</li>
+  <li><strong>E2E</strong> (peu) : Playwright ou Cypress, navigateur réel.</li>
+</ul>
+<p>Jest couvre les deux premiers niveaux. Pour l\'e2e, on sort de Jest.</p>`
+  },
+  {
+    q: 'Comment debugger un test qui passe en local mais échoue en CI ?',
+    a: `<p>Pistes habituelles :</p>
+<ul>
+  <li><strong>État partagé</strong> entre tests : un test pollue l\'autre. Cherche les variables module-level, vérifie les mocks reset.</li>
+  <li><strong>Ordre</strong> dépendant : lance avec <code class="inline">--runInBand</code> (séquentiel) pour voir si le parallélisme casse quelque chose.</li>
+  <li><strong>Timezone / locale</strong> différente sur le CI : fixe la TZ (<code class="inline">TZ=UTC</code>).</li>
+  <li><strong>Asynchrone non attendu</strong> : un <code class="inline">await</code> oublié.</li>
+  <li><strong>Snapshots OS-dependent</strong> : line endings, séparateurs de path.</li>
+</ul>`
+  },
+  {
+    q: 'Comment tester du code qui utilise des Date / Math.random ?',
+    a: `<p>Pour <strong>Date</strong> : <code class="inline">jest.useFakeTimers()</code> puis <code class="inline">jest.setSystemTime(new Date('2024-01-01'))</code>. Tu fixes <code class="inline">Date.now()</code>.</p>
+<p>Pour <strong>Math.random</strong> : <code class="inline">jest.spyOn(Math, 'random').mockReturnValue(0.42)</code>.</p>
+<p>Idée générale : <em>injecter les dépendances non-déterministes</em> dans tes fonctions plutôt que de les hardcoder. Tu peux ainsi les remplacer en test sans mock global.</p>`
+  },
+];
+
+const BADGES = [
+  { id: 'first-lesson', icon: '🎓', name: 'Première leçon', cond: (s) => s.completedLessons.length >= 1 },
+  { id: 'half-lessons', icon: '📚', name: 'À mi-chemin', cond: (s) => s.completedLessons.length >= 5 },
+  { id: 'all-lessons', icon: '🏆', name: 'Toutes les leçons', cond: (s) => s.completedLessons.length === LESSONS.length },
+  { id: 'first-quiz', icon: '🎯', name: 'Quiz complété', cond: (s) => s.bestQuiz > 0 },
+  { id: 'quiz-master', icon: '👑', name: 'Quiz parfait', cond: (s) => s.bestQuiz === QUIZ.length },
+  { id: 'flashcards', icon: '⚡', name: '10 flashcards maîtrisées', cond: (s) => s.masteredCards.length >= 10 },
+  { id: 'xp-500', icon: '💎', name: '500 XP', cond: (s) => s.xp >= 500 },
+  { id: 'ready', icon: '🚀', name: 'Prêt pour l\'entretien', cond: (s) => s.completedLessons.length === LESSONS.length && s.bestQuiz >= 10 },
+];
+
+/* =========================================================================
+   STATE & PERSISTENCE
+   ========================================================================= */
+const STORAGE_KEY = 'jest-mastery-v1';
+const defaultState = {
+  xp: 0,
+  streak: 0,
+  lastVisit: null,
+  completedLessons: [],
+  bestQuiz: 0,
+  masteredCards: [],
+};
+let state = loadState();
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return { ...defaultState, ...(s || {}) };
+  } catch { return { ...defaultState }; }
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+}
+function addXP(n) {
+  state.xp += n;
+  saveState();
+  renderHeader();
+}
+
+// Streak
+(function updateStreak() {
+  const today = new Date().toDateString();
+  if (state.lastVisit !== today) {
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    state.streak = state.lastVisit === y.toDateString() ? state.streak + 1 : 1;
+    state.lastVisit = today;
+    saveState();
+  }
+})();
+
+/* =========================================================================
+   NAVIGATION
+   ========================================================================= */
+function navigate(view, ...args) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  const btn = document.querySelector(`.nav button[data-view="${view}"]`);
+  if (btn) btn.classList.add('active');
+  if (view === 'lessons') renderLessonsList();
+  if (view === 'lesson') renderLesson(args[0]);
+  if (view === 'quiz') startQuiz();
+  if (view === 'flashcards') renderFlashcards();
+  if (view === 'cheatsheet') renderCheatsheet();
+  if (view === 'interview') renderQA();
+  if (view === 'home') renderHome();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('.nav button').forEach(b => {
+  b.addEventListener('click', () => navigate(b.dataset.view));
+});
+
+/* =========================================================================
+   RENDER HEADER + HOME
+   ========================================================================= */
+function renderHeader() {
+  document.getElementById('xpVal').textContent = state.xp;
+  document.getElementById('streakVal').textContent = state.streak;
+}
+function renderHome() {
+  document.getElementById('lessonsDone').textContent = state.completedLessons.length;
+  document.getElementById('lessonsTotal').textContent = LESSONS.length;
+  document.getElementById('bestQuiz').textContent = state.bestQuiz ? `${state.bestQuiz}/${QUIZ.length}` : '—';
+  document.getElementById('cardsMastered').textContent = state.masteredCards.length;
+  document.getElementById('cardsTotal').textContent = FLASHCARDS.length;
+  document.getElementById('xpTotal').textContent = state.xp + ' XP';
+
+  const row = document.getElementById('badgesRow');
+  row.innerHTML = BADGES.map(b => {
+    const earned = b.cond(state);
+    return `<div class="badge-item ${earned ? 'earned' : ''}">
+      <span class="ico">${b.icon}</span>
+      <span>${b.name}</span>
+    </div>`;
+  }).join('');
+}
+
+/* =========================================================================
+   LESSONS
+   ========================================================================= */
+function renderLessonsList() {
+  const list = document.getElementById('lessonsList');
+  list.innerHTML = LESSONS.map((l, i) => {
+    const done = state.completedLessons.includes(l.id);
+    return `<div class="card ${done ? 'done' : ''}" onclick="navigate('lesson', ${i})">
+      <div class="check">✓</div>
+      <div class="badge">${l.badge} · ${i+1}/${LESSONS.length}</div>
+      <h3>${l.title}</h3>
+      <p>${l.desc}</p>
+    </div>`;
+  }).join('');
+}
+
+let currentLessonIdx = 0;
+function renderLesson(idx) {
+  currentLessonIdx = idx;
+  const l = LESSONS[idx];
+  document.getElementById('lessonStep').textContent = `Leçon ${idx+1} / ${LESSONS.length}`;
+  document.getElementById('lessonTitle').textContent = l.title;
+  document.getElementById('lessonContent').innerHTML = l.content;
+  const prev = document.getElementById('prevLesson');
+  const next = document.getElementById('nextLesson');
+  const done = document.getElementById('completeLesson');
+  prev.disabled = idx === 0;
+  next.disabled = idx === LESSONS.length - 1;
+  prev.onclick = () => navigate('lesson', idx - 1);
+  next.onclick = () => navigate('lesson', idx + 1);
+  const isDone = state.completedLessons.includes(l.id);
+  done.textContent = isDone ? '✓ Leçon terminée' : 'Marquer comme terminé (+50 XP)';
+  done.disabled = isDone;
+  done.onclick = () => {
+    if (!state.completedLessons.includes(l.id)) {
+      state.completedLessons.push(l.id);
+      addXP(50);
+      saveState();
+      done.textContent = '✓ Leçon terminée';
+      done.disabled = true;
+      celebrate();
+      if (idx < LESSONS.length - 1) setTimeout(() => navigate('lesson', idx + 1), 800);
+    }
+  };
+}
+
+/* =========================================================================
+   QUIZ
+   ========================================================================= */
+let quizIdx = 0;
+let quizScore = 0;
+let quizOrder = [];
+
+function startQuiz() {
+  quizIdx = 0;
+  quizScore = 0;
+  quizOrder = QUIZ.map((_, i) => i).sort(() => Math.random() - 0.5);
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const card = document.getElementById('quizCard');
+  if (quizIdx >= QUIZ.length) {
+    const pct = Math.round((quizScore / QUIZ.length) * 100);
+    if (quizScore > state.bestQuiz) {
+      state.bestQuiz = quizScore;
+      saveState();
+    }
+    addXP(quizScore * 10);
+    card.innerHTML = `
+      <div class="quiz-result">
+        <div class="score-circle" style="--p: ${pct};">
+          <div class="val">${pct}%</div>
+        </div>
+        <h2 style="margin:0 0 .5rem;">${quizScore} / ${QUIZ.length} bonnes réponses</h2>
+        <p style="color:var(--muted); margin-bottom:1.5rem;">+${quizScore * 10} XP gagné · Meilleur score : ${state.bestQuiz}/${QUIZ.length}</p>
+        <button class="cta" style="display:inline-flex; margin-top:0;" onclick="startQuiz()">Recommencer</button>
+        <button class="back-btn" style="margin-left:.5rem;" onclick="navigate('home')">Accueil</button>
+      </div>
+    `;
+    celebrate();
+    return;
+  }
+  const q = QUIZ[quizOrder[quizIdx]];
+  const shuffled = q.answers.map((a, i) => ({ ...a, _i: i })).sort(() => Math.random() - 0.5);
+  card.innerHTML = `
+    <div class="quiz-progress"><div style="width:${(quizIdx / QUIZ.length) * 100}%"></div></div>
+    <div style="color:var(--muted); font-size:.85rem; margin-bottom:.5rem;">Question ${quizIdx+1} / ${QUIZ.length}</div>
+    <div class="quiz-question">${q.q}</div>
+    <div class="answers">
+      ${shuffled.map((a, i) => `
+        <button class="answer" data-correct="${a.c}">
+          <span class="marker">${String.fromCharCode(65+i)}</span>
+          <span>${a.t}</span>
+        </button>
+      `).join('')}
+    </div>
+    <div class="quiz-explain" id="quizExplain"></div>
+    <div style="text-align:right; margin-top:1.25rem;">
+      <button class="cta" id="nextQ" style="display:none;">Suivant →</button>
+    </div>
+  `;
+  card.querySelectorAll('.answer').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const correct = btn.dataset.correct === 'true';
+      card.querySelectorAll('.answer').forEach(b => {
+        b.disabled = true;
+        if (b.dataset.correct === 'true') b.classList.add('correct');
+      });
+      if (!correct) btn.classList.add('wrong');
+      else quizScore++;
+      const ex = document.getElementById('quizExplain');
+      ex.innerHTML = `<strong>${correct ? '✓ Bonne réponse' : '✗ Pas tout à fait'}</strong> ${q.explain}`;
+      ex.classList.add('show');
+      document.getElementById('nextQ').style.display = 'inline-flex';
+    });
+  });
+  document.getElementById('nextQ').onclick = () => { quizIdx++; renderQuestion(); };
+}
+
+/* =========================================================================
+   FLASHCARDS
+   ========================================================================= */
+let cardIdx = 0;
+function renderFlashcards() {
+  const wrap = document.getElementById('flashWrap');
+  cardIdx = 0;
+  drawCard();
+  function drawCard() {
+    if (cardIdx >= FLASHCARDS.length) {
+      wrap.innerHTML = `
+        <div class="card" style="text-align:center; cursor:default;">
+          <h2>🎉 Deck terminé !</h2>
+          <p style="color:var(--muted); margin:1rem 0;">${state.masteredCards.length}/${FLASHCARDS.length} cartes maîtrisées au total.</p>
+          <button class="cta" style="display:inline-flex; margin-top:0;" onclick="renderFlashcards()">Recommencer</button>
+        </div>`;
+      return;
+    }
+    const c = FLASHCARDS[cardIdx];
+    const mastered = state.masteredCards.includes(c.term);
+    wrap.innerHTML = `
+      <div class="deck-info">Carte ${cardIdx+1} / ${FLASHCARDS.length} · ${state.masteredCards.length} maîtrisées</div>
+      <div class="flashcard" id="fc">
+        <div class="flashcard-inner">
+          <div class="face front">
+            <div class="term">${c.term}</div>
+          </div>
+          <div class="face back">
+            <div class="definition">${c.def}</div>
+          </div>
+        </div>
+      </div>
+      <div class="flashcard-hint">Clique sur la carte pour la retourner ${mastered ? '· <span style="color:var(--green)">déjà maîtrisée ✓</span>' : ''}</div>
+      <div class="flashcard-controls">
+        <button class="miss" id="miss">À revoir</button>
+        <button class="know" id="know">Je connais (+10 XP)</button>
+      </div>
+    `;
+    const fc = document.getElementById('fc');
+    fc.onclick = () => fc.classList.toggle('flipped');
+    document.getElementById('miss').onclick = () => {
+      state.masteredCards = state.masteredCards.filter(t => t !== c.term);
+      saveState();
+      cardIdx++;
+      drawCard();
+    };
+    document.getElementById('know').onclick = () => {
+      if (!state.masteredCards.includes(c.term)) {
+        state.masteredCards.push(c.term);
+        addXP(10);
+        saveState();
+      }
+      cardIdx++;
+      drawCard();
+    };
+  }
+}
+
+/* =========================================================================
+   CHEATSHEET
+   ========================================================================= */
+function renderCheatsheet() {
+  const grid = document.getElementById('sheetGrid');
+  grid.innerHTML = CHEAT.map(c => `
+    <div class="sheet-card">
+      <h3>${c.title}</h3>
+      <pre class="code">${escapeHtml(c.code)}</pre>
+    </div>
+  `).join('');
+}
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* =========================================================================
+   Q&A INTERVIEW
+   ========================================================================= */
+function renderQA() {
+  const list = document.getElementById('qaList');
+  list.innerHTML = QA.map(qa => `
+    <details class="qa">
+      <summary>${qa.q}</summary>
+      <div class="qa-body">${qa.a}</div>
+    </details>
+  `).join('');
+}
+
+/* =========================================================================
+   CONFETTI
+   ========================================================================= */
+function celebrate() {
+  const c = document.getElementById('confetti');
+  const ctx = c.getContext('2d');
+  c.width = innerWidth; c.height = innerHeight;
+  c.classList.add('active');
+  const pieces = Array.from({ length: 80 }, () => ({
+    x: innerWidth / 2,
+    y: innerHeight / 2,
+    vx: (Math.random() - 0.5) * 14,
+    vy: (Math.random() - 1) * 12,
+    g: 0.3,
+    s: Math.random() * 6 + 4,
+    color: ['#ff6b9d','#a78bfa','#fbbf24','#4ade80','#60a5fa'][Math.floor(Math.random()*5)],
+    r: Math.random() * Math.PI,
+    vr: (Math.random() - 0.5) * 0.3,
+  }));
+  let t = 0;
+  function loop() {
+    ctx.clearRect(0, 0, c.width, c.height);
+    pieces.forEach(p => {
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s);
+      ctx.restore();
+    });
+    t++;
+    if (t < 110) requestAnimationFrame(loop);
+    else c.classList.remove('active');
+  }
+  loop();
+}
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+renderHeader();
+renderHome();
+</script>
+
+</body>
+</html>

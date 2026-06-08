@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PACHIROGUE — a pachinko roguelike</title>
+<style>
+  :root{
+    --bg0:#0a0814; --bg1:#140e29; --panel:#1a1430; --panel2:#241a40;
+    --ink:#e7e3ff; --muted:#9a93c4; --line:#36285c;
+    --cyan:#46e0ff; --gold:#ffd34d; --pink:#ff5db1; --green:#5dffa6;
+    --red:#ff5d6c; --purple:#a06bff; --orange:#ff924d;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:radial-gradient(1200px 800px at 50% -10%,#241845 0%,var(--bg1) 40%,var(--bg0) 100%);
+    color:var(--ink);font-family:'Trebuchet MS',Segoe UI,system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:14px;}
+  button{font-family:inherit;cursor:pointer;border:none;color:inherit;}
+  .btn{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+    color:var(--ink);padding:9px 16px;border-radius:10px;font-weight:bold;letter-spacing:.5px;
+    transition:transform .08s,box-shadow .15s,border-color .15s;font-size:14px;}
+  .btn:hover{transform:translateY(-2px);border-color:var(--cyan);box-shadow:0 6px 18px rgba(70,224,255,.18);}
+  .btn:active{transform:translateY(0);}
+  .btn.primary{background:linear-gradient(180deg,#7d3bff,#5a23c9);border-color:#9a6bff;}
+  .btn.primary:hover{box-shadow:0 6px 22px rgba(154,107,255,.4);}
+  .btn.warn{border-color:#5a2a3a;} .btn.warn:hover{border-color:var(--red);box-shadow:0 6px 18px rgba(255,93,108,.2);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+
+  #app{width:100%;max-width:1040px;}
+  .screen{display:none;}
+  .screen.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  /* ---- Start ---- */
+  #startScreen{text-align:center;padding:40px 10px;}
+  .logo{font-size:62px;font-weight:900;letter-spacing:3px;margin:0;
+    background:linear-gradient(180deg,#fff,var(--gold) 50%,var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 40px rgba(255,211,77,.25);}
+  .tagline{color:var(--muted);margin:6px 0 26px;font-size:16px;letter-spacing:2px;}
+  .startbtns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  .startbtns .btn{font-size:17px;padding:13px 26px;}
+  .hint{margin-top:26px;color:var(--muted);font-size:13px;}
+
+  /* ---- Top bar ---- */
+  #topbar{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:8px 14px;margin-bottom:12px;}
+  #topbar .title{font-weight:900;letter-spacing:2px;color:var(--gold);font-size:18px;}
+  .stat{display:flex;align-items:center;gap:6px;font-weight:bold;font-size:14px;}
+  .hpbar{position:relative;width:160px;height:16px;background:#2a1430;border:1px solid #4a2438;border-radius:9px;overflow:hidden;}
+  .hpbar>span{position:absolute;inset:0;background:linear-gradient(90deg,#ff5d6c,#ff924d);width:100%;transition:width .25s;}
+  .hpbar>b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;text-shadow:0 1px 2px #000;}
+  .spacer{flex:1;}
+
+  /* ---- Combat ---- */
+  #combat{display:flex;gap:14px;align-items:flex-start;}
+  #boardWrap{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:inset 0 0 60px rgba(0,0,0,.4);}
+  #board{display:block;border-radius:8px;background:#0c0a1c;cursor:crosshair;}
+  #side{flex:1;display:flex;flex-direction:column;gap:12px;min-width:280px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;}
+  .panel h3{margin:0 0 10px;font-size:12px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+
+  #enemies{display:flex;gap:10px;flex-wrap:wrap;}
+  .enemy{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;
+    cursor:pointer;transition:border-color .15s,transform .1s;position:relative;}
+  .enemy:hover{transform:translateY(-2px);}
+  .enemy.target{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 18px rgba(255,93,108,.25);}
+  .enemy.dead{opacity:.25;filter:grayscale(1);pointer-events:none;}
+  .enemy .face{font-size:42px;line-height:1;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));}
+  .enemy .nm{font-size:11px;color:var(--muted);margin-top:2px;}
+  .enemy .ehp{position:relative;height:13px;background:#2a1430;border:1px solid #4a2438;border-radius:7px;overflow:hidden;margin-top:5px;}
+  .enemy .ehp>span{position:absolute;inset:0;background:linear-gradient(90deg,#ff5d6c,#ff924d);transition:width .25s;}
+  .enemy .ehp>b{position:absolute;inset:0;font-size:10px;display:flex;align-items:center;justify-content:center;color:#fff;text-shadow:0 1px 1px #000;}
+  .intent{margin-top:5px;font-size:12px;font-weight:bold;color:var(--orange);display:flex;gap:4px;align-items:center;justify-content:center;}
+  .intent.block{color:var(--cyan);}
+  .tagbadge{position:absolute;top:4px;right:6px;font-size:10px;color:var(--cyan);background:#10243a;border:1px solid #1d4a66;border-radius:6px;padding:1px 5px;}
+
+  .relicrow{display:flex;gap:6px;flex-wrap:wrap;min-height:30px;}
+  .relic{width:34px;height:34px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:19px;cursor:help;position:relative;}
+  .relic:hover{border-color:var(--gold);}
+  .tip{position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:#0c0a1c;border:1px solid var(--line);
+    border-radius:8px;padding:7px 9px;width:180px;font-size:11px;color:var(--ink);z-index:50;opacity:0;pointer-events:none;transition:opacity .12s;text-align:left;line-height:1.35;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+  .relic:hover .tip,.queueorb:hover .tip{opacity:1;}
+  .tip b{color:var(--gold);}
+
+  .queuerow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .queueorb{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:#0c0a1c;
+    border:2px solid rgba(255,255,255,.5);position:relative;box-shadow:0 2px 6px rgba(0,0,0,.4);}
+  .queueorb.cur{width:42px;height:42px;font-size:13px;box-shadow:0 0 0 2px var(--gold),0 0 16px rgba(255,211,77,.4);}
+  .queueorb .lv{position:absolute;bottom:-4px;right:-4px;font-size:9px;background:#0c0a1c;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:0 3px;}
+
+  .minirow{display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:13px;}
+  .ctrls{display:flex;gap:8px;flex-wrap:wrap;}
+
+  /* ---- Map ---- */
+  #mapScreen .panel{padding:6px;}
+  #mapHolder{position:relative;height:560px;overflow:hidden;border-radius:10px;}
+  #mapCanvas{position:absolute;inset:0;}
+  #mapNodes{position:absolute;inset:0;}
+  .mnode{position:absolute;width:50px;height:50px;border-radius:12px;transform:translate(-50%,-50%);
+    display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--panel2);border:2px solid var(--line);
+    transition:transform .12s,box-shadow .15s;}
+  .mnode.reach{cursor:pointer;border-color:var(--cyan);box-shadow:0 0 16px rgba(70,224,255,.35);animation:pulse 1.4s infinite;}
+  .mnode.reach:hover{transform:translate(-50%,-50%) scale(1.14);}
+  .mnode.cur{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold);}
+  .mnode.done{opacity:.45;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 14px rgba(70,224,255,.3);}50%{box-shadow:0 0 22px rgba(70,224,255,.6);}}
+  .mlabel{position:absolute;transform:translate(-50%,-50%);font-size:10px;color:var(--muted);pointer-events:none;}
+
+  /* ---- Overlays / reward / shop ---- */
+  .overlay{position:fixed;inset:0;background:rgba(6,4,16,.72);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;}
+  .overlay.active{display:flex;animation:fade .2s;}
+  .modal{background:linear-gradient(180deg,var(--panel),var(--bg1));border:1px solid var(--line);border-radius:16px;padding:22px;max-width:680px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6);max-height:90vh;overflow:auto;}
+  .modal h2{margin:0 0 4px;letter-spacing:1px;}
+  .modal .sub{color:var(--muted);font-size:13px;margin-bottom:16px;}
+  .cardgrid{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  .card{width:150px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:transform .1s,border-color .15s,box-shadow .15s;}
+  .card:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 10px 26px rgba(255,211,77,.18);}
+  .card.disabled{opacity:.45;pointer-events:none;}
+  .card .icon{font-size:34px;}
+  .card .cname{font-weight:bold;margin:6px 0 4px;font-size:14px;}
+  .card .cdesc{font-size:11px;color:var(--muted);line-height:1.35;min-height:46px;}
+  .card .cost{margin-top:8px;font-weight:bold;color:var(--gold);font-size:13px;}
+  .orbpip{width:46px;height:46px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;color:#0c0a1c;font-weight:bold;font-size:12px;border:2px solid rgba(255,255,255,.5);}
+  .modal .foot{margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+  .decklist{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .deckcard{width:84px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:11px;}
+  .deckcard.sel{cursor:pointer;} .deckcard.sel:hover{border-color:var(--gold);transform:translateY(-3px);}
+
+  .flash{position:fixed;inset:0;pointer-events:none;z-index:200;}
+  #muteBtn{font-size:18px;background:none;border:none;padding:4px 8px;border-radius:8px;}
+  #muteBtn:hover{background:var(--panel2);}
+  .legend{font-size:11px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+  .howto{font-size:13.5px;line-height:1.6;color:var(--ink);text-align:left;}
+  .howto b{color:var(--gold);}
+  .howto li{margin-bottom:6px;}
+  @media(max-width:880px){#combat{flex-direction:column;align-items:center;}#side{width:100%;}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= START ================= -->
+  <section id="startScreen" class="screen active">
+    <h1 class="logo">PACHIROGUE</h1>
+    <p class="tagline">DROP · BOUNCE · CONQUER</p>
+    <div class="startbtns">
+      <button class="btn primary" id="newRunBtn">⚔️ New Run</button>
+      <button class="btn" id="continueBtn" style="display:none;">↺ Continue</button>
+      <button class="btn" id="howtoBtn">📖 How to Play</button>
+    </div>
+    <p class="hint">A roguelike pachinko deckbuilder. Reach and defeat the Golem.</p>
+  </section>
+
+  <!-- ================= MAIN GAME ================= -->
+  <section id="gameScreen" class="screen">
+    <div id="topbar">
+      <span class="title">PACHIROGUE</span>
+      <span class="stat">🗺️ <span id="floorLbl">Floor 1</span></span>
+      <div class="hpbar"><span id="hpFill"></span><b id="hpTxt">50/50</b></div>
+      <span class="stat" style="color:var(--gold)">💰 <span id="goldLbl">0</span></span>
+      <div class="spacer"></div>
+      <button class="btn" id="deckBtn" style="padding:6px 12px;">🂠 Deck</button>
+      <button id="muteBtn" title="Mute">🔊</button>
+      <button class="btn" id="mapBtn" style="padding:6px 12px;display:none;">🗺️ Map</button>
+    </div>
+
+    <!-- ---- MAP ---- -->
+    <div id="mapScreen" class="screen">
+      <div class="panel">
+        <div id="mapHolder">
+          <canvas id="mapCanvas"></canvas>
+          <div id="mapNodes"></div>
+        </div>
+        <div class="legend">
+          <span>⚔️ Battle</span><span>💀 Elite</span><span>🛒 Shop</span>
+          <span>🔥 Rest</span><span>💎 Treasure</span><span>🗿 Boss</span>
+          <span style="margin-left:auto;color:var(--cyan)">Click a glowing node to advance</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- COMBAT ---- -->
+    <div id="combatScreen" class="screen">
+      <div id="combat">
+        <div id="boardWrap">
+          <canvas id="board" width="460" height="640"></canvas>
+        </div>
+        <div id="side">
+          <div class="panel">
+            <h3>Enemies</h3>
+            <div id="enemies"></div>
+          </div>
+          <div class="panel">
+            <h3>Loaded Orb</h3>
+            <div class="queuerow" id="queueRow"></div>
+            <div class="minirow" style="margin-top:10px;">
+              <span id="orbDesc" style="color:var(--muted);font-size:12px;"></span>
+            </div>
+            <div class="ctrls" style="margin-top:10px;">
+              <button class="btn primary" id="shootHint" disabled>Click board to drop ▾</button>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Relics</h3>
+            <div class="relicrow" id="relicRow"><span style="color:var(--muted);font-size:12px;">None yet</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ OVERLAYS ============ -->
+<div class="overlay" id="howtoOv">
+  <div class="modal">
+    <h2>📖 How to Play</h2>
+    <div class="sub">Pachinko, but make it a roguelike.</div>
+    <ul class="howto">
+      <li><b>Aim & drop:</b> move your mouse over the board and click (or press <b>Space</b>) to drop the loaded orb. The dotted line previews the bounce.</li>
+      <li><b>Pegs:</b> <span style="color:var(--cyan)">cyan pegs</span> add the orb's damage to its <b>pot</b>. <span style="color:var(--gold)">Gold crit pegs</span> raise the orb's <b>multiplier</b> (×2, ×3…). Hit crit pegs early!</li>
+      <li><b>Slots:</b> where the orb falls multiplies the whole pot — aim for the <b>×3</b> center.</li>
+      <li><b>Combat:</b> the pot is dealt to your <b>targeted enemy</b> (click to switch). Kill everything before their ⚔️ timer hits 0.</li>
+      <li><b>Pegs refresh</b> when the board thins out. Some enemies have 🛡️ block that reduces each hit.</li>
+      <li><b>Between fights:</b> climb the map, collect orbs & relics, shop, rest. Beat the 🗿 Golem to win.</li>
+    </ul>
+    <div class="foot"><button class="btn primary" id="howtoClose">Got it</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="rewardOv"><div class="modal" id="rewardModal"></div></div>
+<div class="overlay" id="shopOv"><div class="modal" id="shopModal"></div></div>
+<div class="overlay" id="restOv"><div class="modal" id="restModal"></div></div>
+<div class="overlay" id="deckOv"><div class="modal" id="deckModal"></div></div>
+<div class="overlay" id="endOv"><div class="modal" id="endModal" style="text-align:center;"></div></div>
+<div class="flash" id="flash"></div>
+
+<script>
+"use strict";
+/* =========================================================================
+   PACHIROGUE — single-file roguelike pachinko
+   ========================================================================= */
+const rand=(a=1,b)=>b===undefined?Math.random()*a:a+Math.random()*(b-a);
+const randInt=(a,b)=>Math.floor(rand(a,b+1));
+const choice=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ---------------- Audio ---------------- */
+let actx=null, muted=false;
+function initAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+function blip(freq,dur=0.06,type='square',vol=0.05){
+  if(!actx||muted) return;
+  try{
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.value=vol;
+    o.connect(g);g.connect(actx.destination);o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur);
+    o.stop(actx.currentTime+dur);
+  }catch(e){}
+}
+
+/* ---------------- Data: Orbs ---------------- */
+const ORBS = {
+  stone:  {key:'stone', name:'Stone Orb',  icon:'⬤', dmg:3, restitution:.80, grav:1.00, color:'#9db4ff', desc:'A reliable rock. Balanced bounce and damage.'},
+  boulder:{key:'boulder',name:'Boulder',   icon:'🪨', dmg:7, restitution:.58, grav:1.55, color:'#c79a6b', desc:'Heavy: big damage but barely bounces.'},
+  rubber: {key:'rubber', name:'Rubber Orb',icon:'🟢', dmg:2, restitution:.94, grav:.90, color:'#6dffae', desc:'Super bouncy — racks up tons of peg hits.'},
+  bomb:   {key:'bomb',   name:'Bomb Orb',  icon:'💣', dmg:3, restitution:.74, grav:1.05, color:'#ff7a4d', bomb:true, explosionR:54, desc:'Each peg hit detonates nearby pegs in a chain.'},
+  mend:   {key:'mend',   name:'Mending Orb',icon:'✚', dmg:3, restitution:.82, grav:1.00, color:'#5dffd6', heal:true, desc:'Its pot heals YOU instead of hurting the enemy.'},
+  split:  {key:'split',  name:'Split Orb', icon:'🔱', dmg:2, restitution:.84, grav:.95, color:'#c79bff', count:3, desc:'Splits into 3 orbs, each scores on its own.'},
+  spike:  {key:'spike',  name:'Spike Orb', icon:'✸', dmg:5, restitution:.70, grav:1.10, color:'#ff7ac0', desc:'Sharp and punchy. High base damage.'},
+};
+const ORB_POOL=['boulder','rubber','bomb','mend','split','spike','stone'];
+
+/* ---------------- Data: Relics ---------------- */
+const RELICS = {
+  sharp_pegs:  {icon:'⚡', name:'Sharp Pegs',   desc:'+1 damage for every peg an orb hits.'},
+  lucky_clover:{icon:'🍀', name:'Lucky Clover', desc:'Far more gold crit pegs appear on boards.'},
+  crit_amp:    {icon:'💥', name:'Crit Amplifier',desc:'Crit pegs raise the multiplier by +2 instead of +1.'},
+  spring_boots:{icon:'👢', name:'Spring Boots', desc:'All orbs bounce noticeably more.'},
+  bomb_satchel:{icon:'🧨', name:'Bomb Satchel', desc:'Bombs explode bigger and hit harder.'},
+  vampiric:    {icon:'🦇', name:'Vampire Fang', desc:'Heal 3 HP whenever an enemy dies.'},
+  golden_slot: {icon:'🎰', name:'Golden Slots', desc:'Every bottom slot multiplier is +0.5 higher.'},
+  refresh_stone:{icon:'♻️', name:'Refresh Stone',desc:'Pegs refresh much sooner, so boards stay full.'},
+  iron_skin:   {icon:'🛡️', name:'Iron Skin',    desc:'Take 1 less damage from every enemy attack.'},
+  adrenaline:  {icon:'🔥', name:'Adrenaline',   desc:'+1 orb damage for each living enemy.'},
+  gold_magnet: {icon:'💰', name:'Gold Magnet',  desc:'+50% gold from battles.'},
+  big_heart:   {icon:'❤️', name:'Giant Heart',  desc:'Instantly gain +15 Max HP and heal 15.', instant:true},
+};
+const RELIC_POOL=Object.keys(RELICS);
+
+/* ---------------- Data: Enemies ---------------- */
+const ENEMIES = {
+  slime: {face:'🟩', name:'Slime',  hp:32, dmg:4, cd:2, block:0},
+  bat:   {face:'🦇', name:'Bat',    hp:22, dmg:4, cd:2, block:0},
+  goblin:{face:'👺', name:'Goblin', hp:50, dmg:6, cd:2, block:0},
+  brute: {face:'👹', name:'Brute',  hp:78, dmg:9, cd:3, block:2},
+  knight:{face:'🤺', name:'Knight', hp:100,dmg:9, cd:2, block:4, elite:true},
+  warden:{face:'🧟', name:'Warden', hp:135,dmg:12,cd:2, block:5, elite:true},
+  golem: {face:'🗿', name:'Pachi-Golem', hp:200, dmg:13, cd:3, block:3, boss:true},
+};
+const MULT_CAP=6; // tame runaway crit chains
+
+/* ---------------- Global game state ---------------- */
+let player, map, game={depth:0, curNodeType:'battle'};
+let combat=null;
+
+/* ---------------- Board geometry ---------------- */
+const BW=460, BH=640;
+const LAUNCH={x:BW/2, y:62};
+const FIELD_TOP=118, FIELD_BOT=472;
+const SLOT_TOP=500, SLOT_BOT=588, RESOLVE_Y=606;
+const WALL_L=14, WALL_R=BW-14;
+const GRAV=0.34, SHOT_SPEED=6.4, MAX_SPEED=15;
+
+/* ---------------- Canvas ---------------- */
+const board=document.getElementById('board');
+const ctx=board.getContext('2d');
+(function setupDPR(){
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  board.width=BW*dpr; board.height=BH*dpr;
+  board.style.width=BW+'px'; board.style.height=BH+'px';
+  ctx.scale(dpr,dpr);
+})();
+
+/* =========================================================================
+   SCREEN / NAV
+   ========================================================================= */
+function show(id){
+  document.querySelectorAll('#app > .screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showInner(id){
+  document.getElementById('mapScreen').classList.remove('active');
+  document.getElementById('combatScreen').classList.remove('active');
+  document.getElementById(id).classList.add('active');
+}
+function ov(id,on){ document.getElementById(id).classList.toggle('active',on); }
+
+/* =========================================================================
+   RUN SETUP
+   ========================================================================= */
+function newRun(){
+  player={
+    hp:50, maxHp:50, gold:30,
+    deck:[ mkOrb('stone'),mkOrb('stone'),mkOrb('stone'),mkOrb('stone') ],
+    relics:[],
+  };
+  game.depth=0;
+  map=generateMap();
+  show('gameScreen');
+  document.getElementById('mapBtn').style.display='none';
+  renderTop(); renderRelics();
+  goToMap();
+  saveRun();
+}
+let _orbId=1;
+function mkOrb(type,level=0){ return {type,level,id:_orbId++}; }
+function hasRelic(id){ return player.relics.includes(id); }
+
+/* =========================================================================
+   MAP GENERATION (branching, StS-style)
+   ========================================================================= */
+const ROWS=8;
+function generateMap(){
+  const rows=[];
+  for(let r=0;r<ROWS;r++){
+    let n;
+    if(r===0) n=3;
+    else if(r===ROWS-1) n=1;
+    else n=randInt(2,4);
+    const arr=[];
+    for(let i=0;i<n;i++){
+      arr.push({row:r,idx:i,type:rollNodeType(r),next:[],visited:false,done:false});
+    }
+    rows.push(arr);
+  }
+  // connect rows
+  for(let r=0;r<ROWS-1;r++){
+    const cur=rows[r], nxt=rows[r+1];
+    cur.forEach((node,i)=>{
+      const frac=(i+0.5)/cur.length;
+      // primary target: nearest by fraction
+      let best=0,bd=9;
+      nxt.forEach((nn,j)=>{const d=Math.abs((j+0.5)/nxt.length-frac);if(d<bd){bd=d;best=j;}});
+      const targets=new Set([best]);
+      if(Math.random()<0.5 && nxt.length>1){
+        // add a neighbour
+        const alt=clamp(best+(Math.random()<0.5?-1:1),0,nxt.length-1);
+        targets.add(alt);
+      }
+      node.next=[...targets];
+    });
+    // ensure every next node has an incoming edge
+    nxt.forEach((nn,j)=>{
+      const hasIn=cur.some(node=>node.next.includes(j));
+      if(!hasIn){
+        const frac=(j+0.5)/nxt.length;
+        let best=0,bd=9;
+        cur.forEach((node,i)=>{const d=Math.abs((i+0.5)/cur.length-frac);if(d<bd){bd=d;best=i;}});
+        cur[best].next.push(j);
+      }
+    });
+  }
+  return {rows, curR:-1, curI:-1};
+}
+function rollNodeType(r){
+  if(r===0) return 'battle';
+  if(r===1) return Math.random()<0.3?'elite':'battle';
+  const t=Math.random();
+  if(r===ROWS-2){ // pre-boss row: more rests/shops
+    if(t<0.4) return 'rest';
+    if(t<0.7) return 'shop';
+    return 'treasure';
+  }
+  if(t<0.46) return 'battle';
+  if(t<0.62) return 'elite';
+  if(t<0.74) return 'shop';
+  if(t<0.87) return 'rest';
+  return 'treasure';
+}
+const NODE_ICON={battle:'⚔️',elite:'💀',shop:'🛒',rest:'🔥',treasure:'💎',boss:'🗿'};
+
+function goToMap(){
+  show('gameScreen');
+  showInner('mapScreen');
+  document.getElementById('mapBtn').style.display='none';
+  // boss override on final row
+  if(map.rows[ROWS-1][0]) map.rows[ROWS-1][0].type='boss';
+  renderMap();
+  saveRun();
+}
+function reachableNodes(){
+  if(map.curR===-1) return map.rows[0].map((n,i)=>({r:0,i}));
+  const node=map.rows[map.curR][map.curI];
+  return node.next.map(i=>({r:map.curR+1,i}));
+}
+function renderMap(){
+  const holder=document.getElementById('mapHolder');
+  const W=holder.clientWidth||760, H=560;
+  const mc=document.getElementById('mapCanvas');
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  mc.width=W*dpr;mc.height=H*dpr;mc.style.width=W+'px';mc.style.height=H+'px';
+  const mctx=mc.getContext('2d');mctx.setTransform(dpr,0,0,dpr,0,0);
+  mctx.clearRect(0,0,W,H);
+  const padX=50, padY=42;
+  const rowGap=(H-padY*2)/(ROWS-1);
+  // compute positions
+  map.rows.forEach((row,r)=>{
+    row.forEach((node,i)=>{
+      node.x=padX+((i+0.5)/row.length)*(W-padX*2);
+      node.y=H-padY-r*rowGap; // row0 bottom, boss top
+    });
+  });
+  // draw edges
+  const reach=reachableNodes();
+  const reachKey=new Set(reach.map(o=>o.r+'-'+o.i));
+  mctx.lineWidth=2;
+  map.rows.forEach((row,r)=>{
+    if(r>=ROWS-1) return;
+    row.forEach((node,i)=>{
+      node.next.forEach(j=>{
+        const t=map.rows[r+1][j];
+        const onPath=(map.curR===r && map.curI===i);
+        mctx.strokeStyle=onPath?'rgba(70,224,255,.6)':'rgba(120,100,180,.25)';
+        mctx.beginPath();mctx.moveTo(node.x,node.y);mctx.lineTo(t.x,t.y);mctx.stroke();
+      });
+    });
+  });
+  // draw nodes
+  const holderNodes=document.getElementById('mapNodes');
+  holderNodes.innerHTML='';
+  map.rows.forEach((row,r)=>{
+    row.forEach((node,i)=>{
+      const el=document.createElement('div');
+      el.className='mnode';
+      el.textContent=NODE_ICON[node.type];
+      el.style.left=node.x+'px'; el.style.top=node.y+'px';
+      if(map.curR===r && map.curI===i) el.classList.add('cur');
+      else if(node.done || node.visited) el.classList.add('done');
+      if(reachKey.has(r+'-'+i)){
+        el.classList.add('reach');
+        el.onclick=()=>enterNode(r,i);
+      }
+      holderNodes.appendChild(el);
+    });
+  });
+}
+
+function enterNode(r,i){
+  map.curR=r; map.curI=i;
+  const node=map.rows[r][i];
+  node.visited=true;
+  game.depth=r;
+  game.curNodeType=node.type;
+  initAudio();
+  switch(node.type){
+    case 'battle': case 'elite': case 'boss': startCombat(node.type,r); break;
+    case 'shop': openShop(); break;
+    case 'rest': openRest(); break;
+    case 'treasure': openTreasure(); break;
+  }
+}
+function finishNode(){
+  const node=map.rows[map.curR][map.curI];
+  node.done=true;
+  if(node.type==='boss'){ victory(); return; }
+  goToMap();
+}
+
+/* =========================================================================
+   COMBAT — board generation
+   ========================================================================= */
+function buildBoard(){
+  const pegs=[];
+  const critChance=0.13+(hasRelic('lucky_clover')?0.12:0);
+  const sx=44, sy=44;
+  let rowIndex=0;
+  for(let y=FIELD_TOP;y<=FIELD_BOT;y+=sy){
+    const offset=(rowIndex%2)*sx/2;
+    for(let x=34+offset;x<=BW-30;x+=sx){
+      if(Math.random()<0.12) continue;
+      pegs.push({x,y,r:7,active:true,wall:false,
+        type:Math.random()<critChance?'crit':'normal',hitFx:0});
+    }
+    rowIndex++;
+  }
+  // bottom slot dividers + multipliers
+  const nB=5;
+  const boundaries=[];
+  for(let k=0;k<=nB;k++) boundaries.push(lerp(WALL_L+8,WALL_R-8,k/nB));
+  const baseMul=[1,2,3,2,1];
+  const gold=hasRelic('golden_slot')?0.5:0;
+  const buckets=baseMul.map(m=>m+gold);
+  // divider pegs (walls) between buckets
+  for(let k=1;k<nB;k++){
+    const x=boundaries[k];
+    for(let y=SLOT_TOP;y<=SLOT_BOT;y+=14){
+      pegs.push({x,y,r:6,active:true,wall:true,type:'wall'});
+    }
+  }
+  const scoringTotal=pegs.filter(p=>!p.wall).length;
+  return {pegs,boundaries,buckets,scoringTotal};
+}
+
+function makeEnemy(kind,depth){
+  const b=ENEMIES[kind];
+  const sc=1+depth*0.13;
+  const hp=Math.round(b.hp*sc);
+  return {kind,face:b.face,name:b.name,hp,maxHp:hp,
+    dmg:Math.round(b.dmg+depth*0.8),cd:b.cd,attackIn:b.cd,
+    block:b.block,alive:true,hitFx:0,shakeY:0};
+}
+function rosterFor(type,depth){
+  if(type==='boss') return [makeEnemy('golem',depth)];
+  if(type==='elite'){
+    const lead=depth>=5?'warden':'knight';
+    const r=[makeEnemy(lead,depth)];
+    if(Math.random()<0.4) r.push(makeEnemy('bat',depth));
+    return r;
+  }
+  // normal battle
+  const pool=depth<2?['slime','bat','goblin']:['slime','bat','goblin','brute'];
+  const n=depth<1?1:(Math.random()<0.55?2:1);
+  const r=[];for(let k=0;k<n;k++) r.push(makeEnemy(choice(pool),depth));
+  return r;
+}
+
+function startCombat(type,depth){
+  const bd=buildBoard();
+  combat={
+    type, depth,
+    enemies:rosterFor(type,depth),
+    targetIndex:0,
+    pegs:bd.pegs, boundaries:bd.boundaries, buckets:bd.buckets, scoringTotal:bd.scoringTotal,
+    balls:[], particles:[], floaters:[],
+    shotActive:false, over:false, shotTimer:0,
+    drawPile:[], shake:0,
+    aimX:BW/2, aimY:300,
+    refreshPulse:0,
+  };
+  refillDraw();
+  show('gameScreen');
+  showInner('combatScreen');
+  document.getElementById('mapBtn').style.display='none';
+  renderEnemies(); renderQueue(); renderRelics(); renderTop();
+  document.getElementById('shootHint').disabled=false;
+  document.getElementById('shootHint').textContent='Click board to drop ▾';
+}
+
+function refillDraw(){ combat.drawPile=shuffle(player.deck.slice()); }
+function currentEntry(){ if(combat.drawPile.length===0) refillDraw(); return combat.drawPile[0]; }
+
+/* ---------------- Aiming ---------------- */
+function aimVelocity(){
+  let dx=combat.aimX-LAUNCH.x, dy=combat.aimY-LAUNCH.y;
+  if(dy<10) dy=10;                       // force downward
+  const maxRatio=3.2;
+  if(Math.abs(dx)>maxRatio*dy) dx=Math.sign(dx)*maxRatio*dy;
+  const len=Math.hypot(dx,dy)||1;
+  return {vx:dx/len*SHOT_SPEED, vy:dy/len*SHOT_SPEED};
+}
+
+board.addEventListener('mousemove',e=>{
+  if(!combat) return;
+  const r=board.getBoundingClientRect();
+  combat.aimX=(e.clientX-r.left)*(BW/r.width);
+  combat.aimY=(e.clientY-r.top)*(BH/r.height);
+});
+board.addEventListener('click',()=>shoot());
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space' && combat && document.getElementById('combatScreen').classList.contains('active')){
+    e.preventDefault(); shoot();
+  }
+});
+
+function anyAlive(){ return combat.enemies.some(e=>e.alive); }
+
+function shoot(){
+  if(!combat||combat.over||combat.shotActive||!anyAlive()) return;
+  initAudio();
+  const entry=combat.drawPile.shift();
+  const orb=ORBS[entry.type];
+  const rest=clamp(orb.restitution+(hasRelic('spring_boots')?0.07:0),0,0.96);
+  const base=aimVelocity();
+  const count=orb.count||1;
+  for(let k=0;k<count;k++){
+    let vx=base.vx, vy=base.vy;
+    if(count>1){ // spread the split
+      const ang=(k-(count-1)/2)*0.16;
+      const c=Math.cos(ang),s=Math.sin(ang);
+      vx=base.vx*c-base.vy*s; vy=base.vx*s+base.vy*c;
+    }
+    combat.balls.push({
+      x:LAUNCH.x+(count>1?(k-(count-1)/2)*10:0), y:LAUNCH.y+14,
+      vx,vy, r:9, orb, level:entry.level, rest, grav:orb.grav,
+      pot:0, mult:1, age:0, bestY:0, stuck:0, dead:false,
+      trail:[],
+    });
+  }
+  combat.shotActive=true; combat.shotTimer=0;
+  blip(520,0.05,'sine',0.04);
+  renderQueue();
+}
+
+/* ---------------- Damage calc ---------------- */
+function pegBase(ball){
+  let d=ball.orb.dmg + ball.level*2;
+  if(hasRelic('sharp_pegs')) d+=1;
+  if(ball.orb.bomb && hasRelic('bomb_satchel')) d+=2;
+  if(hasRelic('adrenaline')) d+=combat.enemies.filter(e=>e.alive).length;
+  return d;
+}
+
+/* ---------------- Physics ---------------- */
+function stepBall(ball){
+  ball.age++;
+  ball.vy+=GRAV*ball.grav;
+  // speed cap
+  let sp=Math.hypot(ball.vx,ball.vy);
+  if(sp>MAX_SPEED){ ball.vx*=MAX_SPEED/sp; ball.vy*=MAX_SPEED/sp; sp=MAX_SPEED; }
+  const steps=Math.max(1,Math.ceil(sp/(ball.r*0.6)));
+  for(let s=0;s<steps;s++){
+    ball.x+=ball.vx/steps; ball.y+=ball.vy/steps;
+    // walls
+    if(ball.x<WALL_L+ball.r){ ball.x=WALL_L+ball.r; ball.vx=-ball.vx*ball.rest; }
+    if(ball.x>WALL_R-ball.r){ ball.x=WALL_R-ball.r; ball.vx=-ball.vx*ball.rest; }
+    if(ball.y<ball.r){ ball.y=ball.r; ball.vy=-ball.vy*ball.rest; }
+    // pegs (one collision per substep)
+    collidePegs(ball);
+    if(ball.y>RESOLVE_Y){ resolveBall(ball); ball.dead=true; return; }
+  }
+  // trail
+  ball.trail.push({x:ball.x,y:ball.y});
+  if(ball.trail.length>10) ball.trail.shift();
+  // anti-stuck
+  if(ball.y>ball.bestY+0.4){ ball.bestY=ball.y; ball.stuck=0; }
+  else { ball.stuck++; }
+  if(ball.stuck>110){ ball.vy+=1.4; ball.vx*=0.7; ball.vx+=rand(-0.6,0.6); ball.stuck=80; }
+  if(ball.age>2200){ ball.y=RESOLVE_Y+1; }
+}
+function collidePegs(ball){
+  const pegs=combat.pegs;
+  for(let i=0;i<pegs.length;i++){
+    const p=pegs[i];
+    if(!p.active) continue;
+    const dx=ball.x-p.x, dy=ball.y-p.y;
+    const rr=ball.r+p.r;
+    if(dx*dx+dy*dy<rr*rr){
+      let dist=Math.hypot(dx,dy)||0.001;
+      const nx=dx/dist, ny=dy/dist;
+      ball.x=p.x+nx*rr; ball.y=p.y+ny*rr;
+      const vdot=ball.vx*nx+ball.vy*ny;
+      ball.vx=(ball.vx-2*vdot*nx)*ball.rest;
+      ball.vy=(ball.vy-2*vdot*ny)*ball.rest;
+      ball.vx+=rand(-0.25,0.25);
+      if(!p.wall){ scorePeg(ball,p); }
+      else { p.hitFx=1; blip(300,0.03,'triangle',0.02); }
+      return; // resolve one peg per substep
+    }
+  }
+}
+function scorePeg(ball,p){
+  const base=pegBase(ball);
+  if(p.type==='crit'){
+    ball.mult=Math.min(MULT_CAP,ball.mult+(hasRelic('crit_amp')?2:1));
+    ball.pot+=base*ball.mult;
+    spawnBurst(p.x,p.y,'#ffd34d',14);
+    blip(880,0.06,'square',0.05); blip(1250,0.05,'square',0.04);
+    addFloater(p.x,p.y-6,'×'+ball.mult,'#ffd34d',16);
+  } else {
+    ball.pot+=base*ball.mult;
+    spawnBurst(p.x,p.y,'#46e0ff',7);
+    blip(rand(420,680),0.03,'square',0.035);
+  }
+  p.active=false; p.hitFx=1;
+  if(ball.orb.bomb) bombChain(ball,p);
+}
+function bombChain(ball,origin){
+  const R=ball.orb.explosionR+(hasRelic('bomb_satchel')?26:0);
+  const base=pegBase(ball);
+  spawnBurst(origin.x,origin.y,'#ff7a4d',26);
+  combat.shake=Math.max(combat.shake,5);
+  blip(140,0.18,'sawtooth',0.06);
+  combat.pegs.forEach(p=>{
+    if(!p.active||p.wall) return;
+    const dx=p.x-origin.x, dy=p.y-origin.y;
+    if(dx*dx+dy*dy<=R*R){
+      ball.pot+=base*ball.mult;
+      p.active=false; p.hitFx=1;
+      spawnBurst(p.x,p.y,'#ffb24d',6);
+    }
+  });
+}
+function checkRefresh(){
+  const thr=hasRelic('refresh_stone')?0.45:0.25;
+  const active=combat.pegs.filter(p=>!p.wall&&p.active).length;
+  if(active<=combat.scoringTotal*thr){
+    combat.pegs.forEach(p=>{ if(!p.wall) p.active=true; });
+    combat.refreshPulse=1;
+    blip(660,0.12,'sine',0.05);
+  }
+}
+function resolveBall(ball){
+  // which bucket?
+  const b=combat.boundaries;
+  let idx=0;
+  for(let k=0;k<combat.buckets.length;k++){
+    if(ball.x>=b[k]&&ball.x<b[k+1]){ idx=k; break; }
+    if(ball.x>=b[b.length-1]) idx=combat.buckets.length-1;
+  }
+  const mult=combat.buckets[idx];
+  let final=Math.round(ball.pot*mult);
+  const fx=clamp(ball.x,WALL_L,WALL_R);
+  if(ball.orb.heal){
+    if(final>0){
+      const before=player.hp;
+      player.hp=Math.min(player.maxHp,player.hp+final);
+      const healed=player.hp-before;
+      addFloater(fx,RESOLVE_Y-20,'+'+healed,'#5dffa6',20);
+      spawnBurst(fx,RESOLVE_Y-10,'#5dffa6',18);
+      blip(520,0.08,'sine',0.05);blip(780,0.08,'sine',0.05);
+      renderTop();
+    }
+  } else {
+    const e=combat.enemies[combat.targetIndex];
+    const tgt=(e&&e.alive)?combat.targetIndex:combat.enemies.findIndex(x=>x.alive);
+    if(tgt>=0 && final>0){
+      const en=combat.enemies[tgt];
+      const dealt=Math.max(0,final-en.block);
+      en.hp-=dealt; en.hitFx=1; en.shakeY=6;
+      combat.shake=Math.max(combat.shake,Math.min(9,2+dealt*0.12));
+      addFloater(fx,RESOLVE_Y-20,'-'+dealt+(en.block?' ('+final+'−'+en.block+'🛡)':''),mult>=3?'#ffd34d':'#ff5d6c',mult>=2?22:18);
+      blip(180,0.1,'sawtooth',0.05);
+      if(en.hp<=0){ killEnemy(en); }
+      renderEnemies();
+    } else if(final>0){
+      addFloater(fx,RESOLVE_Y-20,'miss','#9a93c4',16);
+    }
+  }
+  if(mult>=2) addFloater(fx,RESOLVE_Y-44,'SLOT ×'+mult,mult>=3?'#ffd34d':'#46e0ff',mult>=3?20:15);
+}
+function killEnemy(en){
+  en.alive=false; en.hp=0;
+  if(hasRelic('vampiric')){
+    player.hp=Math.min(player.maxHp,player.hp+3);
+    renderTop();
+  }
+  blip(300,0.12,'square',0.05);blip(220,0.14,'square',0.04);
+}
+
+/* after a full shot resolves */
+function afterShot(){
+  renderQueue();
+  checkRefresh(); // pegs only refill between shots, never mid-flight
+  if(!anyAlive()){ winCombat(); return; }
+  // enemy timers
+  let hitPlayer=0;
+  combat.enemies.forEach(e=>{
+    if(!e.alive) return;
+    e.attackIn--;
+    if(e.attackIn<=0){
+      let dmg=e.dmg;
+      if(hasRelic('iron_skin')) dmg=Math.max(1,dmg-1);
+      player.hp-=dmg; hitPlayer+=dmg;
+      e.attackIn=e.cd;
+    }
+  });
+  if(hitPlayer>0){
+    combat.shake=Math.max(combat.shake,Math.min(12,4+hitPlayer*0.5));
+    flashScreen('rgba(255,60,80,0.18)');
+    blip(110,0.16,'sawtooth',0.06);
+    renderTop();
+    if(player.hp<=0){ player.hp=0; renderTop(); gameOver(); return; }
+  }
+  renderEnemies();
+  saveRun();
+}
+
+function winCombat(){
+  combat.over=true;
+  document.getElementById('shootHint').disabled=true;
+  document.getElementById('shootHint').textContent='Victory!';
+  blip(660,0.1,'sine',0.05);blip(880,0.12,'sine',0.05);
+  setTimeout(()=>grantReward(), 700);
+}
+
+/* =========================================================================
+   FX
+   ========================================================================= */
+function spawnBurst(x,y,color,n){
+  for(let i=0;i<n;i++){
+    const a=rand(0,Math.PI*2), sp=rand(0.6,3.4);
+    combat.particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-0.5,life:rand(16,34),color,size:rand(1.5,3.4)});
+  }
+}
+function addFloater(x,y,text,color,size){
+  combat.floaters.push({x,y,text,color,size:size||16,life:50,vy:-0.7});
+}
+function flashScreen(col){
+  const f=document.getElementById('flash');
+  f.style.background=col; f.style.transition='none'; f.style.opacity='1';
+  requestAnimationFrame(()=>{ f.style.transition='opacity .4s'; f.style.opacity='0'; });
+}
+
+/* =========================================================================
+   RENDER LOOP
+   ========================================================================= */
+function loop(){
+  requestAnimationFrame(loop);
+  if(!combat || !document.getElementById('combatScreen').classList.contains('active')) return;
+  // update
+  if(combat.shotActive){
+    combat.balls.forEach(stepBall);
+    combat.balls=combat.balls.filter(b=>!b.dead);
+    if(combat.balls.length===0){ combat.shotActive=false; afterShot(); }
+  }
+  // particles
+  for(let i=combat.particles.length-1;i>=0;i--){
+    const p=combat.particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life--;
+    if(p.life<=0) combat.particles.splice(i,1);
+  }
+  for(let i=combat.floaters.length-1;i>=0;i--){
+    const f=combat.floaters[i]; f.y+=f.vy; f.vy*=0.96; f.life--;
+    if(f.life<=0) combat.floaters.splice(i,1);
+  }
+  combat.enemies.forEach(e=>{ if(e.hitFx>0)e.hitFx-=0.08; if(e.shakeY>0)e.shakeY*=0.8; });
+  combat.pegs.forEach(p=>{ if(p.hitFx>0)p.hitFx-=0.06; });
+  if(combat.shake>0) combat.shake*=0.86;
+  if(combat.refreshPulse>0) combat.refreshPulse-=0.04;
+  drawBoard();
+}
+requestAnimationFrame(loop);
+
+function drawBoard(){
+  ctx.clearRect(0,0,BW,BH);
+  ctx.save();
+  if(combat.shake>0.3){ ctx.translate(rand(-combat.shake,combat.shake),rand(-combat.shake,combat.shake)); }
+
+  // bg
+  const g=ctx.createLinearGradient(0,0,0,BH);
+  g.addColorStop(0,'#120c26');g.addColorStop(1,'#08061a');
+  ctx.fillStyle=g; ctx.fillRect(0,0,BW,BH);
+
+  // side walls
+  ctx.fillStyle='#241a40';
+  ctx.fillRect(0,0,WALL_L,BH); ctx.fillRect(WALL_R,0,BW-WALL_R,BH);
+
+  // refresh pulse
+  if(combat.refreshPulse>0){
+    ctx.fillStyle='rgba(93,255,166,'+(combat.refreshPulse*0.12)+')';
+    ctx.fillRect(0,FIELD_TOP-10,BW,FIELD_BOT-FIELD_TOP+30);
+  }
+
+  // pegs
+  combat.pegs.forEach(p=>{
+    if(p.wall){
+      ctx.fillStyle=p.hitFx>0?'#9a8fd0':'#4a3d72';
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();
+      return;
+    }
+    if(p.active){
+      const col=p.type==='crit'?'#ffd34d':'#46e0ff';
+      ctx.shadowColor=col; ctx.shadowBlur=p.hitFx>0?16:8;
+      ctx.fillStyle=col;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r+(p.hitFx>0?2:0),0,7);ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.fillStyle='rgba(255,255,255,.7)';
+      ctx.beginPath();ctx.arc(p.x-2,p.y-2,p.r*0.32,0,7);ctx.fill();
+    } else {
+      ctx.strokeStyle='rgba(120,110,170,.28)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r-1,0,7);ctx.stroke();
+    }
+  });
+
+  // slot multipliers
+  for(let k=0;k<combat.buckets.length;k++){
+    const x0=combat.boundaries[k], x1=combat.boundaries[k+1];
+    const cx=(x0+x1)/2; const m=combat.buckets[k];
+    const col=m>=3?'#ffd34d':m>=2?'#46e0ff':'#7d72b0';
+    ctx.fillStyle=col;
+    ctx.font='bold 16px Trebuchet MS';ctx.textAlign='center';
+    ctx.fillText('×'+m, cx, SLOT_BOT+18);
+    ctx.fillStyle='rgba(255,255,255,.04)';
+    ctx.fillRect(x0,SLOT_TOP,x1-x0,RESOLVE_Y-SLOT_TOP);
+  }
+  // resolve line
+  ctx.strokeStyle='rgba(255,255,255,.08)';ctx.beginPath();ctx.moveTo(0,RESOLVE_Y);ctx.lineTo(BW,RESOLVE_Y);ctx.stroke();
+
+  // launcher + aim preview
+  if(!combat.shotActive && !combat.over){
+    drawAim();
+  }
+  drawLauncher();
+
+  // balls
+  combat.balls.forEach(b=>{
+    // trail
+    for(let i=0;i<b.trail.length;i++){
+      const t=b.trail[i]; const a=i/b.trail.length;
+      ctx.fillStyle='rgba(255,255,255,'+(a*0.18)+')';
+      ctx.beginPath();ctx.arc(t.x,t.y,b.r*a*0.8,0,7);ctx.fill();
+    }
+    ctx.shadowColor=b.orb.color;ctx.shadowBlur=14;
+    ctx.fillStyle=b.orb.color;
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,7);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.beginPath();ctx.arc(b.x-3,b.y-3,b.r*0.3,0,7);ctx.fill();
+    // pot label
+    if(b.pot>0){
+      ctx.font='bold 13px Trebuchet MS';ctx.textAlign='center';
+      ctx.fillStyle='#fff';ctx.fillText(Math.round(b.pot), b.x, b.y-b.r-6);
+      if(b.mult>1){ ctx.fillStyle='#ffd34d';ctx.font='bold 11px Trebuchet MS';ctx.fillText('×'+b.mult, b.x, b.y-b.r-19); }
+    }
+  });
+
+  // particles
+  combat.particles.forEach(p=>{
+    ctx.globalAlpha=clamp(p.life/30,0,1);
+    ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,7);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // floaters
+  combat.floaters.forEach(f=>{
+    ctx.globalAlpha=clamp(f.life/30,0,1);
+    ctx.font='bold '+f.size+'px Trebuchet MS';ctx.textAlign='center';
+    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.6)';
+    ctx.strokeText(f.text,f.x,f.y);
+    ctx.fillStyle=f.color;ctx.fillText(f.text,f.x,f.y);
+  });
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+function drawLauncher(){
+  ctx.fillStyle='#3a2d5e';
+  ctx.beginPath();ctx.arc(LAUNCH.x,LAUNCH.y,16,0,7);ctx.fill();
+  ctx.fillStyle='#5a4890';
+  ctx.beginPath();ctx.arc(LAUNCH.x,LAUNCH.y,11,0,7);ctx.fill();
+  // loaded orb preview
+  if(!combat.over){
+    const ent=currentEntry();
+    if(ent){
+      const orb=ORBS[ent.type];
+      ctx.shadowColor=orb.color;ctx.shadowBlur=10;
+      ctx.fillStyle=orb.color;
+      ctx.beginPath();ctx.arc(LAUNCH.x,LAUNCH.y,8,0,7);ctx.fill();
+      ctx.shadowBlur=0;
+    }
+  }
+}
+function drawAim(){
+  const v=aimVelocity();
+  // simulate
+  let x=LAUNCH.x,y=LAUNCH.y+14,vx=v.vx,vy=v.vy;
+  const r=9, rest=0.8;
+  ctx.fillStyle='rgba(255,255,255,.5)';
+  for(let s=0;s<70;s++){
+    vy+=GRAV;
+    let sp=Math.hypot(vx,vy); if(sp>MAX_SPEED){vx*=MAX_SPEED/sp;vy*=MAX_SPEED/sp;}
+    const sub=Math.max(1,Math.ceil(sp/(r*0.6)));
+    let hit=false;
+    for(let k=0;k<sub;k++){
+      x+=vx/sub;y+=vy/sub;
+      if(x<WALL_L+r){x=WALL_L+r;vx=-vx*rest;}
+      if(x>WALL_R-r){x=WALL_R-r;vx=-vx*rest;}
+      for(let i=0;i<combat.pegs.length;i++){
+        const p=combat.pegs[i]; if(!p.active) continue;
+        const dx=x-p.x,dy=y-p.y,rr=r+p.r;
+        if(dx*dx+dy*dy<rr*rr){
+          const d=Math.hypot(dx,dy)||0.001,nx=dx/d,ny=dy/d;
+          x=p.x+nx*rr;y=p.y+ny*rr;
+          const vd=vx*nx+vy*ny;vx=(vx-2*vd*nx)*rest;vy=(vy-2*vd*ny)*rest;
+          hit=true;break;
+        }
+      }
+      if(hit)break;
+    }
+    if(s%2===0){
+      ctx.globalAlpha=clamp(1-s/70,0.1,0.6);
+      ctx.beginPath();ctx.arc(x,y,2.2,0,7);ctx.fill();
+    }
+    if(y>RESOLVE_Y)break;
+  }
+  ctx.globalAlpha=1;
+}
+
+/* =========================================================================
+   HUD RENDERING
+   ========================================================================= */
+function renderTop(){
+  document.getElementById('floorLbl').textContent='Floor '+(game.depth+1);
+  document.getElementById('goldLbl').textContent=player.gold;
+  const pct=clamp(player.hp/player.maxHp*100,0,100);
+  document.getElementById('hpFill').style.width=pct+'%';
+  document.getElementById('hpTxt').textContent=Math.max(0,player.hp)+'/'+player.maxHp;
+}
+function renderEnemies(){
+  const box=document.getElementById('enemies');
+  box.innerHTML='';
+  combat.enemies.forEach((e,i)=>{
+    const el=document.createElement('div');
+    el.className='enemy'+(e.alive?'':' dead')+(i===combat.targetIndex&&e.alive?' target':'');
+    const pct=clamp(e.hp/e.maxHp*100,0,100);
+    const intentBlock=e.block>0?`<div class="intent block">🛡️ ${e.block} block</div>`:'';
+    el.innerHTML=`
+      ${e.block>0?`<div class="tagbadge">🛡️${e.block}</div>`:''}
+      <div class="face" style="transform:translateY(${e.shakeY||0}px) scale(${1+(e.hitFx>0?e.hitFx*0.12:0)})">${e.face}</div>
+      <div class="nm">${e.name}</div>
+      <div class="ehp"><span style="width:${pct}%"></span><b>${Math.max(0,Math.round(e.hp))}/${e.maxHp}</b></div>
+      ${e.alive?`<div class="intent">⚔️ ${e.dmg} in ${e.attackIn}</div>`:'<div class="intent" style="color:#5dffa6">defeated</div>'}
+    `;
+    if(e.alive) el.onclick=()=>{ combat.targetIndex=i; renderEnemies(); };
+    box.appendChild(el);
+  });
+}
+function renderQueue(){
+  const row=document.getElementById('queueRow');
+  row.innerHTML='';
+  // ensure current exists
+  const cur=currentEntry();
+  const upcoming=[cur, ...combat.drawPile.slice(1,5)];
+  upcoming.forEach((ent,i)=>{
+    if(!ent) return;
+    const orb=ORBS[ent.type];
+    const el=document.createElement('div');
+    el.className='queueorb'+(i===0?' cur':'');
+    el.style.background=orb.color;
+    el.textContent=orb.icon;
+    if(ent.level>0){ const lv=document.createElement('span');lv.className='lv';lv.textContent='+'+(ent.level*2);el.appendChild(lv);}
+    row.appendChild(el);
+  });
+  const orb=ORBS[cur.type];
+  document.getElementById('orbDesc').innerHTML=`<b style="color:${orb.color}">${orb.name}</b> — base ${orb.dmg+cur.level*2} dmg. ${orb.desc}`;
+}
+function renderRelics(){
+  const row=document.getElementById('relicRow');
+  if(!player.relics.length){ row.innerHTML='<span style="color:var(--muted);font-size:12px;">None yet</span>'; return; }
+  row.innerHTML='';
+  player.relics.forEach(id=>{
+    const r=RELICS[id];
+    const el=document.createElement('div');
+    el.className='relic';el.textContent=r.icon;
+    el.innerHTML+=`<div class="tip"><b>${r.name}</b><br>${r.desc}</div>`;
+    row.appendChild(el);
+  });
+}
+
+/* =========================================================================
+   REWARDS
+   ========================================================================= */
+function grantReward(){
+  let gold=12+game.depth*4+randInt(0,8);
+  if(combat.type==='elite') gold=Math.round(gold*1.7);
+  if(combat.type==='boss') gold=Math.round(gold*2.4);
+  if(hasRelic('gold_magnet')) gold=Math.round(gold*1.5);
+  player.gold+=gold; renderTop();
+
+  const m=document.getElementById('rewardModal');
+  const orbChoices=[randOrbType(),randOrbType(),randOrbType()];
+  const giveRelic=(combat.type==='elite'||combat.type==='boss');
+  const relicChoices=giveRelic?pickRelics(2):[];
+
+  m.innerHTML=`
+    <h2>🏆 Victory!</h2>
+    <div class="sub">You earned <b style="color:var(--gold)">${gold} gold</b>. ${giveRelic?'Claim a relic, then':'Pick'} an orb for your deck.</div>
+    ${giveRelic?`<h3 style="color:var(--muted);font-size:12px;letter-spacing:2px;">RELIC</h3>
+      <div class="cardgrid" id="rwRelics">${relicChoices.map((id,i)=>relicCard(id,'rwRelic('+i+')')).join('')}</div>`:''}
+    <h3 style="color:var(--muted);font-size:12px;letter-spacing:2px;margin-top:14px;">ORB</h3>
+    <div class="cardgrid" id="rwOrbs">${orbChoices.map((t,i)=>orbCard(t,'rwOrb('+i+')')).join('')}</div>
+    <div class="foot"><button class="btn" onclick="rwSkip()">Skip & Continue</button></div>
+  `;
+  window._rwOrbs=orbChoices; window._rwRelics=relicChoices; window._rwGotRelic=!giveRelic; window._rwGotOrb=false;
+  ov('rewardOv',true);
+}
+function randOrbType(){ return choice(ORB_POOL); }
+function pickRelics(n){
+  const avail=RELIC_POOL.filter(id=>!player.relics.includes(id));
+  return shuffle(avail).slice(0,n);
+}
+function orbCard(type,onclick){
+  const o=ORBS[type];
+  return `<div class="card" onclick="${onclick}">
+    <div class="orbpip" style="background:${o.color}">${o.icon}</div>
+    <div class="cname">${o.name}</div>
+    <div class="cdesc">Base ${o.dmg} dmg.<br>${o.desc}</div>
+  </div>`;
+}
+function relicCard(id,onclick){
+  const r=RELICS[id];
+  return `<div class="card" onclick="${onclick}">
+    <div class="icon">${r.icon}</div>
+    <div class="cname">${r.name}</div>
+    <div class="cdesc">${r.desc}</div>
+  </div>`;
+}
+window.rwOrb=function(i){
+  if(window._rwGotOrb) return;
+  player.deck.push(mkOrb(window._rwOrbs[i]));
+  window._rwGotOrb=true;
+  blip(700,0.08,'sine',0.05);
+  maybeFinishReward();
+};
+window.rwRelic=function(i){
+  if(window._rwGotRelic) return;
+  addRelic(window._rwRelics[i]);
+  window._rwGotRelic=true;
+  document.getElementById('rwRelics').querySelectorAll('.card').forEach(c=>c.classList.add('disabled'));
+  blip(900,0.1,'sine',0.05);
+  renderRelics();
+  maybeFinishReward();
+};
+window.rwSkip=function(){ closeRewardAndContinue(); };
+function maybeFinishReward(){
+  if(window._rwGotOrb && document.getElementById('rwOrbs')){
+    document.getElementById('rwOrbs').querySelectorAll('.card').forEach(c=>c.classList.add('disabled'));
+  }
+  // auto-continue once both done
+  if(window._rwGotOrb && window._rwGotRelic){
+    setTimeout(closeRewardAndContinue,350);
+  }
+}
+function closeRewardAndContinue(){ ov('rewardOv',false); finishNode(); }
+function addRelic(id){
+  player.relics.push(id);
+  if(RELICS[id].instant){
+    if(id==='big_heart'){ player.maxHp+=15; player.hp+=15; renderTop(); }
+  }
+}
+
+/* =========================================================================
+   TREASURE
+   ========================================================================= */
+function openTreasure(){
+  const m=document.getElementById('rewardModal');
+  const relics=pickRelics(3);
+  m.innerHTML=`
+    <h2>💎 Treasure</h2>
+    <div class="sub">A hidden cache. Choose one relic to keep.</div>
+    <div class="cardgrid">${relics.map((id,i)=>relicCard(id,'tzPick('+i+')')).join('')}</div>
+    <div class="foot"><button class="btn" onclick="tzSkip()">Leave it</button></div>
+  `;
+  window._tzRelics=relics;
+  ov('rewardOv',true);
+}
+window.tzPick=function(i){ addRelic(window._tzRelics[i]); renderRelics(); blip(900,0.1,'sine',0.05); ov('rewardOv',false); finishNode(); };
+window.tzSkip=function(){ ov('rewardOv',false); finishNode(); };
+
+/* =========================================================================
+   SHOP
+   ========================================================================= */
+function openShop(){
+  const orbStock=[randOrbType(),randOrbType(),randOrbType()].map(t=>({t,cost:randInt(28,46)}));
+  const relicStock=pickRelics(2).map(id=>({id,cost:randInt(55,85)}));
+  window._shop={orbStock,relicStock,removeCost:35,removed:false,healCost:25,healed:false};
+  renderShop();
+  ov('shopOv',true);
+}
+function renderShop(){
+  const s=window._shop;
+  const m=document.getElementById('shopModal');
+  m.innerHTML=`
+    <h2>🛒 Wandering Shop</h2>
+    <div class="sub">Gold: <b style="color:var(--gold)">${player.gold}</b></div>
+    <h3 style="color:var(--muted);font-size:12px;letter-spacing:2px;">ORBS</h3>
+    <div class="cardgrid">
+      ${s.orbStock.map((o,i)=>o.t===null?'':`
+        <div class="card ${player.gold<o.cost?'disabled':''}" onclick="shopOrb(${i})">
+          <div class="orbpip" style="background:${ORBS[o.t].color}">${ORBS[o.t].icon}</div>
+          <div class="cname">${ORBS[o.t].name}</div>
+          <div class="cdesc">Base ${ORBS[o.t].dmg} dmg.<br>${ORBS[o.t].desc}</div>
+          <div class="cost">💰 ${o.cost}</div>
+        </div>`).join('')}
+    </div>
+    <h3 style="color:var(--muted);font-size:12px;letter-spacing:2px;margin-top:12px;">RELICS</h3>
+    <div class="cardgrid">
+      ${s.relicStock.map((r,i)=>r.id===null?'':`
+        <div class="card ${player.gold<r.cost?'disabled':''}" onclick="shopRelic(${i})">
+          <div class="icon">${RELICS[r.id].icon}</div>
+          <div class="cname">${RELICS[r.id].name}</div>
+          <div class="cdesc">${RELICS[r.id].desc}</div>
+          <div class="cost">💰 ${r.cost}</div>
+        </div>`).join('')}
+    </div>
+    <h3 style="color:var(--muted);font-size:12px;letter-spacing:2px;margin-top:12px;">SERVICES</h3>
+    <div class="cardgrid">
+      <div class="card ${(s.removed||player.gold<s.removeCost||player.deck.length<=1)?'disabled':''}" onclick="shopRemove()">
+        <div class="icon">🗑️</div><div class="cname">Remove an Orb</div>
+        <div class="cdesc">Delete one orb from your deck forever.</div><div class="cost">💰 ${s.removeCost}</div>
+      </div>
+      <div class="card ${(s.healed||player.gold<s.healCost||player.hp>=player.maxHp)?'disabled':''}" onclick="shopHeal()">
+        <div class="icon">🍖</div><div class="cname">Hearty Meal</div>
+        <div class="cdesc">Restore 20 HP.</div><div class="cost">💰 ${s.healCost}</div>
+      </div>
+    </div>
+    <div class="foot"><button class="btn primary" onclick="shopLeave()">Leave Shop</button></div>
+  `;
+}
+window.shopOrb=function(i){
+  const s=window._shop,o=s.orbStock[i];
+  if(!o.t||player.gold<o.cost) return;
+  player.gold-=o.cost; player.deck.push(mkOrb(o.t)); s.orbStock[i].t=null;
+  blip(700,0.08,'sine',0.05); renderTop(); renderShop();
+};
+window.shopRelic=function(i){
+  const s=window._shop,r=s.relicStock[i];
+  if(!r.id||player.gold<r.cost) return;
+  player.gold-=r.cost; addRelic(r.id); s.relicStock[i].id=null;
+  blip(900,0.1,'sine',0.05); renderTop(); renderRelics(); renderShop();
+};
+window.shopRemove=function(){
+  const s=window._shop;
+  if(s.removed||player.gold<s.removeCost||player.deck.length<=1) return;
+  openDeckPicker('Remove which orb?',(idx)=>{
+    player.deck.splice(idx,1);
+    player.gold-=s.removeCost; s.removed=true;
+    renderTop(); renderShop(); ov('deckOv',false);
+  });
+};
+window.shopHeal=function(){
+  const s=window._shop;
+  if(s.healed||player.gold<s.healCost||player.hp>=player.maxHp) return;
+  player.gold-=s.healCost; player.hp=Math.min(player.maxHp,player.hp+20); s.healed=true;
+  blip(600,0.08,'sine',0.05); renderTop(); renderShop();
+};
+window.shopLeave=function(){ ov('shopOv',false); finishNode(); };
+
+/* =========================================================================
+   REST
+   ========================================================================= */
+function openRest(){
+  const m=document.getElementById('restModal');
+  const healAmt=Math.round(player.maxHp*0.35);
+  m.innerHTML=`
+    <h2>🔥 Campfire</h2>
+    <div class="sub">A moment of calm. Choose one.</div>
+    <div class="cardgrid">
+      <div class="card" onclick="restHeal(${healAmt})">
+        <div class="icon">💤</div><div class="cname">Rest</div>
+        <div class="cdesc">Heal ${healAmt} HP.<br>(35% of max)</div>
+      </div>
+      <div class="card" onclick="restForge()">
+        <div class="icon">⚒️</div><div class="cname">Forge</div>
+        <div class="cdesc">Upgrade an orb: +2 base damage, permanently.</div>
+      </div>
+    </div>
+  `;
+  ov('restOv',true);
+}
+window.restHeal=function(amt){ player.hp=Math.min(player.maxHp,player.hp+amt); renderTop(); blip(600,0.08,'sine',0.05); ov('restOv',false); finishNode(); };
+window.restForge=function(){
+  openDeckPicker('Upgrade which orb? (+2 damage)',(idx)=>{
+    player.deck[idx].level+=1;
+    blip(800,0.1,'square',0.05);
+    ov('deckOv',false); ov('restOv',false); finishNode();
+  });
+};
+
+/* =========================================================================
+   DECK PICKER / VIEWER
+   ========================================================================= */
+function openDeckPicker(title,onPick){
+  const m=document.getElementById('deckModal');
+  m.innerHTML=`<h2>${title}</h2><div class="decklist" id="dpList"></div>
+    <div class="foot"><button class="btn" onclick="closeDeck()">Cancel</button></div>`;
+  const list=m.querySelector('#dpList');
+  player.deck.forEach((ent,idx)=>{
+    const o=ORBS[ent.type];
+    const el=document.createElement('div');
+    el.className='deckcard sel';
+    el.innerHTML=`<div class="orbpip" style="background:${o.color};width:34px;height:34px;font-size:14px;">${o.icon}</div>
+      <div style="margin-top:4px;">${o.name}</div>
+      <div style="color:var(--gold)">${o.dmg+ent.level*2} dmg${ent.level?' (+'+ent.level*2+')':''}</div>`;
+    el.onclick=()=>onPick(idx);
+    list.appendChild(el);
+  });
+  ov('deckOv',true);
+}
+function openDeckViewer(){
+  const m=document.getElementById('deckModal');
+  m.innerHTML=`<h2>🂠 Your Deck (${player.deck.length})</h2>
+    <div class="sub">Orbs you draw from each battle.</div>
+    <div class="decklist" id="dvList"></div>
+    <div class="foot"><button class="btn primary" onclick="closeDeck()">Close</button></div>`;
+  const list=m.querySelector('#dvList');
+  player.deck.forEach(ent=>{
+    const o=ORBS[ent.type];
+    const el=document.createElement('div');
+    el.className='deckcard';
+    el.innerHTML=`<div class="orbpip" style="background:${o.color};width:34px;height:34px;font-size:14px;">${o.icon}</div>
+      <div style="margin-top:4px;">${o.name}</div>
+      <div style="color:var(--gold)">${o.dmg+ent.level*2} dmg${ent.level?' (+'+ent.level*2+')':''}</div>`;
+    list.appendChild(el);
+  });
+  ov('deckOv',true);
+}
+window.closeDeck=function(){ ov('deckOv',false); };
+
+/* =========================================================================
+   END STATES
+   ========================================================================= */
+function gameOver(){
+  combat.over=true;
+  clearSave();
+  const m=document.getElementById('endModal');
+  m.innerHTML=`<h2 style="color:var(--red)">☠️ You Fell</h2>
+    <div class="sub">You reached Floor ${game.depth+1}. The board claims another adventurer.</div>
+    <div style="font-size:50px;margin:10px;">🪦</div>
+    <div class="foot"><button class="btn primary" onclick="restart()">Try Again</button></div>`;
+  setTimeout(()=>ov('endOv',true),500);
+}
+function victory(){
+  clearSave();
+  const m=document.getElementById('endModal');
+  m.innerHTML=`<h2 style="color:var(--gold)">👑 Victory!</h2>
+    <div class="sub">You shattered the Pachi-Golem and conquered the run!</div>
+    <div style="font-size:54px;margin:10px;">🏆</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:8px;">Relics collected: ${player.relics.length} · Deck size: ${player.deck.length}</div>
+    <div class="foot"><button class="btn primary" onclick="restart()">New Run</button></div>`;
+  blip(660,0.12,'sine',0.06);blip(880,0.14,'sine',0.06);blip(1100,0.16,'sine',0.06);
+  ov('endOv',true);
+}
+window.restart=function(){ ov('endOv',false); show('startScreen'); refreshContinue(); };
+
+/* =========================================================================
+   SAVE / LOAD
+   ========================================================================= */
+const SKEY='pachirogue_save_v1';
+function saveRun(){
+  try{
+    const data={player,depth:game.depth,
+      map:{curR:map.curR,curI:map.curI,
+        rows:map.rows.map(row=>row.map(n=>({type:n.type,next:n.next,visited:n.visited,done:n.done})))}};
+    localStorage.setItem(SKEY,JSON.stringify(data));
+  }catch(e){}
+}
+function clearSave(){ try{ localStorage.removeItem(SKEY); }catch(e){} }
+function loadRun(){
+  try{
+    const raw=localStorage.getItem(SKEY); if(!raw) return false;
+    const d=JSON.parse(raw);
+    player=d.player; game.depth=d.depth;
+    map={curR:d.map.curR,curI:d.map.curI,
+      rows:d.map.rows.map((row,r)=>row.map((n,i)=>({row:r,idx:i,type:n.type,next:n.next,visited:n.visited,done:n.done})))};
+    // bump orb id counter
+    player.deck.forEach(o=>{ if(o.id>=_orbId)_orbId=o.id+1; });
+    return true;
+  }catch(e){ return false; }
+}
+function refreshContinue(){
+  let has=false; try{ has=!!localStorage.getItem(SKEY); }catch(e){}
+  document.getElementById('continueBtn').style.display=has?'inline-block':'none';
+}
+
+/* =========================================================================
+   WIRE UP UI
+   ========================================================================= */
+document.getElementById('newRunBtn').onclick=()=>{ initAudio(); clearSave(); newRun(); };
+document.getElementById('continueBtn').onclick=()=>{ initAudio(); if(loadRun()){ show('gameScreen'); renderTop();renderRelics(); goToMap(); } };
+document.getElementById('howtoBtn').onclick=()=>ov('howtoOv',true);
+document.getElementById('howtoClose').onclick=()=>ov('howtoOv',false);
+document.getElementById('deckBtn').onclick=openDeckViewer;
+document.getElementById('muteBtn').onclick=function(){ muted=!muted; this.textContent=muted?'🔇':'🔊'; };
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o && o.id==='howtoOv') ov('howtoOv',false); }));
+
+refreshContinue();
+</script>
+</body>
+</html>

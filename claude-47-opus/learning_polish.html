@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polski — Apprendre le polonais</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:wght@500;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a12;
+    --bg-2: #0f0f1a;
+    --card: #15151f;
+    --card-hover: #1c1c2a;
+    --elevated: #1e1e2c;
+    --border: #262638;
+    --border-strong: #353550;
+    --text: #ececf5;
+    --text-muted: #9090b0;
+    --text-dim: #5a5a78;
+
+    --pl-red: #e63946;
+    --pl-red-soft: rgba(230,57,70,.18);
+    --pl-red-glow: rgba(230,57,70,.4);
+    --pl-cream: #fefaf3;
+
+    --accent: #a78bfa;
+    --accent-2: #f0abfc;
+    --accent-glow: rgba(167,139,250,.3);
+    --green: #34d399;
+    --green-soft: rgba(52,211,153,.15);
+    --gold: #fbbf24;
+    --gold-soft: rgba(251,191,36,.15);
+    --blue: #60a5fa;
+    --rose: #fb7185;
+
+    --radius: 18px;
+    --radius-sm: 12px;
+    --radius-xs: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,.45);
+    --shadow-lg: 0 18px 60px rgba(0,0,0,.55);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(900px 600px at 12% 8%, rgba(230,57,70,.08), transparent 60%),
+      radial-gradient(700px 500px at 85% 20%, rgba(167,139,250,.06), transparent 60%),
+      radial-gradient(800px 600px at 50% 100%, rgba(240,171,252,.05), transparent 60%);
+  }
+
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  input { font-family: inherit; }
+
+  /* ───────── HEADER ───────── */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,18,.78);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-inner {
+    max-width: 1180px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 70px; padding: 0 28px; gap: 20px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .brand-logo {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(160deg, var(--pl-cream) 0% 50%, var(--pl-red) 50% 100%);
+    display: grid; place-items: center;
+    box-shadow: 0 6px 22px var(--pl-red-glow), inset 0 0 0 1px rgba(255,255,255,.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-logo::after {
+    content: 'Pl';
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-family: 'Fraunces', serif; font-weight: 800; font-size: 19px;
+    color: var(--bg);
+    text-shadow: 0 1px 0 rgba(255,255,255,.4);
+    letter-spacing: -.5px;
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand-title {
+    font-family: 'Fraunces', serif; font-weight: 700; font-size: 19px;
+    letter-spacing: -.4px;
+  }
+  .brand-sub { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+
+  .header-stats { display: flex; align-items: center; gap: 10px; }
+  .stat-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+    transition: border-color .2s, background .2s;
+  }
+  .stat-pill .icon {
+    font-size: 15px;
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+  .stat-pill.streak { color: var(--gold); }
+  .stat-pill.streak .icon { color: var(--gold); }
+  .stat-pill.xp { color: var(--accent); }
+  .stat-pill.xp .icon { color: var(--accent); }
+
+  /* ───────── LAYOUT ───────── */
+  .app {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 36px 28px 100px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ───────── HOME ───────── */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 32px;
+    margin-bottom: 38px;
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(32px, 5vw, 46px);
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.05;
+    margin-bottom: 10px;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(120deg, var(--pl-red), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero-sub { color: var(--text-muted); font-size: 16px; max-width: 540px; }
+
+  .daily-card {
+    min-width: 280px;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, rgba(230,57,70,.12), rgba(167,139,250,.08));
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    position: relative;
+    overflow: hidden;
+  }
+  .daily-card::before {
+    content: ''; position: absolute; inset: -1px;
+    background: linear-gradient(135deg, transparent 50%, rgba(167,139,250,.18));
+    pointer-events: none;
+    border-radius: inherit;
+  }
+  .daily-card .label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--accent-2); margin-bottom: 8px;
+  }
+  .daily-pl {
+    font-family: 'Fraunces', serif; font-weight: 600;
+    font-size: 22px; letter-spacing: -.3px; margin-bottom: 4px;
+  }
+  .daily-fr { font-size: 14px; color: var(--text-muted); margin-bottom: 8px; }
+  .daily-card button.refresh {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--accent-2);
+    font-weight: 600;
+  }
+  .daily-card button.refresh:hover { color: var(--accent); }
+  .daily-card button.speak-btn {
+    position: absolute; top: 16px; right: 16px;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    transition: all .2s;
+  }
+  .daily-card button.speak-btn:hover {
+    background: var(--pl-red-soft);
+    border-color: var(--pl-red);
+    color: var(--pl-red);
+  }
+
+  /* ───────── PROGRESS BAR ───────── */
+  .global-progress {
+    margin-bottom: 32px;
+    padding: 18px 22px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .progress-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .progress-row strong { color: var(--text); font-weight: 600; }
+  .progress-track {
+    height: 8px; border-radius: 999px;
+    background: var(--bg-2);
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--pl-red), var(--accent-2));
+    transition: width .8s cubic-bezier(.2,.7,.2,1);
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  /* ───────── LESSONS GRID ───────── */
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 24px; font-weight: 700; letter-spacing: -.5px;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .lessons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .lesson-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    cursor: pointer;
+    transition: transform .2s cubic-bezier(.2,.7,.2,1), border-color .2s, background .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .lesson-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-strong);
+    background: var(--card-hover);
+  }
+  .lesson-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--lesson-color, var(--pl-red));
+    opacity: .8;
+  }
+  .lesson-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    background: var(--lesson-soft, rgba(230,57,70,.12));
+    display: grid; place-items: center;
+    font-size: 24px;
+    margin-bottom: 14px;
+  }
+  .lesson-card h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 18px; font-weight: 700; letter-spacing: -.3px;
+    margin-bottom: 4px;
+  }
+  .lesson-card .desc {
+    font-size: 13px; color: var(--text-muted);
+    margin-bottom: 16px; line-height: 1.45;
+    min-height: 38px;
+  }
+  .lesson-meta {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; color: var(--text-dim);
+  }
+  .lesson-meta .count { font-weight: 600; }
+  .lesson-progress {
+    margin-top: 12px;
+    height: 5px; border-radius: 999px;
+    background: var(--bg-2);
+    overflow: hidden;
+  }
+  .lesson-progress-fill {
+    height: 100%;
+    background: var(--lesson-color, var(--pl-red));
+    border-radius: 999px;
+    transition: width .6s cubic-bezier(.2,.7,.2,1);
+    box-shadow: 0 0 12px var(--lesson-color, var(--pl-red));
+  }
+
+  /* ───────── ALPHABET PANEL ───────── */
+  .alphabet-section {
+    margin-bottom: 40px;
+  }
+  .alphabet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+  .letter-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .letter-card:hover {
+    border-color: var(--pl-red);
+    background: var(--card-hover);
+    transform: translateY(-2px);
+  }
+  .letter-big {
+    font-family: 'Fraunces', serif;
+    font-size: 28px; font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+  .letter-phon {
+    font-size: 12px; color: var(--accent-2);
+    font-weight: 600; margin-top: 2px;
+  }
+  .letter-ex {
+    font-size: 11px; color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* ───────── LESSON DETAIL ───────── */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-muted);
+    margin-bottom: 20px;
+    padding: 8px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: all .2s;
+  }
+  .back-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+
+  .lesson-header {
+    display: flex; align-items: flex-start; gap: 18px;
+    margin-bottom: 28px;
+  }
+  .lesson-header .lesson-icon { width: 64px; height: 64px; font-size: 32px; margin-bottom: 0; }
+  .lesson-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 32px; font-weight: 700; letter-spacing: -.7px;
+    margin-bottom: 4px;
+  }
+  .lesson-header p { color: var(--text-muted); font-size: 15px; }
+
+  .mode-tabs {
+    display: flex; gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 5px;
+    margin-bottom: 24px;
+    width: fit-content;
+    flex-wrap: wrap;
+  }
+  .mode-tab {
+    padding: 9px 16px;
+    font-size: 13px; font-weight: 600;
+    border-radius: 10px;
+    color: var(--text-muted);
+    transition: all .2s;
+  }
+  .mode-tab:hover { color: var(--text); }
+  .mode-tab.active {
+    background: var(--elevated);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  }
+
+  /* ───────── DISCOVER MODE ───────── */
+  .word-list { display: grid; gap: 8px; }
+  .word-row {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr auto auto;
+    align-items: center; gap: 16px;
+    padding: 14px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: all .2s;
+  }
+  .word-row:hover {
+    border-color: var(--border-strong);
+    background: var(--card-hover);
+  }
+  .word-row.learned {
+    border-color: rgba(52,211,153,.3);
+    background: linear-gradient(90deg, rgba(52,211,153,.05), transparent);
+  }
+  .word-mark {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border-strong);
+    display: grid; place-items: center;
+    font-size: 12px;
+    transition: all .2s;
+    flex-shrink: 0;
+  }
+  .word-row.learned .word-mark {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--bg);
+  }
+  .word-pl {
+    font-family: 'Fraunces', serif;
+    font-size: 17px; font-weight: 600; letter-spacing: -.2px;
+  }
+  .word-pl .phon {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px; font-weight: 500;
+    color: var(--accent-2);
+    margin-top: 2px;
+    letter-spacing: 0;
+    font-style: italic;
+  }
+  .word-fr { color: var(--text-muted); font-size: 14px; }
+  .word-fr .note {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .word-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    transition: all .2s;
+    color: var(--text-muted);
+  }
+  .icon-btn:hover {
+    background: var(--pl-red-soft);
+    border-color: var(--pl-red);
+    color: var(--pl-red);
+  }
+  .icon-btn.active-mark {
+    background: var(--green-soft);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  /* ───────── FLASHCARD MODE ───────── */
+  .practice-area {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 24px;
+    padding: 20px 0;
+  }
+  .practice-counter {
+    font-size: 13px; color: var(--text-muted);
+    font-weight: 600;
+  }
+  .practice-counter strong { color: var(--text); }
+
+  .flashcard {
+    width: 100%; max-width: 480px;
+    aspect-ratio: 4 / 3;
+    perspective: 1500px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .flashcard-inner {
+    position: relative; width: 100%; height: 100%;
+    transition: transform .65s cubic-bezier(.2,.7,.2,1);
+    transform-style: preserve-3d;
+  }
+  .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+  .flashcard-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 22px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 30px;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+  }
+  .flashcard-face.front {
+    background: linear-gradient(160deg, var(--card-hover), var(--card));
+    border: 1px solid var(--border-strong);
+  }
+  .flashcard-face.back {
+    background: linear-gradient(160deg, rgba(230,57,70,.12), rgba(167,139,250,.08));
+    border: 1px solid var(--pl-red);
+    transform: rotateY(180deg);
+  }
+  .flashcard-side {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .flashcard-face.back .flashcard-side { color: var(--pl-red); }
+  .flashcard-word {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(28px, 5vw, 38px);
+    font-weight: 700; letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .flashcard-phon {
+    font-style: italic;
+    color: var(--accent-2);
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+  .flashcard-note {
+    font-size: 13px; color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .flashcard-hint {
+    position: absolute; bottom: 18px; left: 0; right: 0;
+    font-size: 11px; color: var(--text-dim);
+    font-weight: 600; letter-spacing: .5px;
+  }
+  .flashcard-speak {
+    position: absolute; top: 18px; right: 18px;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    transition: all .2s;
+    z-index: 2;
+  }
+  .flashcard-speak:hover {
+    background: var(--pl-red-soft);
+    border-color: var(--pl-red);
+    color: var(--pl-red);
+  }
+
+  .practice-controls {
+    display: flex; gap: 12px;
+    width: 100%; max-width: 480px;
+  }
+  .ctrl-btn {
+    flex: 1;
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-weight: 600; font-size: 14px;
+    transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .ctrl-btn.again {
+    background: rgba(251,113,133,.1);
+    border: 1px solid rgba(251,113,133,.3);
+    color: var(--rose);
+  }
+  .ctrl-btn.again:hover {
+    background: rgba(251,113,133,.18);
+    border-color: var(--rose);
+  }
+  .ctrl-btn.good {
+    background: var(--green-soft);
+    border: 1px solid rgba(52,211,153,.4);
+    color: var(--green);
+  }
+  .ctrl-btn.good:hover {
+    background: rgba(52,211,153,.22);
+    border-color: var(--green);
+  }
+  .ctrl-btn.skip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .ctrl-btn.skip:hover {
+    background: var(--card-hover);
+    color: var(--text);
+  }
+
+  /* ───────── QUIZ MODE ───────── */
+  .quiz-card {
+    width: 100%; max-width: 540px;
+    background: var(--card);
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    padding: 32px;
+    text-align: center;
+  }
+  .quiz-prompt-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .quiz-prompt {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(26px, 4.5vw, 34px);
+    font-weight: 700; letter-spacing: -.6px;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .quiz-prompt-phon {
+    font-style: italic; color: var(--accent-2);
+    font-size: 14px; margin-bottom: 24px;
+  }
+  .quiz-options {
+    display: grid; gap: 10px;
+    margin-top: 20px;
+  }
+  .quiz-option {
+    padding: 14px 18px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-align: left;
+    font-size: 15px; font-weight: 500;
+    transition: all .15s;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .quiz-option:hover:not(:disabled):not(.correct):not(.wrong) {
+    border-color: var(--accent);
+    background: var(--card-hover);
+    transform: translateX(2px);
+  }
+  .quiz-option .key {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: var(--card);
+    border: 1px solid var(--border-strong);
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .quiz-option.correct {
+    background: var(--green-soft);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .quiz-option.correct .key {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--bg);
+  }
+  .quiz-option.wrong {
+    background: rgba(251,113,133,.1);
+    border-color: var(--rose);
+    color: var(--rose);
+  }
+  .quiz-option:disabled { cursor: default; }
+
+  .quiz-feedback {
+    margin-top: 20px;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    display: none;
+  }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.correct {
+    background: var(--green-soft);
+    color: var(--green);
+    border: 1px solid rgba(52,211,153,.3);
+  }
+  .quiz-feedback.wrong {
+    background: rgba(251,113,133,.1);
+    color: var(--rose);
+    border: 1px solid rgba(251,113,133,.3);
+  }
+
+  .quiz-bar {
+    display: flex; gap: 4px;
+    margin-bottom: 22px;
+  }
+  .quiz-bar .seg {
+    flex: 1; height: 5px; border-radius: 999px;
+    background: var(--bg-2);
+    transition: background .3s;
+  }
+  .quiz-bar .seg.ok { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .quiz-bar .seg.ko { background: var(--rose); box-shadow: 0 0 8px var(--rose); }
+  .quiz-bar .seg.cur { background: var(--accent); }
+
+  /* ───────── TYPE MODE ───────── */
+  .type-card {
+    width: 100%; max-width: 540px;
+    background: var(--card);
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    padding: 32px;
+    text-align: center;
+  }
+  .type-input-wrap {
+    margin-top: 20px;
+    display: flex; gap: 10px;
+  }
+  .type-input {
+    flex: 1;
+    padding: 14px 18px;
+    background: var(--bg-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    color: var(--text);
+    font-size: 17px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    letter-spacing: -.3px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .type-input:focus { border-color: var(--accent); }
+  .type-input.correct { border-color: var(--green); }
+  .type-input.wrong { border-color: var(--rose); }
+  .type-submit {
+    padding: 0 22px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--pl-red), var(--accent-2));
+    color: white;
+    font-weight: 700; font-size: 14px;
+    box-shadow: 0 6px 18px var(--pl-red-glow);
+    transition: transform .15s;
+  }
+  .type-submit:hover:not(:disabled) { transform: translateY(-1px); }
+  .type-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+  .pl-keys {
+    display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .pl-key {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px;
+    transition: all .15s;
+  }
+  .pl-key:hover {
+    background: var(--card-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  /* ───────── FINISH SCREEN ───────── */
+  .finish-card {
+    width: 100%; max-width: 480px;
+    background: var(--card);
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    padding: 40px 32px;
+    text-align: center;
+    animation: pop-in .5s cubic-bezier(.2,.7,.2,1);
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(.92) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .finish-emoji {
+    font-size: 64px;
+    display: block; margin-bottom: 14px;
+    filter: drop-shadow(0 4px 20px rgba(251,191,36,.4));
+  }
+  .finish-card h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 28px; font-weight: 700;
+    letter-spacing: -.5px;
+    margin-bottom: 10px;
+  }
+  .finish-stats {
+    display: flex; justify-content: center; gap: 24px;
+    margin: 24px 0;
+  }
+  .finish-stat .v {
+    font-family: 'Fraunces', serif;
+    font-size: 30px; font-weight: 700;
+    color: var(--accent-2);
+    letter-spacing: -.5px;
+    line-height: 1;
+  }
+  .finish-stat .l {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1.2px;
+    font-weight: 600; margin-top: 4px;
+  }
+  .finish-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .finish-actions button {
+    padding: 12px 22px;
+    border-radius: 12px;
+    font-weight: 600; font-size: 14px;
+    transition: all .2s;
+  }
+  .finish-actions button.primary {
+    background: linear-gradient(135deg, var(--pl-red), var(--accent-2));
+    color: white;
+    box-shadow: 0 6px 18px var(--pl-red-glow);
+  }
+  .finish-actions button.primary:hover { transform: translateY(-1px); }
+  .finish-actions button.secondary {
+    background: var(--bg-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+  }
+  .finish-actions button.secondary:hover { background: var(--card-hover); }
+
+  /* ───────── XP BUMP ANIM ───────── */
+  .xp-bump {
+    position: fixed;
+    top: 70px; right: 28px;
+    background: linear-gradient(135deg, var(--gold), #f59e0b);
+    color: var(--bg);
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-weight: 700; font-size: 14px;
+    box-shadow: 0 8px 24px rgba(251,191,36,.4);
+    z-index: 200;
+    pointer-events: none;
+    animation: xp-fly 1.4s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  @keyframes xp-fly {
+    0% { opacity: 0; transform: translateY(20px) scale(.8); }
+    20% { opacity: 1; transform: translateY(0) scale(1); }
+    80% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-30px) scale(.95); }
+  }
+
+  /* ───────── EMPTY ───────── */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+  .empty .emoji { font-size: 48px; display: block; margin-bottom: 14px; }
+  .empty h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px; color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  /* ───────── HELPERS ───────── */
+  .hidden { display: none !important; }
+
+  @media (max-width: 720px) {
+    .hero { grid-template-columns: 1fr; }
+    .header-stats .stat-pill .label { display: none; }
+    .word-row {
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+    }
+    .word-row .word-fr { grid-column: 2 / -1; grid-row: 2; padding-left: 0; }
+    .lessons-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="brand" id="brand">
+      <div class="brand-logo"></div>
+      <div class="brand-text">
+        <div class="brand-title">Polski</div>
+        <div class="brand-sub">Apprendre le polonais</div>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill streak" title="Jours consécutifs">
+        <span class="icon">🔥</span>
+        <span><span id="streak-val">0</span> <span class="label">jours</span></span>
+      </div>
+      <div class="stat-pill xp" title="Points d'expérience">
+        <span class="icon">✦</span>
+        <span><span id="xp-val">0</span> <span class="label">XP</span></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="app">
+  <!-- HOME -->
+  <section id="view-home">
+    <div class="hero">
+      <div>
+        <h1>Witaj <span class="accent">w Polsce</span> 🇵🇱</h1>
+        <p class="hero-sub">Bienvenue ! Apprends le polonais avec des leçons courtes et utiles pour la vie quotidienne. Cartes, quiz et écoute — choisis ton mode.</p>
+      </div>
+      <div class="daily-card" id="daily-card">
+        <button class="speak-btn" id="daily-speak" aria-label="Écouter">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        </button>
+        <div class="label">Phrase du jour</div>
+        <div class="daily-pl" id="daily-pl">—</div>
+        <div class="daily-fr" id="daily-fr">—</div>
+        <button class="refresh" id="daily-refresh">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Une autre phrase
+        </button>
+      </div>
+    </div>
+
+    <div class="global-progress">
+      <div class="progress-row">
+        <span><strong id="global-learned">0</strong> mots appris sur <strong id="global-total">0</strong></span>
+        <span><span id="global-percent">0</span>%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="global-fill" style="width:0%"></div></div>
+    </div>
+
+    <h2 class="section-title">Leçons</h2>
+    <div class="lessons-grid" id="lessons-grid"></div>
+
+    <h2 class="section-title">Alphabet & sons</h2>
+    <div class="alphabet-section">
+      <div class="alphabet-grid" id="alphabet-grid"></div>
+    </div>
+  </section>
+
+  <!-- LESSON DETAIL -->
+  <section id="view-lesson" class="hidden">
+    <button class="back-btn" id="back-home">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Retour
+    </button>
+    <div class="lesson-header">
+      <div class="lesson-icon" id="lh-icon">📚</div>
+      <div>
+        <h2 id="lh-title">Leçon</h2>
+        <p id="lh-desc">Description</p>
+      </div>
+    </div>
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="discover">📖 Découvrir</button>
+      <button class="mode-tab" data-mode="cards">🃏 Cartes</button>
+      <button class="mode-tab" data-mode="quiz">🎯 Quiz</button>
+      <button class="mode-tab" data-mode="type">⌨️ Écrire</button>
+    </div>
+    <div id="mode-content"></div>
+  </section>
+</main>
+
+<script>
+/* ============================================================
+   DATA — vocabulaire structuré par leçons
+   ============================================================ */
+const LESSONS = [
+  {
+    id: 'greetings',
+    title: 'Salutations',
+    icon: '👋',
+    color: '#e63946',
+    desc: 'Les premiers mots pour engager la conversation.',
+    words: [
+      { pl: 'Cześć',         fr: 'Salut',                 phon: 'tchèchtch',    note: 'informel, bonjour & au revoir' },
+      { pl: 'Dzień dobry',    fr: 'Bonjour',               phon: 'djèn dobri',   note: 'formel, en journée' },
+      { pl: 'Dobry wieczór',  fr: 'Bonsoir',               phon: 'dobri viétchour', note: 'le soir' },
+      { pl: 'Dobranoc',       fr: 'Bonne nuit',            phon: 'dobranots' },
+      { pl: 'Do widzenia',    fr: 'Au revoir',             phon: 'do vidzénia',  note: 'formel' },
+      { pl: 'Pa',             fr: 'Bye',                   phon: 'pa',           note: 'très informel' },
+      { pl: 'Na razie',       fr: 'À plus tard',           phon: 'na rajè' },
+      { pl: 'Do zobaczenia',  fr: 'À bientôt',             phon: 'do zobatchénia' },
+      { pl: 'Witaj',          fr: 'Bienvenue',             phon: 'vitaï' },
+      { pl: 'Miło mi',        fr: 'Enchanté(e)',           phon: 'miwo mi',      note: 'litt. "agréable à moi"' },
+    ]
+  },
+  {
+    id: 'politeness',
+    title: 'Politesse',
+    icon: '🙏',
+    color: '#f0abfc',
+    desc: 'S\'il vous plaît, merci, pardon — l\'essentiel pour être courtois.',
+    words: [
+      { pl: 'Proszę',         fr: 'S\'il vous plaît',      phon: 'prochè',       note: 'aussi : voici / je t\'en prie' },
+      { pl: 'Dziękuję',       fr: 'Merci',                 phon: 'djènkouyé' },
+      { pl: 'Dziękuję bardzo',fr: 'Merci beaucoup',        phon: 'djènkouyé bardzo' },
+      { pl: 'Dzięki',         fr: 'Merci (informel)',      phon: 'djènki' },
+      { pl: 'Przepraszam',    fr: 'Pardon / Excusez-moi',  phon: 'pchépracham' },
+      { pl: 'Nie ma za co',   fr: 'De rien',               phon: 'gné ma za tso', note: 'litt. "il n\'y a pas de quoi"' },
+      { pl: 'Tak',            fr: 'Oui',                   phon: 'tak' },
+      { pl: 'Nie',            fr: 'Non',                   phon: 'gné' },
+      { pl: 'Może',           fr: 'Peut-être',             phon: 'mojè' },
+      { pl: 'Oczywiście',     fr: 'Bien sûr',              phon: 'otchivichtché' },
+    ]
+  },
+  {
+    id: 'introduce',
+    title: 'Se présenter',
+    icon: '🤝',
+    color: '#a78bfa',
+    desc: 'Dire son nom, d\'où on vient, comment on va.',
+    words: [
+      { pl: 'Jak się masz?',         fr: 'Comment vas-tu ?',         phon: 'yak chè mach',           note: 'informel' },
+      { pl: 'Jak się Pan/Pani ma?',  fr: 'Comment allez-vous ?',     phon: 'yak chè pan / pagni ma', note: 'formel (M./Mme)' },
+      { pl: 'Dobrze',                fr: 'Bien',                     phon: 'dobjè' },
+      { pl: 'Świetnie',              fr: 'Super',                    phon: 'chviétgné' },
+      { pl: 'Tak sobie',             fr: 'Comme ci comme ça',        phon: 'tak sobié' },
+      { pl: 'Mam na imię…',          fr: 'Je m\'appelle…',           phon: 'mam na imié',            note: 'litt. "j\'ai pour prénom…"' },
+      { pl: 'Jak masz na imię?',     fr: 'Comment t\'appelles-tu ?', phon: 'yak mach na imié' },
+      { pl: 'Jestem z Francji',      fr: 'Je viens de France',       phon: 'yéstém z frantsïi' },
+      { pl: 'Mieszkam w Polsce',     fr: 'J\'habite en Pologne',     phon: 'miechkam f polstsé' },
+      { pl: 'Uczę się polskiego',    fr: 'J\'apprends le polonais',  phon: 'outché chè polskiégo' },
+      { pl: 'Mówię trochę po polsku',fr: 'Je parle un peu polonais', phon: 'mouvié trohè po polskou' },
+      { pl: 'Nie rozumiem',          fr: 'Je ne comprends pas',      phon: 'gné rozoumiém' },
+    ]
+  },
+  {
+    id: 'numbers',
+    title: 'Nombres',
+    icon: '🔢',
+    color: '#60a5fa',
+    desc: 'De 0 à 100 pour les prix, l\'heure et bien plus.',
+    words: [
+      { pl: 'zero',     fr: '0',  phon: 'zéro' },
+      { pl: 'jeden',    fr: '1',  phon: 'yédèn' },
+      { pl: 'dwa',      fr: '2',  phon: 'dva' },
+      { pl: 'trzy',     fr: '3',  phon: 'tchi' },
+      { pl: 'cztery',   fr: '4',  phon: 'tchtéri' },
+      { pl: 'pięć',     fr: '5',  phon: 'piéntch' },
+      { pl: 'sześć',    fr: '6',  phon: 'chéchtch' },
+      { pl: 'siedem',   fr: '7',  phon: 'chiédèm' },
+      { pl: 'osiem',    fr: '8',  phon: 'ochièm' },
+      { pl: 'dziewięć', fr: '9',  phon: 'djéviéntch' },
+      { pl: 'dziesięć', fr: '10', phon: 'djéchiéntch' },
+      { pl: 'jedenaście', fr: '11', phon: 'yédénachtché' },
+      { pl: 'dwanaście',  fr: '12', phon: 'dvanachtché' },
+      { pl: 'dwadzieścia',fr: '20', phon: 'dvadjèchtcha' },
+      { pl: 'trzydzieści',fr: '30', phon: 'tchidjèchtchi' },
+      { pl: 'pięćdziesiąt',fr:'50', phon: 'piéndjéchionnt' },
+      { pl: 'sto',      fr: '100',  phon: 'sto' },
+      { pl: 'tysiąc',   fr: '1000', phon: 'tichionnts' },
+    ]
+  },
+  {
+    id: 'time',
+    title: 'Temps & jours',
+    icon: '🗓️',
+    color: '#fbbf24',
+    desc: 'Aujourd\'hui, demain, lundi… le vocabulaire du temps.',
+    words: [
+      { pl: 'dziś',           fr: 'aujourd\'hui',  phon: 'djich' },
+      { pl: 'jutro',          fr: 'demain',        phon: 'youtro' },
+      { pl: 'wczoraj',        fr: 'hier',          phon: 'ftchoraï' },
+      { pl: 'rano',           fr: 'matin',         phon: 'rano' },
+      { pl: 'wieczorem',      fr: 'le soir',       phon: 'viétchorèm' },
+      { pl: 'teraz',          fr: 'maintenant',    phon: 'téraz' },
+      { pl: 'później',        fr: 'plus tard',     phon: 'pouj-gnèï' },
+      { pl: 'poniedziałek',   fr: 'lundi',         phon: 'pognédjawèk' },
+      { pl: 'wtorek',         fr: 'mardi',         phon: 'ftorèk' },
+      { pl: 'środa',          fr: 'mercredi',      phon: 'chroda' },
+      { pl: 'czwartek',       fr: 'jeudi',         phon: 'tchvartèk' },
+      { pl: 'piątek',         fr: 'vendredi',      phon: 'piontèk' },
+      { pl: 'sobota',         fr: 'samedi',        phon: 'sobota' },
+      { pl: 'niedziela',      fr: 'dimanche',      phon: 'gnédjèla' },
+      { pl: 'tydzień',        fr: 'semaine',       phon: 'tidjèn' },
+      { pl: 'miesiąc',        fr: 'mois',          phon: 'miéchionts' },
+      { pl: 'rok',            fr: 'année',         phon: 'rok' },
+    ]
+  },
+  {
+    id: 'family',
+    title: 'Famille',
+    icon: '👨‍👩‍👧',
+    color: '#fb7185',
+    desc: 'Maman, papa, frère, sœur — les liens essentiels.',
+    words: [
+      { pl: 'rodzina',     fr: 'famille',       phon: 'rodjina' },
+      { pl: 'mama',        fr: 'maman',         phon: 'mama' },
+      { pl: 'tata',        fr: 'papa',          phon: 'tata' },
+      { pl: 'matka',       fr: 'mère',          phon: 'matka' },
+      { pl: 'ojciec',      fr: 'père',          phon: 'oïtchièts' },
+      { pl: 'syn',         fr: 'fils',          phon: 'sin' },
+      { pl: 'córka',       fr: 'fille',         phon: 'tsourka' },
+      { pl: 'brat',        fr: 'frère',         phon: 'brat' },
+      { pl: 'siostra',     fr: 'sœur',          phon: 'chostra' },
+      { pl: 'mąż',         fr: 'mari',          phon: 'monch' },
+      { pl: 'żona',        fr: 'femme (épouse)',phon: 'jona' },
+      { pl: 'dziecko',     fr: 'enfant',        phon: 'djètsko' },
+      { pl: 'babcia',      fr: 'grand-mère',    phon: 'babtcha' },
+      { pl: 'dziadek',     fr: 'grand-père',    phon: 'djadèk' },
+      { pl: 'przyjaciel',  fr: 'ami',           phon: 'pchiyatchièl' },
+    ]
+  },
+  {
+    id: 'food',
+    title: 'Nourriture',
+    icon: '🍞',
+    color: '#34d399',
+    desc: 'Pain, fromage, soupe — ce que tu vois au sklep.',
+    words: [
+      { pl: 'jedzenie',    fr: 'nourriture',    phon: 'yédzégné' },
+      { pl: 'chleb',       fr: 'pain',          phon: 'hlèb' },
+      { pl: 'masło',       fr: 'beurre',        phon: 'maswo' },
+      { pl: 'ser',         fr: 'fromage',       phon: 'sèr' },
+      { pl: 'mleko',       fr: 'lait',          phon: 'mléko' },
+      { pl: 'jajko',       fr: 'œuf',           phon: 'yaïko' },
+      { pl: 'mięso',       fr: 'viande',        phon: 'mièso' },
+      { pl: 'kurczak',     fr: 'poulet',        phon: 'kourtchak' },
+      { pl: 'ryba',        fr: 'poisson',       phon: 'riba' },
+      { pl: 'zupa',        fr: 'soupe',         phon: 'zoupa' },
+      { pl: 'pierogi',     fr: 'pierogi',       phon: 'piérogui',     note: 'raviolis polonais' },
+      { pl: 'ziemniaki',   fr: 'pommes de terre',phon:'jièmgnaki' },
+      { pl: 'warzywa',     fr: 'légumes',       phon: 'vajiva' },
+      { pl: 'owoce',       fr: 'fruits',        phon: 'ovotsé' },
+      { pl: 'jabłko',      fr: 'pomme',         phon: 'yabwko' },
+      { pl: 'cukier',      fr: 'sucre',         phon: 'tsoukièr' },
+      { pl: 'sól',         fr: 'sel',           phon: 'soul' },
+      { pl: 'śniadanie',   fr: 'petit-déjeuner',phon: 'chgnadanié' },
+      { pl: 'obiad',       fr: 'déjeuner',      phon: 'obiat',        note: 'le repas principal vers midi/14h' },
+      { pl: 'kolacja',     fr: 'dîner',         phon: 'kolatsia' },
+      { pl: 'smacznego',   fr: 'bon appétit',   phon: 'smatchnégo' },
+    ]
+  },
+  {
+    id: 'drinks',
+    title: 'Boissons',
+    icon: '☕',
+    color: '#06b6d4',
+    desc: 'Au café, au bar, au resto.',
+    words: [
+      { pl: 'woda',        fr: 'eau',           phon: 'voda' },
+      { pl: 'kawa',        fr: 'café',          phon: 'kava' },
+      { pl: 'herbata',     fr: 'thé',           phon: 'hèrbata' },
+      { pl: 'sok',         fr: 'jus',           phon: 'sok' },
+      { pl: 'piwo',        fr: 'bière',         phon: 'pivo' },
+      { pl: 'wino',        fr: 'vin',           phon: 'vino' },
+      { pl: 'wódka',       fr: 'vodka',         phon: 'voutka' },
+      { pl: 'mleko',       fr: 'lait',          phon: 'mléko' },
+      { pl: 'gorące',      fr: 'chaud',         phon: 'gorontsé' },
+      { pl: 'zimne',       fr: 'froid',         phon: 'jimné' },
+      { pl: 'Na zdrowie!', fr: 'Santé !',       phon: 'na zdrovié',   note: 'litt. "à la santé"' },
+    ]
+  },
+  {
+    id: 'restaurant',
+    title: 'Au restaurant',
+    icon: '🍽️',
+    color: '#f59e0b',
+    desc: 'Commander, demander l\'addition, dire merci.',
+    words: [
+      { pl: 'Stolik dla dwóch osób',fr: 'Une table pour deux',     phon: 'stolik dla dvouh ossoub' },
+      { pl: 'Poproszę…',           fr: 'Je voudrais…',             phon: 'poprochè',         note: 'forme polie pour commander' },
+      { pl: 'Menu, proszę',        fr: 'Le menu, s\'il vous plaît',phon: 'ménou prochè' },
+      { pl: 'Co Pan/Pani poleca?', fr: 'Que recommandez-vous ?',   phon: 'tso pan/pagni polétsa' },
+      { pl: 'Smakuje mi',          fr: 'C\'est bon (j\'aime)',     phon: 'smakouyé mi' },
+      { pl: 'Bez cukru',           fr: 'Sans sucre',               phon: 'bès tsoukrou' },
+      { pl: 'Bez mięsa',           fr: 'Sans viande',              phon: 'bès mièssa' },
+      { pl: 'Jeszcze jedno',       fr: 'Encore un',                phon: 'yéchtché yédno' },
+      { pl: 'Rachunek, proszę',    fr: 'L\'addition, s\'il vous plaît',phon: 'rahounèk prochè' },
+      { pl: 'Czy mogę zapłacić kartą?', fr: 'Je peux payer par carte ?',phon: 'tchi mogué zapwatchitch karton' },
+      { pl: 'Płacę gotówką',       fr: 'Je paie en espèces',       phon: 'pwatsè gotouvkonn' },
+      { pl: 'Reszty nie trzeba',   fr: 'Gardez la monnaie',        phon: 'rèchti gné tchéba' },
+    ]
+  },
+  {
+    id: 'shopping',
+    title: 'Faire ses courses',
+    icon: '🛒',
+    color: '#22c55e',
+    desc: 'Au sklep, au marché, à la pharmacie.',
+    words: [
+      { pl: 'sklep',          fr: 'magasin',                phon: 'sklèp' },
+      { pl: 'apteka',         fr: 'pharmacie',              phon: 'aptéka' },
+      { pl: 'piekarnia',      fr: 'boulangerie',            phon: 'piékargna' },
+      { pl: 'targ',           fr: 'marché',                 phon: 'targ' },
+      { pl: 'Ile to kosztuje?',fr: 'Combien ça coûte ?',    phon: 'ilé to kochtouyé' },
+      { pl: 'Drogo',          fr: 'Cher',                   phon: 'drogo' },
+      { pl: 'Tanio',          fr: 'Pas cher',               phon: 'tagno' },
+      { pl: 'Mam',            fr: 'J\'ai',                  phon: 'mam' },
+      { pl: 'Nie mam',        fr: 'Je n\'ai pas',           phon: 'gné mam' },
+      { pl: 'Szukam…',        fr: 'Je cherche…',            phon: 'choukam' },
+      { pl: 'Czy macie…?',    fr: 'Avez-vous… ?',           phon: 'tchi matché',     note: 'pluriel/formel courant' },
+      { pl: 'paragon',        fr: 'ticket de caisse',       phon: 'paragon' },
+      { pl: 'reklamówka',     fr: 'sac plastique',          phon: 'rèklamoufka' },
+      { pl: 'kasa',           fr: 'caisse',                 phon: 'kassa' },
+      { pl: 'otwarte',        fr: 'ouvert',                 phon: 'otvarté' },
+      { pl: 'zamknięte',      fr: 'fermé',                  phon: 'zamkgnèté' },
+    ]
+  },
+  {
+    id: 'transport',
+    title: 'Transport & ville',
+    icon: '🚊',
+    color: '#3b82f6',
+    desc: 'Tram, train, bus, taxi — se déplacer en Pologne.',
+    words: [
+      { pl: 'tramwaj',     fr: 'tramway',           phon: 'tramvaï' },
+      { pl: 'autobus',     fr: 'bus',               phon: 'aoutoboussse' },
+      { pl: 'pociąg',      fr: 'train',             phon: 'potchionk' },
+      { pl: 'samochód',    fr: 'voiture',           phon: 'samohout' },
+      { pl: 'taksówka',    fr: 'taxi',              phon: 'taksoufka' },
+      { pl: 'lotnisko',    fr: 'aéroport',          phon: 'lotgnisko' },
+      { pl: 'dworzec',     fr: 'gare',              phon: 'dvojèts' },
+      { pl: 'przystanek',  fr: 'arrêt',             phon: 'pchistanèk' },
+      { pl: 'bilet',       fr: 'billet/ticket',     phon: 'bilèt' },
+      { pl: 'gdzie',       fr: 'où',                phon: 'gdjié' },
+      { pl: 'Gdzie jest…?',fr: 'Où est… ?',         phon: 'gdjié yèst' },
+      { pl: 'na lewo',     fr: 'à gauche',          phon: 'na lévo' },
+      { pl: 'na prawo',    fr: 'à droite',          phon: 'na pravo' },
+      { pl: 'prosto',      fr: 'tout droit',        phon: 'prosto' },
+      { pl: 'blisko',      fr: 'près',              phon: 'blisko' },
+      { pl: 'daleko',      fr: 'loin',              phon: 'dalèko' },
+    ]
+  },
+  {
+    id: 'verbs',
+    title: 'Verbes essentiels',
+    icon: '⚡',
+    color: '#a855f7',
+    desc: 'Être, avoir, vouloir, aller — la base.',
+    words: [
+      { pl: 'być',         fr: 'être',              phon: 'bitch' },
+      { pl: 'mieć',        fr: 'avoir',             phon: 'miétch' },
+      { pl: 'chcieć',      fr: 'vouloir',           phon: 'htchiètch' },
+      { pl: 'móc',         fr: 'pouvoir',           phon: 'mouts' },
+      { pl: 'iść',         fr: 'aller (à pied)',    phon: 'ichtch' },
+      { pl: 'jechać',      fr: 'aller (véhicule)',  phon: 'yèhatch' },
+      { pl: 'robić',       fr: 'faire',             phon: 'robitch' },
+      { pl: 'mówić',       fr: 'parler',            phon: 'mouvitch' },
+      { pl: 'rozumieć',    fr: 'comprendre',        phon: 'rozoumiètch' },
+      { pl: 'wiedzieć',    fr: 'savoir',            phon: 'viédjètch' },
+      { pl: 'znać',        fr: 'connaître',         phon: 'znatch' },
+      { pl: 'widzieć',     fr: 'voir',              phon: 'vidjètch' },
+      { pl: 'lubić',       fr: 'aimer (bien)',      phon: 'loubitch' },
+      { pl: 'kochać',      fr: 'aimer (d\'amour)',  phon: 'kohatch' },
+      { pl: 'jeść',        fr: 'manger',            phon: 'yèchtch' },
+      { pl: 'pić',         fr: 'boire',             phon: 'pitch' },
+      { pl: 'kupić',       fr: 'acheter',           phon: 'koupitch' },
+      { pl: 'czytać',      fr: 'lire',              phon: 'tchitatch' },
+    ]
+  },
+  {
+    id: 'colors',
+    title: 'Couleurs',
+    icon: '🎨',
+    color: '#ec4899',
+    desc: 'Rouge, bleu, vert et toutes les autres.',
+    words: [
+      { pl: 'czerwony', fr: 'rouge',     phon: 'tchèrvoni' },
+      { pl: 'niebieski',fr: 'bleu',      phon: 'gnébièski' },
+      { pl: 'zielony',  fr: 'vert',      phon: 'jiéloni' },
+      { pl: 'żółty',    fr: 'jaune',     phon: 'joute' },
+      { pl: 'czarny',   fr: 'noir',      phon: 'tcharni' },
+      { pl: 'biały',    fr: 'blanc',     phon: 'biawi' },
+      { pl: 'szary',    fr: 'gris',      phon: 'chari' },
+      { pl: 'pomarańczowy', fr: 'orange',phon: 'pomarantchovi' },
+      { pl: 'fioletowy', fr: 'violet',   phon: 'fiolétovi' },
+      { pl: 'różowy',   fr: 'rose',      phon: 'roujovi' },
+      { pl: 'brązowy',  fr: 'marron',    phon: 'bronzovi' },
+    ]
+  },
+  {
+    id: 'emergency',
+    title: 'Urgences',
+    icon: '🚨',
+    color: '#ef4444',
+    desc: 'Les phrases qui peuvent te sortir d\'un mauvais pas.',
+    words: [
+      { pl: 'Pomocy!',                fr: 'Au secours !',           phon: 'pomotsi' },
+      { pl: 'Pomóż mi',               fr: 'Aide-moi',               phon: 'pomouj mi' },
+      { pl: 'Zadzwoń na policję',     fr: 'Appelle la police',      phon: 'zadzvogn na politsié' },
+      { pl: 'Potrzebuję lekarza',     fr: 'J\'ai besoin d\'un médecin', phon: 'potchéboué lékaja' },
+      { pl: 'Boli mnie…',             fr: 'J\'ai mal à…',           phon: 'boli mné' },
+      { pl: 'Zgubiłem się',           fr: 'Je suis perdu (M)',      phon: 'zgoubiwèm chè' },
+      { pl: 'Zgubiłam się',           fr: 'Je suis perdue (F)',     phon: 'zgoubiwam chè' },
+      { pl: 'Czy mówi Pan po angielsku?', fr: 'Parlez-vous anglais ? (à un homme)', phon: 'tchi mouvi pan po anguièlskou' },
+    ]
+  },
+];
+
+const ALPHABET = [
+  { l: 'Ą ą', p: 'on (nasal)',    ex: 'mąż' },
+  { l: 'Ć ć', p: 'tchi (doux)',   ex: 'pięć' },
+  { l: 'Ę ę', p: 'en (nasal)',    ex: 'pięć' },
+  { l: 'Ł ł', p: 'w anglais',     ex: 'masło' },
+  { l: 'Ń ń', p: 'gn',            ex: 'koń' },
+  { l: 'Ó ó', p: 'ou',            ex: 'sól' },
+  { l: 'Ś ś', p: 'chi (doux)',    ex: 'śnieg' },
+  { l: 'Ź ź', p: 'ji (doux)',     ex: 'źle' },
+  { l: 'Ż ż', p: 'j (jour)',      ex: 'żona' },
+  { l: 'Cz',  p: 'tch',           ex: 'czas' },
+  { l: 'Sz',  p: 'ch',            ex: 'szok' },
+  { l: 'Rz',  p: 'j (jour)',      ex: 'rzeka' },
+  { l: 'Dz',  p: 'dz',            ex: 'dzwon' },
+  { l: 'Dż',  p: 'dj',            ex: 'dżem' },
+  { l: 'Y y', p: 'i bref',        ex: 'syn' },
+  { l: 'W w', p: 'v',             ex: 'woda' },
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const STORAGE_KEY = 'polski_state_v1';
+const defaultState = () => ({
+  learned: {},        // { 'lessonId:idx': true }
+  xp: 0,
+  streak: 0,
+  lastDay: null,      // ISO date
+  dailyIdx: null,
+});
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    return { ...defaultState(), ...JSON.parse(raw) };
+  } catch { return defaultState(); }
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function bumpStreak() {
+  const today = todayISO();
+  if (state.lastDay === today) return;
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const yISO = y.toISOString().slice(0,10);
+  state.streak = (state.lastDay === yISO) ? state.streak + 1 : 1;
+  state.lastDay = today;
+  saveState();
+}
+
+function addXP(amount) {
+  state.xp += amount;
+  saveState();
+  renderHeader();
+  // Bump animation
+  const bump = document.createElement('div');
+  bump.className = 'xp-bump';
+  bump.textContent = `+${amount} XP`;
+  document.body.appendChild(bump);
+  setTimeout(() => bump.remove(), 1400);
+}
+
+function isLearned(lessonId, idx) {
+  return !!state.learned[`${lessonId}:${idx}`];
+}
+function setLearned(lessonId, idx, val) {
+  const k = `${lessonId}:${idx}`;
+  if (val) state.learned[k] = true; else delete state.learned[k];
+  saveState();
+}
+
+function totalWords() { return LESSONS.reduce((s, l) => s + l.words.length, 0); }
+function learnedInLesson(lessonId) {
+  const lesson = LESSONS.find(l => l.id === lessonId);
+  return lesson.words.filter((_, i) => isLearned(lessonId, i)).length;
+}
+function totalLearned() { return Object.keys(state.learned).length; }
+
+/* ============================================================
+   SPEECH
+   ============================================================ */
+let cachedVoice = null;
+function pickPolishVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = speechSynthesis.getVoices();
+  return voices.find(v => v.lang === 'pl-PL')
+      || voices.find(v => v.lang.startsWith('pl'))
+      || null;
+}
+if ('speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = () => { cachedVoice = pickPolishVoice(); };
+  cachedVoice = pickPolishVoice();
+}
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'pl-PL';
+  u.rate = 0.9;
+  if (cachedVoice) u.voice = cachedVoice;
+  speechSynthesis.speak(u);
+}
+
+/* ============================================================
+   ROUTING
+   ============================================================ */
+const viewHome = document.getElementById('view-home');
+const viewLesson = document.getElementById('view-lesson');
+
+function showHome() {
+  viewLesson.classList.add('hidden');
+  viewHome.classList.remove('hidden');
+  renderHome();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+let currentLesson = null;
+let currentMode = 'discover';
+function openLesson(id) {
+  currentLesson = LESSONS.find(l => l.id === id);
+  currentMode = 'discover';
+  viewHome.classList.add('hidden');
+  viewLesson.classList.remove('hidden');
+  renderLesson();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('back-home').addEventListener('click', showHome);
+document.getElementById('brand').addEventListener('click', showHome);
+
+/* ============================================================
+   RENDER — HEADER
+   ============================================================ */
+function renderHeader() {
+  document.getElementById('streak-val').textContent = state.streak;
+  document.getElementById('xp-val').textContent = state.xp;
+}
+
+/* ============================================================
+   RENDER — HOME
+   ============================================================ */
+function renderHome() {
+  renderHeader();
+  // Daily phrase
+  if (state.dailyIdx == null) state.dailyIdx = pickDailyIdx();
+  renderDaily();
+
+  // Global progress
+  const total = totalWords();
+  const learned = totalLearned();
+  document.getElementById('global-learned').textContent = learned;
+  document.getElementById('global-total').textContent = total;
+  const pct = total ? Math.round(learned / total * 100) : 0;
+  document.getElementById('global-percent').textContent = pct;
+  document.getElementById('global-fill').style.width = pct + '%';
+
+  // Lessons
+  const grid = document.getElementById('lessons-grid');
+  grid.innerHTML = LESSONS.map(l => {
+    const done = learnedInLesson(l.id);
+    const total = l.words.length;
+    const pct = Math.round(done / total * 100);
+    return `
+      <div class="lesson-card" data-id="${l.id}" style="--lesson-color:${l.color};--lesson-soft:${l.color}22">
+        <div class="lesson-icon">${l.icon}</div>
+        <h3>${l.title}</h3>
+        <div class="desc">${l.desc}</div>
+        <div class="lesson-meta">
+          <span class="count">${done}/${total} mots</span>
+          <span>${pct}%</span>
+        </div>
+        <div class="lesson-progress"><div class="lesson-progress-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join('');
+  grid.querySelectorAll('.lesson-card').forEach(el => {
+    el.addEventListener('click', () => openLesson(el.dataset.id));
+  });
+
+  // Alphabet
+  const alpha = document.getElementById('alphabet-grid');
+  alpha.innerHTML = ALPHABET.map(a => `
+    <div class="letter-card" data-ex="${a.ex}">
+      <div class="letter-big">${a.l}</div>
+      <div class="letter-phon">${a.p}</div>
+      <div class="letter-ex">${a.ex}</div>
+    </div>
+  `).join('');
+  alpha.querySelectorAll('.letter-card').forEach(el => {
+    el.addEventListener('click', () => speak(el.dataset.ex));
+  });
+}
+
+function pickDailyIdx() {
+  const flat = [];
+  LESSONS.forEach(l => l.words.forEach((w, i) => flat.push({ lessonId: l.id, idx: i, w })));
+  const r = Math.floor(Math.random() * flat.length);
+  return r;
+}
+
+function renderDaily() {
+  const flat = [];
+  LESSONS.forEach(l => l.words.forEach((w, i) => flat.push({ lessonId: l.id, idx: i, w })));
+  const i = Math.max(0, Math.min(state.dailyIdx ?? 0, flat.length - 1));
+  const item = flat[i];
+  document.getElementById('daily-pl').textContent = item.w.pl;
+  document.getElementById('daily-fr').textContent = item.w.fr + (item.w.note ? ` — ${item.w.note}` : '');
+  document.getElementById('daily-speak').onclick = () => speak(item.w.pl);
+}
+document.getElementById('daily-refresh').addEventListener('click', () => {
+  state.dailyIdx = pickDailyIdx();
+  saveState();
+  renderDaily();
+});
+
+/* ============================================================
+   RENDER — LESSON
+   ============================================================ */
+function renderLesson() {
+  document.getElementById('lh-icon').textContent = currentLesson.icon;
+  document.getElementById('lh-icon').style.background = currentLesson.color + '22';
+  document.getElementById('lh-title').textContent = currentLesson.title;
+  document.getElementById('lh-desc').textContent = currentLesson.desc;
+  document.querySelectorAll('.mode-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === currentMode);
+  });
+  const c = document.getElementById('mode-content');
+  if (currentMode === 'discover') c.innerHTML = renderDiscover();
+  else if (currentMode === 'cards') c.innerHTML = '', renderCards(c);
+  else if (currentMode === 'quiz') c.innerHTML = '', renderQuiz(c);
+  else if (currentMode === 'type') c.innerHTML = '', renderType(c);
+  attachDiscoverHandlers();
+}
+document.querySelectorAll('.mode-tab').forEach(b => {
+  b.addEventListener('click', () => {
+    currentMode = b.dataset.mode;
+    renderLesson();
+  });
+});
+
+/* ============================================================
+   MODE — DISCOVER (just browse)
+   ============================================================ */
+function renderDiscover() {
+  return `<div class="word-list">
+    ${currentLesson.words.map((w, i) => {
+      const learned = isLearned(currentLesson.id, i);
+      return `
+        <div class="word-row ${learned ? 'learned':''}" data-idx="${i}">
+          <div class="word-mark">${learned ? '✓' : ''}</div>
+          <div class="word-pl">${w.pl}<span class="phon">${w.phon}</span></div>
+          <div class="word-fr">${w.fr}${w.note ? `<span class="note">${w.note}</span>` : ''}</div>
+          <div class="word-actions">
+            <button class="icon-btn speak" title="Écouter" data-pl="${w.pl}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
+            <button class="icon-btn mark ${learned ? 'active-mark':''}" title="Marquer comme appris" data-idx="${i}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  </div>`;
+}
+function attachDiscoverHandlers() {
+  document.querySelectorAll('.word-row .speak').forEach(b => {
+    b.addEventListener('click', () => speak(b.dataset.pl));
+  });
+  document.querySelectorAll('.word-row .mark').forEach(b => {
+    b.addEventListener('click', () => {
+      const idx = +b.dataset.idx;
+      const cur = isLearned(currentLesson.id, idx);
+      setLearned(currentLesson.id, idx, !cur);
+      if (!cur) { addXP(2); bumpStreak(); }
+      renderLesson();
+    });
+  });
+}
+
+/* ============================================================
+   MODE — FLASHCARDS
+   ============================================================ */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderCards(container) {
+  const indices = shuffle(currentLesson.words.map((_, i) => i));
+  let pos = 0;
+  let again = 0, good = 0;
+
+  function update() {
+    if (pos >= indices.length) {
+      renderFinish(container, { good, again, total: indices.length, mode: 'cards' });
+      return;
+    }
+    const idx = indices[pos];
+    const w = currentLesson.words[idx];
+    container.innerHTML = `
+      <div class="practice-area">
+        <div class="practice-counter">Carte <strong>${pos+1}</strong> / ${indices.length}</div>
+        <div class="flashcard" id="fc">
+          <div class="flashcard-inner">
+            <div class="flashcard-face front">
+              <button class="flashcard-speak" id="fc-speak" title="Écouter">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+              </button>
+              <div class="flashcard-side">Polonais</div>
+              <div class="flashcard-word">${w.pl}</div>
+              <div class="flashcard-phon">${w.phon}</div>
+              <div class="flashcard-hint">Clique pour voir la traduction</div>
+            </div>
+            <div class="flashcard-face back">
+              <div class="flashcard-side">Français</div>
+              <div class="flashcard-word">${w.fr}</div>
+              ${w.note ? `<div class="flashcard-note">${w.note}</div>` : ''}
+              <div class="flashcard-hint">Évalue ta réponse ↓</div>
+            </div>
+          </div>
+        </div>
+        <div class="practice-controls">
+          <button class="ctrl-btn again" id="ctrl-again">↻ À revoir</button>
+          <button class="ctrl-btn skip" id="ctrl-skip">Passer</button>
+          <button class="ctrl-btn good" id="ctrl-good">✓ Acquis</button>
+        </div>
+      </div>
+    `;
+    const card = document.getElementById('fc');
+    card.addEventListener('click', e => {
+      if (e.target.closest('#fc-speak')) return;
+      card.classList.toggle('flipped');
+    });
+    document.getElementById('fc-speak').addEventListener('click', e => {
+      e.stopPropagation();
+      speak(w.pl);
+    });
+    document.getElementById('ctrl-again').addEventListener('click', () => {
+      again++;
+      // Re-insert this index further in queue
+      indices.push(idx);
+      pos++;
+      update();
+    });
+    document.getElementById('ctrl-skip').addEventListener('click', () => {
+      pos++;
+      update();
+    });
+    document.getElementById('ctrl-good').addEventListener('click', () => {
+      good++;
+      if (!isLearned(currentLesson.id, idx)) {
+        setLearned(currentLesson.id, idx, true);
+        addXP(3);
+      } else addXP(1);
+      bumpStreak();
+      pos++;
+      update();
+    });
+    // auto-speak the polish word once the card appears
+    setTimeout(() => speak(w.pl), 250);
+  }
+  update();
+}
+
+/* ============================================================
+   MODE — QUIZ (multiple choice, polish→french)
+   ============================================================ */
+function renderQuiz(container) {
+  const indices = shuffle(currentLesson.words.map((_, i) => i));
+  const allOptions = LESSONS.flatMap(l => l.words.map(w => w.fr));
+  let pos = 0;
+  const results = []; // 'ok' | 'ko'
+
+  function update() {
+    if (pos >= indices.length) {
+      const good = results.filter(r => r === 'ok').length;
+      renderFinish(container, { good, again: results.length - good, total: indices.length, mode: 'quiz' });
+      return;
+    }
+    const idx = indices[pos];
+    const w = currentLesson.words[idx];
+
+    const wrong = shuffle(allOptions.filter(o => o !== w.fr)).slice(0, 3);
+    const opts = shuffle([w.fr, ...wrong]);
+
+    const segs = indices.map((_, i) => {
+      let cls = '';
+      if (i < pos) cls = results[i] === 'ok' ? 'ok' : 'ko';
+      else if (i === pos) cls = 'cur';
+      return `<div class="seg ${cls}"></div>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="practice-area">
+        <div class="practice-counter">Question <strong>${pos+1}</strong> / ${indices.length}</div>
+        <div class="quiz-card">
+          <div class="quiz-bar">${segs}</div>
+          <div class="quiz-prompt-label">Que signifie ?</div>
+          <div class="quiz-prompt">${w.pl}</div>
+          <div class="quiz-prompt-phon">${w.phon}</div>
+          <div class="quiz-options">
+            ${opts.map((o, i) => `
+              <button class="quiz-option" data-correct="${o === w.fr ? '1':'0'}">
+                <span class="key">${i+1}</span>
+                <span>${o}</span>
+              </button>
+            `).join('')}
+          </div>
+          <div class="quiz-feedback" id="qfb"></div>
+        </div>
+      </div>
+    `;
+    const buttons = container.querySelectorAll('.quiz-option');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const correct = btn.dataset.correct === '1';
+        buttons.forEach(b => {
+          b.disabled = true;
+          if (b.dataset.correct === '1') b.classList.add('correct');
+        });
+        if (!correct) btn.classList.add('wrong');
+        const fb = document.getElementById('qfb');
+        if (correct) {
+          fb.className = 'quiz-feedback correct show';
+          fb.textContent = `✓ Bravo ! "${w.pl}" = "${w.fr}"`;
+          if (!isLearned(currentLesson.id, idx)) {
+            setLearned(currentLesson.id, idx, true);
+            addXP(3);
+          } else addXP(1);
+          bumpStreak();
+          results.push('ok');
+        } else {
+          fb.className = 'quiz-feedback wrong show';
+          fb.textContent = `✗ Non. "${w.pl}" signifie "${w.fr}"${w.note ? ` — ${w.note}` : ''}.`;
+          results.push('ko');
+        }
+        speak(w.pl);
+        setTimeout(() => { pos++; update(); }, correct ? 1000 : 1800);
+      });
+    });
+    // Keyboard
+    const onKey = e => {
+      const n = parseInt(e.key);
+      if (n >= 1 && n <= buttons.length) buttons[n-1].click();
+    };
+    document.addEventListener('keydown', onKey, { once: true });
+  }
+  update();
+}
+
+/* ============================================================
+   MODE — TYPE (hear, then type the polish word)
+   ============================================================ */
+function renderType(container) {
+  const indices = shuffle(currentLesson.words.map((_, i) => i));
+  let pos = 0;
+  const results = [];
+
+  function normalize(s) {
+    return s.toLowerCase().trim().replace(/[.,!?;:]/g, '').replace(/\s+/g, ' ');
+  }
+
+  function update() {
+    if (pos >= indices.length) {
+      const good = results.filter(r => r === 'ok').length;
+      renderFinish(container, { good, again: results.length - good, total: indices.length, mode: 'type' });
+      return;
+    }
+    const idx = indices[pos];
+    const w = currentLesson.words[idx];
+
+    const segs = indices.map((_, i) => {
+      let cls = '';
+      if (i < pos) cls = results[i] === 'ok' ? 'ok' : 'ko';
+      else if (i === pos) cls = 'cur';
+      return `<div class="seg ${cls}"></div>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="practice-area">
+        <div class="practice-counter">Question <strong>${pos+1}</strong> / ${indices.length}</div>
+        <div class="type-card">
+          <div class="quiz-bar">${segs}</div>
+          <div class="quiz-prompt-label">Écris en polonais</div>
+          <div class="quiz-prompt">${w.fr}</div>
+          ${w.note ? `<div class="quiz-prompt-phon">${w.note}</div>` : ''}
+          <div class="type-input-wrap">
+            <input type="text" class="type-input" id="t-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Tape ici…" />
+            <button class="type-submit" id="t-submit">Vérifier</button>
+          </div>
+          <div class="pl-keys">
+            ${['ą','ć','ę','ł','ń','ó','ś','ź','ż'].map(c => `<button class="pl-key" data-c="${c}">${c}</button>`).join('')}
+          </div>
+          <button class="ctrl-btn skip" style="margin-top:14px; max-width:160px; margin-left:auto; margin-right:auto;" id="t-hint">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            Écouter
+          </button>
+          <div class="quiz-feedback" id="qfb"></div>
+        </div>
+      </div>
+    `;
+
+    const input = document.getElementById('t-input');
+    const submit = document.getElementById('t-submit');
+    input.focus();
+
+    container.querySelectorAll('.pl-key').forEach(k => {
+      k.addEventListener('click', () => {
+        const start = input.selectionStart, end = input.selectionEnd;
+        input.value = input.value.slice(0, start) + k.dataset.c + input.value.slice(end);
+        input.focus();
+        input.selectionStart = input.selectionEnd = start + 1;
+      });
+    });
+
+    document.getElementById('t-hint').addEventListener('click', () => speak(w.pl));
+
+    function check() {
+      const ans = normalize(input.value);
+      const target = normalize(w.pl);
+      const fb = document.getElementById('qfb');
+      submit.disabled = true; input.disabled = true;
+      if (ans === target) {
+        input.classList.add('correct');
+        fb.className = 'quiz-feedback correct show';
+        fb.textContent = `✓ Parfait ! ${w.pl}`;
+        if (!isLearned(currentLesson.id, idx)) {
+          setLearned(currentLesson.id, idx, true);
+          addXP(5);
+        } else addXP(2);
+        bumpStreak();
+        results.push('ok');
+        speak(w.pl);
+        setTimeout(() => { pos++; update(); }, 1100);
+      } else {
+        input.classList.add('wrong');
+        fb.className = 'quiz-feedback wrong show';
+        fb.innerHTML = `✗ La bonne réponse est <strong>${w.pl}</strong>${w.phon ? ` <em>(${w.phon})</em>` : ''}`;
+        results.push('ko');
+        speak(w.pl);
+        setTimeout(() => { pos++; update(); }, 2200);
+      }
+    }
+    submit.addEventListener('click', check);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') check();
+    });
+  }
+  update();
+}
+
+/* ============================================================
+   FINISH SCREEN
+   ============================================================ */
+function renderFinish(container, { good, again, total, mode }) {
+  const pct = Math.round(good / total * 100);
+  const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '👍' : '💪';
+  const title = pct >= 90 ? 'Excellent !' : pct >= 70 ? 'Bien joué !' : pct >= 50 ? 'Pas mal !' : 'Continue !';
+  container.innerHTML = `
+    <div class="practice-area">
+      <div class="finish-card">
+        <span class="finish-emoji">${emoji}</span>
+        <h3>${title}</h3>
+        <p style="color:var(--text-muted)">Tu as terminé la session "${currentLesson.title}".</p>
+        <div class="finish-stats">
+          <div class="finish-stat"><div class="v">${good}</div><div class="l">Réussis</div></div>
+          <div class="finish-stat"><div class="v">${again}</div><div class="l">À revoir</div></div>
+          <div class="finish-stat"><div class="v">${pct}%</div><div class="l">Score</div></div>
+        </div>
+        <div class="finish-actions">
+          <button class="primary" id="finish-again">Recommencer</button>
+          <button class="secondary" id="finish-home">Retour aux leçons</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('finish-again').addEventListener('click', () => {
+    if (mode === 'cards') renderCards(container);
+    else if (mode === 'quiz') renderQuiz(container);
+    else if (mode === 'type') renderType(container);
+  });
+  document.getElementById('finish-home').addEventListener('click', showHome);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+showHome();
+</script>
+</body>
+</html>

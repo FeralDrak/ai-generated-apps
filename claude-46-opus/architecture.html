@@ -1,0 +1,2341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SysDesign Academy — Architecture Web Fullstack</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg-2: #121829;
+  --panel: #161c30;
+  --panel-2: #1e2540;
+  --text: #e8ecf3;
+  --text-dim: #8b95a8;
+  --text-soft: #b8c1d4;
+  --primary: #7c5cff;
+  --primary-2: #4fd1c7;
+  --accent: #ff6b9d;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.18);
+  --gradient: linear-gradient(135deg, #7c5cff 0%, #4fd1c7 100%);
+  --gradient-accent: linear-gradient(135deg, #ff6b9d 0%, #fbbf24 100%);
+  --shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,92,255,0.18), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(79,209,199,0.12), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 10% 90%, rgba(255,107,157,0.08), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ========= HEADER ========= */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+  background: rgba(10,14,26,0.75);
+  border-bottom: 1px solid var(--border);
+}
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--gradient);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  box-shadow: 0 4px 20px rgba(124,92,255,0.4);
+}
+.logo span.gradient {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.nav-tab {
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.nav-tab.active {
+  background: rgba(124,92,255,0.15);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(124,92,255,0.3);
+}
+.progress-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  font-size: 12px;
+}
+.progress-bar-mini {
+  width: 70px;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--gradient);
+  transition: width 0.4s;
+}
+
+/* ========= MAIN ========= */
+main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 28px 80px;
+}
+.view { display: none; animation: fadeIn 0.4s ease; }
+.view.active { display: block; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========= HOME VIEW ========= */
+.hero {
+  padding: 56px 40px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(124,92,255,0.2), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(79,209,199,0.15), transparent 50%),
+    linear-gradient(135deg, var(--panel) 0%, var(--panel-2) 100%);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 30px;
+  background: rgba(124,92,255,0.12);
+  border: 1px solid rgba(124,92,255,0.3);
+  font-size: 12px;
+  font-weight: 600;
+  color: #b4a3ff;
+  margin-bottom: 20px;
+  position: relative;
+}
+.hero h1 {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  position: relative;
+  max-width: 800px;
+}
+.hero h1 .gradient {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero p {
+  font-size: 17px;
+  color: var(--text-soft);
+  max-width: 640px;
+  margin-bottom: 28px;
+  position: relative;
+}
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: relative;
+}
+.btn {
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-primary {
+  background: var(--gradient);
+  color: white;
+  box-shadow: 0 8px 24px rgba(124,92,255,0.35);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(124,92,255,0.5); }
+.btn-ghost {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.1); border-color: var(--border-hover); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.stat-card {
+  padding: 22px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.2s;
+}
+.stat-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+.stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.stat-value .gradient {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.stat-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.section-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 18px;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-subtitle {
+  color: var(--text-dim);
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.topics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.topic-card {
+  padding: 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.topic-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color, var(--primary));
+  opacity: 0.7;
+}
+.topic-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow);
+}
+.topic-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  margin-bottom: 14px;
+  background: color-mix(in srgb, var(--color, var(--primary)) 15%, transparent);
+  color: var(--color, var(--primary));
+}
+.topic-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+.topic-card p {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.topic-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ========= LESSONS VIEW ========= */
+.lessons-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+}
+.lessons-sidebar {
+  position: sticky;
+  top: 100px;
+  align-self: start;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.lessons-sidebar::-webkit-scrollbar { width: 6px; }
+.lessons-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.sidebar-category {
+  padding: 14px 14px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-soft);
+  transition: all 0.15s;
+  width: 100%;
+  text-align: left;
+}
+.sidebar-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.sidebar-item.active {
+  background: rgba(124,92,255,0.15);
+  color: var(--text);
+  font-weight: 600;
+}
+.sidebar-item.done::before {
+  content: '✓';
+  color: var(--success);
+  font-weight: 700;
+  font-size: 11px;
+}
+.sidebar-item:not(.done)::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  flex-shrink: 0;
+}
+
+.lesson-content {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  min-height: 500px;
+}
+.lesson-header {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.lesson-cat {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(124,92,255,0.15);
+  color: #b4a3ff;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+.lesson-content h2 {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+.lesson-summary {
+  font-size: 16px;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+.lesson-body {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-soft);
+}
+.lesson-body h3 {
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 700;
+  margin: 28px 0 12px;
+  letter-spacing: -0.01em;
+}
+.lesson-body p { margin-bottom: 14px; }
+.lesson-body ul {
+  list-style: none;
+  margin: 12px 0 18px;
+  padding: 0;
+}
+.lesson-body li {
+  padding: 6px 0 6px 24px;
+  position: relative;
+}
+.lesson-body li::before {
+  content: '▸';
+  position: absolute;
+  left: 6px;
+  color: var(--primary-2);
+  font-weight: bold;
+}
+.lesson-body strong { color: var(--text); font-weight: 700; }
+.lesson-body code {
+  background: rgba(124,92,255,0.12);
+  color: #c4b5fd;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 13px;
+}
+.callout {
+  margin: 18px 0;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border-left: 3px solid var(--primary);
+  background: rgba(124,92,255,0.08);
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.callout.warning { border-left-color: var(--warning); background: rgba(251,191,36,0.08); }
+.callout.success { border-left-color: var(--success); background: rgba(74,222,128,0.08); }
+.callout.danger { border-left-color: var(--danger); background: rgba(248,113,113,0.08); }
+.callout-icon { font-size: 20px; flex-shrink: 0; line-height: 1.2; }
+.callout strong { color: var(--text); display: block; margin-bottom: 2px; }
+.callout p { margin: 0; font-size: 13.5px; }
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 20px 0;
+}
+.compare-col {
+  padding: 20px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.compare-col h4 {
+  font-size: 15px;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.compare-col.pro h4::before { content: '✓ '; color: var(--success); }
+.compare-col.con h4::before { content: '✗ '; color: var(--danger); }
+.compare-col ul { margin: 0; }
+.compare-col li { font-size: 13px; padding: 4px 0 4px 20px; }
+
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  gap: 12px;
+}
+
+/* ========= FLASHCARDS VIEW ========= */
+.flashcard-container {
+  max-width: 680px;
+  margin: 40px auto;
+  text-align: center;
+}
+.flashcard-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.flashcard {
+  perspective: 1600px;
+  height: 340px;
+  margin-bottom: 24px;
+}
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+.flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+.flashcard-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 20px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.flashcard-face.front {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(124,92,255,0.15), transparent 50%),
+    var(--panel);
+}
+.flashcard-face.back {
+  background:
+    radial-gradient(circle at 70% 80%, rgba(79,209,199,0.15), transparent 50%),
+    var(--panel);
+  transform: rotateY(180deg);
+}
+.flashcard-face .label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+.flashcard-face .question {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+.flashcard-face .hint {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: auto;
+  padding-top: 20px;
+}
+.flashcard-face .answer {
+  font-size: 16px;
+  color: var(--text-soft);
+  line-height: 1.6;
+  max-width: 540px;
+}
+.flashcard-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.flashcard-controls button {
+  padding: 11px 20px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  transition: all 0.2s;
+}
+.flashcard-controls button:hover { background: rgba(255,255,255,0.1); }
+.flashcard-controls button.easy { background: rgba(74,222,128,0.12); border-color: rgba(74,222,128,0.3); color: #a7f3d0; }
+.flashcard-controls button.hard { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.3); color: #fca5a5; }
+
+/* ========= QUIZ VIEW ========= */
+.quiz-container {
+  max-width: 780px;
+  margin: 0 auto;
+}
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.quiz-progress {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.quiz-progress-fill {
+  height: 100%;
+  background: var(--gradient);
+  transition: width 0.4s;
+}
+.quiz-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px;
+}
+.quiz-qnum {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.quiz-question {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 24px;
+  line-height: 1.3;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 10px; }
+.quiz-option {
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.03);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--text-soft);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.quiz-option:hover:not(:disabled) {
+  background: rgba(124,92,255,0.08);
+  border-color: rgba(124,92,255,0.4);
+  color: var(--text);
+}
+.quiz-option:disabled { cursor: default; }
+.quiz-option-letter {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.quiz-option.correct {
+  background: rgba(74,222,128,0.1);
+  border-color: rgba(74,222,128,0.5);
+  color: #d1fae5;
+}
+.quiz-option.correct .quiz-option-letter { background: var(--success); color: #052e13; }
+.quiz-option.wrong {
+  background: rgba(248,113,113,0.1);
+  border-color: rgba(248,113,113,0.5);
+  color: #fee2e2;
+}
+.quiz-option.wrong .quiz-option-letter { background: var(--danger); color: #7f1d1d; }
+.quiz-explanation {
+  margin-top: 20px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: rgba(79,209,199,0.08);
+  border-left: 3px solid var(--primary-2);
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.6;
+  display: none;
+}
+.quiz-explanation.visible { display: block; animation: fadeIn 0.3s; }
+.quiz-explanation strong { color: var(--primary-2); display: block; margin-bottom: 6px; }
+.quiz-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+  gap: 12px;
+}
+
+.quiz-result {
+  text-align: center;
+  padding: 48px 40px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+.quiz-result-icon {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: var(--gradient);
+  display: grid;
+  place-items: center;
+  font-size: 44px;
+  box-shadow: 0 10px 40px rgba(124,92,255,0.4);
+}
+.quiz-result h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+.quiz-result p { color: var(--text-dim); margin-bottom: 24px; }
+.quiz-score {
+  font-size: 64px;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+/* ========= BUILDER VIEW (Request Flow) ========= */
+.builder-layout {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 30px;
+}
+.builder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.builder-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.scenario-select {
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.flow-canvas {
+  position: relative;
+  min-height: 480px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(124,92,255,0.05), transparent 70%),
+    rgba(0,0,0,0.25);
+  border-radius: 16px;
+  padding: 50px 30px;
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+.flow-lane {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 900px;
+  position: relative;
+}
+.flow-node {
+  flex: 1;
+  min-width: 100px;
+  padding: 16px 12px;
+  background: var(--panel-2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.flow-node.active {
+  border-color: var(--primary);
+  background: rgba(124,92,255,0.12);
+  box-shadow: 0 0 30px rgba(124,92,255,0.3), inset 0 0 0 1px rgba(124,92,255,0.3);
+  transform: scale(1.05);
+}
+.flow-node-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+  display: block;
+}
+.flow-node-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.flow-node-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.flow-arrow {
+  flex-shrink: 0;
+  width: 24px;
+  height: 2px;
+  background: rgba(255,255,255,0.12);
+  position: relative;
+}
+.flow-arrow::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  border: 5px solid transparent;
+  border-left-color: rgba(255,255,255,0.2);
+}
+.flow-arrow.lit { background: var(--primary); }
+.flow-arrow.lit::after { border-left-color: var(--primary); }
+.flow-info {
+  margin-top: 24px;
+  padding: 20px 24px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  min-height: 120px;
+}
+.flow-info h4 {
+  font-size: 17px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.flow-info p { color: var(--text-soft); font-size: 14px; line-height: 1.6; }
+.flow-info .metrics {
+  display: flex;
+  gap: 20px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.metric-chip {
+  padding: 6px 12px;
+  background: rgba(124,92,255,0.12);
+  border: 1px solid rgba(124,92,255,0.25);
+  border-radius: 20px;
+  font-size: 11px;
+  color: #c4b5fd;
+  font-weight: 600;
+}
+
+/* ========= CASE STUDIES ========= */
+.cases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+.case-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.case-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, var(--case-color, rgba(124,92,255,0.2)), transparent 70%);
+  border-radius: 50%;
+  transform: translate(30%, -30%);
+  pointer-events: none;
+}
+.case-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow);
+}
+.case-card h3 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+  position: relative;
+}
+.case-card .case-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+  position: relative;
+}
+.case-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  position: relative;
+}
+.case-tag {
+  padding: 3px 10px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  font-size: 11px;
+  color: var(--text-soft);
+}
+.case-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.case-modal.visible { display: flex; animation: fadeIn 0.2s; }
+.case-modal-content {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  max-width: 860px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 40px;
+  position: relative;
+}
+.case-modal-content::-webkit-scrollbar { width: 8px; }
+.case-modal-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.case-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+.case-modal-close:hover { background: rgba(255,255,255,0.12); }
+.case-modal-content h2 {
+  font-size: 30px;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+.case-modal-content > .sub {
+  color: var(--text-dim);
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+.case-section {
+  margin-bottom: 24px;
+}
+.case-section h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--primary-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.case-section p { color: var(--text-soft); font-size: 14px; line-height: 1.7; margin-bottom: 8px; }
+.case-section ul { list-style: none; padding: 0; }
+.case-section li {
+  padding: 5px 0 5px 22px;
+  position: relative;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+.case-section li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: bold;
+}
+.case-section strong { color: var(--text); font-weight: 700; }
+
+/* ========= GLOSSARY ========= */
+.glossary-search {
+  position: relative;
+  margin-bottom: 24px;
+  max-width: 500px;
+}
+.glossary-search input {
+  width: 100%;
+  padding: 14px 18px 14px 46px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+}
+.glossary-search input:focus {
+  border-color: rgba(124,92,255,0.5);
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.1);
+}
+.glossary-search::before {
+  content: '🔍';
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.5;
+}
+.glossary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.glossary-item {
+  padding: 18px 22px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+.glossary-item:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+.glossary-term {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.glossary-term .badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: rgba(124,92,255,0.15);
+  color: #b4a3ff;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.glossary-def {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ========= MISC ========= */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+
+@media (max-width: 900px) {
+  .lessons-layout { grid-template-columns: 1fr; }
+  .lessons-sidebar { position: static; max-height: 300px; }
+  .hero h1 { font-size: 34px; }
+  .lesson-content { padding: 24px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .nav-tab span:not(.icon) { display: none; }
+  .nav-tab { padding: 9px 11px; }
+  .header-inner { padding: 14px 16px; gap: 12px; }
+  main { padding: 20px 16px 60px; }
+  .hero { padding: 36px 24px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>SysDesign <span class="gradient">Academy</span></div>
+    </div>
+    <nav class="nav-tabs" id="navTabs">
+      <button class="nav-tab active" data-view="home"><span class="icon">🏠</span><span>Accueil</span></button>
+      <button class="nav-tab" data-view="lessons"><span class="icon">📚</span><span>Cours</span></button>
+      <button class="nav-tab" data-view="flashcards"><span class="icon">🎴</span><span>Flashcards</span></button>
+      <button class="nav-tab" data-view="quiz"><span class="icon">🎯</span><span>Quiz</span></button>
+      <button class="nav-tab" data-view="builder"><span class="icon">🏗️</span><span>Flow</span></button>
+      <button class="nav-tab" data-view="cases"><span class="icon">🧩</span><span>Cas d'étude</span></button>
+      <button class="nav-tab" data-view="glossary"><span class="icon">📖</span><span>Glossaire</span></button>
+    </nav>
+    <div class="progress-pill">
+      <span id="progressLabel">0 / 0</span>
+      <div class="progress-bar-mini"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ================= HOME ================= -->
+  <section class="view active" id="view-home">
+    <div class="hero">
+      <div class="hero-badge">🎯 Préparation entretien · Architecture Fullstack</div>
+      <h1>Maîtrise le <span class="gradient">System Design</span><br>des grandes applications web.</h1>
+      <p>Un parcours interactif pour apprendre à concevoir des architectures fullstack modernes, scalables et robustes. Cours, flashcards, quiz, cas d'étude et simulateur de requêtes réunis en un seul endroit.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" data-goto="lessons">Commencer le parcours →</button>
+        <button class="btn btn-ghost" data-goto="quiz">Tester mes connaissances</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Cours</div>
+        <div class="stat-value" id="statLessons">—</div>
+        <div class="stat-hint">Répartis en 6 catégories</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Flashcards</div>
+        <div class="stat-value" id="statCards">—</div>
+        <div class="stat-hint">Révision active</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Quiz</div>
+        <div class="stat-value" id="statQuiz">—</div>
+        <div class="stat-hint">Questions type entretien</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cas d'étude</div>
+        <div class="stat-value" id="statCases">—</div>
+        <div class="stat-hint">Systèmes réels analysés</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">🧠 Les grands domaines à maîtriser</h2>
+    <p class="section-subtitle">Un bon architecte fullstack doit pouvoir parler avec aisance de chacun de ces piliers.</p>
+    <div class="topics-grid" id="topicsGrid"></div>
+  </section>
+
+  <!-- ================= LESSONS ================= -->
+  <section class="view" id="view-lessons">
+    <div class="lessons-layout">
+      <aside class="lessons-sidebar" id="lessonsSidebar"></aside>
+      <article class="lesson-content" id="lessonContent"></article>
+    </div>
+  </section>
+
+  <!-- ================= FLASHCARDS ================= -->
+  <section class="view" id="view-flashcards">
+    <div class="flashcard-container">
+      <div class="flashcard-meta">
+        <span id="fcProgress">Carte 1 / 20</span>
+        <span>Clique pour retourner · Espace pour retourner · ← → pour naviguer</span>
+      </div>
+      <div class="flashcard" id="flashcard">
+        <div class="flashcard-inner">
+          <div class="flashcard-face front">
+            <div class="label">Question</div>
+            <div class="question" id="fcQuestion">Chargement…</div>
+            <div class="hint">Clique pour voir la réponse</div>
+          </div>
+          <div class="flashcard-face back">
+            <div class="label">Réponse</div>
+            <div class="answer" id="fcAnswer">—</div>
+            <div class="hint">Clique pour revenir</div>
+          </div>
+        </div>
+      </div>
+      <div class="flashcard-controls">
+        <button id="fcPrev">← Précédent</button>
+        <button class="hard" id="fcHard">👎 À revoir</button>
+        <button class="easy" id="fcEasy">👍 Maîtrisé</button>
+        <button id="fcNext">Suivant →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= QUIZ ================= -->
+  <section class="view" id="view-quiz">
+    <div class="quiz-container" id="quizContainer"></div>
+  </section>
+
+  <!-- ================= BUILDER / FLOW ================= -->
+  <section class="view" id="view-builder">
+    <div class="builder-layout">
+      <div class="builder-header">
+        <div>
+          <h2 class="section-title" style="margin-bottom: 6px;">🏗️ Simulateur de flux de requête</h2>
+          <p class="section-subtitle" style="margin:0;">Clique sur « Envoyer » pour suivre le parcours d'une requête à travers l'architecture. Clique sur un composant pour voir son rôle.</p>
+        </div>
+        <div class="builder-controls">
+          <select class="scenario-select" id="scenarioSelect">
+            <option value="classic">🌐 Architecture web classique</option>
+            <option value="micro">🧩 Microservices + gateway</option>
+            <option value="stream">⚡ Temps réel (WebSocket)</option>
+            <option value="event">📨 Event-driven</option>
+          </select>
+          <button class="btn btn-primary" id="playFlow">▶ Envoyer une requête</button>
+        </div>
+      </div>
+      <div class="flow-canvas">
+        <div class="flow-lane" id="flowLane"></div>
+      </div>
+      <div class="flow-info" id="flowInfo">
+        <h4>💡 Prêt à simuler</h4>
+        <p>Sélectionne un scénario puis clique sur « Envoyer une requête ». Chaque composant sera activé l'un après l'autre, accompagné d'une explication détaillée et des métriques typiques que l'on observe en production.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CASES ================= -->
+  <section class="view" id="view-cases">
+    <h2 class="section-title">🧩 Cas d'étude d'architectures réelles</h2>
+    <p class="section-subtitle">Étudier comment les grandes plateformes résolvent les problèmes de scale est l'une des meilleures façons de progresser.</p>
+    <div class="cases-grid" id="casesGrid"></div>
+  </section>
+
+  <!-- ================= GLOSSARY ================= -->
+  <section class="view" id="view-glossary">
+    <h2 class="section-title">📖 Glossaire complet</h2>
+    <p class="section-subtitle">Les termes et acronymes qui tomberont probablement en entretien.</p>
+    <div class="glossary-search">
+      <input type="text" id="glossarySearch" placeholder="Rechercher un terme (ex: CAP, CDN, idempotent…)">
+    </div>
+    <div class="glossary-grid" id="glossaryGrid"></div>
+  </section>
+</main>
+
+<div class="case-modal" id="caseModal">
+  <div class="case-modal-content" id="caseModalContent"></div>
+</div>
+
+<script>
+/* ============================================================
+   DATA
+============================================================ */
+const TOPICS = [
+  { icon:'🏛️', color:'#7c5cff', title:'Fondamentaux', desc:'Scalabilité, disponibilité, latence, CAP. Le vocabulaire de base dont tout entretien a besoin.' },
+  { icon:'🧩', color:'#4fd1c7', title:'Architectures', desc:'Monolithe, microservices, event-driven, serverless, hexagonal. Quand choisir quoi.' },
+  { icon:'🎨', color:'#ff6b9d', title:'Frontend & Delivery', desc:'SSR, CSR, SSG, CDN, edge computing. Comment livrer une UI rapide et fiable.' },
+  { icon:'🔌', color:'#fbbf24', title:'APIs & Communication', desc:'REST, GraphQL, gRPC, WebSockets. Les contrats entre services.' },
+  { icon:'🗄️', color:'#4ade80', title:'Données & Stockage', desc:'SQL, NoSQL, réplication, sharding, cache. Le cœur de la performance.' },
+  { icon:'🛡️', color:'#f87171', title:'Sécurité & Ops', desc:'Auth, rate limiting, observabilité, SRE. La dimension production du métier.' },
+];
+
+const LESSONS = [
+  // ============ FONDAMENTAUX ============
+  { cat:'Fondamentaux', title:'Scalabilité : verticale vs horizontale',
+    summary:"Augmenter la puissance d'une seule machine, ou multiplier les machines ? Chaque choix a des limites que tu dois connaître.",
+    body:`
+<h3>Deux stratégies radicalement différentes</h3>
+<p>La <strong>scalabilité verticale</strong> (scale up) consiste à ajouter du CPU, de la RAM ou des SSD à une machine existante. Simple à mettre en œuvre, aucune modification applicative — mais le coût explose au-delà d'un certain seuil et il existe une limite physique.</p>
+<p>La <strong>scalabilité horizontale</strong> (scale out) consiste à ajouter des machines derrière un load balancer. C'est le modèle dominant des grands systèmes car il n'a théoriquement pas de plafond, permet de tolérer la panne d'un nœud, et coûte linéairement.</p>
+<div class="compare-grid">
+  <div class="compare-col pro"><h4>Horizontal</h4><ul>
+    <li>Tolérance aux pannes native</li>
+    <li>Coût linéaire, granulaire</li>
+    <li>Pas de plafond matériel</li>
+    <li>Déploiements progressifs (canary, blue/green)</li>
+  </ul></div>
+  <div class="compare-col con"><h4>Contraintes</h4><ul>
+    <li>L'app doit être <strong>stateless</strong></li>
+    <li>Sessions externalisées (Redis)</li>
+    <li>Synchronisation inter-nœuds complexe</li>
+    <li>Complexité opérationnelle plus élevée</li>
+  </ul></div>
+</div>
+<div class="callout"><div class="callout-icon">💡</div><div><strong>À retenir pour l'entretien</strong><p>La première question à poser est toujours : <em>"cette application est-elle stateless ?"</em>. Si elle ne l'est pas, le passage à l'horizontal demande d'extraire l'état (sessions, cache local, uploads temporaires) vers un service partagé.</p></div></div>
+` },
+
+  { cat:'Fondamentaux', title:"Haute disponibilité & SLA",
+    summary:"99.9% de disponibilité, ça fait combien de minutes de panne par mois ? Et comment concevoir pour atteindre ce chiffre ?",
+    body:`
+<h3>Le vocabulaire des 9</h3>
+<p>La disponibilité se mesure en pourcentage de temps où le service répond correctement. Chaque « 9 » supplémentaire multiplie la difficulté — et le coût.</p>
+<ul>
+  <li><strong>99%</strong> → 3j 15h d'indisponibilité par an</li>
+  <li><strong>99.9%</strong> → 8h 45min par an (standard SaaS B2B)</li>
+  <li><strong>99.99%</strong> → 52min par an (systèmes critiques)</li>
+  <li><strong>99.999%</strong> → 5min par an (télécoms, finance)</li>
+</ul>
+<h3>Comment on y arrive ?</h3>
+<p>La disponibilité se construit en éliminant les <strong>points de défaillance uniques</strong> (SPOF). On redonde chaque couche : plusieurs instances d'API, une base de données avec réplication, un load balancer avec failover, et idéalement plusieurs zones de disponibilité.</p>
+<p>La règle d'or : si un composant tombe et que tout s'arrête, il doit être dupliqué. On parle alors de <code>MTBF</code> (mean time between failures) et de <code>MTTR</code> (mean time to recovery).</p>
+<div class="callout warning"><div class="callout-icon">⚠️</div><div><strong>SLA ≠ SLO ≠ SLI</strong><p><strong>SLI</strong> : la métrique (ex: taux de succès). <strong>SLO</strong> : l'objectif interne (ex: 99.95%). <strong>SLA</strong> : l'engagement contractuel avec le client (souvent plus laxiste que le SLO).</p></div></div>
+` },
+
+  { cat:'Fondamentaux', title:"Théorème CAP et BASE",
+    summary:"Cohérence, Disponibilité, Partition tolerance. Tu ne peux en garder que deux — et ce choix structure toute ta stack de données.",
+    body:`
+<h3>Les trois propriétés</h3>
+<ul>
+  <li><strong>C</strong>onsistency : toute lecture renvoie l'écriture la plus récente</li>
+  <li><strong>A</strong>vailability : chaque requête reçoit une réponse (pas d'erreur)</li>
+  <li><strong>P</strong>artition tolerance : le système continue de fonctionner malgré une coupure réseau entre ses nœuds</li>
+</ul>
+<p>Le théorème CAP dit qu'en cas de partition réseau, tu dois choisir entre garantir la cohérence ou garantir la disponibilité. Comme une partition réseau <strong>finira</strong> par arriver dans tout système distribué, on parle souvent de CP ou AP.</p>
+<h3>Illustrations concrètes</h3>
+<div class="compare-grid">
+  <div class="compare-col pro"><h4>CP (Consistency + Partition)</h4><ul>
+    <li>MongoDB, HBase, Redis Cluster</li>
+    <li>Idéal : système bancaire, stock e-commerce</li>
+    <li>Sacrifie la disponibilité pendant une panne</li>
+  </ul></div>
+  <div class="compare-col pro"><h4>AP (Availability + Partition)</h4><ul>
+    <li>Cassandra, DynamoDB, CouchDB</li>
+    <li>Idéal : timeline sociale, cart, analytics</li>
+    <li>Accepte une cohérence éventuelle</li>
+  </ul></div>
+</div>
+<h3>BASE, la philosophie opposée à ACID</h3>
+<p><strong>B</strong>asically <strong>A</strong>vailable, <strong>S</strong>oft state, <strong>E</strong>ventual consistency. C'est le modèle des bases NoSQL qui privilégient la disponibilité. Ton panier Amazon peut être momentanément incohérent entre deux onglets : ce n'est pas grave, la réconciliation se fera.</p>
+<div class="callout"><div class="callout-icon">🎯</div><div><strong>Piège classique</strong><p>Le CAP n'est pas un choix « une fois pour toutes ». Un même système peut être CP sur le paiement et AP sur le catalogue produit. C'est exactement le genre de nuance qui impressionne en entretien.</p></div></div>
+` },
+
+  { cat:'Fondamentaux', title:"Latence, débit et loi d'Amdahl",
+    summary:"Optimiser la latence et optimiser le débit sont deux exercices différents. La loi d'Amdahl t'explique pourquoi paralléliser ne suffit pas.",
+    body:`
+<h3>Les deux métriques à ne jamais confondre</h3>
+<p>La <strong>latence</strong> est le temps d'une opération individuelle (ex: 120ms pour une requête). Le <strong>débit</strong> est le nombre d'opérations par unité de temps (ex: 5 000 req/s). On peut avoir une latence élevée avec un débit élevé : pense à un convoi de camions.</p>
+<p>En production, on ne mesure pas la latence moyenne mais la <strong>distribution</strong>. Le P50, le P95 et surtout le <strong>P99</strong> — parce qu'un utilisateur sur 100 qui attend 3s, c'est ce qui fait perdre des clients.</p>
+<h3>Les ordres de grandeur à connaître par cœur</h3>
+<ul>
+  <li>Accès cache L1 CPU : ~1 ns</li>
+  <li>Accès mémoire RAM : ~100 ns</li>
+  <li>SSD random read : ~150 μs</li>
+  <li>Aller-retour datacenter intra-région : ~500 μs</li>
+  <li>Aller-retour continents : ~150 ms</li>
+  <li>Lecture disque HDD : ~10 ms</li>
+</ul>
+<p>Ces chiffres (les fameux <em>Latency Numbers Every Programmer Should Know</em> de Jeff Dean) justifient 90% des décisions d'architecture : pourquoi cacher en mémoire, pourquoi utiliser un CDN, pourquoi redouter les jointures cross-DB.</p>
+<div class="callout success"><div class="callout-icon">📊</div><div><strong>Loi d'Amdahl</strong><p>Le gain maximal de la parallélisation est limité par la portion séquentielle du code. Si 5% du code reste séquentiel, même avec 1000 cœurs, tu ne gagneras jamais plus qu'un facteur 20.</p></div></div>
+` },
+
+  // ============ ARCHITECTURES ============
+  { cat:'Architectures', title:"Monolithe vs Microservices",
+    summary:"Le débat le plus polarisant de l'industrie. La vérité est qu'aucun des deux n'est universellement meilleur.",
+    body:`
+<h3>Le monolithe moderne</h3>
+<p>Un seul artefact déployable qui contient toute la logique métier. Longtemps décrié, il revient en force sous le nom de <strong>monolithe modulaire</strong> : une seule app, mais strictement modularisée en interne. C'est souvent le bon choix pour démarrer.</p>
+<h3>Les microservices</h3>
+<p>Découpage en services indépendants, chacun propriétaire de ses données, communiquant via API ou messaging. Avantage : scale indépendant, équipes autonomes, choix technologiques libres. Coût : complexité opérationnelle énorme.</p>
+<div class="compare-grid">
+  <div class="compare-col pro"><h4>Monolithe</h4><ul>
+    <li>Transactions ACID faciles</li>
+    <li>Refactoring transverse simple</li>
+    <li>Un seul pipeline CI/CD</li>
+    <li>Parfait < 5 développeurs</li>
+  </ul></div>
+  <div class="compare-col pro"><h4>Microservices</h4><ul>
+    <li>Scale indépendant par service</li>
+    <li>Déploiements fréquents et isolés</li>
+    <li>Tolérance aux pannes par isolement</li>
+    <li>Équipes autonomes (Conway's Law)</li>
+  </ul></div>
+</div>
+<div class="callout danger"><div class="callout-icon">🚨</div><div><strong>Le piège du microservice prématuré</strong><p>Passer en microservices avant d'avoir des domaines stables mène au « distributed monolith » : toute la complexité réseau sans aucun des bénéfices. Règle empirique : ne découpe que quand tu as une raison métier claire (scaling, équipes, cycles de release différents).</p></div></div>
+<h3>Loi de Conway</h3>
+<p>« Toute organisation qui conçoit un système produit une architecture qui reflète sa structure de communication. » Autrement dit : la forme de ton architecture imite la forme de ton entreprise. Les microservices fonctionnent quand l'org est déjà faite d'équipes autonomes.</p>
+` },
+
+  { cat:'Architectures', title:"Architecture event-driven & CQRS",
+    summary:"Découpler les producteurs des consommateurs par des événements. La clé pour absorber des pics et construire des systèmes réactifs.",
+    body:`
+<h3>Le principe</h3>
+<p>Au lieu d'appeler un service B depuis un service A, A publie un <strong>événement</strong> (« commande_passée ») sur un bus. Les services intéressés (stock, facturation, email, analytics) s'y abonnent. A n'a plus besoin de savoir qui consomme.</p>
+<h3>CQRS — Command Query Responsibility Segregation</h3>
+<p>Séparer radicalement le modèle d'écriture (Commands) du modèle de lecture (Queries). Les écritures vont dans un store optimisé pour l'intégrité, les lectures dans des vues dénormalisées optimisées pour la performance. On synchronise les deux par événements.</p>
+<h3>Event sourcing</h3>
+<p>Au lieu de stocker l'<em>état</em> actuel, on stocke la <em>suite d'événements</em> qui y ont mené. L'état se reconstruit en rejouant l'historique. Idéal pour l'audit, le debugging et les « time travel » fonctionnels — beaucoup plus complexe à opérer.</p>
+<div class="callout"><div class="callout-icon">⚡</div><div><strong>Cas d'usage type</strong><p>Un e-commerce : la commande passe en file Kafka, 8 services y souscrivent. Si le service d'email tombe, les emails sont rattrapés à la reprise. Le service de paiement n'est pas bloqué par le service de facturation. Chaque consommateur scale à son rythme.</p></div></div>
+` },
+
+  { cat:'Architectures', title:"Serverless & Edge computing",
+    summary:"Du code sans serveurs à gérer, déployé à quelques millisecondes de tes utilisateurs. Le futur pour certains workloads, un piège pour d'autres.",
+    body:`
+<h3>FaaS : Functions-as-a-Service</h3>
+<p>Tu écris des fonctions courtes (<code>handler(event)</code>), le cloud s'occupe du scaling, du provisionnement et du runtime. AWS Lambda, Cloudflare Workers, Vercel Functions. Tu paies à la milliseconde d'exécution — zéro usage = zéro coût.</p>
+<h3>Ce que ça change</h3>
+<ul>
+  <li><strong>Scaling auto</strong> de 0 à 10 000 instances en secondes</li>
+  <li><strong>Cold start</strong> : la première invocation d'une fonction inactive prend 100ms à 2s selon le runtime</li>
+  <li><strong>Stateless obligatoire</strong> : pas de mémoire partagée, session externe</li>
+  <li><strong>Timeouts courts</strong> : 15 minutes max sur Lambda</li>
+</ul>
+<h3>Edge computing</h3>
+<p>Exécuter le code au plus près de l'utilisateur, sur des PoP répartis mondialement (Cloudflare Workers, Deno Deploy). Latence typique : <50ms partout. Idéal pour : auth, rewrite d'URL, personnalisation, A/B testing, rendering HTML.</p>
+<div class="callout warning"><div class="callout-icon">⚠️</div><div><strong>Anti-patterns serverless</strong><p>Workloads CPU-intensifs longs, batch processing volumineux, connexions DB persistantes (attention aux pools) et applis qui n'arrivent jamais à rester à froid. Dans ces cas, les containers restent plus économiques.</p></div></div>
+` },
+
+  // ============ FRONTEND & DELIVERY ============
+  { cat:'Frontend & Delivery', title:"SSR, CSR, SSG, ISR — le grand match",
+    summary:"Où ton HTML est-il généré ? Sur le serveur à chaque requête, dans le navigateur, au build, ou un mélange ? Chaque choix a ses conséquences.",
+    body:`
+<h3>Les 4 stratégies de rendu</h3>
+<ul>
+  <li><strong>CSR</strong> (Client-Side Rendering) : le serveur envoie un HTML quasi vide + JS. Le navigateur construit toute l'UI. SPA classique. ⚡ interactive après hydratation, ❌ SEO et first paint pauvres.</li>
+  <li><strong>SSR</strong> (Server-Side Rendering) : le serveur génère le HTML complet à chaque requête. ⚡ SEO et first paint excellents, ❌ charge serveur par requête.</li>
+  <li><strong>SSG</strong> (Static Site Generation) : le HTML est pré-généré au build, servi depuis un CDN. ⚡ ultra rapide et bon marché, ❌ impossible pour du contenu personnalisé.</li>
+  <li><strong>ISR</strong> (Incremental Static Regeneration) : du SSG avec revalidation périodique ou on-demand. Le meilleur des deux mondes pour du contenu semi-dynamique.</li>
+</ul>
+<h3>Streaming & React Server Components</h3>
+<p>La tendance actuelle est de streamer le HTML par morceaux depuis le serveur (React 18, Next.js App Router). Les parties statiques arrivent d'abord, les parties dynamiques arrivent quand elles sont prêtes. Les RSC permettent d'exécuter du code purement serveur sans envoyer de JS associé au client.</p>
+<div class="callout success"><div class="callout-icon">🎯</div><div><strong>Choisir en entretien</strong><p>« Une landing page marketing » → SSG. « Un dashboard privé lourdement interactif » → CSR (ou SSR + hydratation). « Un site e-commerce avec catalogue produit qui change peu » → ISR. « Une news avec personnalisation » → SSR ou streaming.</p></div></div>
+` },
+
+  { cat:'Frontend & Delivery', title:"CDN, cache HTTP & stratégies de fraîcheur",
+    summary:"Un CDN bien configuré peut servir 99% de ton trafic sans toucher à ton origine. Mais encore faut-il comprendre les en-têtes Cache-Control.",
+    body:`
+<h3>Qu'est-ce qu'un CDN ?</h3>
+<p>Un réseau de serveurs (PoP) répartis géographiquement qui mettent en cache tes assets statiques et servent l'utilisateur depuis le point le plus proche. Cloudflare, Fastly, CloudFront, Akamai. Latence divisée par 5 à 10, coût d'origine divisé par 100.</p>
+<h3>Les en-têtes qui comptent</h3>
+<ul>
+  <li><code>Cache-Control: public, max-age=31536000, immutable</code> — pour les assets versionnés (app.a8f3.js)</li>
+  <li><code>Cache-Control: no-cache</code> — revalidation obligatoire (index.html qui référence les assets)</li>
+  <li><code>Cache-Control: private, max-age=0</code> — jamais en CDN, toujours frais (HTML personnalisé)</li>
+  <li><code>ETag</code> / <code>Last-Modified</code> — la revalidation conditionnelle : renvoie 304 si rien n'a changé</li>
+  <li><code>Stale-while-revalidate=60</code> — sert le vieux contenu pendant qu'on rafraîchit en arrière-plan</li>
+</ul>
+<h3>Stratégie d'invalidation</h3>
+<p>La règle d'or : <strong>ne jamais invalider, toujours versionner</strong>. <code>main.a8f3.js</code> devient <code>main.b4e1.js</code> → le CDN sert juste une nouvelle URL. Tu n'as qu'à invalider le fichier HTML qui les référence.</p>
+<div class="callout"><div class="callout-icon">🌍</div><div><strong>Au-delà des assets statiques</strong><p>Les CDN modernes peuvent aussi mettre en cache des réponses d'API (<em>edge caching</em>), exécuter du code sur la PoP (<em>edge workers</em>), et servir du streaming vidéo. C'est le premier rempart contre les pics de trafic.</p></div></div>
+` },
+
+  // ============ APIS ============
+  { cat:'APIs & Communication', title:"REST, GraphQL, gRPC — quand choisir quoi",
+    summary:"Pas de religion, juste des trade-offs. Chaque style d'API brille dans un contexte précis.",
+    body:`
+<h3>REST</h3>
+<p>Basé sur HTTP et les ressources (/users, /orders). Simple, cacheable, largement outillé, excellent pour les API publiques. Piège : l'<strong>under-fetching</strong> (trop d'appels) et l'<strong>over-fetching</strong> (trop de données reçues).</p>
+<h3>GraphQL</h3>
+<p>Le client décrit exactement les champs dont il a besoin. Un seul endpoint, des requêtes typées, un schéma fort. Idéal pour des UIs complexes avec des besoins variés (mobile, web, TV). Coûts : cache HTTP plus difficile, complexité backend (N+1, dataloader, rate-limiting par coût).</p>
+<h3>gRPC</h3>
+<p>RPC basé sur HTTP/2 et Protobuf. Ultra-rapide, typé, bidirectionnel streaming. Le standard de facto pour la communication <strong>service-à-service</strong> en interne. Pas pour les clients web directs (nécessite un proxy grpc-web).</p>
+<div class="compare-grid">
+  <div class="compare-col pro"><h4>Quand REST ?</h4><ul>
+    <li>API publique, simple, documentable</li>
+    <li>Cache HTTP fortement utilisé</li>
+    <li>Besoin d'outillage universel</li>
+  </ul></div>
+  <div class="compare-col pro"><h4>Quand GraphQL ?</h4><ul>
+    <li>Front-ends multiples aux besoins variés</li>
+    <li>Agrégation de données hétérogènes (BFF)</li>
+    <li>Équipes front autonomes sur le data fetching</li>
+  </ul></div>
+</div>
+<h3>WebSockets & Server-Sent Events</h3>
+<p>Pour le push temps réel (chat, notifications, cours de bourse, édition collaborative). Les SSE sont unidirectionnels mais reposent sur HTTP classique : souvent suffisants et plus simples que les WebSockets.</p>
+` },
+
+  { cat:'APIs & Communication', title:"Idempotence, versioning et contrats",
+    summary:"Une API production-ready tient sur trois piliers : des opérations rejouables sans effet de bord, un versioning stable, et des contrats clairs.",
+    body:`
+<h3>Idempotence</h3>
+<p>Une opération est <strong>idempotente</strong> si l'exécuter une ou dix fois produit le même résultat. Indispensable dans un monde distribué où les retries sont inévitables.</p>
+<ul>
+  <li><code>GET</code>, <code>PUT</code>, <code>DELETE</code> sont idempotents par nature</li>
+  <li><code>POST</code> ne l'est pas → utilise un <code>Idempotency-Key</code> généré côté client pour que le serveur détecte les duplications</li>
+  <li>Stripe popularise cette pratique pour les paiements</li>
+</ul>
+<h3>Versioning des APIs</h3>
+<p>Trois écoles :</p>
+<ul>
+  <li><strong>URL</strong> : <code>/v1/users</code>. Très visible, simple à router, mais duplique la documentation.</li>
+  <li><strong>Header</strong> : <code>Accept: application/vnd.app.v2+json</code>. Plus propre, mais invisible dans les logs.</li>
+  <li><strong>Evolutive</strong> (GraphQL) : on ne supprime jamais de champs, on déprécie. Un seul endpoint vit éternellement.</li>
+</ul>
+<div class="callout warning"><div class="callout-icon">🔒</div><div><strong>Contract testing</strong><p>Tester qu'un service B respecte encore le contrat du service A consommateur est un type de test dédié (<em>Pact</em>, <em>Spring Cloud Contract</em>). C'est souvent ce qui sauve une migration microservices.</p></div></div>
+` },
+
+  // ============ DATA ============
+  { cat:'Données & Stockage', title:"SQL vs NoSQL : la décision la plus mal comprise",
+    summary:"Ce n'est jamais « SQL ou NoSQL ». C'est « quel modèle de données correspond à mes accès » — et cela peut conduire aux deux.",
+    body:`
+<h3>Les familles NoSQL</h3>
+<ul>
+  <li><strong>Document</strong> (MongoDB, Couchbase) : objets JSON imbriqués. Idéal quand chaque entité se lit en un bloc.</li>
+  <li><strong>Key-value</strong> (Redis, DynamoDB) : clé → valeur. Ultra rapide, structure minimale. Cache, sessions, rate-limiting.</li>
+  <li><strong>Colonne large</strong> (Cassandra, Bigtable) : écritures massives, distribution native. Time-series, logs, analytics.</li>
+  <li><strong>Graphe</strong> (Neo4j, Amazon Neptune) : quand les relations sont la donnée (réseau social, recommandation, fraude).</li>
+</ul>
+<h3>Pourquoi SQL reste souvent le bon choix</h3>
+<p>Les bases relationnelles modernes (Postgres, MySQL) offrent des transactions ACID, des jointures efficaces, des index sophistiqués, des fonctions JSON natives, et une sémantique claire. PostgreSQL est presque toujours une bonne réponse par défaut pour un nouveau projet.</p>
+<div class="callout success"><div class="callout-icon">🎯</div><div><strong>Modélisation orientée requête</strong><p>En NoSQL, on modélise d'abord les <em>accès</em> (quelles queries je vais faire ?), puis les données. En SQL, on modélise les <em>entités</em>, puis on ajoute des index pour les accès. C'est l'inverse.</p></div></div>
+<h3>Polyglot persistence</h3>
+<p>Les vrais grands systèmes utilisent plusieurs bases : Postgres pour le transactionnel, Redis pour le cache, Elasticsearch pour la recherche, ClickHouse pour l'analytics, S3 pour les blobs. Chaque technologie pour son use case.</p>
+` },
+
+  { cat:'Données & Stockage', title:"Réplication, sharding et partitionnement",
+    summary:"Deux techniques qu'on confond souvent mais qui répondent à des problèmes opposés : la lecture vs l'écriture, la disponibilité vs la scalabilité.",
+    body:`
+<h3>Réplication</h3>
+<p>Copier les données sur plusieurs nœuds. Objectif principal : <strong>disponibilité</strong> et <strong>scalabilité en lecture</strong>.</p>
+<ul>
+  <li><strong>Leader-follower</strong> (primary-replica) : un nœud maître pour les écritures, plusieurs réplicas en lecture seule. Lag de réplication à surveiller.</li>
+  <li><strong>Multi-leader</strong> : plusieurs nœuds acceptent des écritures. Plus complexe à cause des conflits à résoudre.</li>
+  <li><strong>Leaderless</strong> (Cassandra, Dynamo) : chaque nœud accepte tout. Lectures et écritures contactent plusieurs réplicas en parallèle (quorum R+W>N).</li>
+</ul>
+<h3>Sharding (partitionnement horizontal)</h3>
+<p>Diviser les données sur plusieurs nœuds. Objectif principal : <strong>scalabilité en écriture</strong> et volume de stockage. Chaque shard ne contient qu'un sous-ensemble des données.</p>
+<ul>
+  <li><strong>Range-based</strong> : par plages (A-F, G-L…). Efficace pour les requêtes par intervalle, mais risque de hot spots.</li>
+  <li><strong>Hash-based</strong> : par hash(key) modulo N. Distribution uniforme, mais perd la notion d'ordre.</li>
+  <li><strong>Consistent hashing</strong> : anneau logique. Permet d'ajouter/retirer un shard sans redistribuer tout le dataset.</li>
+</ul>
+<div class="callout danger"><div class="callout-icon">🚨</div><div><strong>Piège classique</strong><p>Une mauvaise clé de sharding est très difficile à corriger. Choisir <code>user_id</code> alors que tes queries sont par <code>order_id</code> = tu scannes tous les shards à chaque requête. La clé doit refléter les accès dominants.</p></div></div>
+` },
+
+  { cat:'Données & Stockage', title:"Caching : stratégies et pièges",
+    summary:"Un cache mal implémenté coûte plus cher qu'il ne rapporte. Comprendre les patterns est essentiel.",
+    body:`
+<h3>Les 5 stratégies classiques</h3>
+<ul>
+  <li><strong>Cache-aside</strong> (lazy loading) : l'app regarde dans le cache, si miss elle lit la DB puis peuple le cache. Le plus courant. Risque : données stales si les writes ne l'invalident pas.</li>
+  <li><strong>Read-through</strong> : le cache lui-même charge depuis la DB si besoin. L'app n'interagit qu'avec le cache.</li>
+  <li><strong>Write-through</strong> : chaque écriture va <em>à la fois</em> au cache et à la DB, de manière synchrone. Cohérence garantie, mais latence d'écriture plus élevée.</li>
+  <li><strong>Write-behind</strong> (write-back) : l'écriture va au cache, qui persiste en DB de manière asynchrone. Ultra rapide, mais risque de perte si le cache tombe.</li>
+  <li><strong>Refresh-ahead</strong> : le cache se pré-rafraîchit avant l'expiration pour les clés chaudes.</li>
+</ul>
+<h3>Les politiques d'éviction</h3>
+<p>Quand le cache est plein : <strong>LRU</strong> (Least Recently Used, défaut Redis), <strong>LFU</strong> (Least Frequently Used), <strong>TTL</strong> (expiration par durée), ou FIFO.</p>
+<h3>Les 3 tempêtes à connaître</h3>
+<ul>
+  <li><strong>Cache stampede</strong> : 1000 requêtes ratent le cache au même instant et vont toutes en DB. Solution : lock distribué, single-flight, ou probabilistic early expiration.</li>
+  <li><strong>Cache penetration</strong> : on interroge des clés qui n'existent pas → la DB est sollicitée à chaque fois. Solution : cacher aussi les « null » avec un TTL court ou utiliser un bloom filter.</li>
+  <li><strong>Cache avalanche</strong> : plein de clés expirent au même moment. Solution : jitter sur les TTL.</li>
+</ul>
+<div class="callout"><div class="callout-icon">💰</div><div><strong>La règle des 2 choses dures</strong><p>« Il n'y a que deux choses difficiles en informatique : l'invalidation de cache et nommer les choses. » — Phil Karlton. Rappelle-toi qu'un cache introduit une source supplémentaire de vérité à synchroniser.</p></div></div>
+` },
+
+  { cat:'Données & Stockage', title:"Index, plans d'exécution et hot path",
+    summary:"Un index transforme un scan de table O(n) en un accès O(log n). Mais ajouter trop d'index ralentit les écritures.",
+    body:`
+<h3>Ce qu'est un index</h3>
+<p>Une structure secondaire (B-tree, hash, GIN, GiST…) qui permet de localiser rapidement les lignes correspondant à une condition. Sans index, une requête <code>WHERE email = ?</code> scanne toute la table.</p>
+<h3>Les règles à connaître</h3>
+<ul>
+  <li>Index les colonnes utilisées dans <code>WHERE</code>, <code>JOIN</code>, <code>ORDER BY</code></li>
+  <li>Un index composé <code>(a, b, c)</code> sert aussi les queries sur <code>a</code> et <code>(a, b)</code> — jamais l'inverse</li>
+  <li>Chaque index ralentit les <code>INSERT/UPDATE/DELETE</code> — garder le minimum nécessaire</li>
+  <li><code>EXPLAIN ANALYZE</code> est ton meilleur ami : regarde toujours le plan d'exécution</li>
+</ul>
+<h3>Types spécialisés</h3>
+<ul>
+  <li><strong>Covering index</strong> : inclut toutes les colonnes du SELECT → plus besoin d'aller chercher la ligne</li>
+  <li><strong>Partial index</strong> : indexe uniquement un sous-ensemble (<code>WHERE status = 'active'</code>)</li>
+  <li><strong>Full-text</strong> : recherche textuelle (<code>tsvector</code> en Postgres)</li>
+  <li><strong>Geospatial</strong> : R-tree pour les requêtes géographiques</li>
+</ul>
+<div class="callout success"><div class="callout-icon">📈</div><div><strong>La vraie optimisation DB</strong><p>Avant d'acheter un plus gros serveur : active les slow queries, identifie les 5 requêtes les plus lentes, regarde leur plan, ajoute les bons index. 90% des problèmes de perf DB viennent de là.</p></div></div>
+` },
+
+  // ============ SECURITY & OPS ============
+  { cat:'Sécurité & Ops', title:"Authentification et autorisation modernes",
+    summary:"JWT, OAuth2, OIDC, refresh tokens, sessions. Les confondre est l'erreur la plus classique en entretien.",
+    body:`
+<h3>Authentification vs Autorisation</h3>
+<p><strong>AuthN</strong> : prouver qui tu es (login). <strong>AuthZ</strong> : déterminer ce que tu as le droit de faire (permissions, rôles, RBAC, ABAC).</p>
+<h3>OAuth 2.0 et OIDC</h3>
+<p>OAuth2 est un protocole d'<strong>autorisation déléguée</strong> (« autorise cette app à lire mes photos Google »). OIDC est une couche d'<strong>authentification</strong> construite sur OAuth2 qui ajoute un <code>id_token</code> (« voici qui est l'utilisateur »). Les deux reposent sur les flows classiques : Authorization Code + PKCE pour les SPA et mobiles.</p>
+<h3>Sessions serveur vs JWT</h3>
+<div class="compare-grid">
+  <div class="compare-col pro"><h4>Sessions (cookie + store)</h4><ul>
+    <li>Révocation instantanée (suppression côté serveur)</li>
+    <li>Aucune donnée sensible côté client</li>
+    <li>Demande un store partagé entre instances</li>
+  </ul></div>
+  <div class="compare-col con"><h4>JWT stateless</h4><ul>
+    <li>Aucun état serveur — scale facile</li>
+    <li>Lisibles de partout (microservices)</li>
+    <li><strong>Révocation difficile</strong> : il faut une liste noire ou des TTL courts + refresh</li>
+  </ul></div>
+</div>
+<h3>Le modèle access + refresh</h3>
+<p>Access token court (15 min, non révocable), refresh token long (7 jours, stocké en httpOnly cookie, révocable en DB). Le meilleur des deux mondes pour la plupart des apps.</p>
+<div class="callout danger"><div class="callout-icon">⚠️</div><div><strong>Ne stocke JAMAIS un JWT dans localStorage</strong><p>Accessible en JS → volable par une XSS. Utilise un cookie <code>httpOnly; Secure; SameSite=Strict</code>.</p></div></div>
+` },
+
+  { cat:'Sécurité & Ops', title:"Rate limiting et protection DDoS",
+    summary:"Chaque endpoint public doit avoir une limite. Sans elle, une seule IP peut faire tomber ton API.",
+    body:`
+<h3>Les algorithmes de rate limiting</h3>
+<ul>
+  <li><strong>Token bucket</strong> : un seau se remplit à un taux fixe, chaque requête consomme un jeton. Absorbe les pics — le plus utilisé.</li>
+  <li><strong>Leaky bucket</strong> : les requêtes entrent dans une file qui se vide à taux fixe. Lisse complètement le trafic.</li>
+  <li><strong>Fixed window</strong> : N req par minute. Simple, mais permet un burst 2× à la frontière.</li>
+  <li><strong>Sliding window log / counter</strong> : plus précis, plus coûteux en mémoire.</li>
+</ul>
+<h3>Où implémenter ?</h3>
+<p>Dans un ordre de plus en plus fin : <strong>CDN / WAF</strong> (Cloudflare, AWS Shield), <strong>reverse proxy</strong> (Nginx, Envoy), <strong>API gateway</strong> (Kong, Tyk), <strong>application</strong>. Chaque couche attrape ce que la précédente a laissé passer.</p>
+<h3>Critères de limitation</h3>
+<ul>
+  <li>Par IP : simple mais punit les entreprises (NAT)</li>
+  <li>Par user ID : plus juste mais nécessite l'auth</li>
+  <li>Par API key : classique pour les API B2B</li>
+  <li>Par coût (GraphQL) : chaque champ a un poids, la limite est un budget</li>
+</ul>
+<div class="callout"><div class="callout-icon">🛡️</div><div><strong>Réponses propres</strong><p>Retourne <code>429 Too Many Requests</code> avec les en-têtes <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>Retry-After</code>. Les clients bien conçus vont respecter ces headers et retry avec backoff.</p></div></div>
+` },
+
+  { cat:'Sécurité & Ops', title:"Observabilité : logs, métriques, traces",
+    summary:"« Tu ne peux pas réparer ce que tu ne mesures pas. » Les 3 piliers de l'observabilité sont devenus un standard industriel.",
+    body:`
+<h3>Les 3 piliers</h3>
+<ul>
+  <li><strong>Logs</strong> : événements textuels datés. Utiles pour le debug ponctuel. Volumineux, chers à indexer. → ELK, Loki, Datadog Logs.</li>
+  <li><strong>Metrics</strong> : séries temporelles numériques agrégées (req/s, latence P99, erreurs). Utiles pour les alertes et dashboards. → Prometheus, Grafana, Datadog Metrics.</li>
+  <li><strong>Traces</strong> : suivi d'une requête à travers tous les services qu'elle traverse, avec la durée de chaque étape. → Jaeger, Tempo, OpenTelemetry.</li>
+</ul>
+<h3>OpenTelemetry</h3>
+<p>Le standard unique pour collecter logs, metrics et traces. Un SDK dans chaque langage, un format unifié (OTLP), un collecteur qui route vers n'importe quel backend. C'est devenu la réponse par défaut à « comment instrumente-t-on ton app ? ».</p>
+<h3>SLI, SLO, error budget</h3>
+<p>Un <strong>SLI</strong> est une métrique (% requêtes < 300ms). Un <strong>SLO</strong> est l'objectif (99.9% des requêtes < 300ms sur 30 jours). L'<strong>error budget</strong> est le droit à l'échec restant (0.1% = 43 min sur 30j). Tant qu'il reste du budget, on peut déployer vite. Quand il est épuisé, on gèle les features et on stabilise.</p>
+<div class="callout success"><div class="callout-icon">🎯</div><div><strong>RED et USE</strong><p>Deux méthodes classiques pour instrumenter. <strong>RED</strong> (services) : Rate, Errors, Duration. <strong>USE</strong> (ressources) : Utilization, Saturation, Errors. Mémorise ces 6 lettres et tu as 80% de ce qu'il faut monitorer.</p></div></div>
+` },
+];
+
+const FLASHCARDS = [
+  { q:"Qu'est-ce que le théorème CAP ?", a:"En présence d'une partition réseau, un système distribué doit choisir entre Cohérence (toute lecture voit l'écriture la plus récente) et Disponibilité (toute requête reçoit une réponse). On ne peut en garantir que 2 sur 3." },
+  { q:"Différence entre scalabilité verticale et horizontale ?", a:"Verticale = ajouter des ressources à une machine existante (plus simple, plafond physique). Horizontale = ajouter des machines (scale infini, requiert une app stateless et un load balancer)." },
+  { q:"Qu'est-ce que le cache-aside ?", a:"Pattern où l'application lit d'abord dans le cache ; si miss, elle lit la DB puis écrit le résultat dans le cache. L'application gère explicitement le cache. C'est le plus courant (Redis)." },
+  { q:"Que signifient les 9 en disponibilité ?", a:"99% = 3.65j de downtime/an, 99.9% = 8.8h, 99.99% = 52min, 99.999% = 5min. Chaque 9 multiplie par 10 le coût d'opération." },
+  { q:"Différence entre SSR, CSR et SSG ?", a:"SSR : HTML généré à chaque requête côté serveur. CSR : JS génère le HTML dans le navigateur. SSG : HTML généré au build et servi statiquement depuis un CDN." },
+  { q:"Qu'est-ce qu'une opération idempotente ?", a:"Une opération qui produit le même résultat qu'elle soit exécutée une ou N fois. GET, PUT, DELETE le sont. POST doit utiliser un Idempotency-Key pour l'être." },
+  { q:"Différence entre réplication et sharding ?", a:"Réplication = copier les mêmes données sur plusieurs nœuds (disponibilité, scaling lecture). Sharding = diviser les données entre nœuds, chacun ayant un sous-ensemble (scaling écriture, volume)." },
+  { q:"Qu'est-ce qu'un cache stampede ?", a:"Situation où une clé chaude expire et 1000 requêtes simultanées ratent le cache, écrasant la DB. Solutions : lock distribué, single-flight, probabilistic early expiration." },
+  { q:"REST vs GraphQL, quand choisir quoi ?", a:"REST : API publique, cacheable, simple. GraphQL : front-ends multiples avec besoins variés, agrégation de données hétérogènes, élimine l'over/under-fetching." },
+  { q:"Qu'est-ce qu'un load balancer L4 vs L7 ?", a:"L4 = couche transport (TCP/UDP), rapide, ne voit pas le contenu. L7 = couche applicative (HTTP), plus lent, peut router selon l'URL, les headers, faire du SSL termination." },
+  { q:"Qu'est-ce qu'OIDC par rapport à OAuth2 ?", a:"OAuth2 = protocole d'autorisation déléguée. OIDC = couche d'authentification au-dessus d'OAuth2 qui fournit un id_token contenant l'identité de l'utilisateur." },
+  { q:"Quels sont les 3 piliers de l'observabilité ?", a:"Logs (événements textuels), Metrics (séries temporelles agrégées) et Traces (parcours distribué d'une requête). OpenTelemetry est le standard unifié." },
+  { q:"Qu'est-ce qu'un message broker ?", a:"Un intermédiaire qui reçoit et route des messages entre producteurs et consommateurs de manière asynchrone. Kafka (log distribué), RabbitMQ (broker AMQP), SQS (managed queue)." },
+  { q:"Que fait un API Gateway ?", a:"Point d'entrée unique pour les clients vers un écosystème de microservices. Gère : routing, auth, rate limiting, transformation, aggregation, caching. Exemples : Kong, Tyk, AWS API Gateway." },
+  { q:"Qu'est-ce que l'event sourcing ?", a:"Stocker l'état comme une suite d'événements immuables plutôt que l'état actuel. Reconstruction par rejoue. Permet audit, time-travel, debugging, mais complexifie les requêtes." },
+  { q:"Qu'est-ce que CQRS ?", a:"Command Query Responsibility Segregation : séparer le modèle d'écriture (Commands, optimisé pour l'intégrité) du modèle de lecture (Queries, optimisé pour la performance), synchronisés par événements." },
+  { q:"Qu'est-ce qu'un SLO ?", a:"Service Level Objective : un objectif interne mesurable (ex: 99.95% des requêtes < 200ms sur 30 jours). Dérive en error budget qui arbitre entre vélocité feature et stabilité." },
+  { q:"Pourquoi PostgreSQL est-il souvent une bonne réponse par défaut ?", a:"Transactions ACID, jointures efficaces, JSON natif (JSONB), full-text search, extensions (PostGIS), indexation avancée, et écosystème mature. Couvre 90% des besoins." },
+  { q:"Qu'est-ce que la loi de Conway ?", a:"« Toute organisation qui conçoit un système produit une architecture qui reflète sa structure de communication. » Ton archi imite ton org — ou tu souffres." },
+  { q:"Qu'est-ce qu'un consistent hashing ?", a:"Technique de distribution où les nœuds et les clés sont placés sur un anneau logique. Ajouter ou retirer un nœud ne redistribue qu'une fraction 1/N des données au lieu de tout re-hasher." },
+];
+
+const QUIZ = [
+  { q:"Quel est le principal avantage de la scalabilité horizontale sur la verticale ?",
+    options:["Elle est plus simple à implémenter", "Elle n'a pas de plafond physique et permet la tolérance aux pannes", "Elle coûte toujours moins cher", "Elle ne nécessite pas de load balancer"],
+    answer:1, exp:"La scalabilité horizontale n'a pas de limite matérielle dure et permet nativement la tolérance aux pannes (si un nœud tombe, les autres prennent le relais). La verticale est plus simple mais plafonne et crée un SPOF." },
+  { q:"Dans le théorème CAP, que doit-on sacrifier lorsqu'une partition réseau survient ?",
+    options:["La Partition tolerance", "Toujours la Consistency", "Soit la Consistency, soit l'Availability", "Rien, un bon système garde les trois"],
+    answer:2, exp:"La partition étant inévitable, on choisit entre continuer à répondre (AP, avec risque d'incohérence) ou bloquer les requêtes pour préserver la cohérence (CP). On ne peut pas garder les deux pendant la partition." },
+  { q:"Quelle stratégie de rendu est la plus adaptée à une landing page marketing statique ?",
+    options:["CSR (Client-Side Rendering)", "SSR (Server-Side Rendering)", "SSG (Static Site Generation)", "Streaming React Server Components"],
+    answer:2, exp:"Une page marketing ne change que rarement et doit être ultra-rapide et SEO-friendly. Le SSG génère le HTML au build et le sert depuis un CDN — performance optimale et coût minimal." },
+  { q:"Quel algorithme de rate limiting absorbe le mieux les pics de trafic légitimes ?",
+    options:["Fixed window", "Token bucket", "Leaky bucket", "Sliding window log"],
+    answer:1, exp:"Le token bucket permet aux clients de consommer leurs jetons accumulés pour des bursts contrôlés, tout en maintenant un taux moyen. Le leaky bucket lisse totalement — il interdit tout burst." },
+  { q:"Pourquoi ne faut-il jamais stocker un JWT dans localStorage ?",
+    options:["Parce que c'est trop lent", "Parce que localStorage est accessible en JavaScript et donc vulnérable aux attaques XSS", "Parce que localStorage ne supporte pas les tokens longs", "Parce que les navigateurs ne le permettent pas"],
+    answer:1, exp:"localStorage est lisible par n'importe quel script s'exécutant sur la page. Une seule XSS permet de voler le token. Les cookies httpOnly ne sont pas accessibles en JS — bien plus sûrs." },
+  { q:"Qu'est-ce qu'un cache stampede et comment le prévenir ?",
+    options:["Un cache trop plein ; solution : augmenter la taille", "Plusieurs requêtes ratent simultanément une clé chaude qui vient d'expirer et écrasent la DB ; solution : lock distribué ou single-flight", "Un cache qui devient incohérent ; solution : TTL court", "Un cache qui tombe en panne ; solution : réplication"],
+    answer:1, exp:"Le stampede survient quand une clé chaude expire : des centaines de requêtes concurrentes font miss simultanément et tapent toutes la DB. Solution : un seul worker recharge (single-flight / lock), les autres attendent." },
+  { q:"Quelle est la principale différence entre Kafka et RabbitMQ ?",
+    options:["Kafka est plus récent, c'est tout", "Kafka est un log distribué où les messages sont persistés et rejouables ; RabbitMQ est un broker classique où le message est consommé et supprimé", "RabbitMQ est plus rapide", "Kafka ne supporte que JSON"],
+    answer:1, exp:"Kafka persiste les messages dans un log append-only répliqué : plusieurs consumers peuvent les relire, à leur rythme, même des jours après. RabbitMQ route le message vers un consumer puis l'efface — modèle différent." },
+  { q:"Quelle technique permet d'éviter un sharding catastrophique lors de l'ajout d'un nouveau nœud ?",
+    options:["Le range-based partitioning", "Le modulo sur l'ID", "Le consistent hashing", "La réplication synchrone"],
+    answer:2, exp:"Avec <code>hash % N</code>, ajouter un nœud change N et redistribue presque toutes les clés. Le consistent hashing place nœuds et clés sur un anneau : ajouter un nœud ne déplace qu'environ 1/N des clés." },
+  { q:"Qu'est-ce qu'une opération idempotente et pourquoi c'est important en distribué ?",
+    options:["Une opération rapide, pour réduire la latence", "Une opération qui produit le même résultat quand rejouée ; essentielle car les retries réseau sont inévitables", "Une opération atomique, pour respecter ACID", "Une opération qui ne touche pas la DB"],
+    answer:1, exp:"En distribué, une requête peut échouer en timeout alors qu'elle a réussi. Le client retry → risque de double exécution. L'idempotence garantit qu'un retry n'a pas d'effet de bord — indispensable pour les paiements, par exemple." },
+  { q:"Quel composant est le plus efficace pour absorber un pic de trafic sur des assets statiques ?",
+    options:["Un load balancer", "Un CDN", "Une base Redis", "Une API Gateway"],
+    answer:1, exp:"Un CDN met en cache les assets à la périphérie (PoP) et les sert depuis le datacenter le plus proche du visiteur. Il absorbe 99% du trafic statique et réduit la latence d'un facteur 5-10." },
+  { q:"Quelle est la meilleure combinaison pour gérer les tokens d'authentification ?",
+    options:["Un JWT long (30 jours) stocké dans localStorage", "Un access token court + un refresh token long stocké en cookie httpOnly", "Un seul gros cookie de session de 1 an", "Uniquement des sessions serveur avec Redis, jamais de JWT"],
+    answer:1, exp:"Access token court (15 min) sans besoin de révocation, refresh token long en cookie httpOnly (non accessible en JS, révocable en DB). Bon équilibre entre sécurité et UX, standard moderne." },
+  { q:"Qu'est-ce qu'un « error budget » en SRE ?",
+    options:["Le budget annuel alloué à l'équipe infra", "La marge d'indisponibilité tolérée par ton SLO ; quand elle est consommée, on freine les déploiements pour stabiliser", "Le nombre maximum d'erreurs HTTP 500 par heure", "Le budget pour les rollbacks d'urgence"],
+    answer:1, exp:"Si ton SLO est 99.9% sur 30 jours, tu as 43min d'indisponibilité « permises ». Tant qu'il reste du budget, on peut déployer vite ; quand il est épuisé, on arrête les nouvelles features et on stabilise." },
+  { q:"Dans une architecture microservices, à quoi sert une API Gateway ?",
+    options:["À remplacer le load balancer", "À être un point d'entrée unique qui gère routing, auth, rate limiting et agrégation vers les services backend", "À stocker les données partagées entre services", "À orchestrer les transactions distribuées"],
+    answer:1, exp:"L'API Gateway expose une façade cohérente aux clients, cache la topologie interne, et centralise les préoccupations transversales (sécurité, rate limit, monitoring). Elle est au frontend du mesh." },
+  { q:"Quelle est la différence principale entre Event Sourcing et CQRS ?",
+    options:["Ce sont deux noms pour la même chose", "Event Sourcing stocke l'état comme une suite d'événements immuables ; CQRS sépare le modèle d'écriture du modèle de lecture. Ils sont complémentaires mais indépendants", "CQRS remplace Event Sourcing dans les nouveaux systèmes", "Event Sourcing est une base NoSQL, CQRS est un pattern SQL"],
+    answer:1, exp:"On peut faire du CQRS sans Event Sourcing (deux modèles, synchronisés par triggers/ETL) et du Event Sourcing sans CQRS. Ils sont souvent combinés, mais attention à ne pas les confondre." },
+  { q:"Pour une application qui doit afficher des données fraîches à moins de 100 ms à un utilisateur, quelle architecture choisirais-tu en priorité ?",
+    options:["Un seul serveur bien dimensionné", "Une DB relationnelle avec un bon index", "Un CDN / edge function + un cache in-memory (Redis) entre l'API et la DB", "Une file Kafka"],
+    answer:2, exp:"Pour atteindre 100 ms perçus depuis n'importe où : une couche edge (CDN/worker) close du user, et un cache chaud (Redis) côté API pour éviter de taper la DB à chaque requête. La DB seule suffit rarement." },
+];
+
+const CASES = [
+  {
+    title:"URL Shortener (type Bitly)", color:"#7c5cff",
+    sub:"Service qui transforme une URL longue en un alias court et redirige les visiteurs.",
+    tags:["Hash", "Redis", "CDN", "Analytics"],
+    details:{
+      requirements:[
+        "Générer un slug court (6-8 caractères) pour une URL longue",
+        "Redirection en < 100ms globalement",
+        "Stats par slug (clicks, géo, device)",
+        "Supporter 500 créations/s et 50 000 redirects/s",
+        "Rétention longue (années), slugs permanents"
+      ],
+      sizing:"50k redirects/s × 3 années ≈ 4,7 milliards de clicks stockés. 500 créations/s × 3 ans ≈ 47 milliards de slugs (sur-estimation). Ratio lecture/écriture ~100:1 → système optimisé pour la lecture.",
+      decisions:[
+        "<strong>Génération du slug</strong> : base62(id auto-incrementé) ou hash(url) tronqué + collision check. L'approche ID est plus prévisible et scalable.",
+        "<strong>Base de données</strong> : clé-valeur ultra rapide. DynamoDB ou Cassandra pour le scale, Postgres suffit en dessous de 10k rps.",
+        "<strong>Cache</strong> : Redis avec un TTL long sur les slugs populaires. Cache hit > 95% attendu sur les slugs viraux.",
+        "<strong>Redirection</strong> : 302 par défaut (permet de tracker), 301 si l'analytics n'est pas critique (cache navigateur).",
+        "<strong>Distribution</strong> : CDN / edge function qui fait la redirection sans appeler l'origine pour les slugs chauds.",
+        "<strong>Analytics</strong> : découpler. Log l'événement dans Kafka, un consumer l'agrège en ClickHouse. Pas de blocage sur le chemin critique."
+      ],
+      pitfalls:[
+        "Éviter le scan de DB pour détecter les collisions — utiliser un bloom filter ou un INSERT avec contrainte unique + retry",
+        "Protection anti-spam : rate limiting par IP, captcha, détection d'URL malveillantes",
+        "Un id auto-increment monotone révèle ton volume et permet l'énumération → préférer un ID aléatoire ou chiffré"
+      ]
+    }
+  },
+  {
+    title:"Timeline sociale (type Twitter)", color:"#4fd1c7",
+    sub:"Afficher aux utilisateurs les posts récents des comptes qu'ils suivent, en temps quasi réel.",
+    tags:["Fan-out", "Redis", "Kafka", "Hybrid"],
+    details:{
+      requirements:[
+        "Un utilisateur peut suivre jusqu'à plusieurs millions (célébrités)",
+        "Afficher la timeline en moins de 200ms",
+        "Nouveau post visible par les followers dans la seconde",
+        "Scaling : des centaines de millions de users actifs"
+      ],
+      sizing:"200M DAU × 10 posts consommés = 2Md lectures/jour. Écriture : 10M posts/jour. Ratio lecture/écriture ~200:1.",
+      decisions:[
+        "<strong>Fan-out on write (push)</strong> : chaque nouveau post est copié dans la timeline Redis de chaque follower. Lecture ultra rapide (juste un LRANGE), mais une célébrité à 50M followers génère 50M d'écritures par post — impraticable.",
+        "<strong>Fan-out on read (pull)</strong> : au moment de lire, on va chercher les derniers posts de chaque followee et on merge. Lecture coûteuse, écriture triviale.",
+        "<strong>Approche hybride (réelle)</strong> : fan-out on write pour les users normaux, fan-out on read pour les célébrités. La timeline d'un follower est reconstituée en fusionnant sa « inbox » Redis + les posts live des célébrités qu'il suit.",
+        "<strong>Stockage des posts</strong> : base dédiée (Manhattan chez Twitter, ou Cassandra / ScyllaDB). Indexation temporelle par user_id.",
+        "<strong>Médias</strong> : S3/blob storage, URLs signées, CDN en façade.",
+        "<strong>Temps réel</strong> : WebSocket/SSE pour pousser les nouveaux posts. Pub/Sub Redis ou Kafka comme bus interne."
+      ],
+      pitfalls:[
+        "Le lag fan-out crée des incohérences perçues (un post visible chez certains pas chez d'autres) — acceptable",
+        "La timeline d'un nouveau follower doit être « réchauffée » (backfill partiel)",
+        "Ne jamais recalculer les compteurs (followers, likes) en JOIN — ils sont matérialisés et mis à jour par événements"
+      ]
+    }
+  },
+  {
+    title:"Chat temps réel (type WhatsApp)", color:"#ff6b9d",
+    sub:"Messagerie instantanée 1:1 et groupes, delivery garantie, offline, multi-device.",
+    tags:["WebSocket", "Queue", "Delivery receipts", "E2E"],
+    details:{
+      requirements:[
+        "Latence de delivery < 500ms entre deux devices en ligne",
+        "Support offline : le message arrive quand l'appareil se reconnecte",
+        "Read receipts et typing indicators",
+        "Scalabilité : des milliards d'utilisateurs",
+        "Idéalement chiffrement de bout en bout"
+      ],
+      sizing:"Si 1Md d'users actifs et 50 messages/user/jour : 50Md messages/jour ≈ 580k msg/s en pic. Chaque WebSocket = une connexion persistante → millions de connexions par serveur chat.",
+      decisions:[
+        "<strong>Passerelles WebSocket</strong> : des serveurs de type gateway (« edge ») maintiennent les connexions. Chaque user est associé à une passerelle (via un registry Redis ou Zookeeper).",
+        "<strong>Routing</strong> : pour envoyer un message, le chat-service publie dans un topic « user:X »; la gateway qui héberge X consomme et pousse via sa WebSocket.",
+        "<strong>Persistance</strong> : les messages vont dans une DB distribuée (Cassandra / ScyllaDB). Index par (conversation_id, timestamp).",
+        "<strong>Offline</strong> : tant que le destinataire n'est pas connecté, le message reste en file d'inbox. À la reconnexion, on fait un fetch incrémental.",
+        "<strong>Read receipts</strong> : autre message système de type <code>read</code> avec le timestamp, suivant le même chemin.",
+        "<strong>E2E encryption</strong> : protocole Signal (Double Ratchet). Les clés privées ne quittent jamais les devices ; le serveur ne voit que du chiffré."
+      ],
+      pitfalls:[
+        "Rester sticky sur la gateway : si l'user change de PoP, il faut re-publier l'association",
+        "Retries de delivery idempotents (msg_id unique côté client)",
+        "Les groupes massifs explosent en fan-out : utiliser un fan-out serveur contrôlé + historique commun"
+      ]
+    }
+  },
+  {
+    title:"Plateforme de streaming vidéo (type YouTube/Netflix)", color:"#fbbf24",
+    sub:"Upload, transcoding, delivery adaptative, recommandation. L'un des systèmes les plus coûteux à opérer.",
+    tags:["HLS/DASH", "CDN", "Transcoding", "Recommender"],
+    details:{
+      requirements:[
+        "Upload d'une vidéo → disponibilité en quelques minutes",
+        "Lecture adaptative (qualité qui s'ajuste au réseau)",
+        "Faible latence de démarrage (< 2s)",
+        "Rester performant mondialement",
+        "Protection contre le téléchargement illégal (DRM)"
+      ],
+      sizing:"500h de vidéo uploadées par minute. Chaque vidéo est transcodée en 5-8 qualités (240p, 360p, 480p, 720p, 1080p, 4K). Un film HD ~ 1GB, en 4K ~ 20GB. Storage total en pétaoctets.",
+      decisions:[
+        "<strong>Upload</strong> : multipart resumable upload vers un bucket d'ingestion (S3). Le client envoie en chunks avec des URLs pré-signées, ce qui contourne l'API.",
+        "<strong>Transcoding</strong> : dès qu'un upload est complet, un événement Kafka déclenche un pipeline de workers qui encodent en plusieurs qualités + formats (HLS, DASH). Les workers sont dans un cluster auto-scalant (K8s + GPU nodes).",
+        "<strong>Storage</strong> : les segments HLS (courtes tranches .ts de 2-10s) sont stockés en cold storage (S3 Glacier pour l'archive, S3 standard pour le chaud), et pushés sur le CDN.",
+        "<strong>Delivery</strong> : CDN multi-région pour servir les segments. Le client demande le manifest (playlist m3u8), puis choisit la qualité segment par segment selon sa bande passante mesurée.",
+        "<strong>Métadonnées</strong> : titre, tags, durée, ACL → base relationnelle. L'historique de visionnage va dans une DB time-series ou un data lake.",
+        "<strong>Recommandation</strong> : pipeline batch (Spark) + features online (Redis) + modèle ML servi par un service dédié."
+      ],
+      pitfalls:[
+        "Ne jamais streamer depuis l'origine : tout doit passer par le CDN, sinon les coûts explosent",
+        "Le chemin critique player → manifest → segments doit tolérer les slowness de CDN (client retry, manifest signé court terme)",
+        "Protection : URLs signées avec expiration courte, DRM Widevine/FairPlay pour le premium",
+        "Optimiser la vie des formats : pré-encoder seulement les qualités les plus demandées, générer le 4K à la volée pour les vidéos moins populaires"
+      ]
+    }
+  },
+  {
+    title:"E-commerce avec paiement (type Shopify)", color:"#4ade80",
+    sub:"Catalogue, panier, checkout, stock, paiement. Le cas d'étude le plus transversal.",
+    tags:["Saga", "Stock", "Idempotency", "Read models"],
+    details:{
+      requirements:[
+        "Catalogue > 10M produits, recherche full-text",
+        "Cart disponible multi-device",
+        "Stock précis en temps réel (pas de survente)",
+        "Checkout fiable même sous pic Black Friday",
+        "Intégration paiement (Stripe, Adyen)"
+      ],
+      sizing:"Pics : jusqu'à 10 000 commandes/s pendant le Black Friday, avec des catalogues consultés à 500 000 rps. Le stockage principal est modeste (dizaines de To), mais les index de recherche et les lectures sont critiques.",
+      decisions:[
+        "<strong>Catalogue</strong> : source de vérité en Postgres. Réplication vers Elasticsearch pour la recherche full-text et facettes, vers Redis pour les fiches produit ultra-chaudes. Le CDN cache aussi les fiches HTML (ISR/SSG).",
+        "<strong>Panier</strong> : Redis avec TTL. Clé = user_id ou session_id. Persistance DB pour les paniers de users connectés.",
+        "<strong>Stock</strong> : DB relationnelle avec verrous pessimistes au moment du checkout, ou réservation temporaire en Redis avec TTL (« je bloque 1 unité pendant 10min »). Attention aux hot items : les verrous deviennent un goulot.",
+        "<strong>Checkout = saga</strong> : plusieurs étapes qui peuvent échouer (réserver stock → créer commande → charger paiement → confirmer stock → envoyer email). Pas de transaction distribuée. Chaque étape a sa compensation en cas d'échec.",
+        "<strong>Paiement</strong> : délégué à un provider (Stripe). Utiliser un <code>Idempotency-Key</code> pour ne jamais double-charger en cas de retry.",
+        "<strong>Événements</strong> : chaque étape du cycle de vie commande (créée, payée, expédiée) est publiée sur Kafka. Les consumers alimentent l'inventaire, l'email, l'analytics, le CRM."
+      ],
+      pitfalls:[
+        "La survente de stock = perte de confiance : préférer une indispo temporaire à une survente",
+        "Ne jamais dépendre du paiement synchrone pour répondre au client — le paiement a ses propres SLA",
+        "Les emails transactionnels passent par une file durable, jamais inline",
+        "Le cache produit doit être invalidé sur update prix/stock, avec une stratégie de fallback si le cache tombe"
+      ]
+    }
+  },
+];
+
+const GLOSSARY = [
+  { term:"ACID", badge:"DB", def:"Atomicité, Cohérence, Isolation, Durabilité. Les 4 propriétés qui définissent une transaction relationnelle fiable." },
+  { term:"BASE", badge:"DB", def:"Basically Available, Soft state, Eventual consistency. La philosophie opposée à ACID, adoptée par la plupart des bases NoSQL." },
+  { term:"CAP", badge:"Théorème", def:"Consistency, Availability, Partition tolerance. Un système distribué ne peut en garantir que 2 sur 3 en cas de partition réseau." },
+  { term:"CDN", badge:"Delivery", def:"Content Delivery Network. Réseau de serveurs répartis qui mettent en cache et servent les assets depuis le PoP le plus proche de l'utilisateur." },
+  { term:"CQRS", badge:"Pattern", def:"Command Query Responsibility Segregation. Séparer le modèle d'écriture du modèle de lecture, souvent combiné avec l'Event Sourcing." },
+  { term:"CORS", badge:"Web", def:"Cross-Origin Resource Sharing. Mécanisme par lequel un serveur autorise des navigateurs d'une autre origine à faire des requêtes." },
+  { term:"Eventual consistency", badge:"DB", def:"Modèle dans lequel, en l'absence de nouvelles écritures, toutes les réplicas finiront par converger vers le même état." },
+  { term:"Event sourcing", badge:"Pattern", def:"Stocker l'état comme une suite d'événements immuables, l'état courant étant obtenu en rejouant l'historique." },
+  { term:"gRPC", badge:"API", def:"Framework RPC haute performance basé sur HTTP/2 et Protobuf, pensé pour la communication inter-services." },
+  { term:"Horizontal scaling", badge:"Scale", def:"Ajouter des machines pour absorber la charge, par opposition à « vertical scaling »." },
+  { term:"Idempotence", badge:"API", def:"Propriété d'une opération qui produit le même résultat quand rejouée N fois. Indispensable pour gérer les retries." },
+  { term:"JWT", badge:"Sécu", def:"JSON Web Token. Token signé (et optionnellement chiffré) contenant des claims. Stateless, populaire pour les API." },
+  { term:"Kafka", badge:"Data", def:"Plateforme de streaming distribuée basée sur un log append-only partitionné et répliqué. Messages persistés et rejouables." },
+  { term:"Load balancer", badge:"Infra", def:"Composant qui distribue le trafic entrant entre plusieurs backends. Peut fonctionner en L4 (TCP) ou L7 (HTTP)." },
+  { term:"MTBF / MTTR", badge:"SRE", def:"Mean Time Between Failures / Mean Time To Recovery. Deux métriques complémentaires pour mesurer la fiabilité." },
+  { term:"OIDC", badge:"Sécu", def:"OpenID Connect. Couche d'authentification construite sur OAuth 2.0, fournit un id_token contenant l'identité." },
+  { term:"OAuth 2.0", badge:"Sécu", def:"Protocole standard d'autorisation déléguée. Permet à une app d'accéder à des ressources au nom d'un user sans connaître son mot de passe." },
+  { term:"PoP", badge:"Infra", def:"Point of Presence. Emplacement physique d'un CDN/edge, au plus près des utilisateurs." },
+  { term:"Pub/Sub", badge:"Messaging", def:"Publication / Subscription. Pattern où des publishers émettent des messages reçus par tous les subscribers intéressés." },
+  { term:"Rate limiting", badge:"Sécu", def:"Mécanisme qui limite le nombre de requêtes qu'un client peut envoyer dans une fenêtre de temps." },
+  { term:"Replication", badge:"DB", def:"Copier les données sur plusieurs nœuds pour la disponibilité et la scalabilité en lecture." },
+  { term:"REST", badge:"API", def:"Representational State Transfer. Style architectural basé sur HTTP et les ressources, qui utilise les verbes GET/POST/PUT/DELETE." },
+  { term:"Saga", badge:"Pattern", def:"Séquence de transactions locales avec compensations en cas d'échec, pour orchestrer des opérations distribuées sans transaction ACID globale." },
+  { term:"Sharding", badge:"DB", def:"Partitionnement horizontal : diviser les données entre plusieurs nœuds, chacun ne contenant qu'un sous-ensemble." },
+  { term:"SLA / SLO / SLI", badge:"SRE", def:"SLI est la métrique, SLO l'objectif interne, SLA l'engagement contractuel envers le client." },
+  { term:"SPOF", badge:"Infra", def:"Single Point Of Failure. Composant dont la panne entraîne l'arrêt complet du système." },
+  { term:"SSE", badge:"Web", def:"Server-Sent Events. Flux unidirectionnel du serveur vers le client via HTTP, plus simple que WebSocket pour la plupart des cas." },
+  { term:"SSG / SSR / CSR", badge:"Frontend", def:"Static Site Generation (au build) / Server-Side Rendering (à la requête) / Client-Side Rendering (dans le navigateur)." },
+  { term:"Stateless", badge:"Archi", def:"Une application stateless ne conserve aucun état entre les requêtes. Condition sine qua non du scale horizontal." },
+  { term:"Throughput", badge:"Perf", def:"Débit : nombre d'opérations réalisables par unité de temps. À distinguer de la latence (temps d'une opération)." },
+  { term:"WebSocket", badge:"Web", def:"Protocole bidirectionnel full-duplex sur TCP, initié via un upgrade HTTP. Idéal pour le temps réel." },
+  { term:"Write-through / Write-back", badge:"Cache", def:"Write-through : chaque écriture est immédiatement propagée en DB. Write-back : écriture différée, asynchrone." },
+];
+
+/* ============================================================
+   APP STATE
+============================================================ */
+const state = {
+  view: 'home',
+  currentLesson: 0,
+  completedLessons: new Set(JSON.parse(localStorage.getItem('sd_done') || '[]')),
+  flashcard: 0,
+  flashcardOrder: FLASHCARDS.map((_,i)=>i),
+  quiz: { current: 0, answers: [], finished: false },
+  glossaryFilter: '',
+};
+function persist() { localStorage.setItem('sd_done', JSON.stringify([...state.completedLessons])); }
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+function showView(name) {
+  state.view = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view === name));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (name === 'lessons') renderLessons();
+  if (name === 'flashcards') renderFlashcard();
+  if (name === 'quiz') renderQuiz();
+  if (name === 'builder') renderBuilder();
+  if (name === 'cases') renderCases();
+  if (name === 'glossary') renderGlossary();
+}
+document.querySelectorAll('.nav-tab').forEach(t => t.addEventListener('click', () => showView(t.dataset.view)));
+document.querySelectorAll('[data-goto]').forEach(b => b.addEventListener('click', () => showView(b.dataset.goto)));
+
+/* ============================================================
+   HOME
+============================================================ */
+function renderHome() {
+  const tg = document.getElementById('topicsGrid');
+  tg.innerHTML = TOPICS.map(t => `
+    <div class="topic-card" style="--color:${t.color}" data-cat="${t.title}">
+      <div class="topic-icon">${t.icon}</div>
+      <h3>${t.title}</h3>
+      <p>${t.desc}</p>
+      <div class="topic-count">${LESSONS.filter(l => l.cat === t.title).length} cours</div>
+    </div>
+  `).join('');
+  tg.querySelectorAll('.topic-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const cat = card.dataset.cat;
+      const idx = LESSONS.findIndex(l => l.cat === cat);
+      if (idx >= 0) { state.currentLesson = idx; showView('lessons'); }
+    });
+  });
+  document.getElementById('statLessons').innerHTML = `<span class="gradient">${LESSONS.length}</span>`;
+  document.getElementById('statCards').innerHTML = `<span class="gradient">${FLASHCARDS.length}</span>`;
+  document.getElementById('statQuiz').innerHTML = `<span class="gradient">${QUIZ.length}</span>`;
+  document.getElementById('statCases').innerHTML = `<span class="gradient">${CASES.length}</span>`;
+}
+
+/* ============================================================
+   LESSONS
+============================================================ */
+function renderLessons() {
+  const sidebar = document.getElementById('lessonsSidebar');
+  const cats = [...new Set(LESSONS.map(l => l.cat))];
+  sidebar.innerHTML = cats.map(cat => `
+    <div class="sidebar-category">${cat}</div>
+    ${LESSONS.map((l, i) => l.cat === cat ? `
+      <button class="sidebar-item ${i === state.currentLesson ? 'active' : ''} ${state.completedLessons.has(i) ? 'done' : ''}" data-idx="${i}">
+        ${l.title}
+      </button>
+    ` : '').join('')}
+  `).join('');
+  sidebar.querySelectorAll('.sidebar-item').forEach(item => {
+    item.addEventListener('click', () => {
+      state.currentLesson = Number(item.dataset.idx);
+      renderLessons();
+    });
+  });
+
+  const lesson = LESSONS[state.currentLesson];
+  const content = document.getElementById('lessonContent');
+  content.innerHTML = `
+    <div class="lesson-header">
+      <div class="lesson-cat">${lesson.cat}</div>
+      <h2>${lesson.title}</h2>
+      <p class="lesson-summary">${lesson.summary}</p>
+    </div>
+    <div class="lesson-body">${lesson.body}</div>
+    <div class="lesson-nav">
+      <button class="btn btn-ghost" id="lessonPrev" ${state.currentLesson === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>← Précédent</button>
+      <button class="btn btn-primary" id="lessonDone">${state.completedLessons.has(state.currentLesson) ? '✓ Terminé' : 'Marquer comme lu'}</button>
+      <button class="btn btn-ghost" id="lessonNext" ${state.currentLesson === LESSONS.length - 1 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>Suivant →</button>
+    </div>
+  `;
+  document.getElementById('lessonPrev').addEventListener('click', () => {
+    if (state.currentLesson > 0) { state.currentLesson--; renderLessons(); }
+  });
+  document.getElementById('lessonNext').addEventListener('click', () => {
+    if (state.currentLesson < LESSONS.length - 1) { state.currentLesson++; renderLessons(); }
+  });
+  document.getElementById('lessonDone').addEventListener('click', () => {
+    if (state.completedLessons.has(state.currentLesson)) state.completedLessons.delete(state.currentLesson);
+    else state.completedLessons.add(state.currentLesson);
+    persist();
+    updateProgress();
+    renderLessons();
+  });
+}
+
+/* ============================================================
+   FLASHCARDS
+============================================================ */
+function renderFlashcard() {
+  const idx = state.flashcardOrder[state.flashcard];
+  const card = FLASHCARDS[idx];
+  document.getElementById('fcQuestion').textContent = card.q;
+  document.getElementById('fcAnswer').textContent = card.a;
+  document.getElementById('fcProgress').textContent = `Carte ${state.flashcard + 1} / ${FLASHCARDS.length}`;
+  document.getElementById('flashcard').classList.remove('flipped');
+}
+document.getElementById('flashcard').addEventListener('click', (e) => {
+  e.currentTarget.classList.toggle('flipped');
+});
+document.getElementById('fcNext').addEventListener('click', () => {
+  state.flashcard = (state.flashcard + 1) % FLASHCARDS.length;
+  renderFlashcard();
+});
+document.getElementById('fcPrev').addEventListener('click', () => {
+  state.flashcard = (state.flashcard - 1 + FLASHCARDS.length) % FLASHCARDS.length;
+  renderFlashcard();
+});
+document.getElementById('fcEasy').addEventListener('click', () => {
+  state.flashcard = (state.flashcard + 1) % FLASHCARDS.length;
+  renderFlashcard();
+});
+document.getElementById('fcHard').addEventListener('click', () => {
+  // Déplace la carte en queue pour revoir
+  const idx = state.flashcardOrder.splice(state.flashcard, 1)[0];
+  state.flashcardOrder.push(idx);
+  if (state.flashcard >= state.flashcardOrder.length) state.flashcard = 0;
+  renderFlashcard();
+});
+document.addEventListener('keydown', (e) => {
+  if (state.view !== 'flashcards') return;
+  if (e.key === ' ') { e.preventDefault(); document.getElementById('flashcard').classList.toggle('flipped'); }
+  if (e.key === 'ArrowRight') document.getElementById('fcNext').click();
+  if (e.key === 'ArrowLeft') document.getElementById('fcPrev').click();
+});
+
+/* ============================================================
+   QUIZ
+============================================================ */
+function renderQuiz() {
+  const c = document.getElementById('quizContainer');
+  if (state.quiz.finished) {
+    const correct = state.quiz.answers.filter((a, i) => a === QUIZ[i].answer).length;
+    const pct = Math.round((correct / QUIZ.length) * 100);
+    const msg = pct >= 80 ? 'Bravo, tu maîtrises !' : pct >= 60 ? 'Bon score, continue.' : 'À retravailler — révise les cours.';
+    c.innerHTML = `
+      <div class="quiz-result">
+        <div class="quiz-result-icon">${pct >= 80 ? '🏆' : pct >= 60 ? '🎯' : '💪'}</div>
+        <h2>${msg}</h2>
+        <div class="quiz-score">${correct} / ${QUIZ.length}</div>
+        <p>${pct}% de bonnes réponses</p>
+        <button class="btn btn-primary" id="quizRestart">Rejouer le quiz</button>
+      </div>
+    `;
+    document.getElementById('quizRestart').addEventListener('click', () => {
+      state.quiz = { current: 0, answers: [], finished: false };
+      renderQuiz();
+    });
+    return;
+  }
+  const q = QUIZ[state.quiz.current];
+  const pct = ((state.quiz.current) / QUIZ.length) * 100;
+  const userAnswer = state.quiz.answers[state.quiz.current];
+  const answered = userAnswer !== undefined;
+  c.innerHTML = `
+    <div class="quiz-header">
+      <h2 class="section-title">🎯 Quiz</h2>
+      <span style="color:var(--text-dim);font-size:13px;">Question ${state.quiz.current + 1} / ${QUIZ.length}</span>
+    </div>
+    <div class="quiz-progress"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
+    <div class="quiz-card">
+      <div class="quiz-qnum">Question ${state.quiz.current + 1}</div>
+      <div class="quiz-question">${q.q}</div>
+      <div class="quiz-options">
+        ${q.options.map((opt, i) => {
+          let cls = '';
+          if (answered) {
+            if (i === q.answer) cls = 'correct';
+            else if (i === userAnswer) cls = 'wrong';
+          }
+          return `<button class="quiz-option ${cls}" data-i="${i}" ${answered ? 'disabled' : ''}>
+            <div class="quiz-option-letter">${String.fromCharCode(65 + i)}</div>
+            <div>${opt}</div>
+          </button>`;
+        }).join('')}
+      </div>
+      <div class="quiz-explanation ${answered ? 'visible' : ''}">
+        <strong>${userAnswer === q.answer ? '✓ Correct' : '✗ Incorrect'}</strong>
+        ${q.exp}
+      </div>
+      <div class="quiz-actions">
+        <button class="btn btn-ghost" id="quizBack" ${state.quiz.current === 0 ? 'style="opacity:0.4;cursor:not-allowed;" disabled' : ''}>← Précédent</button>
+        <button class="btn btn-primary" id="quizNext" ${!answered ? 'style="opacity:0.4;cursor:not-allowed;" disabled' : ''}>
+          ${state.quiz.current === QUIZ.length - 1 ? 'Voir le score' : 'Suivant →'}
+        </button>
+      </div>
+    </div>
+  `;
+  c.querySelectorAll('.quiz-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.quiz.answers[state.quiz.current] !== undefined) return;
+      state.quiz.answers[state.quiz.current] = Number(btn.dataset.i);
+      renderQuiz();
+    });
+  });
+  document.getElementById('quizBack').addEventListener('click', () => {
+    if (state.quiz.current > 0) { state.quiz.current--; renderQuiz(); }
+  });
+  document.getElementById('quizNext').addEventListener('click', () => {
+    if (state.quiz.current < QUIZ.length - 1) { state.quiz.current++; renderQuiz(); }
+    else { state.quiz.finished = true; renderQuiz(); }
+  });
+}
+
+/* ============================================================
+   BUILDER / FLOW SIMULATOR
+============================================================ */
+const SCENARIOS = {
+  classic: {
+    title: "Architecture web classique",
+    nodes: [
+      { icon:'👤', title:'Client', sub:'Browser', desc:"L'utilisateur charge une page. Le navigateur résout le DNS, établit une connexion TLS, et envoie la requête HTTP.", metrics:['Latence utilisateur ~ 20–150ms réseau'] },
+      { icon:'🌍', title:'CDN', sub:'Edge', desc:"Le CDN intercepte la requête. Si l'asset est en cache sur le PoP le plus proche, il répond directement — la requête n'atteint jamais ton infra. 90%+ du trafic s'arrête ici.", metrics:['Hit ratio: 85–99%', 'Latence ajoutée: <5ms'] },
+      { icon:'⚖️', title:'Load Balancer', sub:'L7', desc:"Pour les ressources non cachées, le LB (Nginx, Envoy, ALB) reçoit la requête, termine le TLS, inspecte les headers et route vers une instance backend saine selon un algorithme (round-robin, least-connections).", metrics:['Algorithme: least-conn', 'Health check: 5s', '+1–3ms'] },
+      { icon:'🖥️', title:'API / App', sub:'Node/Go/Java', desc:"L'application métier traite la requête : validation, logique, appel aux services dépendants. Stateless, horizontalement scalable derrière le LB.", metrics:['CPU: ~70% cible', 'P99: 80ms'] },
+      { icon:'⚡', title:'Cache', sub:'Redis', desc:"Avant de taper la DB, l'app consulte Redis. Pour les données chaudes, cache hit > 95%. Gain de latence typique : 10ms → 0.5ms.", metrics:['Hit: 95%', 'Latence: <1ms'] },
+      { icon:'🗄️', title:'Database', sub:'Postgres', desc:"Base transactionnelle principale. Réplication primary/replicas : le primary pour les writes, les replicas pour les reads à grande échelle.", metrics:['P99 read: 5ms', 'Replicas: 3'] },
+    ]
+  },
+  micro: {
+    title: "Microservices + API Gateway",
+    nodes: [
+      { icon:'👤', title:'Client', sub:'Browser/App', desc:"Le client (web ou mobile) envoie une requête à l'API Gateway. Il ne connaît jamais la topologie interne.", metrics:[] },
+      { icon:'🌍', title:'CDN', sub:'Edge', desc:"Le CDN sert les assets statiques et peut mettre en cache certaines réponses API selon les headers.", metrics:['Statics cachés: 99%'] },
+      { icon:'🚪', title:'API Gateway', sub:'Kong/Envoy', desc:"Point d'entrée unique des API. Gère : authentification JWT, rate limiting, routing vers le bon service, aggregation de réponses, transformation.", metrics:['JWT verify: 0.5ms', 'Rate limit: 100 req/min'] },
+      { icon:'🧩', title:'Service A', sub:'Orders', desc:"Service métier autonome avec sa propre DB. Communique avec les autres services via gRPC pour le sync et Kafka pour l'async.", metrics:['Instances: 8', 'Autoscale CPU'] },
+      { icon:'📨', title:'Broker', sub:'Kafka', desc:"Bus d'événements durable : quand Order publie « order_created », les services Stock, Email et Analytics s'abonnent et réagissent indépendamment.", metrics:['Lag: <100ms', 'Réplication: 3'] },
+      { icon:'🧩', title:'Service B', sub:'Payments', desc:"Autre service qui consomme l'événement et déclenche sa propre logique. Pas de transaction distribuée — on compense en cas d'échec (saga pattern).", metrics:['Idempotency-Key', 'Retry: 3'] },
+      { icon:'🗄️', title:'DB par service', sub:'Polyglot', desc:"Chaque service possède sa DB. Orders en Postgres, Payments en Postgres, Catalog en MongoDB, Search en Elasticsearch. Principe de l'ownership.", metrics:['Zero shared DB'] },
+    ]
+  },
+  stream: {
+    title: "Temps réel (WebSocket)",
+    nodes: [
+      { icon:'📱', title:'Client', sub:'WebSocket', desc:"Le client initie une connexion WebSocket qui reste ouverte. Après le handshake HTTP initial, c'est un canal bidirectionnel full-duplex.", metrics:['Latence msg: <50ms', 'Conn persistante'] },
+      { icon:'🌐', title:'Edge Proxy', sub:'TLS + sticky', desc:"Un proxy TLS (Envoy, Nginx) termine la connexion et route en sticky (hash IP ou connection ID) vers une gateway qui gardera la connexion.", metrics:['Sticky: 100%', 'TLS offload'] },
+      { icon:'🔌', title:'Gateway WS', sub:'Sessions', desc:"Chaque gateway maintient des milliers de connexions persistantes. Elle s'enregistre dans un registry Redis (user_id → gateway_id) pour le routing inverse.", metrics:['Conn/node: 50k', 'Mémoire: ~4GB'] },
+      { icon:'📨', title:'Pub/Sub', sub:'Redis/Kafka', desc:"Pour pousser un message à user X, le service publie sur le topic « user:X ». La gateway qui héberge X consomme et pousse via sa WebSocket.", metrics:['Fan-out: O(1)'] },
+      { icon:'🧠', title:'Service métier', sub:'Chat/Feed', desc:"Le service reçoit les messages entrants, les valide, les persiste et publie les événements de diffusion vers le bus.", metrics:[] },
+      { icon:'🗄️', title:'Store', sub:'Cassandra', desc:"Le store distribué persiste l'historique des messages. Clé composite (conversation_id, timestamp), optimisé pour les écritures et lectures chronologiques.", metrics:['Écriture: <5ms', 'Réplication: 3'] },
+    ]
+  },
+  event: {
+    title: "Architecture event-driven",
+    nodes: [
+      { icon:'👤', title:'Client', sub:'Submit', desc:"Le client poste une commande via une requête HTTP. La réponse est immédiate (« commande acceptée »), le reste se fait en asynchrone.", metrics:['Latence perçue: <100ms'] },
+      { icon:'⚖️', title:'API', sub:'Command handler', desc:"L'API valide la commande, la persiste dans une table « commands », publie un événement « CommandeCréée » et répond 202 Accepted au client.", metrics:['P99: 40ms'] },
+      { icon:'📨', title:'Event Bus', sub:'Kafka', desc:"Kafka reçoit l'événement et le met à disposition de tous les consumers. Chaque partition assure l'ordre, la réplication assure la durabilité.", metrics:['Durabilité: 3×', 'Ordre/partition'] },
+      { icon:'📦', title:'Worker Stock', sub:'Consumer', desc:"Le worker consomme l'événement, vérifie le stock, réserve les articles et publie à son tour un événement « StockRéservé ».", metrics:['Consumer group', 'Offset commit'] },
+      { icon:'💳', title:'Worker Paiement', sub:'Consumer', desc:"Un autre worker, totalement indépendant, consomme les événements et appelle Stripe avec un Idempotency-Key pour ne jamais double-charger.", metrics:['Retry: exp backoff'] },
+      { icon:'📊', title:'Read model', sub:'Materialized view', desc:"Un projecteur final consomme tous les événements et met à jour une vue dénormalisée (Postgres, Elasticsearch) optimisée pour la lecture par le frontend.", metrics:['Lag: ~200ms', 'Eventually consistent'] },
+    ]
+  }
+};
+
+let flowAnimating = false;
+function renderBuilder() {
+  const scen = SCENARIOS[document.getElementById('scenarioSelect').value];
+  const lane = document.getElementById('flowLane');
+  lane.innerHTML = scen.nodes.map((n, i) => `
+    ${i > 0 ? '<div class="flow-arrow" data-arrow="' + i + '"></div>' : ''}
+    <div class="flow-node" data-node="${i}">
+      <span class="flow-node-icon">${n.icon}</span>
+      <div class="flow-node-title">${n.title}</div>
+      <div class="flow-node-sub">${n.sub}</div>
+    </div>
+  `).join('');
+  lane.querySelectorAll('.flow-node').forEach(node => {
+    node.addEventListener('click', () => {
+      if (flowAnimating) return;
+      lane.querySelectorAll('.flow-node').forEach(n => n.classList.remove('active'));
+      lane.querySelectorAll('.flow-arrow').forEach(a => a.classList.remove('lit'));
+      node.classList.add('active');
+      showFlowInfo(scen.nodes[Number(node.dataset.node)]);
+    });
+  });
+}
+function showFlowInfo(node) {
+  document.getElementById('flowInfo').innerHTML = `
+    <h4>${node.icon} ${node.title} <span style="color:var(--text-dim);font-size:13px;font-weight:500;">· ${node.sub}</span></h4>
+    <p>${node.desc}</p>
+    ${node.metrics && node.metrics.length ? '<div class="metrics">' + node.metrics.map(m => '<span class="metric-chip">' + m + '</span>').join('') + '</div>' : ''}
+  `;
+}
+document.getElementById('scenarioSelect').addEventListener('change', renderBuilder);
+document.getElementById('playFlow').addEventListener('click', async () => {
+  if (flowAnimating) return;
+  flowAnimating = true;
+  const scen = SCENARIOS[document.getElementById('scenarioSelect').value];
+  const nodes = document.querySelectorAll('#flowLane .flow-node');
+  const arrows = document.querySelectorAll('#flowLane .flow-arrow');
+  nodes.forEach(n => n.classList.remove('active'));
+  arrows.forEach(a => a.classList.remove('lit'));
+  for (let i = 0; i < nodes.length; i++) {
+    if (i > 0) arrows[i - 1].classList.add('lit');
+    nodes[i].classList.add('active');
+    showFlowInfo(scen.nodes[i]);
+    await new Promise(r => setTimeout(r, 1400));
+    if (i < nodes.length - 1) nodes[i].classList.remove('active');
+  }
+  flowAnimating = false;
+});
+
+/* ============================================================
+   CASE STUDIES
+============================================================ */
+function renderCases() {
+  const grid = document.getElementById('casesGrid');
+  grid.innerHTML = CASES.map((c, i) => `
+    <div class="case-card" style="--case-color:${c.color}33" data-idx="${i}">
+      <h3>${c.title}</h3>
+      <div class="case-sub">${c.sub}</div>
+      <div style="color:var(--text-dim);font-size:12px;">Clique pour voir l'analyse complète →</div>
+      <div class="case-tags">${c.tags.map(t => '<span class="case-tag">' + t + '</span>').join('')}</div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('.case-card').forEach(card => {
+    card.addEventListener('click', () => openCaseModal(Number(card.dataset.idx)));
+  });
+}
+function openCaseModal(idx) {
+  const c = CASES[idx];
+  document.getElementById('caseModalContent').innerHTML = `
+    <button class="case-modal-close" onclick="document.getElementById('caseModal').classList.remove('visible')">✕</button>
+    <h2>${c.title}</h2>
+    <div class="sub">${c.sub}</div>
+    <div class="case-section">
+      <h4>🎯 Contraintes fonctionnelles & non-fonctionnelles</h4>
+      <ul>${c.details.requirements.map(r => '<li>' + r + '</li>').join('')}</ul>
+    </div>
+    <div class="case-section">
+      <h4>📏 Estimation (back of the envelope)</h4>
+      <p>${c.details.sizing}</p>
+    </div>
+    <div class="case-section">
+      <h4>🏗️ Décisions d'architecture clés</h4>
+      <ul>${c.details.decisions.map(d => '<li>' + d + '</li>').join('')}</ul>
+    </div>
+    <div class="case-section">
+      <h4>⚠️ Pièges et subtilités</h4>
+      <ul>${c.details.pitfalls.map(p => '<li>' + p + '</li>').join('')}</ul>
+    </div>
+  `;
+  document.getElementById('caseModal').classList.add('visible');
+}
+document.getElementById('caseModal').addEventListener('click', (e) => {
+  if (e.target.id === 'caseModal') e.currentTarget.classList.remove('visible');
+});
+
+/* ============================================================
+   GLOSSARY
+============================================================ */
+function renderGlossary() {
+  const grid = document.getElementById('glossaryGrid');
+  const q = state.glossaryFilter.toLowerCase();
+  const items = GLOSSARY.filter(g => !q || g.term.toLowerCase().includes(q) || g.def.toLowerCase().includes(q));
+  if (items.length === 0) {
+    grid.innerHTML = '<div class="empty">Aucun terme trouvé pour « ' + state.glossaryFilter + ' »</div>';
+    return;
+  }
+  grid.innerHTML = items
+    .sort((a, b) => a.term.localeCompare(b.term))
+    .map(g => `
+      <div class="glossary-item">
+        <div class="glossary-term">${g.term} <span class="badge">${g.badge}</span></div>
+        <div class="glossary-def">${g.def}</div>
+      </div>
+    `).join('');
+}
+document.getElementById('glossarySearch').addEventListener('input', (e) => {
+  state.glossaryFilter = e.target.value;
+  renderGlossary();
+});
+
+/* ============================================================
+   PROGRESS
+============================================================ */
+function updateProgress() {
+  const done = state.completedLessons.size;
+  const total = LESSONS.length;
+  document.getElementById('progressLabel').textContent = `${done} / ${total}`;
+  document.getElementById('progressBar').style.width = ((done / total) * 100) + '%';
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+renderHome();
+updateProgress();
+showView('home');
+</script>
+</body>
+</html>

@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestJS Mastery — Prep entretien fullstack</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-elev: #14141d;
+    --bg-elev-2: #1c1c28;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --text-dim: #9090a8;
+    --accent: #e0234e;
+    --accent-glow: #ff4070;
+    --accent-soft: rgba(224, 35, 78, 0.15);
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --info: #60a5fa;
+    --code-bg: #0d0d14;
+    --keyword: #ff7ab6;
+    --string: #a5e075;
+    --comment: #6a6a7e;
+    --type: #7dd3fc;
+    --func: #fbbf24;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(at 20% 0%, rgba(224, 35, 78, 0.08) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, rgba(96, 165, 250, 0.06) 0px, transparent 50%);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--bg-elev);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .logo {
+    padding: 0 24px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .logo h1 {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-glow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+  .logo p { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  .nav { list-style: none; }
+  .nav-section {
+    padding: 12px 24px 6px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    font-weight: 700;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-dim);
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { background: var(--bg-elev-2); color: var(--text); }
+  .nav-item.active {
+    background: var(--accent-soft);
+    color: var(--text);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .nav-item .check {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--ok);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .nav-item.completed .check { opacity: 1; }
+
+  .progress-bar {
+    margin: 16px 24px;
+    height: 6px;
+    background: var(--bg-elev-2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+    width: 0%;
+    transition: width 0.4s;
+  }
+  .progress-text {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: -8px;
+    margin-bottom: 8px;
+  }
+
+  /* Main */
+  .main { padding: 40px 56px; max-width: 1100px; }
+
+  .breadcrumb {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  h2.lesson-title {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+    line-height: 1.1;
+  }
+  .lesson-subtitle {
+    color: var(--text-dim);
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+
+  .content-block {
+    margin-bottom: 24px;
+    line-height: 1.7;
+    color: #c8c8d8;
+    font-size: 15px;
+  }
+  .content-block h3 {
+    color: var(--text);
+    font-size: 20px;
+    margin: 28px 0 12px;
+    font-weight: 700;
+  }
+  .content-block h4 {
+    color: var(--text);
+    font-size: 16px;
+    margin: 20px 0 8px;
+    font-weight: 600;
+  }
+  .content-block p { margin-bottom: 12px; }
+  .content-block ul, .content-block ol { margin: 12px 0 12px 24px; }
+  .content-block li { margin-bottom: 6px; }
+  .content-block strong { color: var(--text); }
+  .content-block code:not(pre code) {
+    background: var(--bg-elev-2);
+    color: var(--accent-glow);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+  }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    position: relative;
+  }
+  pre .lang-tag {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .kw { color: var(--keyword); }
+  .str { color: var(--string); }
+  .cm { color: var(--comment); font-style: italic; }
+  .ty { color: var(--type); }
+  .fn { color: var(--func); }
+  .dec { color: var(--accent-glow); }
+
+  /* Callouts */
+  .callout {
+    border-left: 4px solid var(--info);
+    background: rgba(96, 165, 250, 0.08);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.tip { border-color: var(--ok); background: rgba(74, 222, 128, 0.08); }
+  .callout.warn { border-color: var(--warn); background: rgba(251, 191, 36, 0.08); }
+  .callout.interview { border-color: var(--accent); background: var(--accent-soft); }
+  .callout-title {
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .callout.tip .callout-title { color: var(--ok); }
+  .callout.warn .callout-title { color: var(--warn); }
+  .callout.interview .callout-title { color: var(--accent-glow); }
+  .callout .callout-title { color: var(--info); }
+
+  /* Comparison table */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .compare-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .compare-card h4 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .compare-card.nest h4 { color: var(--accent-glow); }
+  .compare-card ul { margin: 0; padding-left: 18px; }
+
+  /* Quiz */
+  .quiz {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 32px;
+  }
+  .quiz h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    margin-bottom: 18px;
+  }
+  .quiz-question { margin-bottom: 16px; font-size: 15px; }
+  .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-option {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 16px;
+    text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .quiz-option:hover:not(:disabled) {
+    background: var(--bg-elev);
+    border-color: var(--accent);
+  }
+  .quiz-option:disabled { cursor: default; }
+  .quiz-option.correct {
+    background: rgba(74, 222, 128, 0.15);
+    border-color: var(--ok);
+    color: var(--ok);
+  }
+  .quiz-option.wrong {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    color: #fca5a5;
+  }
+  .quiz-feedback {
+    margin-top: 14px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: none;
+  }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: rgba(74, 222, 128, 0.1); border-left: 3px solid var(--ok); }
+  .quiz-feedback.ko { background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; }
+
+  /* Footer nav */
+  .footer-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .btn {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn:hover { background: var(--bg-elev-2); border-color: var(--accent); }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-glow));
+    border-color: var(--accent);
+  }
+  .btn.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(224, 35, 78, 0.3); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Architecture diagram */
+  .diagram {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 20px 0;
+    text-align: center;
+  }
+  .diagram-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 12px 0;
+    flex-wrap: wrap;
+  }
+  .diagram-box {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 140px;
+    transition: all 0.2s;
+  }
+  .diagram-box.controller { border-color: var(--info); color: var(--info); }
+  .diagram-box.service { border-color: var(--ok); color: var(--ok); }
+  .diagram-box.module { border-color: var(--accent); color: var(--accent-glow); }
+  .diagram-box.guard, .diagram-box.pipe, .diagram-box.intercept { border-color: var(--warn); color: var(--warn); }
+  .diagram-arrow { font-size: 20px; color: var(--text-dim); align-self: center; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin: 20px 0 0;
+  }
+  .tab {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 10px 16px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab.active { color: var(--accent-glow); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Final screen */
+  .completion {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .completion-icon {
+    font-size: 72px;
+    margin-bottom: 24px;
+  }
+  .completion h2 {
+    font-size: 32px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-glow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .main { padding: 24px; }
+    .compare { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo">
+      <h1>🦁 NestJS Mastery</h1>
+      <p>Prep entretien fullstack</p>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText">0 / 0 leçons</div>
+    <ul class="nav" id="nav"></ul>
+  </aside>
+
+  <main class="main" id="main"></main>
+</div>
+
+<script>
+/* ============================================================
+   CONTENU PÉDAGOGIQUE — NestJS pour dev fullstack React/Node
+   ============================================================ */
+
+const lessons = [
+  {
+    section: "Fondations",
+    id: "intro",
+    icon: "🎯",
+    title: "NestJS, c'est quoi vraiment ?",
+    subtitle: "Pourquoi un framework Node opinionated existe, et qu'est-ce qu'il t'apporte par rapport à Express pur.",
+    content: `
+      <div class="content-block">
+        <p>Tu fais déjà du Node.js avec Express ou Fastify. <strong>NestJS</strong> est un framework qui s'appuie <em>justement</em> sur Express (par défaut) ou Fastify dessous. Mais il ajoute une couche d'architecture inspirée d'Angular et du backend Java/Spring : <strong>modules, injection de dépendances, décorateurs</strong>.</p>
+
+        <h3>Les 3 piliers à retenir</h3>
+        <ul>
+          <li><strong>TypeScript first</strong> — les décorateurs et les types sont au cœur du framework.</li>
+          <li><strong>Architecture modulaire</strong> — l'app est un arbre de modules, chacun encapsule une feature.</li>
+          <li><strong>Dependency Injection (DI)</strong> — tu ne fais jamais <code>new MonService()</code>, Nest l'injecte pour toi.</li>
+        </ul>
+
+        <div class="compare">
+          <div class="compare-card">
+            <h4>Express pur</h4>
+            <ul>
+              <li>Tu structures comme tu veux</li>
+              <li>Tu choisis ton ORM, validation, etc.</li>
+              <li>Flexible mais inégal entre projets</li>
+              <li>Pas de DI native</li>
+            </ul>
+          </div>
+          <div class="compare-card nest">
+            <h4>NestJS</h4>
+            <ul>
+              <li>Convention forte (controllers/services/modules)</li>
+              <li>Intégrations officielles (TypeORM, Mongoose, GraphQL, Swagger…)</li>
+              <li>Code uniforme, scalable</li>
+              <li>DI, guards, pipes, interceptors out of the box</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout interview">
+          <div class="callout-title">💼 Entretien</div>
+          Si on te demande "pourquoi NestJS plutôt qu'Express ?", la réponse attendue : <em>"architecture opinionated qui force de bonnes pratiques sur des projets d'équipe — DI, séparation des responsabilités, testabilité élevée — au prix d'une courbe d'apprentissage et de plus de boilerplate."</em>
+        </div>
+
+        <h3>Installation rapide</h3>
+        <pre><span class="lang-tag">bash</span><span class="cm"># Installation du CLI</span>
+npm i -g @nestjs/cli
+
+<span class="cm"># Création d'un projet</span>
+nest new my-app
+
+<span class="cm"># Générer une ressource complète (controller + service + module + DTO)</span>
+nest g resource users</pre>
+      </div>
+    `,
+    quiz: {
+      question: "Quelle affirmation décrit le mieux NestJS ?",
+      options: [
+        "Un remplaçant de Node.js qui exécute du TypeScript nativement",
+        "Un framework opinionated bâti au-dessus d'Express/Fastify avec DI et architecture modulaire",
+        "Un ORM compatible avec PostgreSQL et MongoDB",
+        "Une alternative à React côté backend"
+      ],
+      correct: 1,
+      explain: "NestJS n'exécute pas le code lui-même — il s'appuie sur Express (par défaut) ou Fastify. Sa valeur ajoutée, c'est l'architecture imposée."
+    }
+  },
+
+  {
+    section: "Fondations",
+    id: "architecture",
+    icon: "🏗️",
+    title: "L'architecture en couches",
+    subtitle: "Module → Controller → Service. Le pattern central que tu reverras dans 100% des projets Nest.",
+    content: `
+      <div class="content-block">
+        <p>Chaque feature dans NestJS suit la même triple structure. C'est <strong>la</strong> chose à comprendre.</p>
+
+        <div class="diagram">
+          <div class="diagram-row">
+            <div class="diagram-box module">UsersModule</div>
+          </div>
+          <div style="color: var(--text-dim); font-size: 12px;">déclare et expose</div>
+          <div class="diagram-row">
+            <div class="diagram-box controller">UsersController</div>
+            <div class="diagram-arrow">→</div>
+            <div class="diagram-box service">UsersService</div>
+            <div class="diagram-arrow">→</div>
+            <div class="diagram-box" style="border-color: var(--text-dim); color: var(--text-dim);">DB / API</div>
+          </div>
+          <div style="margin-top: 12px; color: var(--text-dim); font-size: 12px;">
+            Controller = routes HTTP &nbsp;·&nbsp; Service = logique métier &nbsp;·&nbsp; Module = colle DI
+          </div>
+        </div>
+
+        <h3>Exemple complet : feature "users"</h3>
+
+        <h4>1️⃣ Le Controller — reçoit les requêtes HTTP</h4>
+        <pre><span class="lang-tag">users.controller.ts</span><span class="kw">import</span> { Controller, Get, Post, Body, Param } <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+<span class="kw">import</span> { UsersService } <span class="kw">from</span> <span class="str">'./users.service'</span>;
+
+<span class="dec">@Controller</span>(<span class="str">'users'</span>) <span class="cm">// préfixe la route : /users</span>
+<span class="kw">export class</span> <span class="ty">UsersController</span> {
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> usersService: <span class="ty">UsersService</span>) {}
+
+  <span class="dec">@Get</span>()
+  <span class="fn">findAll</span>() {
+    <span class="kw">return</span> <span class="kw">this</span>.usersService.<span class="fn">findAll</span>();
+  }
+
+  <span class="dec">@Get</span>(<span class="str">':id'</span>)
+  <span class="fn">findOne</span>(<span class="dec">@Param</span>(<span class="str">'id'</span>) id: <span class="ty">string</span>) {
+    <span class="kw">return</span> <span class="kw">this</span>.usersService.<span class="fn">findOne</span>(id);
+  }
+
+  <span class="dec">@Post</span>()
+  <span class="fn">create</span>(<span class="dec">@Body</span>() dto: CreateUserDto) {
+    <span class="kw">return</span> <span class="kw">this</span>.usersService.<span class="fn">create</span>(dto);
+  }
+}</pre>
+
+        <h4>2️⃣ Le Service — la logique métier (injectable)</h4>
+        <pre><span class="lang-tag">users.service.ts</span><span class="kw">import</span> { Injectable } <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+
+<span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">UsersService</span> {
+  <span class="kw">private</span> users = [];
+
+  <span class="fn">findAll</span>() { <span class="kw">return</span> <span class="kw">this</span>.users; }
+  <span class="fn">findOne</span>(id: <span class="ty">string</span>) { <span class="kw">return</span> <span class="kw">this</span>.users.<span class="fn">find</span>(u => u.id === id); }
+  <span class="fn">create</span>(dto: CreateUserDto) {
+    <span class="kw">const</span> user = { id: crypto.<span class="fn">randomUUID</span>(), ...dto };
+    <span class="kw">this</span>.users.<span class="fn">push</span>(user);
+    <span class="kw">return</span> user;
+  }
+}</pre>
+
+        <h4>3️⃣ Le Module — assemble le tout</h4>
+        <pre><span class="lang-tag">users.module.ts</span><span class="kw">import</span> { Module } <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+<span class="kw">import</span> { UsersController } <span class="kw">from</span> <span class="str">'./users.controller'</span>;
+<span class="kw">import</span> { UsersService } <span class="kw">from</span> <span class="str">'./users.service'</span>;
+
+<span class="dec">@Module</span>({
+  controllers: [UsersController],
+  providers: [UsersService],     <span class="cm">// instances injectables dans ce module</span>
+  exports: [UsersService],        <span class="cm">// rend dispo dans d'autres modules qui importent celui-ci</span>
+})
+<span class="kw">export class</span> <span class="ty">UsersModule</span> {}</pre>
+
+        <div class="callout tip">
+          <div class="callout-title">💡 Mental model</div>
+          Le <strong>controller</strong> ne devrait <em>jamais</em> contenir de logique métier — juste valider/router. Toute la logique vit dans les <strong>services</strong>. C'est le test ultime de qualité Nest.
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: "Où devrait vivre la logique métier (calculs, règles, accès DB) ?",
+      options: [
+        "Dans le Controller, pour avoir tout au même endroit",
+        "Dans le Module, dans la propriété providers",
+        "Dans un Service injecté dans le Controller",
+        "Dans un Middleware Express classique"
+      ],
+      correct: 2,
+      explain: "Le Controller ne fait que recevoir/valider/déléguer. Le Service contient la logique et est testable indépendamment."
+    }
+  },
+
+  {
+    section: "Fondations",
+    id: "di",
+    icon: "💉",
+    title: "Dependency Injection",
+    subtitle: "Le mécanisme magique derrière `private readonly service: Service` dans les constructeurs.",
+    content: `
+      <div class="content-block">
+        <p>Tu n'instancies jamais tes services avec <code>new</code>. Tu déclares ta dépendance dans le constructeur, et Nest l'injecte automatiquement. Ce conteneur IoC (Inversion of Control) est <strong>le cœur</strong> de Nest.</p>
+
+        <h3>Pourquoi c'est puissant</h3>
+        <ul>
+          <li><strong>Singleton par défaut</strong> — une seule instance partagée dans toute l'app.</li>
+          <li><strong>Testable</strong> — tu mockes les dépendances facilement dans les tests unitaires.</li>
+          <li><strong>Découplé</strong> — tu codes contre une interface, pas une implémentation concrète.</li>
+        </ul>
+
+        <h3>Comment ça marche</h3>
+        <pre><span class="lang-tag">auth.service.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">AuthService</span> {
+  <span class="kw">constructor</span>(
+    <span class="kw">private readonly</span> users: <span class="ty">UsersService</span>,   <span class="cm">// Nest résout ça via le type</span>
+    <span class="kw">private readonly</span> jwt: <span class="ty">JwtService</span>,
+  ) {}
+
+  <span class="kw">async</span> <span class="fn">login</span>(email: <span class="ty">string</span>, pwd: <span class="ty">string</span>) {
+    <span class="kw">const</span> user = <span class="kw">await this</span>.users.<span class="fn">findByEmail</span>(email);
+    <span class="cm">// ... validation</span>
+    <span class="kw">return</span> { token: <span class="kw">this</span>.jwt.<span class="fn">sign</span>({ sub: user.id }) };
+  }
+}</pre>
+
+        <h3>Les Scopes — DEFAULT, REQUEST, TRANSIENT</h3>
+        <p>Par défaut, un provider est un <strong>singleton</strong>. Mais tu peux changer ça :</p>
+        <pre><span class="lang-tag">scopes.ts</span><span class="cm">// 1. DEFAULT (singleton) — une instance pour toute l'app</span>
+<span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">CacheService</span> {}
+
+<span class="cm">// 2. REQUEST — une nouvelle instance par requête HTTP (utile pour le contexte utilisateur)</span>
+<span class="dec">@Injectable</span>({ scope: Scope.REQUEST })
+<span class="kw">export class</span> <span class="ty">RequestContextService</span> {}
+
+<span class="cm">// 3. TRANSIENT — une nouvelle instance à chaque injection</span>
+<span class="dec">@Injectable</span>({ scope: Scope.TRANSIENT })
+<span class="kw">export class</span> <span class="ty">LoggerService</span> {}</pre>
+
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Attention performance</div>
+          <code>Scope.REQUEST</code> implique que <strong>toute la chaîne</strong> qui en dépend devient request-scoped. Ça peut tuer les perfs : utilise-le uniquement quand tu as vraiment besoin du contexte par requête.
+        </div>
+
+        <h3>Custom providers — pour les cas avancés</h3>
+        <pre><span class="lang-tag">module.ts</span><span class="dec">@Module</span>({
+  providers: [
+    <span class="cm">// useClass : alias pour swap d'implémentation</span>
+    { provide: <span class="ty">MailerService</span>, useClass: process.env.NODE_ENV === <span class="str">'test'</span> ? MockMailer : RealMailer },
+
+    <span class="cm">// useValue : injecter une valeur (config, mock)</span>
+    { provide: <span class="str">'API_KEY'</span>, useValue: process.env.API_KEY },
+
+    <span class="cm">// useFactory : construction dynamique avec dépendances</span>
+    {
+      provide: <span class="str">'DB_CONNECTION'</span>,
+      <span class="fn">useFactory</span>: (config: <span class="ty">ConfigService</span>) => <span class="fn">createConnection</span>(config.<span class="fn">get</span>(<span class="str">'DB_URL'</span>)),
+      inject: [ConfigService],
+    },
+  ],
+})</pre>
+
+        <div class="callout interview">
+          <div class="callout-title">💼 Question piège fréquente</div>
+          <em>"Comment Nest sait quel service injecter ?"</em> → Grâce aux <strong>métadonnées TypeScript</strong> émises par <code>emitDecoratorMetadata: true</code> dans <code>tsconfig.json</code>. Pour les tokens non-classes (string/symbol), il faut <code>@Inject('TOKEN')</code>.
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: "Tu ajoutes Scope.REQUEST à un service utilisé par tous tes controllers. Quel risque ?",
+      options: [
+        "Le code ne compilera pas",
+        "Tous les controllers qui en dépendent deviennent request-scoped, dégradant les perfs",
+        "Le service ne pourra plus être exporté du module",
+        "TypeScript va casser l'injection automatique"
+      ],
+      correct: 1,
+      explain: "Le scope se propage : si A (REQUEST) est utilisé par B, B devient aussi REQUEST. Chaque requête HTTP instancie toute la chaîne — coûteux en mémoire/CPU."
+    }
+  },
+
+  {
+    section: "Request lifecycle",
+    id: "pipes",
+    icon: "🔧",
+    title: "Pipes — validation & transformation",
+    subtitle: "Transformer ou valider les données entrantes AVANT que le controller ne les voie.",
+    content: `
+      <div class="content-block">
+        <p>Un <strong>Pipe</strong> intercepte un argument et soit le <em>transforme</em>, soit le <em>valide</em>. Il s'exécute juste avant la méthode du controller.</p>
+
+        <h3>Pipes built-in</h3>
+        <pre><span class="lang-tag">controller.ts</span><span class="dec">@Get</span>(<span class="str">':id'</span>)
+<span class="fn">findOne</span>(<span class="dec">@Param</span>(<span class="str">'id'</span>, ParseIntPipe) id: <span class="ty">number</span>) {
+  <span class="cm">// id est garanti d'être un number, sinon 400 Bad Request automatique</span>
+}
+
+<span class="dec">@Get</span>()
+<span class="fn">findAll</span>(<span class="dec">@Query</span>(<span class="str">'page'</span>, <span class="kw">new</span> <span class="ty">DefaultValuePipe</span>(1), ParseIntPipe) page: <span class="ty">number</span>) {}
+
+<span class="cm">// Autres : ParseBoolPipe, ParseUUIDPipe, ParseArrayPipe, ParseEnumPipe, ParseFilePipe</span></pre>
+
+        <h3>Le pattern phare : ValidationPipe + class-validator</h3>
+        <p>C'est <em>la</em> manière standard de valider les bodies. Tu écris un DTO décoré, Nest valide tout seul.</p>
+
+        <pre><span class="lang-tag">create-user.dto.ts</span><span class="kw">import</span> { IsEmail, IsString, MinLength, IsOptional, IsInt, Min } <span class="kw">from</span> <span class="str">'class-validator'</span>;
+
+<span class="kw">export class</span> <span class="ty">CreateUserDto</span> {
+  <span class="dec">@IsEmail</span>()
+  email: <span class="ty">string</span>;
+
+  <span class="dec">@IsString</span>()
+  <span class="dec">@MinLength</span>(8)
+  password: <span class="ty">string</span>;
+
+  <span class="dec">@IsOptional</span>()
+  <span class="dec">@IsInt</span>()
+  <span class="dec">@Min</span>(13)
+  age?: <span class="ty">number</span>;
+}</pre>
+
+        <pre><span class="lang-tag">main.ts (bootstrap)</span><span class="kw">async function</span> <span class="fn">bootstrap</span>() {
+  <span class="kw">const</span> app = <span class="kw">await</span> NestFactory.<span class="fn">create</span>(AppModule);
+
+  app.<span class="fn">useGlobalPipes</span>(<span class="kw">new</span> <span class="ty">ValidationPipe</span>({
+    whitelist: <span class="kw">true</span>,            <span class="cm">// strip les propriétés non déclarées dans le DTO</span>
+    forbidNonWhitelisted: <span class="kw">true</span>, <span class="cm">// throw si des propriétés inattendues arrivent</span>
+    transform: <span class="kw">true</span>,            <span class="cm">// transforme automatiquement (ex: string → number pour les @Param)</span>
+  }));
+
+  <span class="kw">await</span> app.<span class="fn">listen</span>(3000);
+}</pre>
+
+        <div class="callout tip">
+          <div class="callout-title">💡 Combo gagnant</div>
+          <code>ValidationPipe + class-validator + class-transformer</code> est <strong>le</strong> setup standard. Quasi tous les projets Nest l'utilisent. À connaître par cœur en entretien.
+        </div>
+
+        <h3>Pipe custom</h3>
+        <pre><span class="lang-tag">trim.pipe.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">TrimPipe</span> <span class="kw">implements</span> <span class="ty">PipeTransform</span> {
+  <span class="fn">transform</span>(value: <span class="ty">unknown</span>) {
+    <span class="kw">if</span> (<span class="kw">typeof</span> value === <span class="str">'string'</span>) <span class="kw">return</span> value.<span class="fn">trim</span>();
+    <span class="kw">return</span> value;
+  }
+}</pre>
+      </div>
+    `,
+    quiz: {
+      question: "Avec ValidationPipe({ whitelist: true }), si le client envoie { email, password, role: 'admin' } et que le DTO n'a pas de propriété role, que se passe-t-il ?",
+      options: [
+        "L'API retourne 400 avec une erreur de validation",
+        "role est silencieusement supprimé avant d'arriver au controller",
+        "role passe tel quel, whitelist n'agit que sur les types",
+        "Nest lance une exception 500"
+      ],
+      correct: 1,
+      explain: "whitelist=true strip les propriétés inconnues. Pour rejeter avec une erreur, il faut AUSSI forbidNonWhitelisted=true."
+    }
+  },
+
+  {
+    section: "Request lifecycle",
+    id: "guards",
+    icon: "🛡️",
+    title: "Guards — authentification & autorisation",
+    subtitle: "Décider si une requête a le droit de passer. C'est ici que vit ton AuthGuard JWT, RolesGuard, etc.",
+    content: `
+      <div class="content-block">
+        <p>Un <strong>Guard</strong> implémente <code>canActivate(): boolean | Promise&lt;boolean&gt;</code>. Si ça retourne <code>false</code>, Nest lance une <code>403 Forbidden</code>.</p>
+
+        <h3>Guard JWT classique</h3>
+        <pre><span class="lang-tag">jwt-auth.guard.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">JwtAuthGuard</span> <span class="kw">implements</span> <span class="ty">CanActivate</span> {
+  <span class="kw">constructor</span>(<span class="kw">private</span> jwt: <span class="ty">JwtService</span>) {}
+
+  <span class="kw">async</span> <span class="fn">canActivate</span>(ctx: <span class="ty">ExecutionContext</span>): <span class="ty">Promise</span>&lt;<span class="ty">boolean</span>&gt; {
+    <span class="kw">const</span> req = ctx.<span class="fn">switchToHttp</span>().<span class="fn">getRequest</span>();
+    <span class="kw">const</span> token = req.headers.authorization?.<span class="fn">replace</span>(<span class="str">'Bearer '</span>, <span class="str">''</span>);
+    <span class="kw">if</span> (!token) <span class="kw">throw new</span> <span class="ty">UnauthorizedException</span>();
+
+    <span class="kw">try</span> {
+      req.user = <span class="kw">await this</span>.jwt.<span class="fn">verifyAsync</span>(token);
+      <span class="kw">return</span> <span class="kw">true</span>;
+    } <span class="kw">catch</span> {
+      <span class="kw">throw new</span> <span class="ty">UnauthorizedException</span>();
+    }
+  }
+}</pre>
+
+        <h3>Application — 3 niveaux possibles</h3>
+        <pre><span class="lang-tag">application</span><span class="cm">// 1. Global — pour toute l'app</span>
+app.<span class="fn">useGlobalGuards</span>(<span class="kw">new</span> <span class="ty">JwtAuthGuard</span>());
+
+<span class="cm">// 2. Au niveau du Controller</span>
+<span class="dec">@UseGuards</span>(JwtAuthGuard)
+<span class="dec">@Controller</span>(<span class="str">'users'</span>)
+<span class="kw">export class</span> <span class="ty">UsersController</span> {}
+
+<span class="cm">// 3. Au niveau d'une route spécifique</span>
+<span class="dec">@UseGuards</span>(JwtAuthGuard)
+<span class="dec">@Get</span>(<span class="str">'profile'</span>)
+<span class="fn">getProfile</span>() {}</pre>
+
+        <h3>RolesGuard avec décorateur custom</h3>
+        <p>Pattern <strong>très</strong> fréquent en entretien : combiner un décorateur métier et un guard qui le lit via <code>Reflector</code>.</p>
+
+        <pre><span class="lang-tag">roles.decorator.ts</span><span class="kw">import</span> { SetMetadata } <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+<span class="kw">export const</span> <span class="fn">Roles</span> = (...roles: <span class="ty">string</span>[]) => <span class="fn">SetMetadata</span>(<span class="str">'roles'</span>, roles);</pre>
+
+        <pre><span class="lang-tag">roles.guard.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">RolesGuard</span> <span class="kw">implements</span> <span class="ty">CanActivate</span> {
+  <span class="kw">constructor</span>(<span class="kw">private</span> reflector: <span class="ty">Reflector</span>) {}
+
+  <span class="fn">canActivate</span>(ctx: <span class="ty">ExecutionContext</span>): <span class="ty">boolean</span> {
+    <span class="kw">const</span> required = <span class="kw">this</span>.reflector.<span class="fn">get</span>&lt;<span class="ty">string</span>[]&gt;(<span class="str">'roles'</span>, ctx.<span class="fn">getHandler</span>());
+    <span class="kw">if</span> (!required) <span class="kw">return</span> <span class="kw">true</span>;
+    <span class="kw">const</span> { user } = ctx.<span class="fn">switchToHttp</span>().<span class="fn">getRequest</span>();
+    <span class="kw">return</span> required.<span class="fn">some</span>(r => user.roles?.<span class="fn">includes</span>(r));
+  }
+}</pre>
+
+        <pre><span class="lang-tag">usage</span><span class="dec">@UseGuards</span>(JwtAuthGuard, RolesGuard)
+<span class="dec">@Roles</span>(<span class="str">'admin'</span>)
+<span class="dec">@Delete</span>(<span class="str">':id'</span>)
+<span class="fn">remove</span>(<span class="dec">@Param</span>(<span class="str">'id'</span>) id: <span class="ty">string</span>) {}</pre>
+
+        <div class="callout interview">
+          <div class="callout-title">💼 Différence Guard vs Middleware</div>
+          Le <strong>middleware</strong> Express s'exécute avant la résolution de la route (pas accès au handler). Le <strong>guard</strong> a accès à <code>ExecutionContext</code> et donc à toutes les métadonnées (roles, décorateurs). C'est plus puissant pour l'auth.
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: "Pourquoi préférer un Guard à un Middleware Express pour la gestion des rôles ?",
+      options: [
+        "Les middlewares ne supportent pas async/await",
+        "Le Guard a accès à ExecutionContext et peut lire les métadonnées décorées sur le handler",
+        "Les middlewares ne s'exécutent qu'en production",
+        "Un Guard est plus performant qu'un middleware"
+      ],
+      correct: 1,
+      explain: "ExecutionContext + Reflector permet au Guard de lire @Roles('admin') directement sur la méthode. Un middleware n'a pas cette info."
+    }
+  },
+
+  {
+    section: "Request lifecycle",
+    id: "interceptors",
+    icon: "🔄",
+    title: "Interceptors — autour de la réponse",
+    subtitle: "Logging, mapping de réponse, cache, timeout : tout ce qui enveloppe la méthode controller.",
+    content: `
+      <div class="content-block">
+        <p>Un <strong>Interceptor</strong> peut exécuter du code <em>avant</em> ET <em>après</em> le handler, et même transformer la réponse via <code>rxjs</code>.</p>
+
+        <h3>Logging interceptor</h3>
+        <pre><span class="lang-tag">logging.interceptor.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">LoggingInterceptor</span> <span class="kw">implements</span> <span class="ty">NestInterceptor</span> {
+  <span class="fn">intercept</span>(ctx: <span class="ty">ExecutionContext</span>, next: <span class="ty">CallHandler</span>): <span class="ty">Observable</span>&lt;<span class="ty">any</span>&gt; {
+    <span class="kw">const</span> start = Date.<span class="fn">now</span>();
+    <span class="kw">const</span> { method, url } = ctx.<span class="fn">switchToHttp</span>().<span class="fn">getRequest</span>();
+
+    <span class="kw">return</span> next.<span class="fn">handle</span>().<span class="fn">pipe</span>(
+      <span class="fn">tap</span>(() => console.<span class="fn">log</span>(<span class="str">\`\${method} \${url} - \${Date.now() - start}ms\`</span>)),
+    );
+  }
+}</pre>
+
+        <h3>Transform interceptor — wrapper de réponse</h3>
+        <p>Pattern hyper courant : enrober toutes les réponses dans <code>{ data: ..., timestamp: ... }</code>.</p>
+
+        <pre><span class="lang-tag">transform.interceptor.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">TransformInterceptor</span>&lt;T&gt; <span class="kw">implements</span> <span class="ty">NestInterceptor</span>&lt;T, { data: T }&gt; {
+  <span class="fn">intercept</span>(ctx: <span class="ty">ExecutionContext</span>, next: <span class="ty">CallHandler</span>) {
+    <span class="kw">return</span> next.<span class="fn">handle</span>().<span class="fn">pipe</span>(
+      <span class="fn">map</span>(data => ({ data, timestamp: <span class="kw">new</span> <span class="ty">Date</span>().<span class="fn">toISOString</span>() })),
+    );
+  }
+}</pre>
+
+        <h3>Cache & Timeout</h3>
+        <pre><span class="lang-tag">timeout.interceptor.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">TimeoutInterceptor</span> <span class="kw">implements</span> <span class="ty">NestInterceptor</span> {
+  <span class="fn">intercept</span>(ctx: <span class="ty">ExecutionContext</span>, next: <span class="ty">CallHandler</span>) {
+    <span class="kw">return</span> next.<span class="fn">handle</span>().<span class="fn">pipe</span>(
+      <span class="fn">timeout</span>(5000),
+      <span class="fn">catchError</span>(err => err <span class="kw">instanceof</span> TimeoutError
+        ? <span class="fn">throwError</span>(() => <span class="kw">new</span> <span class="ty">RequestTimeoutException</span>())
+        : <span class="fn">throwError</span>(() => err)),
+    );
+  }
+}</pre>
+
+        <h3>Le cycle complet — ordre d'exécution</h3>
+        <div class="diagram">
+          <div class="diagram-row">
+            <div class="diagram-box" style="border-color: var(--text-dim); color: var(--text-dim);">Request</div>
+            <div class="diagram-arrow">→</div>
+            <div class="diagram-box" style="border-color: #9333ea; color: #c084fc;">Middleware</div>
+            <div class="diagram-arrow">→</div>
+            <div class="diagram-box guard">Guard</div>
+            <div class="diagram-arrow">→</div>
+            <div class="diagram-box intercept">Interceptor (pre)</div>
+          </div>
+          <div class="diagram-row">
+            <div class="diagram-box pipe">Pipe</div>
+            <div class="diagram-arrow">→</div>
+            <div class="diagram-box controller">Controller</div>
+            <div class="diagram-arrow">→</div>
+            <div class="diagram-box service">Service</div>
+            <div class="diagram-arrow">→</div>
+            <div class="diagram-box intercept">Interceptor (post)</div>
+            <div class="diagram-arrow">→</div>
+            <div class="diagram-box" style="border-color: var(--text-dim); color: var(--text-dim);">Response</div>
+          </div>
+        </div>
+
+        <div class="callout interview">
+          <div class="callout-title">💼 À mémoriser absolument</div>
+          L'ordre du request lifecycle Nest : <strong>Middleware → Guards → Interceptors (avant) → Pipes → Controller → Interceptors (après) → Exception Filters</strong>. C'est une question quasi systématique.
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: "Quelle est la différence principale entre un Interceptor et un Guard ?",
+      options: [
+        "Le Guard ne peut pas accéder à la requête",
+        "L'Interceptor s'exécute avant ET après le handler et peut transformer la réponse ; le Guard décide juste si la requête passe",
+        "Le Guard n'est pas injectable, contrairement à l'Interceptor",
+        "Les Interceptors sont déprécié depuis Nest v9"
+      ],
+      correct: 1,
+      explain: "Le Guard ne fait que dire oui/non. L'Interceptor enveloppe l'appel : code avant, code après, transformation de la réponse via rxjs."
+    }
+  },
+
+  {
+    section: "Request lifecycle",
+    id: "filters",
+    icon: "💥",
+    title: "Exception Filters",
+    subtitle: "Centraliser le format d'erreur de toute ton API.",
+    content: `
+      <div class="content-block">
+        <p>Quand une exception est levée n'importe où, Nest la capte et lance le filter approprié. Tu peux customiser pour avoir un format d'erreur cohérent.</p>
+
+        <h3>Exceptions built-in</h3>
+        <pre><span class="lang-tag">service.ts</span><span class="kw">throw new</span> <span class="ty">NotFoundException</span>(<span class="str">'User not found'</span>);        <span class="cm">// 404</span>
+<span class="kw">throw new</span> <span class="ty">UnauthorizedException</span>();                       <span class="cm">// 401</span>
+<span class="kw">throw new</span> <span class="ty">ForbiddenException</span>();                          <span class="cm">// 403</span>
+<span class="kw">throw new</span> <span class="ty">BadRequestException</span>(<span class="str">'Invalid email'</span>);          <span class="cm">// 400</span>
+<span class="kw">throw new</span> <span class="ty">ConflictException</span>(<span class="str">'Email already exists'</span>);    <span class="cm">// 409</span>
+<span class="kw">throw new</span> <span class="ty">InternalServerErrorException</span>();                <span class="cm">// 500</span>
+
+<span class="cm">// Custom status</span>
+<span class="kw">throw new</span> <span class="ty">HttpException</span>(<span class="str">'Teapot mode'</span>, HttpStatus.I_AM_A_TEAPOT);</pre>
+
+        <h3>Filter global pour un format uniforme</h3>
+        <pre><span class="lang-tag">all-exceptions.filter.ts</span><span class="dec">@Catch</span>()
+<span class="kw">export class</span> <span class="ty">AllExceptionsFilter</span> <span class="kw">implements</span> <span class="ty">ExceptionFilter</span> {
+  <span class="fn">catch</span>(exception: <span class="ty">unknown</span>, host: <span class="ty">ArgumentsHost</span>) {
+    <span class="kw">const</span> ctx = host.<span class="fn">switchToHttp</span>();
+    <span class="kw">const</span> response = ctx.<span class="fn">getResponse</span>();
+    <span class="kw">const</span> request = ctx.<span class="fn">getRequest</span>();
+
+    <span class="kw">const</span> status = exception <span class="kw">instanceof</span> HttpException
+      ? exception.<span class="fn">getStatus</span>()
+      : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    response.<span class="fn">status</span>(status).<span class="fn">json</span>({
+      statusCode: status,
+      timestamp: <span class="kw">new</span> <span class="ty">Date</span>().<span class="fn">toISOString</span>(),
+      path: request.url,
+      message: exception <span class="kw">instanceof</span> HttpException ? exception.<span class="fn">getResponse</span>() : <span class="str">'Internal error'</span>,
+    });
+  }
+}
+
+<span class="cm">// Application globale</span>
+app.<span class="fn">useGlobalFilters</span>(<span class="kw">new</span> <span class="ty">AllExceptionsFilter</span>());</pre>
+
+        <h3>Filter ciblé</h3>
+        <pre><span class="lang-tag">prisma-exception.filter.ts</span><span class="dec">@Catch</span>(Prisma.PrismaClientKnownRequestError)
+<span class="kw">export class</span> <span class="ty">PrismaExceptionFilter</span> <span class="kw">implements</span> <span class="ty">ExceptionFilter</span> {
+  <span class="fn">catch</span>(error: Prisma.PrismaClientKnownRequestError, host: <span class="ty">ArgumentsHost</span>) {
+    <span class="kw">if</span> (error.code === <span class="str">'P2002'</span>) {
+      <span class="cm">// Unique constraint failed</span>
+      <span class="kw">const</span> response = host.<span class="fn">switchToHttp</span>().<span class="fn">getResponse</span>();
+      response.<span class="fn">status</span>(409).<span class="fn">json</span>({ message: <span class="str">'Duplicate entry'</span> });
+    }
+  }
+}</pre>
+
+        <div class="callout tip">
+          <div class="callout-title">💡 Best practice</div>
+          Throw des exceptions <strong>dans le service</strong>, pas dans le controller. Le service ne sait rien de HTTP ? Throw des exceptions métier custom et map-les vers HTTP dans un filter.
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: "Tu veux uniformiser le format JSON de toutes tes erreurs API. Quel mécanisme Nest utilises-tu ?",
+      options: [
+        "Un middleware Express qui intercepte res.json",
+        "Un Guard global qui retourne false",
+        "Un Exception Filter global appliqué via useGlobalFilters",
+        "Un Pipe qui transforme la réponse"
+      ],
+      correct: 2,
+      explain: "C'est exactement le rôle d'un Exception Filter : capter toutes les exceptions et formater la réponse de sortie."
+    }
+  },
+
+  {
+    section: "Patterns avancés",
+    id: "config",
+    icon: "⚙️",
+    title: "ConfigModule & variables d'environnement",
+    subtitle: "Le module officiel pour gérer .env, validation des variables et config typée.",
+    content: `
+      <div class="content-block">
+        <p>Oublie <code>process.env.X</code> partout. Nest fournit <code>@nestjs/config</code> avec validation Joi/Zod.</p>
+
+        <h3>Setup standard</h3>
+        <pre><span class="lang-tag">app.module.ts</span><span class="kw">import</span> { ConfigModule, ConfigService } <span class="kw">from</span> <span class="str">'@nestjs/config'</span>;
+<span class="kw">import</span> * <span class="kw">as</span> Joi <span class="kw">from</span> <span class="str">'joi'</span>;
+
+<span class="dec">@Module</span>({
+  imports: [
+    ConfigModule.<span class="fn">forRoot</span>({
+      isGlobal: <span class="kw">true</span>,                  <span class="cm">// dispo partout sans réimporter</span>
+      envFilePath: [<span class="str">'.env.local'</span>, <span class="str">'.env'</span>],
+      validationSchema: Joi.<span class="fn">object</span>({
+        NODE_ENV: Joi.<span class="fn">string</span>().<span class="fn">valid</span>(<span class="str">'dev'</span>, <span class="str">'prod'</span>, <span class="str">'test'</span>).<span class="fn">default</span>(<span class="str">'dev'</span>),
+        PORT: Joi.<span class="fn">number</span>().<span class="fn">default</span>(3000),
+        DATABASE_URL: Joi.<span class="fn">string</span>().<span class="fn">required</span>(),
+        JWT_SECRET: Joi.<span class="fn">string</span>().<span class="fn">min</span>(32).<span class="fn">required</span>(),
+      }),
+    }),
+  ],
+})
+<span class="kw">export class</span> <span class="ty">AppModule</span> {}</pre>
+
+        <h3>Injection dans un service</h3>
+        <pre><span class="lang-tag">auth.service.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">AuthService</span> {
+  <span class="kw">constructor</span>(<span class="kw">private</span> config: <span class="ty">ConfigService</span>) {}
+
+  <span class="fn">getSecret</span>() {
+    <span class="kw">return this</span>.config.<span class="fn">get</span>&lt;<span class="ty">string</span>&gt;(<span class="str">'JWT_SECRET'</span>);
+    <span class="cm">// ou .getOrThrow('JWT_SECRET') pour throw si absente</span>
+  }
+}</pre>
+
+        <h3>Config typée — pattern propre</h3>
+        <p>Crée des fichiers de config namespacés pour typer.</p>
+
+        <pre><span class="lang-tag">database.config.ts</span><span class="kw">export default</span> <span class="fn">registerAs</span>(<span class="str">'database'</span>, () => ({
+  url: process.env.DATABASE_URL,
+  poolSize: <span class="fn">parseInt</span>(process.env.DB_POOL_SIZE ?? <span class="str">'10'</span>, 10),
+}));
+
+<span class="cm">// usage</span>
+<span class="kw">constructor</span>(
+  <span class="dec">@Inject</span>(databaseConfig.KEY)
+  <span class="kw">private</span> dbConfig: ConfigType&lt;<span class="kw">typeof</span> databaseConfig&gt;,
+) {}</pre>
+
+        <div class="callout interview">
+          <div class="callout-title">💼 Erreur classique</div>
+          Oublier <code>isGlobal: true</code> et devoir réimporter <code>ConfigModule</code> dans chaque feature module. À mentionner pour montrer que tu connais le piège.
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: "Tu veux que ton appli refuse de démarrer si JWT_SECRET n'est pas défini. Que fais-tu ?",
+      options: [
+        "Tu mets process.exit(1) dans main.ts",
+        "Tu passes un validationSchema (Joi/Zod) à ConfigModule.forRoot()",
+        "Tu utilises un Guard global",
+        "Tu mets le secret en dur dans le code"
+      ],
+      correct: 1,
+      explain: "Le validationSchema fait planter l'app au boot si une variable requise est absente ou invalide — exactement ce qu'on veut."
+    }
+  },
+
+  {
+    section: "Patterns avancés",
+    id: "database",
+    icon: "🗄️",
+    title: "TypeORM & Prisma — intégration BDD",
+    subtitle: "Les 2 ORM dominants dans l'écosystème Nest. Comprendre les deux est un plus en entretien.",
+    content: `
+      <div class="content-block">
+        <h3>Option 1 : TypeORM (officielle Nest)</h3>
+        <pre><span class="lang-tag">app.module.ts</span><span class="dec">@Module</span>({
+  imports: [
+    TypeOrmModule.<span class="fn">forRootAsync</span>({
+      inject: [ConfigService],
+      <span class="fn">useFactory</span>: (config: <span class="ty">ConfigService</span>) => ({
+        type: <span class="str">'postgres'</span>,
+        url: config.<span class="fn">get</span>(<span class="str">'DATABASE_URL'</span>),
+        entities: [User, Post],
+        synchronize: config.<span class="fn">get</span>(<span class="str">'NODE_ENV'</span>) === <span class="str">'dev'</span>, <span class="cm">// JAMAIS en prod</span>
+      }),
+    }),
+  ],
+})</pre>
+
+        <pre><span class="lang-tag">user.entity.ts</span><span class="dec">@Entity</span>()
+<span class="kw">export class</span> <span class="ty">User</span> {
+  <span class="dec">@PrimaryGeneratedColumn</span>(<span class="str">'uuid'</span>)
+  id: <span class="ty">string</span>;
+
+  <span class="dec">@Column</span>({ unique: <span class="kw">true</span> })
+  email: <span class="ty">string</span>;
+
+  <span class="dec">@OneToMany</span>(() => Post, post => post.author)
+  posts: <span class="ty">Post</span>[];
+}</pre>
+
+        <pre><span class="lang-tag">users.service.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">UsersService</span> {
+  <span class="kw">constructor</span>(
+    <span class="dec">@InjectRepository</span>(User) <span class="kw">private</span> repo: Repository&lt;User&gt;,
+  ) {}
+
+  <span class="fn">findAll</span>() { <span class="kw">return this</span>.repo.<span class="fn">find</span>({ relations: [<span class="str">'posts'</span>] }); }
+
+  <span class="kw">async</span> <span class="fn">create</span>(dto: CreateUserDto) {
+    <span class="kw">const</span> user = <span class="kw">this</span>.repo.<span class="fn">create</span>(dto);
+    <span class="kw">return this</span>.repo.<span class="fn">save</span>(user);
+  }
+}</pre>
+
+        <h3>Option 2 : Prisma (très populaire en 2025+)</h3>
+        <pre><span class="lang-tag">prisma.service.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">PrismaService</span> <span class="kw">extends</span> PrismaClient <span class="kw">implements</span> OnModuleInit {
+  <span class="kw">async</span> <span class="fn">onModuleInit</span>() { <span class="kw">await this</span>.<span class="fn">$connect</span>(); }
+}</pre>
+
+        <pre><span class="lang-tag">users.service.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">UsersService</span> {
+  <span class="kw">constructor</span>(<span class="kw">private</span> prisma: <span class="ty">PrismaService</span>) {}
+
+  <span class="fn">findAll</span>() { <span class="kw">return this</span>.prisma.user.<span class="fn">findMany</span>({ include: { posts: <span class="kw">true</span> } }); }
+  <span class="fn">create</span>(dto: CreateUserDto) { <span class="kw">return this</span>.prisma.user.<span class="fn">create</span>({ data: dto }); }
+}</pre>
+
+        <div class="compare">
+          <div class="compare-card">
+            <h4>TypeORM</h4>
+            <ul>
+              <li>Entities = classes décorées</li>
+              <li>Migrations gérées dans le code</li>
+              <li>Repository pattern</li>
+              <li>Plus mature mais relations parfois lourdes</li>
+            </ul>
+          </div>
+          <div class="compare-card nest">
+            <h4>Prisma</h4>
+            <ul>
+              <li>Schema dans schema.prisma</li>
+              <li>Types générés automatiquement (DX top)</li>
+              <li>Querybuilder fluide</li>
+              <li>Migrations versionnées en SQL</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Lifecycle hooks utiles</h3>
+        <pre><span class="lang-tag">hooks</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">DbService</span> <span class="kw">implements</span> <span class="ty">OnModuleInit</span>, <span class="ty">OnApplicationShutdown</span> {
+  <span class="kw">async</span> <span class="fn">onModuleInit</span>() { <span class="cm">/* connecter */</span> }
+  <span class="kw">async</span> <span class="fn">onApplicationShutdown</span>() { <span class="cm">/* fermer proprement */</span> }
+}</pre>
+
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Synchronize en prod</div>
+          <code>synchronize: true</code> de TypeORM modifie ton schéma DB à chaque démarrage. C'est <strong>dangereux en prod</strong> — utilise toujours des migrations explicites.
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: "Tu utilises TypeORM. Quel mécanisme permet d'injecter un Repository<User> dans ton service ?",
+      options: [
+        "@Inject(Repository<User>)",
+        "@InjectRepository(User) couplé à TypeOrmModule.forFeature([User]) dans le module",
+        "Importer Repository directement depuis TypeORM",
+        "Étendre PrismaClient dans le service"
+      ],
+      correct: 1,
+      explain: "Le repository est enregistré dans le DI container via forFeature, et récupéré dans le service via @InjectRepository."
+    }
+  },
+
+  {
+    section: "Patterns avancés",
+    id: "testing",
+    icon: "🧪",
+    title: "Tests unitaires & e2e",
+    subtitle: "Le module Testing de Nest rend les tests très fluides grâce à la DI.",
+    content: `
+      <div class="content-block">
+        <p>NestJS fournit <code>@nestjs/testing</code> avec <code>Test.createTestingModule</code> qui mime le bootstrap de l'app dans un test.</p>
+
+        <h3>Test unitaire d'un Service avec mock</h3>
+        <pre><span class="lang-tag">users.service.spec.ts</span><span class="kw">describe</span>(<span class="str">'UsersService'</span>, () => {
+  <span class="kw">let</span> service: <span class="ty">UsersService</span>;
+  <span class="kw">let</span> repo: { find: jest.<span class="ty">Mock</span>; save: jest.<span class="ty">Mock</span> };
+
+  <span class="fn">beforeEach</span>(<span class="kw">async</span> () => {
+    repo = { find: jest.<span class="fn">fn</span>(), save: jest.<span class="fn">fn</span>() };
+
+    <span class="kw">const</span> module = <span class="kw">await</span> Test.<span class="fn">createTestingModule</span>({
+      providers: [
+        UsersService,
+        { provide: <span class="fn">getRepositoryToken</span>(User), useValue: repo },
+      ],
+    }).<span class="fn">compile</span>();
+
+    service = module.<span class="fn">get</span>(UsersService);
+  });
+
+  <span class="fn">it</span>(<span class="str">'returns all users'</span>, <span class="kw">async</span> () => {
+    repo.find.<span class="fn">mockResolvedValue</span>([{ id: <span class="str">'1'</span>, email: <span class="str">'a@b.c'</span> }]);
+    <span class="kw">const</span> result = <span class="kw">await</span> service.<span class="fn">findAll</span>();
+    <span class="fn">expect</span>(result).<span class="fn">toHaveLength</span>(1);
+  });
+});</pre>
+
+        <h3>Test e2e avec supertest</h3>
+        <pre><span class="lang-tag">app.e2e-spec.ts</span><span class="kw">describe</span>(<span class="str">'Users (e2e)'</span>, () => {
+  <span class="kw">let</span> app: <span class="ty">INestApplication</span>;
+
+  <span class="fn">beforeAll</span>(<span class="kw">async</span> () => {
+    <span class="kw">const</span> mod = <span class="kw">await</span> Test.<span class="fn">createTestingModule</span>({
+      imports: [AppModule],
+    }).<span class="fn">compile</span>();
+
+    app = mod.<span class="fn">createNestApplication</span>();
+    app.<span class="fn">useGlobalPipes</span>(<span class="kw">new</span> <span class="ty">ValidationPipe</span>());
+    <span class="kw">await</span> app.<span class="fn">init</span>();
+  });
+
+  <span class="fn">it</span>(<span class="str">'POST /users — 400 if email invalid'</span>, () => {
+    <span class="kw">return</span> <span class="fn">request</span>(app.<span class="fn">getHttpServer</span>())
+      .<span class="fn">post</span>(<span class="str">'/users'</span>)
+      .<span class="fn">send</span>({ email: <span class="str">'not-an-email'</span>, password: <span class="str">'12345678'</span> })
+      .<span class="fn">expect</span>(400);
+  });
+
+  <span class="fn">afterAll</span>(() => app.<span class="fn">close</span>());
+});</pre>
+
+        <h3>Override d'un provider</h3>
+        <p>Très pratique pour remplacer un service externe par un mock en e2e.</p>
+        <pre><span class="lang-tag">override</span><span class="kw">const</span> mod = <span class="kw">await</span> Test.<span class="fn">createTestingModule</span>({ imports: [AppModule] })
+  .<span class="fn">overrideProvider</span>(MailerService)
+  .<span class="fn">useValue</span>({ send: jest.<span class="fn">fn</span>() })
+  .<span class="fn">compile</span>();</pre>
+
+        <div class="callout tip">
+          <div class="callout-title">💡 Stratégie</div>
+          <strong>Unit tests</strong> sur les services (rapides, mocks faciles grâce à la DI). <strong>e2e tests</strong> sur les controllers / parcours critiques. Pas besoin de beaucoup d'intégration intermédiaire.
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: "Tu veux tester ton UsersService isolément. Comment injectes-tu un faux Repository ?",
+      options: [
+        "Tu instancies UsersService avec new et tu passes le mock",
+        "Tu utilises Test.createTestingModule avec { provide: getRepositoryToken(User), useValue: mockRepo }",
+        "Tu modifies le fichier source pour exposer une méthode setRepository",
+        "Ce n'est pas testable sans une vraie base"
+      ],
+      correct: 1,
+      explain: "getRepositoryToken(User) donne le token DI utilisé par @InjectRepository. Tu peux donc le remplacer par un mock dans le module de test."
+    }
+  },
+
+  {
+    section: "Bonus entretien",
+    id: "extras",
+    icon: "🎁",
+    title: "Sujets bonus — Swagger, microservices, GraphQL",
+    subtitle: "Connaître l'existence de ces modules t'aide à briller même sans expérience approfondie.",
+    content: `
+      <div class="content-block">
+        <h3>📘 Swagger / OpenAPI auto</h3>
+        <p>Une ligne et tu as une doc API interactive. Module quasi standard.</p>
+        <pre><span class="lang-tag">main.ts</span><span class="kw">const</span> config = <span class="kw">new</span> <span class="ty">DocumentBuilder</span>()
+  .<span class="fn">setTitle</span>(<span class="str">'My API'</span>)
+  .<span class="fn">setVersion</span>(<span class="str">'1.0'</span>)
+  .<span class="fn">addBearerAuth</span>()
+  .<span class="fn">build</span>();
+
+<span class="kw">const</span> doc = SwaggerModule.<span class="fn">createDocument</span>(app, config);
+SwaggerModule.<span class="fn">setup</span>(<span class="str">'api/docs'</span>, app, doc);</pre>
+
+        <p>Combine avec <code>@ApiProperty()</code> dans tes DTOs et c'est terminé.</p>
+
+        <h3>🚌 Microservices & messaging</h3>
+        <p>Nest gère TCP, Redis, RabbitMQ, Kafka, NATS, gRPC, MQTT en natif. Architecture event-driven en une dizaine de lignes.</p>
+        <pre><span class="lang-tag">microservice</span><span class="kw">const</span> app = <span class="kw">await</span> NestFactory.<span class="fn">createMicroservice</span>(AppModule, {
+  transport: Transport.REDIS,
+  options: { host: <span class="str">'localhost'</span>, port: 6379 },
+});
+
+<span class="cm">// Côté handler</span>
+<span class="dec">@MessagePattern</span>({ cmd: <span class="str">'sum'</span> })
+<span class="fn">sum</span>(data: <span class="ty">number</span>[]) { <span class="kw">return</span> data.<span class="fn">reduce</span>((a, b) => a + b, 0); }
+
+<span class="dec">@EventPattern</span>(<span class="str">'user.created'</span>)
+<span class="fn">handleUserCreated</span>(payload: <span class="ty">any</span>) { <span class="cm">/* notifier, sans réponse */</span> }</pre>
+
+        <h3>🚀 GraphQL (code-first)</h3>
+        <pre><span class="lang-tag">user.resolver.ts</span><span class="dec">@Resolver</span>(() => User)
+<span class="kw">export class</span> <span class="ty">UsersResolver</span> {
+  <span class="kw">constructor</span>(<span class="kw">private</span> users: <span class="ty">UsersService</span>) {}
+
+  <span class="dec">@Query</span>(() => [User])
+  <span class="fn">users</span>() { <span class="kw">return this</span>.users.<span class="fn">findAll</span>(); }
+
+  <span class="dec">@Mutation</span>(() => User)
+  <span class="fn">createUser</span>(<span class="dec">@Args</span>(<span class="str">'input'</span>) input: CreateUserInput) {
+    <span class="kw">return this</span>.users.<span class="fn">create</span>(input);
+  }
+}</pre>
+
+        <h3>⏰ Tâches planifiées (Cron)</h3>
+        <pre><span class="lang-tag">tasks.service.ts</span><span class="dec">@Injectable</span>()
+<span class="kw">export class</span> <span class="ty">TasksService</span> {
+  <span class="dec">@Cron</span>(<span class="str">'0 2 * * *'</span>) <span class="cm">// tous les jours à 2h</span>
+  <span class="fn">cleanupOldSessions</span>() { <span class="cm">/* ... */</span> }
+
+  <span class="dec">@Interval</span>(5000) <span class="cm">// toutes les 5s</span>
+  <span class="fn">heartbeat</span>() {}
+}</pre>
+
+        <h3>🔌 WebSockets</h3>
+        <pre><span class="lang-tag">events.gateway.ts</span><span class="dec">@WebSocketGateway</span>({ cors: <span class="kw">true</span> })
+<span class="kw">export class</span> <span class="ty">EventsGateway</span> {
+  <span class="dec">@WebSocketServer</span>() server: <span class="ty">Server</span>;
+
+  <span class="dec">@SubscribeMessage</span>(<span class="str">'message'</span>)
+  <span class="fn">onMessage</span>(<span class="dec">@MessageBody</span>() data: <span class="ty">string</span>) {
+    <span class="kw">this</span>.server.<span class="fn">emit</span>(<span class="str">'broadcast'</span>, data);
+  }
+}</pre>
+
+        <div class="callout interview">
+          <div class="callout-title">💼 Différenciateur</div>
+          Mentionner que tu sais que <strong>Nest peut faire HTTP + WS + gRPC + microservices dans la même app</strong> avec la même DI et les mêmes décorateurs — c'est un des arguments commerciaux clés du framework.
+        </div>
+
+        <h3>📋 Checklist anti-trous-de-mémoire</h3>
+        <div class="content-block">
+          <ul>
+            <li>✅ Module / Controller / Service — le triple sacré</li>
+            <li>✅ DI par constructeur, scopes (DEFAULT, REQUEST, TRANSIENT)</li>
+            <li>✅ Pipes (ValidationPipe + class-validator) — validation par DTO</li>
+            <li>✅ Guards — <code>canActivate</code>, AuthGuard, Reflector pour métadonnées</li>
+            <li>✅ Interceptors — pre/post + rxjs, transformation de réponse</li>
+            <li>✅ Exception Filters — uniformiser les erreurs</li>
+            <li>✅ Request lifecycle : Middleware → Guard → Interceptor → Pipe → Controller → Interceptor → Filter</li>
+            <li>✅ ConfigModule global avec validation Joi/Zod</li>
+            <li>✅ TypeORM (@InjectRepository) ou Prisma (PrismaService étendant PrismaClient)</li>
+            <li>✅ Tests : Test.createTestingModule, overrideProvider, supertest pour e2e</li>
+            <li>✅ Swagger auto, microservices, GraphQL code-first, WebSockets, Cron</li>
+          </ul>
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: "Quel décorateur Nest utilises-tu pour exposer une méthode de service comme handler GraphQL ?",
+      options: [
+        "@Controller() + @Get()",
+        "@Resolver() + @Query() ou @Mutation()",
+        "@WebSocketGateway() + @SubscribeMessage()",
+        "@MessagePattern()"
+      ],
+      correct: 1,
+      explain: "@Resolver marque la classe, et @Query / @Mutation marquent les méthodes. C'est l'équivalent GraphQL de @Controller / @Get."
+    }
+  },
+];
+
+/* ============================================================
+   RUNTIME
+   ============================================================ */
+
+const state = {
+  current: 0,
+  completed: new Set(JSON.parse(localStorage.getItem('nestjs-completed') || '[]')),
+  answered: new Set(JSON.parse(localStorage.getItem('nestjs-answered') || '[]')),
+};
+
+function saveState() {
+  localStorage.setItem('nestjs-completed', JSON.stringify([...state.completed]));
+  localStorage.setItem('nestjs-answered', JSON.stringify([...state.answered]));
+}
+
+function renderNav() {
+  const nav = document.getElementById('nav');
+  let html = '';
+  let currentSection = null;
+  lessons.forEach((l, i) => {
+    if (l.section !== currentSection) {
+      currentSection = l.section;
+      html += `<li class="nav-section">${currentSection}</li>`;
+    }
+    const active = i === state.current ? 'active' : '';
+    const completed = state.completed.has(l.id) ? 'completed' : '';
+    html += `<li class="nav-item ${active} ${completed}" data-i="${i}">
+      <span>${l.icon}</span><span>${l.title}</span><span class="check">✓</span>
+    </li>`;
+  });
+  nav.innerHTML = html;
+  nav.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => goTo(parseInt(el.dataset.i)));
+  });
+
+  const pct = (state.completed.size / lessons.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${state.completed.size} / ${lessons.length} leçons`;
+}
+
+function renderMain() {
+  if (state.current >= lessons.length) {
+    renderCompletion();
+    return;
+  }
+  const l = lessons[state.current];
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="breadcrumb">${l.section} · Leçon ${state.current + 1} / ${lessons.length}</div>
+    <h2 class="lesson-title">${l.icon} ${l.title}</h2>
+    <p class="lesson-subtitle">${l.subtitle}</p>
+    ${l.content}
+    <div class="quiz">
+      <h3>🎯 Quick check</h3>
+      <div class="quiz-question">${l.quiz.question}</div>
+      <div class="quiz-options" id="quizOptions">
+        ${l.quiz.options.map((opt, i) => `
+          <button class="quiz-option" data-i="${i}">${String.fromCharCode(65 + i)}. ${opt}</button>
+        `).join('')}
+      </div>
+      <div class="quiz-feedback" id="quizFeedback"></div>
+    </div>
+    <div class="footer-nav">
+      <button class="btn" id="prevBtn" ${state.current === 0 ? 'disabled' : ''}>← Précédent</button>
+      <button class="btn primary" id="nextBtn">${state.current === lessons.length - 1 ? 'Terminer 🎓' : 'Suivant →'}</button>
+    </div>
+  `;
+
+  main.querySelectorAll('.quiz-option').forEach(btn => {
+    btn.addEventListener('click', () => onAnswer(parseInt(btn.dataset.i)));
+  });
+  document.getElementById('prevBtn').addEventListener('click', () => goTo(state.current - 1));
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    state.completed.add(l.id);
+    saveState();
+    goTo(state.current + 1);
+  });
+
+  if (state.answered.has(l.id)) {
+    document.querySelectorAll('.quiz-option').forEach((b, i) => {
+      b.disabled = true;
+      if (i === l.quiz.correct) b.classList.add('correct');
+    });
+  }
+
+  main.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function onAnswer(choice) {
+  const l = lessons[state.current];
+  const fb = document.getElementById('quizFeedback');
+  const buttons = document.querySelectorAll('.quiz-option');
+  buttons.forEach(b => b.disabled = true);
+
+  if (choice === l.quiz.correct) {
+    buttons[choice].classList.add('correct');
+    fb.className = 'quiz-feedback show ok';
+    fb.innerHTML = `<strong>✓ Exact !</strong> ${l.quiz.explain}`;
+  } else {
+    buttons[choice].classList.add('wrong');
+    buttons[l.quiz.correct].classList.add('correct');
+    fb.className = 'quiz-feedback show ko';
+    fb.innerHTML = `<strong>✗ Pas tout à fait.</strong> ${l.quiz.explain}`;
+  }
+  state.answered.add(l.id);
+  state.completed.add(l.id);
+  saveState();
+  renderNav();
+}
+
+function goTo(i) {
+  if (i < 0) return;
+  state.current = i;
+  renderNav();
+  renderMain();
+}
+
+function renderCompletion() {
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="completion">
+      <div class="completion-icon">🎓</div>
+      <h2>Bravo, prep terminée !</h2>
+      <p class="lesson-subtitle">Tu as parcouru les ${lessons.length} chapitres essentiels de NestJS.</p>
+      <div style="max-width: 600px; margin: 32px auto; text-align: left;">
+        <div class="callout interview">
+          <div class="callout-title">💼 Récap entretien</div>
+          Le mental model à retenir : <strong>Nest = TypeScript + DI + architecture modulaire + décorateurs</strong>. La force du framework, c'est la cohérence : peu importe la feature (HTTP, GraphQL, WebSocket, microservice), tu retrouves le triptyque <em>Module / Controller-Resolver-Gateway / Service</em>.
+        </div>
+        <div class="callout tip">
+          <div class="callout-title">🚀 Pour aller plus loin</div>
+          Construis un mini-projet : API CRUD avec auth JWT + role-based access. Couvre 80% des questions d'entretien. Si tu veux te démarquer : ajoute Swagger + un test e2e.
+        </div>
+      </div>
+      <button class="btn primary" onclick="goTo(0)">Recommencer 🔄</button>
+    </div>
+  `;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+renderNav();
+renderMain();
+</script>
+</body>
+</html>
