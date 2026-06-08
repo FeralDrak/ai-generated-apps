@@ -1,0 +1,1094 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ES6+ Playground — Apprendre le JavaScript moderne</title>
+    <style>
+        :root{
+            --bg:#0b1020;
+            --bg-2:#0f152b;
+            --panel:#141b35;
+            --panel-2:#1a2245;
+            --border:#28315a;
+            --text:#e6ebff;
+            --muted:#9aa3c7;
+            --accent:#7c5cff;
+            --accent-2:#22d3ee;
+            --good:#34d399;
+            --bad:#fb7185;
+            --warn:#fbbf24;
+            --code-bg:#0a0f24;
+        }
+        *{box-sizing:border-box}
+        html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+        body{
+            background:
+                    radial-gradient(1200px 600px at 80% -10%, rgba(124,92,255,.15), transparent 60%),
+                    radial-gradient(900px 500px at -10% 20%, rgba(34,211,238,.12), transparent 60%),
+                    var(--bg);
+            min-height:100vh;
+        }
+        header{
+            padding:28px 36px 18px;
+            display:flex;align-items:center;justify-content:space-between;
+            border-bottom:1px solid var(--border);
+            backdrop-filter: blur(8px);
+            position:sticky;top:0;z-index:5;
+            background:rgba(11,16,32,.7);
+        }
+        .brand{display:flex;align-items:center;gap:14px}
+        .logo{
+            width:42px;height:42px;border-radius:12px;
+            background:linear-gradient(135deg,var(--accent),var(--accent-2));
+            display:grid;place-items:center;font-weight:800;color:#0b1020;
+            box-shadow:0 8px 24px rgba(124,92,255,.35);
+        }
+        h1{font-size:20px;margin:0;letter-spacing:.2px}
+        .subtitle{color:var(--muted);font-size:13px;margin-top:2px}
+        .progress-wrap{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px}
+        .progress{
+            width:200px;height:8px;border-radius:99px;background:var(--panel);
+            overflow:hidden;border:1px solid var(--border)
+        }
+        .progress > div{
+            height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));
+            width:0%;transition:width .4s ease
+        }
+
+        main{display:grid;grid-template-columns:300px 1fr;gap:24px;padding:24px 36px 60px;max-width:1400px;margin:0 auto}
+        @media (max-width: 980px){ main{grid-template-columns:1fr;padding:16px} }
+
+        aside{
+            background:var(--panel);border:1px solid var(--border);border-radius:18px;
+            padding:14px;height:fit-content;position:sticky;top:96px
+        }
+        .nav-title{font-size:11px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;padding:6px 10px}
+        .nav-list{display:flex;flex-direction:column;gap:4px;max-height:70vh;overflow:auto;padding-right:4px}
+        .nav-list::-webkit-scrollbar{width:8px}
+        .nav-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+        .nav-item{
+            display:flex;align-items:center;justify-content:space-between;gap:8px;
+            padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--text);
+            border:1px solid transparent;font-size:14px;transition:all .15s ease
+        }
+        .nav-item:hover{background:var(--panel-2)}
+        .nav-item.active{background:var(--panel-2);border-color:var(--border)}
+        .nav-item .check{
+            width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);
+            display:grid;place-items:center;font-size:11px;color:transparent;flex-shrink:0
+        }
+        .nav-item.done .check{background:var(--good);border-color:var(--good);color:#0b1020}
+        .nav-item .num{font-size:11px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:99px;border:1px solid var(--border)}
+
+        section.lesson{
+            background:var(--panel);border:1px solid var(--border);border-radius:20px;
+            padding:28px 32px;
+        }
+        .pill{display:inline-block;font-size:11px;letter-spacing:1px;text-transform:uppercase;
+            color:var(--accent-2);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);
+            padding:4px 10px;border-radius:99px;margin-bottom:10px}
+        h2{font-size:28px;margin:0 0 6px;line-height:1.2}
+        .lesson-desc{color:var(--muted);margin:0 0 22px;line-height:1.6;font-size:15px}
+
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}
+        @media (max-width:780px){.grid-2{grid-template-columns:1fr}}
+        .card{
+            background:var(--bg-2);border:1px solid var(--border);border-radius:14px;
+            padding:14px 16px
+        }
+        .card h4{margin:0 0 10px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+        .card.bad h4{color:var(--bad)}
+        .card.good h4{color:var(--good)}
+        pre{
+            margin:0;background:var(--code-bg);border-radius:10px;padding:14px 16px;
+            overflow:auto;font-size:13.5px;line-height:1.55;border:1px solid var(--border);
+            font-family:"SF Mono",Menlo,Consolas,monospace
+        }
+
+        /* Syntax highlight */
+        .tk-key{color:#c084fc}
+        .tk-str{color:#86efac}
+        .tk-num{color:#fcd34d}
+        .tk-com{color:#64748b;font-style:italic}
+        .tk-fn{color:#22d3ee}
+        .tk-op{color:#f472b6}
+
+        .playground{
+            margin-top:8px;background:var(--bg-2);border:1px solid var(--border);
+            border-radius:14px;overflow:hidden
+        }
+        .pg-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)}
+        .pg-title{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+        .pg-actions{display:flex;gap:8px}
+        .btn{
+            border:1px solid var(--border);background:var(--panel);color:var(--text);
+            padding:7px 14px;border-radius:10px;font-size:13px;cursor:pointer;
+            transition:all .15s ease;font-weight:500
+        }
+        .btn:hover{background:var(--panel-2);border-color:var(--accent)}
+        .btn.primary{
+            background:linear-gradient(135deg,var(--accent),var(--accent-2));
+            border:none;color:#0b1020;font-weight:700
+        }
+        .btn.primary:hover{filter:brightness(1.1)}
+        textarea.editor{
+            width:100%;min-height:140px;background:var(--code-bg);color:var(--text);
+            border:none;padding:14px 16px;font-family:"SF Mono",Menlo,Consolas,monospace;
+            font-size:13.5px;line-height:1.55;resize:vertical;outline:none
+        }
+        .console{
+            background:#070b1c;color:#a7f3d0;padding:12px 16px;font-family:"SF Mono",Menlo,Consolas,monospace;
+            font-size:13px;border-top:1px solid var(--border);min-height:48px;white-space:pre-wrap;word-break:break-word
+        }
+        .console .err{color:var(--bad)}
+        .console .info{color:var(--muted)}
+
+        .quiz{
+            margin-top:22px;padding:18px 20px;border:1px solid var(--border);
+            border-radius:14px;background:linear-gradient(180deg,rgba(124,92,255,.06),transparent)
+        }
+        .quiz h3{margin:0 0 6px;font-size:16px}
+        .quiz p.q{margin:0 0 14px;color:var(--muted);font-size:14px}
+        .quiz-options{display:flex;flex-direction:column;gap:8px}
+        .quiz-opt{
+            border:1px solid var(--border);background:var(--bg-2);padding:10px 14px;border-radius:10px;
+            cursor:pointer;font-size:14px;text-align:left;color:var(--text);transition:all .15s ease
+        }
+        .quiz-opt:hover{border-color:var(--accent)}
+        .quiz-opt.correct{border-color:var(--good);background:rgba(52,211,153,.1)}
+        .quiz-opt.wrong{border-color:var(--bad);background:rgba(251,113,133,.1)}
+        .quiz-feedback{margin-top:12px;font-size:14px;color:var(--muted);min-height:20px}
+        .quiz-feedback.good{color:var(--good)}
+        .quiz-feedback.bad{color:var(--bad)}
+
+        .footer-nav{display:flex;justify-content:space-between;margin-top:26px;gap:10px}
+        kbd{
+            background:var(--code-bg);border:1px solid var(--border);border-bottom-width:2px;
+            padding:1px 6px;border-radius:6px;font-size:12px;font-family:"SF Mono",Menlo,Consolas,monospace
+        }
+
+        .badge{
+            display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;
+            background:var(--panel-2);border:1px solid var(--border);font-size:12px;color:var(--muted)
+        }
+        .badge.es6{color:#a7f3d0;border-color:rgba(167,243,208,.3)}
+        .badge.es2020{color:#fcd34d;border-color:rgba(252,211,77,.3)}
+        .badge.es2022{color:#fda4af;border-color:rgba(253,164,175,.3)}
+        .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+
+        .toast{
+            position:fixed;bottom:20px;right:20px;background:var(--panel);
+            border:1px solid var(--border);padding:12px 18px;border-radius:12px;
+            transform:translateY(100px);opacity:0;transition:all .3s ease;z-index:20;
+            box-shadow:0 12px 30px rgba(0,0,0,.4)
+        }
+        .toast.show{transform:translateY(0);opacity:1}
+        .toast.good{border-color:var(--good)}
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <div class="logo">JS</div>
+        <div>
+            <h1>ES6+ Playground</h1>
+            <div class="subtitle">Apprends le JavaScript moderne, leçon par leçon</div>
+        </div>
+    </div>
+    <div class="progress-wrap">
+        <span id="progressLabel">0 / 0 leçons</span>
+        <div class="progress"><div id="progressBar"></div></div>
+    </div>
+</header>
+
+<main>
+    <aside>
+        <div class="nav-title">Programme</div>
+        <div class="nav-list" id="navList"></div>
+    </aside>
+
+    <section class="lesson" id="lessonRoot"></section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    /* =========================================================
+       Data : Les leçons ES6+
+       ========================================================= */
+    const LESSONS = [
+        {
+            id:"let-const",
+            era:"ES6 (2015)",
+            title:"let & const : portée de bloc",
+            desc:"En ES5, var avait une portée de fonction et était hoistée. ES6 introduit let (réassignable) et const (constante) avec une portée de bloc — bien plus prévisible.",
+            bad:`// ES5 — var fuit en dehors du bloc
+for (var i = 0; i < 3; i++) {}
+console.log(i); // 3 😱
+
+if (true) { var x = 1; }
+console.log(x); // 1 😱`,
+            good:`// ES6 — let / const sont scopés au bloc
+for (let i = 0; i < 3; i++) {}
+// console.log(i) -> ReferenceError ✅
+
+const PI = 3.14159;
+// PI = 3 -> TypeError ✅
+
+// const protège la liaison, pas le contenu
+const arr = [1, 2];
+arr.push(3); // OK
+// arr = []   // ❌`,
+            play:`const greet = (name) => \`Hello, \${name}!\`;
+let count = 0;
+for (let i = 0; i < 3; i++) count++;
+console.log(greet("ES6"), "count =", count);`,
+            quiz:{
+                q:"Que se passe-t-il avec ce code ?\nconst user = { name: 'Ana' };\nuser.name = 'Bob';",
+                options:["TypeError immédiate","Le nom devient 'Bob' sans erreur","La variable user est réassignée"],
+                answer:1,
+                explain:"const empêche la réassignation de la liaison, mais le contenu de l'objet reste mutable."
+            }
+        },
+        {
+            id:"arrow",
+            era:"ES6 (2015)",
+            title:"Fonctions fléchées (arrow functions)",
+            desc:"Plus concises, et surtout : pas de this propre. Le this est lexical — il provient du contexte englobant. Idéal pour les callbacks.",
+            bad:`// ES5 — perte de contexte avec this
+function Counter() {
+  this.n = 0;
+  setInterval(function() {
+    this.n++; // this = window/undefined !
+    console.log(this.n);
+  }, 1000);
+}`,
+            good:`// ES6 — this lexical avec arrow
+function Counter() {
+  this.n = 0;
+  setInterval(() => {
+    this.n++; // this = l'instance ✅
+  }, 1000);
+}
+
+// Concision
+const double = x => x * 2;
+const sum = (a, b) => a + b;
+const obj = name => ({ name }); // retour objet`,
+            play:`const nums = [1, 2, 3, 4, 5];
+const squared = nums.map(n => n ** 2);
+const evens = nums.filter(n => n % 2 === 0);
+console.log({ squared, evens });`,
+            quiz:{
+                q:"Une arrow function peut-elle être utilisée comme constructeur avec new ?",
+                options:["Oui, comme une fonction normale","Non, elle n'a pas de [[Construct]]","Seulement avec class"],
+                answer:1,
+                explain:"Les arrow functions n'ont pas de this propre, ni de prototype, ni de [[Construct]] : new arrow() lève une TypeError."
+            }
+        },
+        {
+            id:"template",
+            era:"ES6 (2015)",
+            title:"Template literals",
+            desc:"Les backticks permettent l'interpolation avec ${} et les chaînes multi-lignes. Et les tagged templates ouvrent la porte à des DSL puissants.",
+            bad:`// ES5 — concaténation pénible
+var name = "Ada";
+var age = 36;
+var msg = "Hello " + name + ",\\n" +
+          "you are " + age + " years old.";`,
+            good:`// ES6 — template literals
+const name = "Ada";
+const age = 36;
+const msg = \`Hello \${name},
+you are \${age} years old.\`;
+
+// Tagged templates
+function html(strings, ...values) {
+  return strings.reduce((acc, s, i) =>
+    acc + s + (values[i] ? \`<b>\${values[i]}</b>\` : ""), "");
+}
+const out = html\`Hi \${name}, age \${age}\`;`,
+            play:`const items = ["pomme", "poire", "kiwi"];
+const list = \`Fruits :
+\${items.map((it, i) => \`  \${i+1}. \${it}\`).join("\\n")}\`;
+console.log(list);`,
+            quiz:{
+                q:"Que reçoit le 1er paramètre d'une tagged template ?",
+                options:["Une string complète","Un tableau des morceaux statiques","Un objet { strings, values }"],
+                answer:1,
+                explain:"Le 1er paramètre est un tableau (avec une propriété raw) des fragments statiques entre les ${...}."
+            }
+        },
+        {
+            id:"destructuring",
+            era:"ES6 (2015)",
+            title:"Destructuration",
+            desc:"Extraire des valeurs d'objets ou de tableaux en une ligne. Avec defaults, renaming, nesting et rest. Utilisable aussi dans les paramètres de fonction.",
+            bad:`// ES5
+function draw(opts) {
+  var x = opts.x;
+  var y = opts.y;
+  var color = opts.color || "black";
+  // ...
+}`,
+            good:`// ES6 — destructuration
+function draw({ x, y, color = "black", size: s = 10 }) {
+  return \`(\${x},\${y}) \${color} size=\${s}\`;
+}
+
+// Tableaux
+const [first, second, ...rest] = [1, 2, 3, 4, 5];
+
+// Swap sans variable temporaire
+let a = 1, b = 2;
+[a, b] = [b, a];
+
+// Nesting
+const { user: { name, addr: { city } = {} } } = data;`,
+            play:`const user = { id: 7, profile: { name: "Lin", lang: "fr" }, tags: ["js","ts"] };
+const { profile: { name }, tags: [main, ...others] = [] } = user;
+console.log({ name, main, others });`,
+            quiz:{
+                q:"Que vaut a après : const { x: a = 5 } = { x: undefined } ?",
+                options:["undefined","5","null"],
+                answer:1,
+                explain:"La valeur par défaut s'applique uniquement quand la valeur est strictement undefined."
+            }
+        },
+        {
+            id:"spread-rest",
+            era:"ES6 / ES2018",
+            title:"Spread & Rest (...)",
+            desc:"Le même opérateur joue deux rôles : étaler (spread) ou rassembler (rest). Très pratique pour copier, fusionner et écrire des fonctions variadiques.",
+            bad:`// ES5
+function sum() {
+  var args = Array.prototype.slice.call(arguments);
+  return args.reduce(function(a,b){return a+b;}, 0);
+}
+var merged = Object.assign({}, a, b);`,
+            good:`// Rest dans les paramètres
+const sum = (...nums) => nums.reduce((a,b) => a+b, 0);
+
+// Spread sur tableaux
+const merged = [...arr1, ...arr2, 99];
+
+// Spread sur objets (ES2018)
+const next = { ...prev, updated: true };
+
+// Cloner sans muter
+const copy = [...original];`,
+            play:`const a = [1, 2, 3], b = [4, 5];
+const merged = [...a, ...b];
+const max = Math.max(...merged);
+const obj = { ...{x:1}, ...{y:2}, z:3 };
+console.log({ merged, max, obj });`,
+            quiz:{
+                q:"Quelle différence entre arguments et ...rest ?",
+                options:["Aucune","arguments est un vrai Array, rest non","rest est un vrai Array, arguments est array-like"],
+                answer:2,
+                explain:"arguments est un objet array-like (pas de .map, .filter). ...rest produit un vrai Array, et fonctionne dans les arrow functions."
+            }
+        },
+        {
+            id:"defaults",
+            era:"ES6 (2015)",
+            title:"Paramètres par défaut",
+            desc:"Définir une valeur par défaut directement dans la signature. Évaluée à chaque appel, et peut référencer les paramètres précédents.",
+            bad:`function fetchUser(id, opts) {
+  opts = opts || {};
+  var retries = opts.retries !== undefined ? opts.retries : 3;
+  // 0, '', false écrasés par défaut ! 🐞
+}`,
+            good:`function fetchUser(id, { retries = 3, signal } = {}) {
+  // ...
+}
+
+// Référence aux paramètres précédents
+function range(start, end = start + 10) {
+  return [start, end];
+}
+range(5); // [5, 15]`,
+            play:`const greet = (name = "anonymous", lang = "fr") =>
+  lang === "fr" ? \`Bonjour \${name}\` : \`Hello \${name}\`;
+console.log(greet());
+console.log(greet("Sam", "en"));`,
+            quiz:{
+                q:"Le défaut s'applique-t-il quand on passe explicitement null ?",
+                options:["Oui","Non, seulement undefined"],
+                answer:1,
+                explain:"Seul undefined déclenche le default. null est une valeur explicite et passe tel quel."
+            }
+        },
+        {
+            id:"classes",
+            era:"ES6 / ES2022",
+            title:"Classes & champs privés",
+            desc:"Sucre syntaxique au-dessus du prototype, mais avec extends, super, static, getters/setters. ES2022 ajoute les champs privés #field.",
+            bad:`// ES5 — prototype manuel
+function Animal(name) { this.name = name; }
+Animal.prototype.speak = function() { return this.name; };
+function Dog(name) { Animal.call(this, name); }
+Dog.prototype = Object.create(Animal.prototype);`,
+            good:`class Animal {
+  constructor(name) { this.name = name; }
+  speak() { return \`\${this.name} makes a sound\`; }
+  static fromJson(o) { return new this(o.name); }
+}
+
+class Counter {
+  #count = 0;             // privé (ES2022)
+  increment() { this.#count++; }
+  get value() { return this.#count; }
+}
+
+class Dog extends Animal {
+  speak() { return \`\${super.speak()} (woof)\`; }
+}`,
+            play:`class Stack {
+  #items = [];
+  push(x) { this.#items.push(x); return this; }
+  pop()   { return this.#items.pop(); }
+  get size() { return this.#items.length; }
+}
+const s = new Stack().push(1).push(2).push(3);
+console.log("size:", s.size, "pop:", s.pop());`,
+            quiz:{
+                q:"Que vaut typeof Foo si class Foo {} ?",
+                options:["'class'","'object'","'function'"],
+                answer:2,
+                explain:"Les classes sont du sucre syntaxique : ce sont des fonctions spéciales (typeof === 'function'), avec [[IsClassConstructor]]."
+            }
+        },
+        {
+            id:"promises",
+            era:"ES6 (2015)",
+            title:"Promises",
+            desc:"Une valeur future (pending → fulfilled / rejected). Elles remplacent le callback hell et se composent avec .then/.catch/.finally et Promise.all/race/any.",
+            bad:`// Callback hell
+getUser(id, function(err, user) {
+  if (err) return cb(err);
+  getOrders(user, function(err, orders) {
+    if (err) return cb(err);
+    getTotal(orders, function(err, total) { /*...*/ });
+  });
+});`,
+            good:`// Promise chain
+getUser(id)
+  .then(getOrders)
+  .then(getTotal)
+  .catch(err => console.error(err))
+  .finally(() => stopSpinner());
+
+// Combinators
+Promise.all([a(), b()]);   // tout ou rien
+Promise.race([a(), b()]);  // le 1er résolu/rejeté
+Promise.any([a(), b()]);   // le 1er résolu (ES2021)
+Promise.allSettled([a(),b()]); // toujours résolu`,
+            play:`const wait = (ms, v) => new Promise(r => setTimeout(() => r(v), ms));
+Promise.all([wait(50,"a"), wait(20,"b"), wait(80,"c")])
+  .then(vals => console.log("got:", vals));
+console.log("Promises créées, attente...");`,
+            quiz:{
+                q:"Promise.all([p1, p2]) — si p1 rejette, que se passe-t-il ?",
+                options:["Le résultat attend p2","Rejette immédiatement avec p1","Renvoie [error, undefined]"],
+                answer:1,
+                explain:"Promise.all applique fail-fast : dès qu'une promesse rejette, le tout rejette. Pour tout attendre, utilise allSettled."
+            }
+        },
+        {
+            id:"async-await",
+            era:"ES2017",
+            title:"async / await",
+            desc:"Écrire de l'asynchrone qui se lit comme du synchrone. await suspend la fonction async jusqu'à résolution. try/catch fonctionne comme en code sync.",
+            bad:`getUser(id)
+  .then(u => getOrders(u)
+    .then(o => render(u, o)))
+  .catch(handle);`,
+            good:`async function load(id) {
+  try {
+    const user = await getUser(id);
+    const orders = await getOrders(user);
+    render(user, orders);
+  } catch (err) {
+    handle(err);
+  }
+}
+
+// Parallèle : lancer puis await
+async function loadParallel() {
+  const [u, o] = await Promise.all([getUser(), getOrders()]);
+}`,
+            play:`const wait = (ms, v) => new Promise(r => setTimeout(() => r(v), ms));
+(async () => {
+  const start = Date.now();
+  const [a, b] = await Promise.all([wait(40,1), wait(40,2)]);
+  console.log("parallel:", a+b, "in", Date.now()-start, "ms");
+})();`,
+            quiz:{
+                q:"Que retourne une fonction async ?",
+                options:["La valeur return directement","Une Promise","undefined toujours"],
+                answer:1,
+                explain:"Une fonction async retourne TOUJOURS une Promise — la valeur de return en devient la valeur résolue."
+            }
+        },
+        {
+            id:"optional",
+            era:"ES2020",
+            title:"Optional chaining ?.",
+            desc:"Accéder à une propriété profonde sans planter sur null/undefined. Court-circuite et retourne undefined.",
+            bad:`const city = user && user.address && user.address.city;
+const fn = obj && obj.cb && obj.cb();
+const item = arr && arr[0];`,
+            good:`const city = user?.address?.city;     // undefined si chemin cassé
+const fn   = obj?.cb?.();              // appel optionnel
+const item = arr?.[0];                 // index optionnel
+
+// Combiné avec ??
+const port = config?.server?.port ?? 3000;`,
+            play:`const a = { user: { addr: { city: "Lyon" } } };
+const b = { user: null };
+console.log(a?.user?.addr?.city);
+console.log(b?.user?.addr?.city);
+console.log(b?.user?.greet?.());`,
+            quiz:{
+                q:"obj?.x est équivalent à...",
+                options:["obj && obj.x","obj == null ? undefined : obj.x","obj !== undefined ? obj.x : null"],
+                answer:1,
+                explain:"?. court-circuite uniquement sur null ou undefined (== null), pas sur 0, '', false."
+            }
+        },
+        {
+            id:"nullish",
+            era:"ES2020",
+            title:"Nullish coalescing ??",
+            desc:"|| considère 0, '', false comme falsy → souvent un bug. ?? ne tombe en défaut QUE pour null ou undefined.",
+            bad:`const port = config.port || 3000;     // si port=0 → 3000 🐞
+const name = input.name || "anon";    // si name='' → 'anon' 🐞
+const flag = opts.enabled || true;    // si false → true 🐞`,
+            good:`const port = config.port ?? 3000;     // 0 reste 0 ✅
+const name = input.name ?? "anon";    // '' reste '' ✅
+const flag = opts.enabled ?? true;    // false reste false ✅
+
+// Logical assignment (ES2021)
+obj.x ??= "default"; // assigne si null/undefined
+obj.y ||= "default"; // assigne si falsy
+obj.z &&= "newval";  // assigne si truthy`,
+            play:`const cases = [0, "", false, null, undefined, "ok"];
+console.log("|| :", cases.map(v => v || "DEFAULT"));
+console.log("?? :", cases.map(v => v ?? "DEFAULT"));`,
+            quiz:{
+                q:"Que vaut 0 ?? 42 ?",
+                options:["42","0","NaN"],
+                answer:1,
+                explain:"?? ne fallback que sur null/undefined. 0 est une valeur valide, donc on garde 0."
+            }
+        },
+        {
+            id:"modules",
+            era:"ES6 (2015)",
+            title:"Modules ES (import / export)",
+            desc:"Système officiel de modules. Statique (analysable, tree-shakable). Différent de CommonJS (require) côté Node.",
+            bad:`// CommonJS
+const fs = require("fs");
+module.exports = { hello };
+exports.bye = bye;`,
+            good:`// math.js
+export const PI = 3.14;
+export function add(a, b) { return a + b; }
+export default class Calculator {}
+
+// app.js
+import Calculator, { PI, add } from "./math.js";
+import * as math from "./math.js";
+
+// Dynamique (lazy)
+const mod = await import("./heavy.js");`,
+            play:`// Démo conceptuelle (impossible d'importer ici)
+const mockModule = {
+  default: class Calculator { add(a,b){return a+b} },
+  PI: 3.14
+};
+const Calc = mockModule.default;
+console.log("PI =", mockModule.PI, "add =", new Calc().add(2,3));`,
+            quiz:{
+                q:"Les imports ES sont...",
+                options:["Dynamiques, évalués à l'exécution","Statiques, analysables au build","Identiques à require()"],
+                answer:1,
+                explain:"Les imports ES sont statiques (en haut du fichier, chemins littéraux), ce qui permet le tree-shaking. import() reste dynamique."
+            }
+        },
+        {
+            id:"iter",
+            era:"ES6 (2015)",
+            title:"Itérateurs & for...of",
+            desc:"Le protocole d'itération unifie tableaux, strings, Map, Set, NodeList... for...of itère sur les valeurs (vs for...in sur les clés).",
+            bad:`// ES5 — for sur les indices
+for (var i = 0; i < arr.length; i++) {
+  console.log(arr[i]);
+}
+// for...in itère les clés (et hérités !) — danger sur les arrays`,
+            good:`// for...of : valeurs
+for (const v of [10, 20, 30]) console.log(v);
+for (const ch of "abc") console.log(ch);
+
+// Map / Set
+const m = new Map([["a",1],["b",2]]);
+for (const [k, v] of m) console.log(k, v);
+
+// Custom iterable
+const range = {
+  *[Symbol.iterator]() { yield 1; yield 2; yield 3; }
+};
+[...range]; // [1,2,3]`,
+            play:`function* fib(n) {
+  let [a, b] = [0, 1];
+  while (n-- > 0) { yield a; [a, b] = [b, a+b]; }
+}
+const out = [...fib(8)];
+console.log("fibonacci:", out);`,
+            quiz:{
+                q:"for...in vs for...of sur un tableau ?",
+                options:["Identiques","for...in donne les indices (string), for...of les valeurs","Aucun ne marche sur les tableaux"],
+                answer:1,
+                explain:"for...in énumère les clés énumérables (y compris héritées) en string. for...of utilise le protocole d'itération et donne les valeurs."
+            }
+        },
+        {
+            id:"map-set",
+            era:"ES6 (2015)",
+            title:"Map & Set",
+            desc:"Structures de données natives. Map : clés de n'importe quel type, ordre conservé, .size. Set : valeurs uniques.",
+            bad:`// Object utilisé comme Map
+var cache = {};
+cache["1"] = "a";
+cache[1] = "b"; // collision (clé coercée)
+Object.keys(cache).length; // pas .size
+// pas d'objet en clé`,
+            good:`const cache = new Map();
+cache.set(1, "a").set("1", "b");  // clés distinctes ✅
+cache.set(obj, "metadata");        // objet en clé ✅
+cache.size;                        // O(1)
+
+// Set : déduplication express
+const unique = [...new Set([1,2,2,3,3,3])]; // [1,2,3]
+
+// WeakMap/WeakSet — clés faibles, GC-friendly
+const meta = new WeakMap();
+meta.set(domNode, { ts: Date.now() });`,
+            play:`const visits = new Map();
+["alice","bob","alice","charlie","bob","alice"].forEach(u =>
+  visits.set(u, (visits.get(u) ?? 0) + 1));
+console.log(Object.fromEntries(visits));
+console.log("unique:", [...new Set(["a","b","a","c"])]);`,
+            quiz:{
+                q:"Quelle est la différence clé entre WeakMap et Map ?",
+                options:["WeakMap est plus rapide","WeakMap n'empêche pas le GC de ses clés","WeakMap accepte plus de types de clés"],
+                answer:1,
+                explain:"WeakMap ne maintient qu'une référence faible vers ses clés (qui doivent être des objets) — elles peuvent être collectées par le GC. Pas itérable."
+            }
+        },
+        {
+            id:"obj-methods",
+            era:"ES2017+",
+            title:"Object.entries / fromEntries / Object.hasOwn",
+            desc:"Méthodes pour transformer entre objets et tableaux de paires. Object.hasOwn (ES2022) remplace hasOwnProperty.",
+            bad:`for (var k in obj) {
+  if (obj.hasOwnProperty(k)) {
+    console.log(k, obj[k]);
+  }
+}`,
+            good:`// Itérer
+for (const [k, v] of Object.entries(obj)) {}
+
+// Transformer un objet
+const upper = Object.fromEntries(
+  Object.entries(obj).map(([k,v]) => [k, v.toUpperCase()])
+);
+
+// URLSearchParams ↔ objet
+const params = Object.fromEntries(new URLSearchParams("a=1&b=2"));
+
+// Object.hasOwn (ES2022) — plus sûr
+if (Object.hasOwn(obj, "key")) {}`,
+            play:`const prices = { apple: 1.2, bread: 2.5, milk: 1.8 };
+const inEuros = Object.fromEntries(
+  Object.entries(prices)
+    .filter(([,p]) => p > 1.5)
+    .map(([k,p]) => [k, \`\${p}€\`])
+);
+console.log(inEuros);`,
+            quiz:{
+                q:"Pourquoi préférer Object.hasOwn(obj, key) à obj.hasOwnProperty(key) ?",
+                options:["C'est plus rapide","Plus sûr : marche sur Object.create(null) / clés écrasées","Aucune différence"],
+                answer:1,
+                explain:"obj.hasOwnProperty échoue si l'objet est créé avec Object.create(null) ou si la clé 'hasOwnProperty' est écrasée."
+            }
+        },
+        {
+            id:"arr-methods",
+            era:"ES6+",
+            title:"Méthodes de tableau modernes",
+            desc:"find, includes, flat, flatMap, at... Et la nouvelle vague ES2023 immuable : toSorted, toReversed, toSpliced, with.",
+            bad:`arr.indexOf(x) !== -1                    // includes()
+arr.filter(p)[0]                         // find()
+[].concat.apply([], nested)              // flat()
+arr.slice().sort()                       // toSorted (ES2023)
+arr[arr.length - 1]                      // arr.at(-1)`,
+            good:`arr.includes(x);
+arr.find(p => p.id === 7);
+arr.findLast(p => p.active);            // ES2023
+[[1,2],[3]].flat();                     // [1,2,3]
+words.flatMap(w => w.split(""));        // map + flat
+arr.at(-1);                             // dernier élément
+
+// ES2023 — immutable
+const sorted = nums.toSorted();         // sans muter !
+const reversed = nums.toReversed();
+const next = nums.with(0, 99);          // copie + remplace`,
+            play:`const data = [
+  { name:"a", score: 12 },
+  { name:"b", score: 8 },
+  { name:"c", score: 17 },
+];
+const top = data.toSorted((x,y) => y.score - x.score).at(0);
+const flatted = [[1,2],[3,[4,5]]].flat(2);
+console.log({ top, flatted });`,
+            quiz:{
+                q:"Différence entre sort() et toSorted() ?",
+                options:["Aucune","sort mute le tableau, toSorted retourne une copie triée","toSorted est plus rapide"],
+                answer:1,
+                explain:"sort() trie en place (mutation). toSorted() (ES2023) retourne un nouveau tableau trié — immutabilité confortable."
+            }
+        },
+        {
+            id:"misc",
+            era:"ES2020+",
+            title:"BigInt, séparateurs, top-level await",
+            desc:"Petites pépites bien utiles : entiers arbitrairement grands, séparateurs numériques pour la lisibilité, et await au top-level dans les modules.",
+            bad:`Number.MAX_SAFE_INTEGER + 1 === Number.MAX_SAFE_INTEGER + 2; // true 😱
+const million = 1000000;     // dur à lire
+// Avant ES2022 : impossible d'await en dehors d'une async`,
+            good:`// BigInt — entiers de précision arbitraire
+const huge = 9007199254740993n;
+const product = 12345678901234567890n * 2n;
+
+// Numeric separators (ES2021) — pure lisibilité
+const pop = 8_000_000_000;
+const hex = 0xFF_EC_DE_5E;
+const bin = 0b1010_0001;
+
+// Top-level await dans les modules ES (ES2022)
+const data = await fetch("/api").then(r => r.json());`,
+            play:`const big = 2n ** 64n;
+const million = 1_000_000;
+console.log("2^64 =", big.toString());
+console.log("million =", million);
+console.log("typeof big:", typeof big);`,
+            quiz:{
+                q:"Peut-on additionner un BigInt et un Number ?",
+                options:["Oui, BigInt est converti","Non, TypeError","Oui, le résultat est un Number"],
+                answer:1,
+                explain:"Mélanger BigInt et Number lève une TypeError. Il faut convertir explicitement : BigInt(n) ou Number(big)."
+            }
+        },
+    ];
+
+    /* =========================================================
+       Mini syntax highlighter
+       ========================================================= */
+    const KEYWORDS = ["const","let","var","function","return","if","else","for","of","in","while",
+        "class","extends","super","static","new","this","import","export","from","default","try","catch",
+        "finally","throw","async","await","yield","typeof","instanceof","true","false","null","undefined","get","set"];
+
+    function escapeHtml(s){
+        return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+    function highlight(src){
+        // Single-pass tokenizer — avoids regex-overlap on already-marked HTML
+        const KW = new Set(KEYWORDS);
+        const OPS = ["=>","??","?.","...","===","!==",">=","<=","**","&&","||","??=","||=","&&="];
+        let out = "";
+        let i = 0;
+        const n = src.length;
+        const wrap = (cls, txt) => '<span class="tk-'+cls+'">'+escapeHtml(txt)+'</span>';
+
+        while (i < n) {
+            const c = src[i];
+            const c2 = src.substr(i, 2);
+
+            // Line comment
+            if (c2 === "//") {
+                let j = src.indexOf("\n", i);
+                if (j === -1) j = n;
+                out += wrap("com", src.slice(i, j));
+                i = j;
+                continue;
+            }
+            // Block comment
+            if (c2 === "/*") {
+                let j = src.indexOf("*/", i+2);
+                if (j === -1) j = n; else j += 2;
+                out += wrap("com", src.slice(i, j));
+                i = j;
+                continue;
+            }
+            // Strings: ` ' "
+            if (c === "`" || c === "'" || c === '"') {
+                const quote = c;
+                let j = i + 1;
+                while (j < n) {
+                    if (src[j] === "\\") { j += 2; continue; }
+                    if (src[j] === quote) { j++; break; }
+                    j++;
+                }
+                out += wrap("str", src.slice(i, j));
+                i = j;
+                continue;
+            }
+            // Numbers (incl. 0x, 0b, separators, BigInt n suffix)
+            if (/[0-9]/.test(c) || (c === "." && /[0-9]/.test(src[i+1] || ""))) {
+                let j = i;
+                while (j < n && /[0-9a-fA-FxXbBoO_.n]/.test(src[j])) j++;
+                out += wrap("num", src.slice(i, j));
+                i = j;
+                continue;
+            }
+            // Identifiers / keywords / function calls
+            if (/[A-Za-z_$]/.test(c)) {
+                let j = i + 1;
+                while (j < n && /[\w$]/.test(src[j])) j++;
+                const word = src.slice(i, j);
+                if (KW.has(word)) {
+                    out += wrap("key", word);
+                } else {
+                    // Look ahead (skip whitespace) for `(` to detect function call
+                    let k = j;
+                    while (k < n && /\s/.test(src[k])) k++;
+                    if (src[k] === "(") {
+                        out += wrap("fn", word);
+                    } else {
+                        out += escapeHtml(word);
+                    }
+                }
+                i = j;
+                continue;
+            }
+            // Multi-char operators
+            let matched = false;
+            for (const op of OPS) {
+                if (src.substr(i, op.length) === op) {
+                    out += wrap("op", op);
+                    i += op.length;
+                    matched = true;
+                    break;
+                }
+            }
+            if (matched) continue;
+
+            // Default: escape single char
+            out += escapeHtml(c);
+            i++;
+        }
+        return out;
+    }
+
+    /* =========================================================
+       State & rendering
+       ========================================================= */
+    const STATE_KEY = "es6plus-progress-v1";
+    let state = loadState();
+    let currentIdx = state.last ?? 0;
+
+    function loadState(){
+        try { return JSON.parse(localStorage.getItem(STATE_KEY)) || { done:{}, last:0 }; }
+        catch(e) { return { done:{}, last:0 }; }
+    }
+    function saveState(){
+        try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch(e){}
+    }
+
+    function renderNav(){
+        const list = document.getElementById("navList");
+        list.innerHTML = "";
+        LESSONS.forEach((l, i) => {
+            const div = document.createElement("div");
+            div.className = "nav-item" + (i===currentIdx ? " active":"") + (state.done[l.id] ? " done":"");
+            div.innerHTML = `
+      <span class="check">✓</span>
+      <span style="flex:1">${l.title}</span>
+      <span class="num">${i+1}</span>
+    `;
+            div.onclick = () => { currentIdx = i; state.last = i; saveState(); renderAll(); };
+            list.appendChild(div);
+        });
+        const total = LESSONS.length;
+        const done = Object.keys(state.done).filter(k => state.done[k]).length;
+        document.getElementById("progressLabel").textContent = `${done} / ${total} leçons`;
+        document.getElementById("progressBar").style.width = (done/total*100)+"%";
+    }
+
+    function renderLesson(){
+        const l = LESSONS[currentIdx];
+        const root = document.getElementById("lessonRoot");
+        const eraBadge = (era) => {
+            let cls = "es6";
+            if (/2020|2021/.test(era)) cls = "es2020";
+            if (/2022|2023/.test(era)) cls = "es2022";
+            return `<span class="badge ${cls}">${era}</span>`;
+        };
+        root.innerHTML = `
+    <div class="meta">
+      ${eraBadge(l.era)}
+      <span class="badge">Leçon ${currentIdx+1} / ${LESSONS.length}</span>
+      ${state.done[l.id] ? '<span class="badge" style="color:var(--good);border-color:rgba(52,211,153,.3)">✓ terminée</span>' : ''}
+    </div>
+    <span class="pill">${l.id}</span>
+    <h2>${l.title}</h2>
+    <p class="lesson-desc">${l.desc}</p>
+
+    <div class="grid-2">
+      <div class="card bad">
+        <h4>Avant — ES5 / pièges</h4>
+        <pre><code>${highlight(l.bad)}</code></pre>
+      </div>
+      <div class="card good">
+        <h4>Avec ES6+</h4>
+        <pre><code>${highlight(l.good)}</code></pre>
+      </div>
+    </div>
+
+    <div class="playground">
+      <div class="pg-head">
+        <span class="pg-title">⚡ Playground — édite et exécute</span>
+        <div class="pg-actions">
+          <button class="btn" id="resetBtn">Réinitialiser</button>
+          <button class="btn primary" id="runBtn">▶ Exécuter <kbd>Ctrl</kbd>+<kbd>↵</kbd></button>
+        </div>
+      </div>
+      <textarea class="editor" id="editor" spellcheck="false">${l.play}</textarea>
+      <div class="console" id="console"><span class="info">// La sortie apparaîtra ici...</span></div>
+    </div>
+
+    <div class="quiz">
+      <h3>🧩 Quiz éclair</h3>
+      <p class="q">${l.quiz.q.replace(/\n/g,"<br>")}</p>
+      <div class="quiz-options" id="quizOpts">
+        ${l.quiz.options.map((o,i) => `<button class="quiz-opt" data-i="${i}">${o}</button>`).join("")}
+      </div>
+      <div class="quiz-feedback" id="quizFb"></div>
+    </div>
+
+    <div class="footer-nav">
+      <button class="btn" id="prevBtn" ${currentIdx===0?"disabled style='opacity:.4'":""}>← Précédent</button>
+      <button class="btn primary" id="nextBtn">${currentIdx===LESSONS.length-1?"Terminer ✨":"Suivant →"}</button>
+    </div>
+  `;
+
+        document.getElementById("runBtn").onclick = runCode;
+        document.getElementById("resetBtn").onclick = () => {
+            document.getElementById("editor").value = l.play;
+            document.getElementById("console").innerHTML = '<span class="info">// La sortie apparaîtra ici...</span>';
+        };
+        document.getElementById("editor").addEventListener("keydown", (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); runCode(); }
+            if (e.key === "Tab") {
+                e.preventDefault();
+                const ed = e.target;
+                const start = ed.selectionStart, end = ed.selectionEnd;
+                ed.value = ed.value.substring(0,start) + "  " + ed.value.substring(end);
+                ed.selectionStart = ed.selectionEnd = start + 2;
+            }
+        });
+
+        document.querySelectorAll(".quiz-opt").forEach(btn => {
+            btn.onclick = () => onQuizAnswer(parseInt(btn.dataset.i,10));
+        });
+
+        document.getElementById("prevBtn").onclick = () => {
+            if (currentIdx > 0) { currentIdx--; state.last = currentIdx; saveState(); renderAll(); }
+        };
+        document.getElementById("nextBtn").onclick = () => {
+            if (currentIdx < LESSONS.length-1) {
+                currentIdx++; state.last = currentIdx; saveState(); renderAll();
+            } else {
+                const done = Object.keys(state.done).filter(k => state.done[k]).length;
+                toast(done === LESSONS.length ? "🎉 Bravo, toutes les leçons sont validées !" : `Tu as terminé ${done}/${LESSONS.length}. Reviens valider les autres quiz !`, "good");
+            }
+        };
+    }
+
+    function runCode(){
+        const code = document.getElementById("editor").value;
+        const cons = document.getElementById("console");
+        cons.innerHTML = "";
+        const log = (...args) => {
+            const line = args.map(a => {
+                if (typeof a === "string") return a;
+                try { return JSON.stringify(a, (k,v) => typeof v === "bigint" ? v.toString()+"n" : v, 2); }
+                catch(e){ return String(a); }
+            }).join(" ");
+            cons.innerHTML += line + "\n";
+        };
+        const customConsole = { log, error:(...a)=>{ cons.innerHTML += `<span class="err">${a.join(" ")}</span>\n`; }, warn:log, info:log };
+        try {
+            const fn = new Function("console", `"use strict";\n${code}`);
+            const r = fn(customConsole);
+            if (r !== undefined) log("→", r);
+        } catch (err) {
+            cons.innerHTML += `<span class="err">${err.name}: ${err.message}</span>\n`;
+        }
+    }
+
+    function onQuizAnswer(i){
+        const l = LESSONS[currentIdx];
+        const opts = document.querySelectorAll(".quiz-opt");
+        const fb = document.getElementById("quizFb");
+        opts.forEach(o => o.disabled = true);
+        if (i === l.quiz.answer) {
+            opts[i].classList.add("correct");
+            fb.className = "quiz-feedback good";
+            fb.textContent = "✅ Exact ! " + l.quiz.explain;
+            if (!state.done[l.id]) {
+                state.done[l.id] = true;
+                saveState();
+                toast("Leçon validée 🎉", "good");
+                renderNav();
+                const meta = document.querySelector(".meta");
+                if (meta && !meta.innerHTML.includes("terminée")) {
+                    meta.innerHTML += '<span class="badge" style="color:var(--good);border-color:rgba(52,211,153,.3)">✓ terminée</span>';
+                }
+            }
+        } else {
+            opts[i].classList.add("wrong");
+            opts[l.quiz.answer].classList.add("correct");
+            fb.className = "quiz-feedback bad";
+            fb.textContent = "❌ Pas tout à fait. " + l.quiz.explain;
+        }
+    }
+
+    function toast(msg, kind=""){
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = "toast show " + kind;
+        setTimeout(()=> t.className = "toast " + kind, 2400);
+    }
+
+    function renderAll(){
+        renderNav();
+        renderLesson();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "TEXTAREA") return;
+        if (e.key === "ArrowLeft" && currentIdx > 0) { currentIdx--; state.last = currentIdx; saveState(); renderAll(); }
+        if (e.key === "ArrowRight" && currentIdx < LESSONS.length-1) { currentIdx++; state.last = currentIdx; saveState(); renderAll(); }
+    });
+
+    renderAll();
+</script>
+</body>
+</html>

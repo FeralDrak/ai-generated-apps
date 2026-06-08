@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Weather Dashboard</title>
+    <style>
+        /* --- Global Styling and Setup --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121218;
+            color: #f0f0f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #8d9fff;
+            margin-bottom: 30px;
+            text-shadow: 0 0 5px rgba(141, 159, 255, 0.5);
+        }
+
+        /* --- Control Panel --- */
+        #controls {
+            margin-bottom: 40px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .weather-button {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .weather-button:hover {
+            background-color: #34495e;
+            transform: translateY(-2px);
+        }
+
+        /* --- Grid Container for Cards --- */
+        #weather-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1200px;
+        }
+
+        /* --- Weather Card Styling --- */
+        .weather-card {
+            background-color: rgba(35, 48, 65, 0.7);
+            backdrop-filter: blur(8px); /* Gives a frosted glass effect */
+            border-radius: 20px;
+            padding: 30px;
+            width: 280px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative; /* Essential for absolute positioning of animations */
+            overflow: hidden;
+            transition: transform 0.4s ease;
+        }
+
+        .weather-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 20px;
+            z-index: 10; /* Ensure text is above animations */
+            position: relative;
+        }
+
+        h2 {
+            font-size: 2em;
+            margin: 5px 0;
+            color: #ecf0f1;
+        }
+
+        p.description {
+            font-size: 1.1em;
+            color: #bdc3c7;
+        }
+
+        /* --- Animation Layers (The Visuals) --- */
+
+        /* General animation container for controlling visibility/state */
+        .weather-animation-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicking through the animation to content */
+            z-index: 5;
+        }
+
+        /* ==================== RAIN ANIMATION ==================== */
+        .rain::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: repeating-linear-gradient(
+                    to bottom,
+                    rgba(30, 50, 70, 0.2) 0px,
+                    rgba(30, 50, 70, 0.2) 1px, /* Gap between raindrops */
+                    transparent 1px,
+                    transparent 8px
+            );
+            background-size: 100% 20px; /* Controls density and speed factor */
+            animation: fallRain linear infinite;
+        }
+
+        @keyframes fallRain {
+            from { background-position: 0 0; }
+            to { background-position: 0 150px; }
+        }
+
+        /* ==================== SNOW ANIMATION ==================== */
+        .snow .weather-animation-layer::before,
+        .snow .weather-animation-layer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+            /* We use multiple divs or complex gradient patterns for better snow effect */
+        }
+
+        @keyframes snowfall {
+            from { transform: translate(-100%, 0); opacity: 1; }
+            to { transform: translate(100%, 100vh); opacity: 0; }
+        }
+        /* Simple Snowfall Div Generator (CSS only way to make many flakes) */
+        .snow-flake {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            opacity: 0; /* Start hidden */
+        }
+
+        /* ==================== SUN ANIMATION ==================== */
+        .sun {
+            background-color: #ffeb3b;
+            box-shadow: inset 0 -10px 20px rgba(255, 227, 59, 0.4);
+        }
+        .sun .weather-animation-layer::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translate(-50%, 0%);
+            width: 200%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 230, 0, 0.4) 0px, transparent 50%);
+            animation: shineRays 8s linear infinite;
+        }
+
+        @keyframes shineRays {
+            from { transform: translate(-50%, 0%) scale(1); }
+            to { transform: translate(-50%, 200vh) scale(1.5); }
+        }
+
+        /* ==================== WIND ANIMATION ==================== */
+        .wind .weather-animation-layer::before,
+        .wind .weather-animation-layer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(141, 159, 255, 0.8) 50%, rgba(255, 255, 255, 0) 100%);
+            opacity: 0; /* Hidden initially */
+        }
+
+        /* Create multiple wind lines for effect */
+        .wind .weather-animation-layer::before {
+            top: 10%;
+            width: 2px;
+            height: 80%;
+            background-color: rgba(141, 159, 255, 0.6);
+            transform: translateX(-100%);
+            animation: moveWindLine1 linear infinite;
+        }
+
+        .wind .weather-animation-layer::after {
+            top: 70%;
+            width: 3px;
+            height: 80%;
+            background-color: rgba(255, 165, 0, 0.7);
+            transform: translateX(-100%);
+            animation: moveWindLine2 linear infinite;
+        }
+
+        @keyframes moveWindLine1 {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(100%); opacity: 0.5; }
+        }
+        @keyframes moveWindLine2 {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(100%); opacity: 0.4; }
+        }
+
+    </style>
+</head>
+<body>
+
+<h1>Animated Weather Forecast Dashboard</h1>
+
+<div id="controls">
+    <button class="weather-button" onclick="setWeather('wind')">Windy</button>
+    <button class="weather-button" onclick="setWeather('rain')">Rainy</button>
+    <button class="weather-button" onclick="setWeather('sun')">Sunny</button>
+    <button class="weather-button" onclick="setWeather('snow')">Snowy</button>
+</div>
+
+<div id="weather-container">
+    <!-- Card 1: Wind -->
+    <div id="card-1" class="weather-card wind" data-condition="Windy">
+        <div class="weather-animation-layer"></div>
+        <div class="card-header">
+            <h2>💨</h2>
+            <p>Windy</p>
+        </div>
+        <p class="description">High winds are expected with moving clouds.</p>
+    </div>
+
+    <!-- Card 2: Rain -->
+    <div id="card-2" class="weather-card rain" data-condition="Rainy">
+        <div class="weather-animation-layer"></div>
+        <div class="card-header">
+            <h2>💧</h2>
+            <p>Rainy</p>
+        </div>
+        <p class="description">Expect steady rainfall and wet conditions.</p>
+    </div>
+
+    <!-- Card 3: Sun -->
+    <div id="card-3" class="weather-card sun" data-condition="Sunny">
+        <div class="weather-animation-layer"></div>
+        <div class="card-header">
+            <h2>☀️</h2>
+            <p>Sunny</p>
+        </div>
+        <p class="description">A beautiful, bright day with clear skies.</p>
+    </div>
+
+    <!-- Card 4: Snow -->
+    <div id="card-4" class="weather-card snow" data-condition="Snowy">
+        <div class="weather-animation-layer"></div>
+        <div class="card-header">
+            <h2>❄️</h2>
+            <p>Snowy</p>
+        </div>
+        <p class="description">Gentle snowfall accumulation.</p>
+    </div>
+</div>
+
+<script>
+    const cards = document.querySelectorAll('.weather-card');
+
+    /**
+     * Clears all current animation classes and sets a base state on all cards.
+     */
+    function resetCards() {
+        cards.forEach(card => {
+            // Remove specific weather classes (rain, sun, wind, snow)
+            card.classList.remove('wind', 'rain', 'sun', 'snow');
+            // Ensure the animation layer is clean
+            card.querySelector('.weather-animation-layer').innerHTML = '';
+        });
+    }
+
+    /**
+     * Generates multiple snowflake elements and adds them to a card.
+     * @param {HTMLElement} container - The weather card element.
+     */
+    function setupSnow(container) {
+        const layer = container.querySelector('.weather-animation-layer');
+        // We'll use the pseudo-element method for simplicity, but we simulate multiple flakes by adding background patterns/multiple animations if needed.
+        // For a pure JS simulation of many random falling flakes:
+        for (let i = 0; i < 20; i++) {
+            const flake = document.createElement('div');
+            flake.className = 'snow-flake';
+            flake.style.left = `${Math.random() * 100}%`;
+            flake.style.top = `-${Math.random() * 300}px`; // Start above the card
+            flake.style.animationDuration = `${(Math.random() * 5) + 8}s`; // Slow fall
+            flake.style.animationName = 'fallSnow';
+            flake.style.animationTimingFunction = 'linear';
+            flake.style.animationPlayState = 'running';
+            flake.style.animationDelay = `${Math.random() * 5}s`;
+            layer.appendChild(flake);
+        }
+    }
+
+    // Add a specific keyframe for the JS generated snow (needs to be dynamic, usually better in <style>)
+    const styleSheet = document.createElement("style");
+    styleSheet.innerHTML = `
+            @keyframes fallSnow {
+                0% { transform: translate(0, 0); opacity: 0; }
+                10% { opacity: 1; }
+                100% { transform: translate(-5vw, 105vh); opacity: 0.8; }
+            }
+        `;
+    document.head.appendChild(styleSheet);
+
+
+    /**
+     * Sets the active weather condition for all cards.
+     * @param {string} condition - The weather type ('wind', 'rain', 'sun', 'snow').
+     */
+    function setWeather(condition) {
+        resetCards();
+
+        // 1. Set the class and text content for all cards based on the selected condition
+        cards.forEach((card, index) => {
+            const cardId = `card-${index + 1}`;
+            let newIcon = '';
+            let newTitle = '';
+            let newDesc = '';
+
+            if (condition === 'wind') {
+                newIcon = '💨';
+                newTitle = 'Windy';
+                newDesc = 'High winds are expected with moving clouds.';
+            } else if (condition === 'rain') {
+                newIcon = '💧';
+                newTitle = 'Rainy';
+                newDesc = 'Expect steady rainfall and wet conditions.';
+            } else if (condition === 'sun') {
+                newIcon = '☀️';
+                newTitle = 'Sunny';
+                newDesc = 'A beautiful, bright day with clear skies.';
+            } else if (condition === 'snow') {
+                newIcon = '❄️';
+                newTitle = 'Snowy';
+                newDesc = 'Gentle snowfall accumulation.';
+            }
+
+            // Update content and apply the class
+            card.querySelector('.weather-animation-layer').innerHTML = ''; // Clear old animations first
+            card.className = `weather-card ${condition}`; // Apply the new weather class
+
+            const header = card.querySelector('.card-header');
+            header.querySelector('h2').textContent = newIcon;
+            header.querySelector('p:nth-child(2)').textContent = newTitle;
+
+            // Special handling for Snow animation (JS setup is necessary)
+            if (condition === 'snow') {
+                setupSnow(card);
+            }
+        });
+    }
+
+    // Initialize the dashboard with a default state (e.g., Rainy)
+    document.addEventListener('DOMContentLoaded', () => {
+        setWeather('rain');
+    });
+</script>
+
+</body>
+</html>
