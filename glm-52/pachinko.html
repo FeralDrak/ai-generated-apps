@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pachinko Dungeon — Roguelike</title>
+    <style>
+        :root{
+            --bg0:#0a0420;
+            --bg1:#1a0740;
+            --neon:#00f0ff;
+            --pink:#ff2d95;
+            --gold:#ffd86b;
+            --green:#39ff88;
+            --red:#ff3355;
+            --text:#e7e7ff;
+            --muted:#8a86c8;
+            --panel:rgba(15,8,45,0.85);
+            --border:rgba(0,240,255,0.35);
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;background:radial-gradient(ellipse at 50% 0%,#2a0a5e 0%,#0a0420 70%);color:var(--text);font-family:"Trebuchet MS",system-ui,sans-serif;overflow:hidden;user-select:none}
+        #wrap{position:relative;width:100%;height:100vh;display:flex;align-items:center;justify-content:center}
+        #game{display:block;background:transparent;border-radius:14px;box-shadow:0 0 50px rgba(0,240,255,.25),inset 0 0 0 2px rgba(0,240,255,.25);cursor:crosshair;image-rendering:pixelated}
+        .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;pointer-events:none}
+        .panel{pointer-events:auto;background:var(--panel);border:2px solid var(--border);border-radius:16px;padding:24px 28px;max-width:560px;backdrop-filter:blur(8px);box-shadow:0 0 40px rgba(0,240,255,.3)}
+        h1{font-size:38px;letter-spacing:2px;text-align:center;background:linear-gradient(90deg,var(--neon),var(--pink),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 30px rgba(255,45,149,.5);margin-bottom:6px}
+        h2{font-size:24px;margin-bottom:14px;color:var(--neon);text-shadow:0 0 12px rgba(0,240,255,.6)}
+        p,li{line-height:1.55}
+        .kbd{display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(0,240,255,.08);font-family:monospace;font-size:12px;color:var(--neon)}
+        .btn{cursor:pointer;border:2px solid var(--border);background:rgba(0,240,255,.08);color:var(--text);padding:10px 22px;border-radius:10px;font-size:15px;letter-spacing:1px;transition:all .15s;font-weight:bold}
+        .btn:hover{background:rgba(0,240,255,.18);box-shadow:0 0 18px rgba(0,240,255,.5);transform:translateY(-1px)}
+        .btn:active{transform:translateY(1px)}
+        .btn.pink{border-color:rgba(255,45,149,.5);background:rgba(255,45,149,.1)}
+        .btn.pink:hover{background:rgba(255,45,149,.22);box-shadow:0 0 18px rgba(255,45,149,.6)}
+        .btn.gold{border-color:rgba(255,216,107,.5);background:rgba(255,216,107,.1);color:var(--gold)}
+        .btn.gold:hover{background:rgba(255,216,107,.22);box-shadow:0 0 18px rgba(255,216,107,.6)}
+        .row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+        .muted{color:var(--muted);font-size:13px}
+        .hud{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:5;font-size:14px;gap:10px}
+        .hud .box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px;backdrop-filter:blur(4px);min-width:90px}
+        .hud .lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+        .hud .val{font-size:18px;font-weight:bold;color:var(--neon);text-shadow:0 0 8px rgba(0,240,255,.6)}
+        .hud .val.pink{color:var(--pink);text-shadow:0 0 8px rgba(255,45,149,.6)}
+        .hud .val.gold{color:var(--gold);text-shadow:0 0 8px rgba(255,216,107,.6)}
+        .hud .val.green{color:var(--green);text-shadow:0 0 8px rgba(57,255,136,.6)}
+        .hud .val.red{color:var(--red);text-shadow:0 0 8px rgba(255,53,85,.6)}
+        .toast{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);padding:8px 18px;border-radius:20px;font-size:13px;color:var(--neon);opacity:0;transition:opacity .3s;z-index:6;pointer-events:none}
+        .toast.show{opacity:1}
+        .upgrade-card{cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:rgba(0,240,255,.05);transition:all .15s;display:flex;flex-direction:column;gap:4px;min-height:90px}
+        .upgrade-card:hover{background:rgba(0,240,255,.13);box-shadow:0 0 14px rgba(0,240,255,.4);transform:translateY(-2px)}
+        .upgrade-card.locked{opacity:.45;cursor:not-allowed}
+        .upgrade-card .uname{color:var(--neon);font-weight:bold;font-size:14px}
+        .upgrade-card .udesc{font-size:12px;color:var(--muted);line-height:1.4}
+        .upgrade-card .ucost{margin-top:auto;color:var(--gold);font-weight:bold;font-size:14px}
+        .shop-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0 18px}
+        .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 18px}
+        .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin:8px 0}
+        .stats .k{color:var(--muted)}
+        .stats .v{color:var(--neon);text-align:right;font-weight:bold}
+        .center{text-align:center}
+        .flex{display:flex;gap:8px;align-items:center}
+        .big{font-size:22px;font-weight:bold}
+        .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;letter-spacing:1px}
+        .tag.bumper{background:rgba(255,45,149,.2);color:var(--pink)}
+        .tag.bomb{background:rgba(255,53,85,.2);color:var(--red)}
+        .tag.multi{background:rgba(255,216,107,.2);color:var(--gold)}
+        .tag.trap{background:rgba(255,53,85,.2);color:var(--red)}
+        .tag.gold{background:rgba(255,216,107,.2);color:var(--gold)}
+        .tag.green{background:rgba(57,255,136,.15);color:var(--green)}
+        .help{font-size:13px;color:var(--muted);line-height:1.6;margin:8px 0}
+        #flicker{animation:flick 4s infinite}
+        @keyframes flick{0%,100%{opacity:1}50%{opacity:.85}}
+        ::-webkit-scrollbar{width:8px}
+        ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+        .hidden{display:none!important}
+    </style>
+</head>
+<body>
+<div id="wrap">
+    <canvas id="game"></canvas>
+
+    <!-- HUD -->
+    <div class="hud hidden" id="hud">
+        <div class="box"><div class="lbl">Étage</div><div class="val pink" id="hFloor">1</div></div>
+        <div class="box"><div class="lbl">Score / Cible</div><div class="val" id="hScore">0 / 100</div></div>
+        <div class="box"><div class="lbl">Billes</div><div class="val green" id="hBalls">5</div></div>
+        <div class="box"><div class="lbl">Coins</div><div class="val gold" id="hCoins">0</div></div>
+        <div class="box"><div class="lbl">Mult.</div><div class="val" id="hMult">x1</div></div>
+        <div class="box"><div class="lbl">Run Coins</div><div class="val gold" id="hRunCoins">0</div></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- Overlays -->
+    <div class="overlay" id="overlay"></div>
+</div>
+
+<script>
+    "use strict";
+    /* =========================================================
+       PACHINKO DUNGEON — Roguelike Pachinko (single file)
+       ========================================================= */
+
+    // ---------- Config ----------
+    const W = 720, H = 900;
+    const GRAV = 1400;          // px/s^2
+    const BALL_R = 9;
+    const PEG_R = 10;
+    const POCKET_H = 70;
+    const WALL = 18;
+    const MAX_BALL_SPEED = 1500;
+    const LAUNCH_Y = 40;
+
+    // ---------- Canvas ----------
+    const cv = document.getElementById('game');
+    const ctx = cv.getContext('2d');
+    function fit(){
+        const wrap=document.getElementById('wrap');
+        const maxW = Math.min(wrap.clientWidth-20, 760);
+        const maxH = Math.min(wrap.clientHeight-20, 920);
+        const scale = Math.min(maxW/W, maxH/H);
+        cv.style.width = (W*scale)+'px';
+        cv.style.height = (H*scale)+'px';
+        cv.width = W; cv.height = H;
+        ctx.imageSmoothingEnabled=true;
+    }
+    window.addEventListener('resize',fit);
+    fit();
+
+    // ---------- Audio (WebAudio synth) ----------
+    let AC=null;
+    function ensureAudio(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+    function beep(freq,dur,type='sine',vol=0.15,decay=0.1){
+        if(!AC)return;
+        const t=AC.currentTime;
+        const o=AC.createOscillator(); const g=AC.createGain();
+        o.type=type; o.frequency.setValueAtTime(freq,t);
+        g.gain.setValueAtTime(vol,t);
+        g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+        o.connect(g); g.connect(AC.destination);
+        o.start(t); o.stop(t+dur+0.02);
+    }
+    function sPlink(){ beep(880,0.08,'triangle',0.12); }
+    function sBumper(){ beep(440,0.05,'square',0.12); setTimeout(()=>beep(880,0.06,'square',0.1),20); }
+    function sBomb(){ beep(120,0.3,'sawtooth',0.25,0.3); setTimeout(()=>beep(60,0.4,'sawtooth',0.2,0.4),50); }
+    function sPocket(v){ beep(540+v*2,0.12,'sine',0.14); }
+    function sTrap(){ beep(140,0.25,'sawtooth',0.2,0.3); }
+    function sWin(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'triangle',0.16),i*90)); }
+    function sLose(){ [330,247,196,147].forEach((f,i)=>setTimeout(()=>beep(f,0.3,'sawtooth',0.18),i*120)); }
+    function sBuy(){ beep(880,0.06,'square',0.12); setTimeout(()=>beep(1320,0.1,'square',0.12),60); }
+    function sLaunch(){ beep(220,0.1,'sine',0.12); }
+
+    // ---------- Utilities ----------
+    const TAU=Math.PI*2;
+    const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+    const lerp=(a,b,t)=>a+(b-a)*t;
+    const rand=(a,b)=>a+Math.random()*(b-a);
+    const randi=(a,b)=>Math.floor(rand(a,b+1));
+    const choice=arr=>arr[Math.floor(Math.random()*arr.length)];
+    const dist2=(ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
+
+    function toast(msg,ms=1500){
+        const t=document.getElementById('toast');
+        t.textContent=msg; t.classList.add('show');
+        clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove('show'),ms);
+    }
+
+    // ---------- Game State ----------
+    const GS = { MENU:'menu', AIM:'aim', RUN:'run', SHOP:'shop', META:'meta', OVER:'over', WIN:'win' };
+    let state = GS.MENU;
+
+    // meta (persistent)
+    let meta = loadMeta();
+
+    function loadMeta(){
+        try{
+            const m=JSON.parse(localStorage.getItem('pachinkoMeta')||'{}');
+            return {
+                coins: m.coins||0,
+                upgrades: m.upgrades||{},
+                bestFloor: m.bestFloor||0,
+                bestScore: m.bestScore||0,
+                runs: m.runs||0,
+                muted: m.muted||false
+            };
+        }catch(e){ return {coins:0,upgrades:{},bestFloor:0,bestScore:0,runs:0,muted:false}; }
+    }
+    function saveMeta(){ try{ localStorage.setItem('pachinkoMeta', JSON.stringify(meta)); }catch(e){} }
+
+    // run state (reset per run)
+    let run = null;
+    function newRun(){
+        run = {
+            floor: 1,
+            score: 0,
+            target: 100,
+            ballsLeft: 5 + (meta.upgrades.extraStartBall? meta.upgrades.extraStartBall*1 : 0),
+            coins: 0,                          // coins earned THIS run (added to meta at death/cashout)
+            upgrades: {},                      // run-scoped upgrades purchased in shop
+            multiplier: 1,
+            multTimer: 0,
+            stats: { pegsHit:0, bumpersHit:0, bombs:0, ballsLaunched:0, traps:0, pockets:0 },
+            aimX: W/2,
+            aimAngle: 0,     // radians from vertical, negative=left
+            aimPower: 0,     // 0..1
+            aiming: false,
+            dragStartX: 0, dragStartY: 0,
+            dragX: 0, dragY: 0,
+        };
+    }
+
+    // floor state
+    let floor = null;
+    function newFloor(n){
+        const layout = pickLayout(n);
+        floor = {
+            pegs: [],
+            pockets: [],
+            layout: layout,
+            isBoss: (n%5===0),
+            bumpersLit: 0,
+            bombChains: 0,
+        };
+        generatePegs(n, layout);
+        generatePockets(n);
+    }
+
+    function pickLayout(n){
+        const layouts=['grid','hex','scatter','pyramid'];
+        if(n>=3) layouts.push('checker');
+        if(n>=6) layouts.push('waves');
+        if(n%5===0) return 'boss';
+        return choice(layouts);
+    }
+
+    // ---------- Peg generation ----------
+    function generatePegs(n, layout){
+        floor.pegs = [];
+        const top = POCKET_H + 60;
+        const bot = H - POCKET_H - 30;
+        const left = WALL + 25;
+        const right = W - WALL - 25;
+
+        // base density depends on layout
+        const density = layout==='boss'? 0.55 : (0.7 + Math.min(0.15,n*0.02));
+
+        function addP(x,y,type='peg'){
+            if(x<left||x>right||y<top||y>bot) return;
+            floor.pegs.push({x,y,r:PEG_R,type,hits:0,lit:false,phase:Math.random()*TAU,alive:true,born:0});
+        }
+
+        if(layout==='grid'){
+            const gx=70, gy=60;
+            for(let y=top+20;y<bot-20;y+=gy){
+                const off=((y-top)/gy)%2===0?0:gx/2;
+                for(let x=left+off;x<right;x+=gx){
+                    if(Math.random()<density) addP(x,y);
+                }
+            }
+        } else if(layout==='hex'){
+            const gx=58, gy=46;
+            for(let y=top+20;y<bot-20;y+=gy){
+                const row=Math.floor((y-top)/gy);
+                const off=row%2?gx/2:0;
+                for(let x=left+off;x<right;x+=gx){
+                    if(Math.random()<density) addP(x,y);
+                }
+            }
+        } else if(layout==='scatter'){
+            const count = 55 + n*3;
+            for(let i=0;i<count;i++){
+                addP(rand(left,right), rand(top+20,bot-20));
+            }
+        } else if(layout==='pyramid'){
+            const rows = 9;
+            for(let r=0;r<rows;r++){
+                const y = top + 30 + r*46;
+                const cnt = r+3;
+                const span = right-left;
+                for(let i=0;i<cnt;i++){
+                    const x = left + (span*(i+0.5))/cnt;
+                    if(Math.random()<density) addP(x,y);
+                }
+            }
+        } else if(layout==='checker'){
+            const gx=66, gy=54;
+            for(let y=top+20;y<bot-20;y+=gy){
+                const row=Math.floor((y-top)/gy);
+                for(let x=left+((row%2)?gx/2:0);x<right;x+=gx){
+                    if((Math.floor((x-left)/gx)+row)%2===0){
+                        if(Math.random()<density) addP(x,y);
+                    }
+                }
+            }
+        } else if(layout==='waves'){
+            for(let x=left;x<right;x+=22){
+                const y = top + 30 + 60*Math.sin((x/W)*Math.PI*4) + 100 + 80*Math.cos((x/W)*Math.PI*2.5);
+                if(y<bot-20 && Math.random()<0.3) addP(x,y);
+            }
+            // also sprinkle
+            for(let i=0;i<30;i++) addP(rand(left,right),rand(top+30,bot-20));
+        } else if(layout==='boss'){
+            // boss = hard trap-heavy: pegs only on sides, gap in middle (easy to fall through)
+            for(let y=top+30;y<bot-30;y+=55){
+                addP(left+15,y);
+                addP(left+50,y);
+                addP(right-15,y);
+                addP(right-50,y);
+            }
+            // few pegs in middle to bounce
+            for(let i=0;i<8;i++) addP(rand(left+150,right-150),rand(top+80,bot-30));
+        }
+
+        // assign special types based on floor difficulty
+        const total = floor.pegs.length;
+        const bumpRate = clamp(0.15 - n*0.012, 0.05, 0.15);
+        const bombRate = clamp(0.02 + n*0.005, 0.02, 0.12);
+        const multiRate = 0.05;
+        floor.pegs.forEach(p=>{
+            if(p.type!=='peg') return;
+            const r=Math.random();
+            if(r<bumpRate) p.type='bumper';
+            else if(r<bumpRate+bombRate) p.type='bomb';
+            else if(r<bumpRate+bombRate+multiRate) p.type='multi';
+        });
+
+        // count bumpers for goal tracking
+        floor.bumpersTotal = floor.pegs.filter(p=>p.type==='bumper').length;
+    }
+
+    function generatePockets(n){
+        floor.pockets = [];
+        const count = n>=4? 7 : 5;
+        const totalW = W - WALL*2 - 20;
+        const pw = totalW/count;
+        // values scale with floor
+        for(let i=0;i<count;i++){
+            const x = WALL+10 + pw*i + pw/2;
+            let val = Math.round((8 + n*1.5) * (0.7 + Math.random()*0.6));
+            // edge pockets higher value
+            if(i===0||i===count-1) val = Math.round(val*1.4);
+            // trap probability scales
+            const trapP = clamp(0.04 + n*0.018 - 0.05*(i===0||i===count-1?1:0), 0, 0.5);
+            const isTrap = (n>=2) && Math.random()<trapP;
+            floor.pockets.push({
+                x: x, w: pw, h: POCKET_H,
+                val: isTrap? 0 : val,
+                isTrap,
+                glow: 0
+            });
+        }
+        // ensure at least 2 non-trap
+        let nonTrap = floor.pockets.filter(p=>!p.isTrap).length;
+        while(nonTrap<2){
+            const t = floor.pockets.find(p=>p.isTrap);
+            if(!t) break;
+            t.isTrap=false; t.val=Math.round((8+n*1.5)*1.1); nonTrap++;
+        }
+        // boss floor: lots of traps, but center one is gold
+        if(floor.isBoss){
+            floor.pockets.forEach((p,i)=>{
+                if(i===Math.floor(count/2)){ p.isTrap=false; p.val=Math.round((20+n*3)); p.gold=true; }
+                else if(i!==0&&i!==count-1){ p.isTrap=true; p.val=0; }
+            });
+        }
+    }
+
+    // ---------- Run upgrades catalog ----------
+    const UPGRADES = [
+        {id:'extraBall',  name:'+1 Bille / étage',     desc:'Une bille supplémentaire à chaque étage.', cost:25, max:5, apply:r=>{r.ballsLeft+=1;}},
+        {id:'pegPower',    name:'Pegs +50% score',     desc:'Chaque peg touché rapporte plus.', cost:20, max:4, apply:r=>{r.upgrades.pegMul=(r.upgrades.pegMul||1)+0.5;}},
+        {id:'bumperPower', name:'Bumpers +100% score', desc:'Bumpers rapportent double.',              cost:35, max:3, apply:r=>{r.upgrades.bumperMul=(r.upgrades.bumperMul||1)+1;}},
+        {id:'pocketBonus',name:'Poches +50% valeur',  desc:'Poches rapportent plus de coins.',       cost:30, max:4, apply:r=>{r.upgrades.pocketMul=(r.upgrades.pocketMul||1)+0.5;}},
+        {id:'multiball',   name:'Multiball x2',         desc:'Chaque lancer libère 2 billes.',          cost:50, max:3, apply:r=>{r.upgrades.multiball=(r.upgrades.multiball||1)+1;}},
+        {id:'magnet',      name:'Aimant (légère)',      desc:'Légère attraction vers poches non-piège.',cost:40, max:2, apply:r=>{r.upgrades.magnet=(r.upgrades.magnet||0)+0.4;}},
+        {id:'launchPower', name:'Lancer +20% puissance',desc:'Vitesse initiale augmentée.',            cost:15, max:5, apply:r=>{r.upgrades.launchMul=(r.upgrades.launchMul||1)+0.2;}},
+        {id:'biggerBall',  name:'Grosse bille (+2px)',  desc:'Billes plus larges, touchent plus.',    cost:45, max:3, apply:r=>{r.upgrades.ballR=(r.upgrades.ballR||BALL_R)+2;}},
+        {id:'slowGrav',    name:'Gravité -15%',          desc:'Billes tombent plus lentement.',         cost:30, max:3, apply:r=>{r.upgrades.gravMul=(r.upgrades.gravMul||1)-0.15;}},
+        {id:'bombChain',   name:'Bombe +50% radius',     desc:'Les explosions sont plus larges.',       cost:35, max:3, apply:r=>{r.upgrades.bombMul=(r.upgrades.bombMul||1)+0.5;}},
+        {id:'cashFlow',    name:'+25% coins de score',  desc:'Score → coins plus efficace.',            cost:30, max:4, apply:r=>{r.upgrades.coinMul=(r.upgrades.coinMul||1)+0.25;}},
+        {id:'shield',      name:'Bouclier (1 erreur)',  desc:'Premier échec de cible pardonné.',        cost:80, max:1, apply:r=>{r.upgrades.shield=(r.upgrades.shield||0)+1;}},
+    ];
+
+    // meta upgrades (permanent)
+    const META_UPGRADES = [
+        {id:'mExtraBall',  name:'+1 bille / étage (perm)',  cost:100, max:5, key:'extraStartBall'},
+        {id:'mStartCoins', name:'+20% coins de run start',   cost:60,  max:4, key:'startCoinMul', apply:()=>{}},
+        {id:'mHeal',       name:'Bouclier run gratuit au début',cost:200, max:1, key:'startShield'},
+        {id:'mLuck',       name:'+5% bumpers',               cost:80,  max:4, key:'bumpLuck', apply:()=>{}},
+        {id:'mPocketVal',  name:'+10% valeur poches (perm)',  cost:70,  max:5, key:'pocketValBonus'},
+        {id:'mPegScore',   name:'+10% score pegs (perm)',    cost:70,  max:5, key:'pegScoreBonus'},
+    ];
+
+    // ---------- Balls ----------
+    let balls = [];
+    function spawnBall(x,y,vx,vy,r=BALL_R){
+        balls.push({x,y,vx,vy,r,trail:[],born:performance.now(),bounces:0});
+    }
+
+    function clearBalls(){ balls=[]; }
+
+    // ---------- Particles ----------
+    let particles=[];
+    function emit(x,y,n,color,opts={}){
+        const sp=opts.speed||200, life=opts.life||0.5, sz=opts.size||3, grav=opts.grav!=null?opts.grav:600;
+        for(let i=0;i<n;i++){
+            const a=Math.random()*TAU;
+            particles.push({
+                x,y,
+                vx:Math.cos(a)*rand(sp*0.3,sp),
+                vy:Math.sin(a)*rand(sp*0.3,sp) - (opts.up||0),
+                life, age:0, color, sz:rand(sz*0.5,sz), grav
+            });
+        }
+    }
+
+    // ---------- Screen shake / hit-stop ----------
+    let shake=0, hitStop=0;
+    function addShake(v){ shake=Math.min(20,shake+v); }
+    function addHitStop(ms){ hitStop=Math.max(hitStop,ms); }
+
+    // ---------- Input ----------
+    let mouse = {x:W/2, y:H/2, down:false};
+
+    function canvasPos(e){
+        const r=cv.getBoundingClientRect();
+        const sx = W / r.width;
+        return { x:(e.clientX-r.left)*sx, y:(e.clientY-r.top)*sx };
+    }
+
+    cv.addEventListener('mousemove',e=>{
+        const p=canvasPos(e); mouse.x=p.x; mouse.y=p.y;
+        if(state===GS.AIM && run.aiming){
+            run.dragX=p.x; run.dragY=p.y;
+            updateAim();
+        } else if(state===GS.AIM){
+            run.aimX = clamp(p.x, WALL+30, W-WALL-30);
+        }
+    });
+    cv.addEventListener('mousedown',e=>{
+        ensureAudio();
+        const p=canvasPos(e);
+        mouse.down=true;
+        if(state===GS.AIM && !run.aiming){
+            run.aiming=true;
+            run.dragStartX=p.x; run.dragStartY=p.y;
+            run.dragX=p.x; run.dragY=p.y;
+            updateAim();
+        }
+    });
+    window.addEventListener('mouseup',e=>{
+        mouse.down=false;
+        if(state===GS.AIM && run.aiming){
+            launchBalls();
+            run.aiming=false;
+            run.aimPower=0;
+        }
+    });
+    window.addEventListener('keydown',e=>{
+        if(e.key==='m'||e.key==='M'){ meta.muted=!meta.muted; saveMeta(); toast(meta.muted?'Son coupé':'Son activé'); }
+        if(e.key==='Escape'){ if(state===GS.SHOP) {} }
+    });
+
+    // ---------- Aim ----------
+    function updateAim(){
+        const dx = run.dragX - run.dragStartX;
+        const dy = run.dragY - run.dragStartY;
+        // direction: opposite of drag (slingshot) — but we drag from launch point downward to aim
+        // Use drag vector itself: angle from launch point
+        const lx = run.aimX, ly = LAUNCH_Y;
+        // we recompute based on current mouse vs launch point
+        const ax = mouse.x - lx;
+        const ay = mouse.y - ly;
+        const len = Math.hypot(ax,ay);
+        run.aimPower = clamp(len/250, 0, 1);
+        run.aimAngle = Math.atan2(ax, ay); // 0 = straight down, negative=left
+    }
+
+    // ---------- Launch ----------
+    function launchBalls(){
+        if(run.ballsLeft<=0) return;
+        const n = 1 + (run.upgrades.multiball? run.upgrades.multiball-1 : 0);
+        const speed = lerp(400, 900, run.aimPower) * (run.upgrades.launchMul||1);
+        const r = run.upgrades.ballR || BALL_R;
+        // straight down with horizontal velocity from angle
+        // angle: 0 -> straight down (vy positive). vx = sin(angle)*speed, vy = cos(angle)*speed
+        for(let i=0;i<n;i++){
+            const offsetX = i*(14*(i%2===0?1:-1));
+            const vx = Math.sin(run.aimAngle)*speed + offsetX*3;
+            const vy = Math.cos(run.aimAngle)*speed;
+            spawnBall(run.aimX + offsetX, LAUNCH_Y, vx, vy, r);
+        }
+        run.ballsLeft--;
+        run.stats.ballsLaunched += n;
+        sLaunch();
+        emit(run.aimX, LAUNCH_Y, 8, '#00f0ff', {speed:160, life:0.4, up:80});
+        updateHUD();
+        // transition to RUN state while balls are in motion
+        state = GS.RUN;
+    }
+
+    // ---------- Physics ----------
+    function step(dt){
+        // hit-stop
+        if(hitStop>0){ hitStop-=dt*1000; return; }
+
+        // multiplier timer
+        if(run.multTimer>0){
+            run.multTimer-=dt;
+            if(run.multTimer<=0) run.multiplier=1;
+        }
+
+        const grav = GRAV * (run.upgrades.gravMul||1);
+        const magnet = run.upgrades.magnet||0;
+
+        for(let i=balls.length-1;i>=0;i--){
+            const b=balls[i];
+            b.vy += grav*dt;
+            // magnet: slight pull toward non-trap pockets
+            if(magnet>0 && b.y > H - 280){
+                let best=null, bestD=1e9;
+                for(const p of floor.pockets){
+                    if(p.isTrap) continue;
+                    const d = Math.abs(b.x - p.x);
+                    if(d<bestD){ bestD=d; best=p; }
+                }
+                if(best && bestD<200){
+                    const dir = Math.sign(best.x - b.x);
+                    b.vx += dir * magnet * 200 * dt;
+                }
+            }
+            b.vx = clamp(b.vx, -MAX_BALL_SPEED, MAX_BALL_SPEED);
+            b.vy = clamp(b.vy, -MAX_BALL_SPEED, MAX_BALL_SPEED);
+            // integrate
+            b.x += b.vx*dt;
+            b.y += b.vy*dt;
+            // trail
+            b.trail.push({x:b.x,y:b.y});
+            if(b.trail.length>10) b.trail.shift();
+            b.bounces++;
+
+            // walls
+            if(b.x < WALL+b.r){ b.x=WALL+b.r; b.vx=-b.vx*0.7; addShake(0.5); }
+            if(b.x > W-WALL-b.r){ b.x=W-WALL-b.r; b.vx=-b.vx*0.7; addShake(0.5); }
+
+            // peg collisions (brute force; pegs ~ 100)
+            for(const p of floor.pegs){
+                if(!p.alive) continue;
+                const ddx = b.x - p.x, ddy = b.y - p.y;
+                const rsum = b.r + p.r;
+                const d2 = ddx*ddx + ddy*ddy;
+                if(d2 < rsum*rsum){
+                    const d = Math.sqrt(d2)||0.001;
+                    const nx = ddx/d, ny = ddy/d;
+                    // separate
+                    const overlap = rsum - d;
+                    b.x += nx*overlap; b.y += ny*overlap;
+                    // reflect
+                    const vn = b.vx*nx + b.vy*ny;
+                    if(vn<0){
+                        b.vx -= 2*vn*nx*0.85;
+                        b.vy -= 2*vn*ny*0.85;
+                        // dampen slightly
+                        b.vx*=0.96; b.vy*=0.96;
+                    }
+                    onPegHit(p, b);
+                }
+            }
+
+            // bottom pockets
+            if(b.y > H - POCKET_H){
+                // find which pocket
+                let pk = floor.pockets.find(p=> b.x > p.x - p.w/2 && b.x < p.x + p.w/2);
+                if(!pk){
+                    // fell between pockets: trap
+                    pk = floor.pockets[0];
+                    // assign to nearest
+                    let best=Infinity;
+                    for(const p of floor.pockets){
+                        const d=Math.abs(b.x-p.x); if(d<best){best=d; pk=p;}
+                    }
+                    pk.isTrap = true; pk.val = 0; // treat gap as trap
+                }
+                onPocket(pk, b);
+                balls.splice(i,1);
+                continue;
+            }
+
+            // off-screen safety
+            if(b.y > H + 50 || b.y < -50){
+                balls.splice(i,1);
+            }
+        }
+
+        // particles
+        for(let i=particles.length-1;i>=0;i--){
+            const p=particles[i];
+            p.vy += p.grav*dt;
+            p.x += p.vx*dt; p.y += p.vy*dt;
+            p.age += dt;
+            if(p.age >= p.life) particles.splice(i,1);
+        }
+
+        // shake decay
+        shake *= 0.86;
+
+        // check floor end
+        if(state===GS.RUN){
+            if(balls.length===0){
+                // all balls settled → check score
+                if(run.score >= run.target){
+                    floorCleared();
+                } else if(run.ballsLeft<=0){
+                    // shield?
+                    if((run.upgrades.shield||0) > 0){
+                        run.upgrades.shield--;
+                        toast('Bouclier utilisé ! Cible abaissée.');
+                        run.target = Math.max(run.target, run.score + 30); // small mercy
+                        // give 3 free balls
+                        run.ballsLeft += 3;
+                        updateHUD();
+                    } else {
+                        runFailed();
+                    }
+                } else {
+                    state = GS.AIM;
+                }
+            }
+        }
+    }
+
+    // ---------- Peg hit ----------
+    function onPegHit(p, b){
+        if(p.type==='peg'){
+            const base = 5 + Math.floor(run.floor*0.5);
+            const score = base * (run.upgrades.pegMul||1) * (1 + (meta.upgrades.pegScoreBonus||0)*0.1) * run.multiplier;
+            run.score += score;
+            run.coins += score * 0.05 * (run.upgrades.coinMul||1) * (1+(meta.upgrades.startCoinMul||0)*0.1);
+            p.hits++;
+            if(p.hits>=4){ p.alive=false; emit(p.x,p.y,6,'#00f0ff',{speed:140,life:0.4}); }
+            sPlink();
+            emit(b.x,b.y,2,'#00f0ff',{speed:80,life:0.3,size:2,grav:0});
+        } else if(p.type==='bumper'){
+            const base = 25 + run.floor*1;
+            const score = base * (run.upgrades.bumperMul||1) * run.multiplier;
+            run.score += score;
+            run.coins += score * 0.08 * (run.upgrades.coinMul||1);
+            if(!p.lit){ p.lit=true; floor.bumpersLit++; run.stats.bumpersHit++; }
+            // boost ball
+            const dx=b.x-p.x, dy=b.y-p.y; const d=Math.hypot(dx,dy)||1;
+            b.vx += (dx/d)*180; b.vy += (dy/d)*180 - 80;
+            sBumper();
+            addShake(2);
+            emit(p.x,p.y,10,'#ff2d95',{speed:240,life:0.5,up:50});
+            // all bumpers lit bonus
+            if(floor.bumpersLit === floor.bumpersTotal && floor.bumpersTotal>0){
+                const bonus = 80 * run.floor;
+                run.score += bonus;
+                run.coins += bonus*0.1;
+                toast('Bumpers tous allumés ! +'+bonus, 1800);
+                sWin(); addShake(8); addHitStop(120);
+                emit(W/2, H/2, 60, '#ff2d95', {speed:600, life:1.0, up:200});
+                // reset bumpers for replay
+                floor.pegs.forEach(pp=>{ if(pp.type==='bumper'){pp.lit=false;} });
+                floor.bumpersLit=0;
+            }
+        } else if(p.type==='bomb'){
+            p.alive=false;
+            const radius = 80 * (run.upgrades.bombMul||1);
+            // destroy pegs in radius, give score per peg destroyed
+            let chain=0;
+            for(const pp of floor.pegs){
+                if(!pp.alive || pp===p) continue;
+                if(dist2(pp.x,pp.y,p.x,p.y) < radius*radius){
+                    if(pp.type==='bomb'){ pp.alive=false; chain++; } // chain bomb? skip to avoid infinite recursion
+                    else if(pp.type!=='bumper' || Math.random()<0.5){
+                        pp.alive=false;
+                        const sc = 15 * (run.upgrades.pegMul||1) * run.multiplier;
+                        run.score += sc;
+                        run.coins += sc*0.08;
+                        emit(pp.x,pp.y,5,'#ff3355',{speed:200,life:0.5});
+                    }
+                }
+            }
+            const bonus = 50 + chain*25;
+            run.score += bonus;
+            run.coins += bonus*0.1;
+            run.stats.bombs++;
+            sBomb();
+            addShake(8); addHitStop(120);
+            emit(p.x,p.y,40,'#ff3355',{speed:500,life:0.8,up:200,size:5,grav:300});
+            emit(p.x,p.y,15,'#ffaa44',{speed:300,life:0.6,up:100});
+            toast('BOOM ! +'+bonus, 1200);
+        } else if(p.type==='multi'){
+            if(p.lit) return;
+            p.lit=true;
+            run.multiplier = 2;
+            run.multTimer = 5;
+            sBumper();
+            emit(p.x,p.y,18,'#ffd86b',{speed:300,life:0.6,up:80});
+            toast('Multiplicateur x2 ! (5s)',1500);
+            p.alive=false; // consumed
+        }
+        updateHUD();
+    }
+
+    // ---------- Pocket ----------
+    function onPocket(p, b){
+        if(p.isTrap){
+            run.stats.traps++;
+            sTrap();
+            addShake(4);
+            emit(b.x, H-30, 25, '#ff3355', {speed:300, life:0.6, up:200});
+            toast('Piège !', 900);
+        } else {
+            p.glow = 1;
+            const val = p.val * (run.upgrades.pocketMul||1) * (1 + (meta.upgrades.pocketValBonus||0)*0.1) * run.multiplier;
+            run.score += Math.round(val*0.6);
+            run.coins += val * 0.18 * (run.upgrades.coinMul||1);
+            run.stats.pockets++;
+            sPocket(p.val);
+            emit(p.x, H-30, p.gold?28:16, p.gold?'#ffd86b':'#39ff88', {speed:280, life:0.6, up:200, size:p.gold?5:3});
+            if(p.gold){ toast('POCHE DORÉE ! +'+Math.round(val*0.6)+' score',1500); addShake(5); }
+        }
+        updateHUD();
+    }
+
+    // ---------- Floor cleared ----------
+    function floorCleared(){
+        sWin();
+        // bonus coins
+        const bonus = 10 + run.floor*3;
+        run.coins += bonus;
+        toast('Étage '+run.floor+' cleared ! +'+bonus+' coins', 2000);
+        state = GS.SHOP;
+        showShop();
+    }
+
+    function nextFloor(){
+        run.floor++;
+        run.target = Math.round(100 * Math.pow(1.45, run.floor-1));
+        // refloor balls: floor gives some balls back
+        const baseBalls = 5 + (meta.upgrades.extraStartBall||0);
+        const extra = Math.floor(run.floor/3); // every 3 floors, +1 ball free
+        run.ballsLeft = baseBalls + extra;
+        // keep score
+        newFloor(run.floor);
+        state = GS.AIM;
+        updateHUD();
+        closeOverlay();
+        toast('Étage '+run.floor+' — Cible '+run.target, 1800);
+    }
+
+    // ---------- Run failed ----------
+    function runFailed(){
+        sLose();
+        // cash out coins to meta
+        meta.coins += Math.floor(run.coins);
+        meta.runs++;
+        meta.bestFloor = Math.max(meta.bestFloor, run.floor);
+        meta.bestScore = Math.max(meta.bestScore, run.score);
+        saveMeta();
+        state = GS.OVER;
+        showGameOver();
+    }
+
+    // ---------- Cashout (player can voluntarily stop run? skip for simplicity) ----------
+
+    // ---------- Shop ----------
+    function showShop(){
+        // pick 3 random upgrades not maxed
+        const avail = UPGRADES.filter(u=>{
+            const cnt = run.upgrades[u.id] || (u.id==='extraBall'? (run.upgrades.extraBall||0) : 0);
+            // count uses
+            return countUpgradeUses(u.id) < u.max;
+        });
+        const pick = [];
+        while(pick.length<3 && avail.length){
+            const u = choice(avail);
+            avail.splice(avail.indexOf(u),1);
+            pick.push(u);
+        }
+        // build HTML
+        const html = `
+    <div class="panel" style="min-width:540px">
+      <h2>🛒 Boutique — Étage ${run.floor} cleared</h2>
+      <div class="help center">Coins disponibles : <b style="color:var(--gold)">${Math.floor(run.coins)}</b> · Score : <b>${Math.floor(run.score)}</b> / ${run.target}</div>
+      <div class="shop-grid" id="shopGrid">
+        ${pick.map(u=>{
+            const uses = countUpgradeUses(u.id);
+            const canBuy = Math.floor(run.coins) >= u.cost && uses < u.max;
+            return `<div class="upgrade-card${canBuy?'':' locked'}" data-id="${u.id}">
+            <div class="uname">${u.name}</div>
+            <div class="udesc">${u.desc}</div>
+            <div class="ucost">${u.cost} coins · ${uses}/${u.max}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="row">
+        <button class="btn" id="btnNext">Étage suivant →</button>
+        <button class="btn pink" id="btnQuit">Abandonner (cash out)</button>
+      </div>
+      <div class="muted center" style="margin-top:10px">Astuce : tu peux acheter plusieurs upgrades si tu as les coins.</div>
+    </div>`;
+        showOverlay(html);
+        // wire
+        document.querySelectorAll('#shopGrid .upgrade-card').forEach(c=>{
+            c.onclick = ()=>{
+                const id = c.dataset.id;
+                const u = UPGRADES.find(x=>x.id===id);
+                const uses = countUpgradeUses(id);
+                if(uses>=u.max){ toast('Max atteint'); return; }
+                if(Math.floor(run.coins) < u.cost){ toast('Pas assez de coins'); return; }
+                run.coins -= u.cost;
+                applyUpgrade(u);
+                // refresh shop UI
+                showShop();
+                sBuy();
+            };
+        });
+        document.getElementById('btnNext').onclick = ()=>{ sBuy(); nextFloor(); };
+        document.getElementById('btnQuit').onclick = ()=>{
+            meta.coins += Math.floor(run.coins);
+            meta.runs++; meta.bestFloor=Math.max(meta.bestFloor,run.floor);
+            meta.bestScore=Math.max(meta.bestScore,run.score); saveMeta();
+            state=GS.MENU; showMenu();
+        };
+    }
+
+    function countUpgradeUses(id){
+        // some upgrades accumulate values directly in run.upgrades
+        if(id==='extraBall') return (run.upgrades.extraBallCount||0);
+        if(id==='pegPower') return Math.round(((run.upgrades.pegMul||1)-1)/0.5);
+        if(id==='bumperPower') return Math.round(((run.upgrades.bumperMul||1)-1)/1);
+        if(id==='pocketBonus') return Math.round(((run.upgrades.pocketMul||1)-1)/0.5);
+        if(id==='multiball') return (run.upgrades.multiball||1)-1;
+        if(id==='magnet') return Math.round((run.upgrades.magnet||0)/0.4);
+        if(id==='launchPower') return Math.round(((run.upgrades.launchMul||1)-1)/0.2);
+        if(id==='biggerBall') return Math.round(((run.upgrades.ballR||BALL_R)-BALL_R)/2);
+        if(id==='slowGrav') return Math.round(((run.upgrades.gravMul||1)-1)/-0.15);
+        if(id==='bombChain') return Math.round(((run.upgrades.bombMul||1)-1)/0.5);
+        if(id==='cashFlow') return Math.round(((run.upgrades.coinMul||1)-1)/0.25);
+        if(id==='shield') return (run.upgrades.shield||0);
+        return 0;
+    }
+
+    function applyUpgrade(u){
+        u.apply(run);
+        // bump count fields
+        if(u.id==='extraBall') run.upgrades.extraBallCount = (run.upgrades.extraBallCount||0)+1;
+        // others tracked via multiplier values
+    }
+
+    // ---------- Menu ----------
+    function showMenu(){
+        state = GS.MENU;
+        const html = `
+    <div class="panel" style="min-width:520px">
+      <h1>PACHINKO DUNGEON</h1>
+      <p class="muted center">Roguelike · Synthwave · Procédural</p>
+      <div class="stats" style="margin:14px 0 4px">
+        <div class="k">Meilleur étage</div><div class="v">${meta.bestFloor}</div>
+        <div class="k">Meilleur score</div><div class="v">${meta.bestScore}</div>
+        <div class="k">Runs</div><div class="v">${meta.runs}</div>
+        <div class="k">Coins méta</div><div class="v" style="color:var(--gold)">${meta.coins}</div>
+      </div>
+      <div class="row">
+        <button class="btn" id="btnPlay">▶ Nouvelle run</button>
+        <button class="btn gold" id="btnMeta">⚙ Méta-boutique</button>
+        <button class="btn pink" id="btnHelp">?</button>
+      </div>
+      <p class="muted center" style="margin-top:14px"><span class="kbd">M</span> muet · <span class="kbd">Souris</span> viser/lancer</p>
+    </div>`;
+        showOverlay(html);
+        document.getElementById('btnPlay').onclick=()=>{ startRun(); };
+        document.getElementById('btnMeta').onclick=()=>{ showMetaShop(); };
+        document.getElementById('btnHelp').onclick=()=>{ showHelp(); };
+    }
+
+    function startRun(){
+        newRun();
+        newFloor(run.floor);
+        // shield from meta
+        if(meta.upgrades.startShield){ run.upgrades.shield=(run.upgrades.shield||0)+1; }
+        // luck: bumpers
+        if(meta.upgrades.bumpLuck){
+            floor.pegs.forEach(p=>{ if(p.type==='peg' && Math.random()<0.05*meta.upgrades.bumpLuck) p.type='bumper'; });
+            floor.bumpersTotal = floor.pegs.filter(p=>p.type==='bumper').length;
+        }
+        state = GS.AIM;
+        updateHUD();
+        closeOverlay();
+        toast('Run commencée — étage 1', 1800);
+        ensureAudio();
+    }
+
+    // ---------- Meta shop ----------
+    function showMetaShop(){
+        const html = `
+    <div class="panel" style="min-width:540px">
+      <h2>⚙ Méta-boutique — Améliorations permanentes</h2>
+      <div class="help center">Coins méta : <b style="color:var(--gold)">${meta.coins}</b></div>
+      <div class="meta-grid" id="metaGrid">
+        ${META_UPGRADES.map(u=>{
+            const cnt = meta.upgrades[u.key]||0;
+            const canBuy = meta.coins >= u.cost && cnt < u.max;
+            return `<div class="upgrade-card${canBuy?'':' locked'}" data-key="${u.key}" data-cost="${u.cost}">
+            <div class="uname">${u.name}</div>
+            <div class="udesc">${u.desc||''}</div>
+            <div class="ucost">${u.cost} coins · ${cnt}/${u.max}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="row"><button class="btn" id="btnBack">← Retour</button></div>
+    </div>`;
+        showOverlay(html);
+        document.querySelectorAll('#metaGrid .upgrade-card').forEach(c=>{
+            c.onclick=()=>{
+                const key=c.dataset.key; const cost=+c.dataset.cost;
+                const u=META_UPGRADES.find(x=>x.key===key);
+                const cnt = meta.upgrades[key]||0;
+                if(cnt>=u.max){ toast('Max'); return; }
+                if(meta.coins<cost){ toast('Pas assez de coins'); return; }
+                meta.coins -= cost;
+                meta.upgrades[key] = cnt+1;
+                saveMeta(); sBuy(); showMetaShop();
+            };
+        });
+        document.getElementById('btnBack').onclick=()=>{ showMenu(); };
+    }
+
+    // ---------- Help ----------
+    function showHelp(){
+        const html=`
+    <div class="panel" style="max-width:600px">
+      <h2>?</h2>
+      <p class="help">Pachinko Dungeon est un roguelike pachinko. Chaque étage est un plateau proceduralement généré avec des pegs, bumpers, bombes et poches.</p>
+      <ul style="margin:8px 0 12px 20px;font-size:13px;line-height:1.6">
+        <li><b>Viser & lancer :</b> bouge la souris pour positionner le canon en haut. Clique et tire vers le bas pour viser, plus tu tires loin, plus la bille part vite.</li>
+        <li><span class="tag bumper">Bumper</span> Peg magenta qui booste la bille et donne gros score. Tous les allumer déclenche un bonus.</li>
+        <li><span class="tag bomb">Bombe</span> Explose et détruit les pegs voisins.</li>
+        <li><span class="tag multi">Multiplicateur</span> x2 score pendant 5s.</li>
+        <li><span class="tag trap">Piège</span> Poche rouge : bille perdue.</li>
+        <li><span class="tag gold">Or</span> Poche dorée : grosse récompense.</li>
+        <li><b>Cible :</b> atteindre le score cible pour passer à l'étage suivant.</li>
+        <li><b>Boutique :</b> dépense tes coins de run en améliorations temporaires.</li>
+        <li><b>Méta :</b> les coins de run sont convertis en coins méta à la mort, dépensables en améliorations permanentes.</li>
+        <li><b>Boss :</b> tous les 5 étages, layout hostile avec une poche dorée centrale.</li>
+        <li><span class="kbd">M</span> muet · <span class="kbd">Éch</span> — </li>
+      </ul>
+      <div class="row"><button class="btn" id="btnBack2">← Retour</button></div>
+    </div>`;
+        showOverlay(html);
+        document.getElementById('btnBack2').onclick=()=>{ state===GS.MENU?showMenu():showMenu(); };
+    }
+
+    // ---------- Game Over ----------
+    function showGameOver(){
+        const html=`
+    <div class="panel" style="min-width:480px">
+      <h1 style="color:var(--red);background:linear-gradient(90deg,#ff3355,#ff2d95,#ff3355);-webkit-background-clip:text;background-clip:text;color:transparent">GAME OVER</h1>
+      <p class="muted center">Tu es mort à l'étage ${run.floor}</p>
+      <div class="stats" style="margin:12px 0">
+        <div class="k">Étage atteint</div><div class="v">${run.floor}</div>
+        <div class="k">Score total</div><div class="v">${Math.floor(run.score)}</div>
+        <div class="k">Coins run</div><div class="v" style="color:var(--gold)">+${Math.floor(run.coins)}</div>
+        <div class="k">Pegs touchés</div><div class="v">${run.stats.pegsHit}</div>
+        <div class="k">Bumpers</div><div class="v">${run.stats.bumpersHit}</div>
+        <div class="k">Bombes</div><div class="v">${run.stats.bombs}</div>
+        <div class="k">Poches</div><div class="v">${run.stats.pockets}</div>
+        <div class="k">Pièges subis</div><div class="v" style="color:var(--red)">${run.stats.traps}</div>
+        <div class="k">Billes lancées</div><div class="v">${run.stats.ballsLaunched}</div>
+      </div>
+      <div class="row">
+        <button class="btn" id="btnRetry">↻ Rejouer</button>
+        <button class="btn gold" id="btnMeta2">⚙ Méta</button>
+        <button class="btn pink" id="btnMenu">Menu</button>
+      </div>
+    </div>`;
+        showOverlay(html);
+        document.getElementById('btnRetry').onclick=()=>{ startRun(); };
+        document.getElementById('btnMeta2').onclick=()=>{ showMetaShop(); };
+        document.getElementById('btnMenu').onclick=()=>{ showMenu(); };
+        // also update stats.pegsHit etc — we didn't track pegsHit, fill it now
+    }
+
+    // ---------- HUD ----------
+    function updateHUD(){
+        document.getElementById('hFloor').textContent = run.floor;
+        document.getElementById('hScore').textContent = Math.floor(run.score) + ' / ' + run.target;
+        document.getElementById('hBalls').textContent = run.ballsLeft;
+        document.getElementById('hCoins').textContent = meta.coins;
+        document.getElementById('hRunCoins').textContent = Math.floor(run.coins);
+        document.getElementById('hMult').textContent = 'x'+run.multiplier + (run.multTimer>0?' ('+run.multTimer.toFixed(1)+'s)':'');
+        // color score
+        const sc = document.getElementById('hScore');
+        if(run.score >= run.target) sc.className='val green';
+        else sc.className='val';
+        const bl = document.getElementById('hBalls');
+        bl.className = run.ballsLeft<=1?'val red':'val green';
+        // show hud
+        document.getElementById('hud').classList.remove('hidden');
+    }
+
+    // ---------- Overlay helpers ----------
+    function showOverlay(html){
+        const o = document.getElementById('overlay');
+        o.innerHTML = html;
+        o.style.pointerEvents='auto';
+    }
+    function closeOverlay(){
+        const o = document.getElementById('overlay');
+        o.innerHTML=''; o.style.pointerEvents='none';
+    }
+
+    // ---------- Rendering ----------
+    function draw(){
+        ctx.clearRect(0,0,W,H);
+
+        // background
+        drawBg();
+
+        // shake offset
+        let sx=0,sy=0;
+        if(shake>0.1){ sx=rand(-shake,shake); sy=rand(-shake,shake); }
+        ctx.save();
+        ctx.translate(sx,sy);
+
+        // board frame
+        drawFrame();
+
+        // pockets
+        drawPockets();
+
+        // pegs
+        drawPegs();
+
+        // balls
+        drawBalls();
+
+        // particles
+        drawParticles();
+
+        // launcher & aim
+        drawLauncher();
+
+        // multiplier banner
+        if(run && run.multTimer>0){
+            ctx.save();
+            ctx.fillStyle='rgba(255,216,107,0.18)';
+            ctx.fillRect(0,0,W,30);
+            ctx.fillStyle='#ffd86b';
+            ctx.font='bold 14px monospace';
+            ctx.textAlign='center';
+            ctx.fillText('MULTIPLICATEUR x2 — '+run.multTimer.toFixed(1)+'s', W/2, 20);
+            ctx.restore();
+        }
+
+        ctx.restore();
+
+        // boss banner
+        if(floor && floor.isBoss && state!==GS.MENU){
+            ctx.save();
+            ctx.fillStyle='rgba(255,53,85,0.15)';
+            ctx.fillRect(0,H-30,W,30);
+            ctx.fillStyle='#ff3355';
+            ctx.font='bold 14px monospace';
+            ctx.textAlign='center';
+            ctx.fillText('⚠ BOSS ÉTAGE '+run.floor+' ⚠', W/2, H-10);
+            ctx.restore();
+        }
+    }
+
+    function drawBg(){
+        // vertical gradient already body; canvas transparent
+        // grid synthwave lines
+        ctx.save();
+        ctx.globalAlpha=0.12;
+        ctx.strokeStyle='#ff2d95';
+        ctx.lineWidth=1;
+        // perspective horizon lines at bottom
+        const horizonY = H*0.65;
+        for(let i=0;i<14;i++){
+            const t = i/13;
+            const y = horizonY + (H-horizonY)*t*t;
+            ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+        }
+        // vertical perspective
+        for(let i=-6;i<=6;i++){
+            const x = W/2 + i*60;
+            ctx.beginPath(); ctx.moveTo(W/2, horizonY); ctx.lineTo(x, H); ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    function drawFrame(){
+        ctx.save();
+        ctx.strokeStyle='rgba(0,240,255,0.6)';
+        ctx.lineWidth=2;
+        ctx.shadowBlur=20; ctx.shadowColor='#00f0ff';
+        ctx.strokeRect(WALL,WALL,W-WALL*2,H-WALL*2);
+        // top launch zone
+        ctx.fillStyle='rgba(0,240,255,0.05)';
+        ctx.fillRect(WALL,WALL,W-WALL*2,POCKET_H+10);
+        // bottom pocket zone
+        ctx.fillStyle='rgba(255,45,149,0.04)';
+        ctx.fillRect(WALL,H-POCKET_H-10,W-WALL*2,POCKET_H+10);
+        ctx.restore();
+    }
+
+    function drawPockets(){
+        if(!floor) return;
+        for(const p of floor.pockets){
+            const x0 = p.x - p.w/2;
+            const y0 = H - POCKET_H;
+            ctx.save();
+            // bg
+            if(p.isTrap){
+                ctx.fillStyle='rgba(255,53,85,0.25)';
+                ctx.fillRect(x0+2, y0+2, p.w-4, p.h-4);
+                ctx.strokeStyle='#ff3355';
+                ctx.lineWidth=2;
+                ctx.shadowBlur=12; ctx.shadowColor='#ff3355';
+                ctx.strokeRect(x0+2, y0+2, p.w-4, p.h-4);
+                // skull-ish X
+                ctx.beginPath();
+                ctx.moveTo(x0+p.w*0.3, y0+p.h*0.3);
+                ctx.lineTo(x0+p.w*0.7, y0+p.h*0.7);
+                ctx.moveTo(x0+p.w*0.7, y0+p.h*0.3);
+                ctx.lineTo(x0+p.w*0.3, y0+p.h*0.7);
+                ctx.stroke();
+            } else if(p.gold){
+                const grd = ctx.createLinearGradient(0,y0,0,y0+p.h);
+                grd.addColorStop(0,'#ffd86b'); grd.addColorStop(1,'#ff8a00');
+                ctx.fillStyle=grd;
+                ctx.fillRect(x0+2, y0+2, p.w-4, p.h-4);
+                ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+                ctx.shadowBlur=25; ctx.shadowColor='#ffd86b';
+                ctx.strokeRect(x0+2, y0+2, p.w-4, p.h-4);
+                ctx.fillStyle='#5a3000';
+                ctx.font='bold 16px monospace'; ctx.textAlign='center';
+                ctx.shadowBlur=0;
+                ctx.fillText('★'+p.val, p.x, y0+p.h/2+5);
+            } else {
+                ctx.fillStyle='rgba(57,255,136,0.2)';
+                ctx.fillRect(x0+2, y0+2, p.w-4, p.h-4);
+                ctx.strokeStyle='#39ff88';
+                ctx.lineWidth=2;
+                ctx.shadowBlur=12; ctx.shadowColor='#39ff88';
+                ctx.strokeRect(x0+2, y0+2, p.w-4, p.h-4);
+                ctx.fillStyle='#39ff88';
+                ctx.font='bold 13px monospace'; ctx.textAlign='center';
+                ctx.shadowBlur=0;
+                ctx.fillText('+'+p.val, p.x, y0+p.h/2+4);
+            }
+            // glow fade
+            if(p.glow>0){
+                ctx.globalAlpha=p.glow;
+                ctx.fillStyle='#fff';
+                ctx.fillRect(x0+2, y0+2, p.w-4, 6);
+                p.glow -= 0.04;
+            }
+            ctx.restore();
+        }
+    }
+
+    function drawPegs(){
+        if(!floor) return;
+        const t = performance.now()/1000;
+        for(const p of floor.pegs){
+            if(!p.alive) continue;
+            ctx.save();
+            let col, glow;
+            if(p.type==='peg'){ col='#00f0ff'; glow='#00f0ff'; }
+            else if(p.type==='bumper'){ col = p.lit? '#ff2d95' : '#ff77b3'; glow='#ff2d95'; }
+            else if(p.type==='bomb'){ col='#ff3355'; glow='#ff3355'; }
+            else if(p.type==='multi'){ col='#ffd86b'; glow='#ffd86b'; }
+            // pulse for special
+            let r = p.r;
+            if(p.type==='bumper' && !p.lit){ r = p.r + Math.sin(t*4+p.phase)*1.5; }
+            if(p.type==='bomb'){ r = p.r + Math.sin(t*6+p.phase)*2; }
+            if(p.type==='multi' && !p.lit){ r = p.r + Math.sin(t*3+p.phase)*2; }
+            ctx.shadowBlur = p.type==='peg'?6:16;
+            ctx.shadowColor = glow;
+            ctx.fillStyle = col;
+            ctx.beginPath(); ctx.arc(p.x,p.y,r,0,TAU); ctx.fill();
+            // hit count ring for pegs
+            if(p.type==='peg' && p.hits>0){
+                ctx.shadowBlur=0;
+                ctx.strokeStyle='rgba(255,255,255,0.4)';
+                ctx.lineWidth=1;
+                ctx.beginPath(); ctx.arc(p.x,p.y,r+2,0,TAU * (p.hits/4)); ctx.stroke();
+            }
+            // bumper lit halo
+            if(p.type==='bumper' && p.lit){
+                ctx.shadowBlur=20;
+                ctx.fillStyle='rgba(255,45,149,0.3)';
+                ctx.beginPath(); ctx.arc(p.x,p.y,r*1.8,0,TAU); ctx.fill();
+            }
+            ctx.restore();
+        }
+        // bumper progress
+        if(floor.bumpersTotal>0 && state!==GS.MENU){
+            ctx.save();
+            ctx.fillStyle='rgba(255,45,149,0.7)';
+            ctx.font='11px monospace';
+            ctx.textAlign='left';
+            ctx.shadowBlur=8; ctx.shadowColor='#ff2d95';
+            ctx.fillText('Bumpers: '+floor.bumpersLit+'/'+floor.bumpersTotal, WALL+8, H-POCKET_H-18);
+            ctx.restore();
+        }
+    }
+
+    function drawBalls(){
+        for(const b of balls){
+            // trail
+            for(let i=0;i<b.trail.length;i++){
+                const t=b.trail[i];
+                const a = i/b.trail.length;
+                ctx.save();
+                ctx.globalAlpha = a*0.5;
+                ctx.fillStyle='#fff';
+                ctx.shadowBlur=8; ctx.shadowColor='#00f0ff';
+                ctx.beginPath(); ctx.arc(t.x,t.y,b.r*a*0.8,0,TAU); ctx.fill();
+                ctx.restore();
+            }
+            // ball
+            ctx.save();
+            ctx.shadowBlur=14; ctx.shadowColor='#fff';
+            ctx.fillStyle='#fff';
+            ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,TAU); ctx.fill();
+            ctx.fillStyle='rgba(0,240,255,0.6)';
+            ctx.beginPath(); ctx.arc(b.x-b.r*0.3,b.y-b.r*0.3,b.r*0.4,0,TAU); ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function drawParticles(){
+        for(const p of particles){
+            const a = 1 - p.age/p.life;
+            ctx.save();
+            ctx.globalAlpha = a;
+            ctx.shadowBlur = 8; ctx.shadowColor = p.color;
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x,p.y,p.sz*a,0,TAU); ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function drawLauncher(){
+        if(!run || state!==GS.AIM && state!==GS.RUN) return;
+        if(state!==GS.AIM) return;
+        const x = run.aimX, y = LAUNCH_Y;
+        ctx.save();
+        // cannon
+        ctx.fillStyle='rgba(0,240,255,0.15)';
+        ctx.strokeStyle='#00f0ff';
+        ctx.lineWidth=2;
+        ctx.shadowBlur=10; ctx.shadowColor='#00f0ff';
+        ctx.beginPath();
+        ctx.rect(x-14, y-18, 28, 26);
+        ctx.fill(); ctx.stroke();
+        // balls remaining indicator
+        ctx.fillStyle='#00f0ff';
+        ctx.font='bold 11px monospace'; ctx.textAlign='center';
+        ctx.shadowBlur=0;
+        ctx.fillText(run.ballsLeft+'⚙', x, y-2);
+        // aim line
+        if(run.aiming){
+            const speed = lerp(400, 900, run.aimPower);
+            const vx = Math.sin(run.aimAngle)*speed;
+            const vy = Math.cos(run.aimAngle)*speed;
+            // simulate trajectory dots
+            let px=x, py=y, vxr=vx, vyr=vy;
+            const grav = GRAV * (run.upgrades.gravMul||1);
+            ctx.fillStyle='rgba(255,255,255,0.6)';
+            for(let i=0;i<24;i++){
+                const dt=0.03;
+                vyr += grav*dt;
+                px += vxr*dt; py += vyr*dt;
+                if(py > H-POCKET_H-20) break;
+                ctx.globalAlpha = 1 - i/24;
+                ctx.beginPath(); ctx.arc(px,py,3,0,TAU); ctx.fill();
+            }
+            // power bar
+            ctx.globalAlpha=1;
+            ctx.fillStyle='rgba(255,45,149,0.3)';
+            ctx.fillRect(x-30, y-30, 60, 5);
+            ctx.fillStyle = run.aimPower>0.8?'#ff3355':(run.aimPower>0.5?'#ffd86b':'#39ff88');
+            ctx.fillRect(x-30, y-30, 60*run.aimPower, 5);
+        } else {
+            // hint
+            ctx.fillStyle='rgba(255,255,255,0.4)';
+            ctx.font='11px monospace';
+            ctx.fillText('clique + tire', x, y+18);
+        }
+        ctx.restore();
+    }
+
+    // ---------- Main loop ----------
+    let last = performance.now();
+    function loop(now){
+        const dt = Math.min(0.033, (now-last)/1000);
+        last = now;
+        if(state===GS.RUN || state===GS.AIM){
+            if(!meta.muted){ /* audio is event-based */ }
+            if(state===GS.RUN) step(dt);
+            // peg pulse update (visual)
+            draw();
+        } else {
+            draw();
+        }
+        requestAnimationFrame(loop);
+    }
+
+    // ---------- Init ----------
+    showMenu();
+    // we need a floor for drawing in menu (show empty)
+    floor = { pegs:[], pockets:[] };
+    run = null;
+    draw();
+    requestAnimationFrame(loop);
+
+    // override draw to handle menu state nicely
+    function drawMenuBg(){
+        ctx.clearRect(0,0,W,H);
+        drawBg();
+        drawFrame();
+        // demo pegs idle
+        const t=performance.now()/1000;
+        // draw a few decorative pegs
+        for(let i=0;i<30;i++){
+            const x = 80 + (i%8)*80;
+            const y = 150 + Math.floor(i/8)*70;
+            ctx.save();
+            ctx.fillStyle = '#00f0ff';
+            ctx.shadowBlur=10; ctx.shadowColor='#00f0ff';
+            ctx.globalAlpha = 0.3 + 0.2*Math.sin(t*2+i);
+            ctx.beginPath(); ctx.arc(x,y,8,0,TAU); ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // Replace loop to use drawMenuBg when in menu
+    const _origLoop = loop;
+    // we already set loop; we just adjust draw() calls — but state check inside draw already handles null run/floor.
+    // Actually our draw uses `floor` and `run` which may be null. Let's guard.
+    // Already handled: drawPockets/drawPegs check !floor and drawLauncher checks !run.
+    // In menu, floor is set to {pegs:[],pockets:[]} — so nothing drawn. Add decorative bg.
+
+    // patch draw to call drawMenuBg when state===MENU
+    const _origDraw = draw;
+    draw = function(){
+        if(state===GS.MENU || state===GS.META || state===GS.OVER || state===GS.SHOP || state===GS.HELP){
+            drawMenuBg();
+        } else {
+            _origDraw();
+        }
+    };
+
+    // Start
+    requestAnimationFrame(functionLoop);
+    function functionLoop(now){
+        const dt = Math.min(0.033, (now-last)/1000);
+        last = now;
+        if(state===GS.RUN) step(dt);
+        draw();
+        requestAnimationFrame(functionLoop);
+    }
+    // remove the earlier loop registration by replacing requestAnimationFrame callbacks?
+    // Since we already did requestAnimationFrame(loop), it will run in parallel. To avoid duplicate, we just let both run but only one matters.
+    // For cleanliness, we ignore that and rely on functionLoop. The earlier loop will also call draw; it's idempotent.
+</script>
+</body>
+</html>

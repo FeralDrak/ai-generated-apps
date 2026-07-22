@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CITÉ RÉTRO — City Builder Pixel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05060e; --panel:#10132a; --panel2:#171b3a; --edge:#2b3162; --edge-lt:#4a5296;
+  --txt:#d7deff; --dim:#7c84b8;
+  --cyan:#6fe3ff; --green:#7be07b; --blue:#5aa8ff; --yellow:#ffd866; --orange:#ff9d5c;
+  --red:#ff5d6c; --magenta:#ff7ce0; --gold:#ffd866;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  background:var(--bg); color:var(--txt);
+  font-family:'VT323',monospace; font-size:19px;
+  overflow:hidden; user-select:none; -webkit-user-select:none;
+}
+.pix{font-family:'Press Start 2P','VT323',monospace;}
+#app{display:flex; flex-direction:column; height:100vh; width:100vw;}
+
+/* ---------- Topbar ---------- */
+#topbar{
+  display:flex; align-items:center; gap:14px; padding:8px 12px;
+  background:linear-gradient(180deg,#171b3a,#0c0e22);
+  border-bottom:3px solid var(--edge); flex-wrap:wrap; z-index:10;
+}
+.logo{font-size:14px; color:var(--gold); text-shadow:2px 2px 0 #000; white-space:nowrap;}
+.logo b{color:var(--cyan);}
+#cityTitle{color:var(--green); font-size:11px;}
+.dateBox{background:#0a0c1c; border:2px solid var(--edge); padding:5px 10px; font-size:20px; color:var(--cyan); white-space:nowrap;}
+.stats{display:flex; gap:10px; flex-wrap:wrap;}
+.stat{display:flex; flex-direction:column; align-items:flex-start; line-height:1.1;
+  background:#0a0c1c; border:2px solid var(--edge); padding:4px 9px; min-width:84px;}
+.stat .lab{font-family:'Press Start 2P'; font-size:6px; color:var(--dim); margin-bottom:4px;}
+.stat .val{font-size:21px; color:var(--cyan);}
+#statMoney .val{color:var(--green);}
+#statMoney.neg .val{color:var(--red);}
+.topControls{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap;}
+.ctrlBtn{
+  font-family:'Press Start 2P'; font-size:11px; color:var(--txt);
+  background:var(--panel2); border:2px solid; border-color:var(--edge-lt) #060713 #060713 var(--edge-lt);
+  padding:7px 9px; cursor:pointer;
+}
+.ctrlBtn:hover{background:#262e58;}
+.ctrlBtn.on{background:var(--edge-lt); color:#fff;}
+.speedBtn.active{background:var(--green); color:#06140a; border-color:#0a0; }
+
+/* ---------- Main layout ---------- */
+main{display:flex; flex:1; min-height:0;}
+aside{background:var(--panel); overflow-y:auto;}
+#leftpanel{width:200px; border-right:3px solid var(--edge);}
+#rightpanel{width:220px; border-left:3px solid var(--edge); display:flex; flex-direction:column;}
+.ptitle{font-family:'Press Start 2P'; font-size:8px; color:var(--gold); padding:10px 10px 6px; letter-spacing:1px;}
+.tools{display:flex; flex-direction:column; gap:4px; padding:0 8px;}
+.tool{
+  display:flex; align-items:center; gap:8px; padding:6px 7px; cursor:pointer;
+  background:var(--panel2); border:2px solid; border-color:var(--edge-lt) #060713 #060713 var(--edge-lt);
+  color:var(--txt); text-align:left; font-family:'VT323'; font-size:17px; line-height:1.1;
+}
+.tool:hover{background:#262e58;}
+.tool.sel{background:#2e376a; border-color:#060713 var(--edge-lt) var(--edge-lt) #060713; box-shadow:inset 0 0 0 1px var(--cyan);}
+.tool .ic{width:18px; height:18px; flex:none; border-radius:2px;}
+.tool .tname{flex:1;}
+.tool .tcost{color:var(--green); font-size:14px;}
+.tool .key{font-family:'Press Start 2P'; font-size:8px; color:var(--dim); background:#000; padding:2px 4px; border-radius:2px;}
+
+.taxBox{padding:6px 12px 14px; display:flex; flex-direction:column; gap:4px;}
+#taxSlider{width:100%;}
+#taxVal{font-size:20px; color:var(--yellow); text-align:center;}
+
+.demand{padding:4px 10px 10px; display:flex; flex-direction:column; gap:8px;}
+.dRow{display:flex; align-items:center; gap:8px; font-family:'Press Start 2P'; font-size:10px;}
+.bar{flex:1; height:12px; background:#000; border:1px solid var(--edge-lt); position:relative; overflow:hidden;}
+.fill{height:100%; width:50%; transition:width .4s;}
+.fill.r{background:var(--green);} .fill.c{background:var(--blue);} .fill.i{background:var(--yellow);}
+
+#viewSelect{margin:0 10px 10px; width:calc(100% - 20px); background:#0a0c1c; color:var(--txt); border:2px solid var(--edge-lt); font-family:'VT323'; font-size:17px; padding:4px;}
+
+#tileInfo{margin:0 10px 10px; background:#0a0c1c; border:2px solid var(--edge); padding:8px; font-size:16px; line-height:1.35; min-height:90px;}
+#logBox{flex:1; margin:0 10px 10px; background:#000; border:2px solid var(--edge); padding:6px; font-size:13px; line-height:1.4; overflow-y:auto; color:var(--green); min-height:80px;}
+#logBox div{margin-bottom:2px; opacity:.9;}
+
+/* ---------- Stage ---------- */
+#stage{flex:1; display:flex; align-items:center; justify-content:center; padding:10px;
+  background:radial-gradient(ellipse at center,#10142b,#050610 90%); position:relative; min-width:0; min-height:0;}
+#wrap{position:relative; width:min(92%,960px); aspect-ratio:4/3; transition:transform .05s;}
+#wrap.shake{animation:quake .5s linear;}
+@keyframes quake{
+  0%,100%{transform:translate(0,0);} 10%{transform:translate(-6px,4px);} 20%{transform:translate(5px,-5px);}
+  30%{transform:translate(-4px,5px);} 40%{transform:translate(6px,2px);} 50%{transform:translate(-5px,-4px);}
+  60%{transform:translate(4px,5px);} 70%{transform:translate(-3px,-3px);} 80%{transform:translate(3px,2px);} 90%{transform:translate(-2px,-2px);}
+}
+canvas#game{display:block; width:100%; height:100%; image-rendering:pixelated; border:3px solid var(--edge);
+  box-shadow:0 0 0 3px #000, 0 0 30px rgba(0,0,0,.7); cursor:crosshair; background:#0b3d1f;}
+
+#hint{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(5,6,15,.92); padding:18px; text-align:center; z-index:5; cursor:pointer;}
+#hint .card{background:var(--panel); border:3px solid var(--edge-lt); padding:20px 24px; max-width:460px; box-shadow:0 8px 0 #000;}
+#hint h2{font-family:'Press Start 2P'; font-size:14px; color:var(--gold); margin-bottom:14px; line-height:1.6;}
+#hint p{font-size:18px; line-height:1.4; margin-bottom:10px; color:var(--txt);}
+#hint ul{list-style:none; text-align:left; font-size:16px; line-height:1.5; margin:10px 0;}
+#hint .k{color:var(--cyan);}
+#hint .startBtns{display:flex; gap:10px; justify-content:center; margin-top:14px;}
+#hint button{font-family:'Press Start 2P'; font-size:11px; padding:10px 14px; cursor:pointer;
+  background:var(--green); color:#06140a; border:2px solid #0a0;}
+#hint button.alt{background:var(--panel2); color:var(--txt); border-color:var(--edge-lt);}
+#hint.hide{display:none;}
+
+/* ---------- Toasts ---------- */
+#toasts{position:fixed; bottom:14px; right:14px; display:flex; flex-direction:column; gap:6px; z-index:50; max-width:320px;}
+.toast{background:#0a0c1c; border:2px solid var(--edge-lt); padding:8px 12px; font-size:16px; box-shadow:0 4px 0 #000; animation:toastin .25s ease;}
+.toast.warn{border-color:var(--red); color:var(--red);}
+.toast.good{border-color:var(--green); color:var(--green);}
+@keyframes toastin{from{transform:translateX(40px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+.toast.fade{animation:toastout .4s ease forwards;}
+@keyframes toastout{to{transform:translateX(40px); opacity:0;}}
+
+/* ---------- Modal ---------- */
+.modal{position:fixed; inset:0; background:rgba(2,3,8,.85); display:flex; align-items:center; justify-content:center; z-index:60;}
+.modal.hide{display:none;}
+.modalCard{background:var(--panel); border:3px solid var(--edge-lt); padding:22px; max-width:560px; max-height:80vh; overflow-y:auto; box-shadow:0 8px 0 #000;}
+.modalCard h2{font-family:'Press Start 2P'; font-size:14px; color:var(--gold); margin-bottom:14px;}
+.modalCard h3{font-family:'Press Start 2P'; font-size:10px; color:var(--cyan); margin:14px 0 6px;}
+.modalCard p,.modalCard li{font-size:17px; line-height:1.5;}
+.modalCard ul{margin-left:18px;}
+.modalCard button{margin-top:16px; font-family:'Press Start 2P'; font-size:11px; padding:9px 14px; cursor:pointer;
+  background:var(--green); color:#06140a; border:2px solid #0a0;}
+.modalCard .key{font-family:'Press Start 2P'; font-size:8px; background:#000; color:var(--cyan); padding:2px 5px; border-radius:2px;}
+
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:var(--edge-lt);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="logo pix">CITÉ <b>RÉTRO</b><div id="cityTitle" class="pix">Hameau</div></div>
+    <div class="dateBox" id="dateLabel">1 Juin 2026</div>
+    <div class="stats">
+      <div class="stat" id="statMoney"><span class="lab pix">ARGENT</span><span class="val" id="valMoney">5000 $</span></div>
+      <div class="stat" id="statPop"><span class="lab pix">POPULATION</span><span class="val" id="valPop">0</span></div>
+      <div class="stat" id="statHap"><span class="lab pix">BONHEUR</span><span class="val" id="valHap">😐 55%</span></div>
+      <div class="stat" id="statJobs"><span class="lab pix">EMPLOIS</span><span class="val" id="valJobs">0</span></div>
+    </div>
+    <div class="topControls">
+      <button id="btnPause" class="ctrlBtn" title="Pause (Espace)">⏸</button>
+      <button class="ctrlBtn speedBtn" data-speed="1" title="Vitesse x1">x1</button>
+      <button class="ctrlBtn speedBtn" data-speed="2" title="Vitesse x2">x2</button>
+      <button class="ctrlBtn speedBtn" data-speed="4" title="Vitesse x4">x4</button>
+      <button id="btnMute" class="ctrlBtn" title="Activer/Couper le son">🔊</button>
+      <button id="btnHelp" class="ctrlBtn" title="Aide (H)">?</button>
+      <button id="btnSave" class="ctrlBtn" title="Sauvegarder">💾</button>
+      <button id="btnReset" class="ctrlBtn" title="Réinitialiser">🗑</button>
+    </div>
+  </header>
+  <main>
+    <aside id="leftpanel">
+      <div class="ptitle">RÉSEAUX</div>
+      <div class="tools" id="toolsNet"></div>
+      <div class="ptitle">ZONES</div>
+      <div class="tools" id="toolsZone"></div>
+      <div class="ptitle">SERVICES</div>
+      <div class="tools" id="toolsSvc"></div>
+      <div class="ptitle">TAUX D'IMPOSITION</div>
+      <div class="taxBox">
+        <input type="range" id="taxSlider" min="0" max="20" value="9" step="1">
+        <div id="taxVal">9 %</div>
+      </div>
+    </aside>
+    <div id="stage">
+      <div id="wrap">
+        <canvas id="game" width="640" height="480"></canvas>
+        <div id="hint">
+          <div class="card">
+            <h2>CITÉ RÉTRO</h2>
+            <p>Construisez et faites prospérer votre cité pixel à partir de rien !</p>
+            <ul>
+              <li><span class="k">Clic gauche</span> — utiliser l'outil sélectionné (glisser pour peindre routes/zones)</li>
+              <li><span class="k">Clic droit</span> — démolir rapidement</li>
+              <li><span class="k">1-0</span> — sélection rapide d'outil</li>
+              <li><span class="k">Espace</span> — pause · <span class="k">+/-</span> — vitesse</li>
+            </ul>
+            <p>Reliez vos zones aux routes, alimentez-les en électricité et en eau, et surveillez le bonheur de vos citoyens !</p>
+            <div class="startBtns">
+              <button id="btnNewGame">NOUVELLE PARTIE</button>
+              <button id="btnContinue" class="alt" style="display:none;">CONTINUER</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside id="rightpanel">
+      <div class="ptitle">DEMANDE R·C·I</div>
+      <div class="demand">
+        <div class="dRow"><span>R</span><div class="bar"><div class="fill r" id="fillR"></div></div></div>
+        <div class="dRow"><span>C</span><div class="bar"><div class="fill c" id="fillC"></div></div></div>
+        <div class="dRow"><span>I</span><div class="bar"><div class="fill i" id="fillI"></div></div></div>
+      </div>
+      <div class="ptitle">VUE DE DONNÉES</div>
+      <select id="viewSelect">
+        <option value="normal">Normale</option>
+        <option value="power">Électricité</option>
+        <option value="water">Eau</option>
+        <option value="pollution">Pollution</option>
+        <option value="land">Valeur foncière</option>
+      </select>
+      <div class="ptitle">INFO CASE</div>
+      <div id="tileInfo">Survolez une case de la carte...</div>
+      <div class="ptitle">JOURNAL</div>
+      <div id="logBox"></div>
+    </aside>
+  </main>
+</div>
+<div id="toasts"></div>
+<div id="helpModal" class="modal hide">
+  <div class="modalCard">
+    <h2 class="pix">AIDE</h2>
+    <h3 class="pix">OBJECTIF</h3>
+    <p>Développez une cité prospère : reliez les zones aux routes, fournissez électricité et eau, gérez vos taxes et votre budget, et regardez votre population grandir.</p>
+    <h3 class="pix">CONTRÔLES</h3>
+    <ul>
+      <li><span class="key">Clic</span> appliquer l'outil sélectionné (glisser pour peindre)</li>
+      <li><span class="key">Clic droit</span> démolition rapide</li>
+      <li><span class="key">1-9 0</span> sélectionner un outil</li>
+      <li><span class="key">Espace</span> pause / reprendre</li>
+      <li><span class="key">+ / -</span> vitesse de jeu</li>
+      <li><span class="key">H</span> afficher/cacher cette aide</li>
+      <li><span class="key">Échap</span> annuler l'outil en cours</li>
+    </ul>
+    <h3 class="pix">CONSEILS</h3>
+    <ul>
+      <li>Les zones ne se développent que si elles touchent une route et sont alimentées en électricité ET en eau.</li>
+      <li>L'Hôtel de Ville fournit une petite zone gratuite d'électricité/eau autour de lui pour démarrer.</li>
+      <li>Les parcs, écoles, hôpitaux et services augmentent la valeur foncière et le bonheur.</li>
+      <li>Les usines polluent — éloignez-les des habitations.</li>
+      <li>Sans caserne de pompiers à proximité, les incendies se propagent vite !</li>
+      <li>Un budget trop négatif rend vos citoyens malheureux. Ajustez les taxes.</li>
+    </ul>
+    <button id="btnCloseHelp">FERMER</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== CONFIG ===================== */
+const COLS=32, ROWS=24, TILE=20;
+const DAY_MS_BASE=520;
+
+const TOOLS=[
+ {id:'bulldoze', name:'Démolir', cost:0, group:'net', hotkey:'1', desc:"Détruit routes, zones et bâtiments (sauf l'Hôtel de Ville)."},
+ {id:'road', name:'Route', cost:10, upkeep:0, group:'net', hotkey:'2', desc:'Nécessaire pour développer les zones.'},
+ {id:'zoneR', name:'Zone Résidentielle', cost:5, group:'zone', hotkey:'3', desc:'Habitations — augmente la population.'},
+ {id:'zoneC', name:'Zone Commerciale', cost:5, group:'zone', hotkey:'4', desc:'Commerces — emplois et taxes.'},
+ {id:'zoneI', name:'Zone Industrielle', cost:5, group:'zone', hotkey:'5', desc:'Usines — emplois, mais pollution.'},
+ {id:'power', name:'Centrale Électrique', cost:500, upkeep:15, radius:9, group:'svc', hotkey:'6', desc:"Fournit l'électricité aux alentours."},
+ {id:'watertower', name:"Château d'Eau", cost:300, upkeep:8, radius:8, group:'svc', hotkey:'7', desc:"Fournit l'eau aux alentours."},
+ {id:'park', name:'Parc', cost:80, upkeep:2, radius:4, group:'svc', hotkey:'8', desc:'Bonheur et valeur foncière.'},
+ {id:'police', name:'Police', cost:350, upkeep:12, radius:7, group:'svc', hotkey:'9', desc:'Réduit la criminalité.'},
+ {id:'firestation', name:'Caserne de Pompiers', cost:350, upkeep:12, radius:7, group:'svc', hotkey:'0', desc:'Éteint les incendies à proximité.'},
+ {id:'school', name:'École', cost:250, upkeep:10, radius:6, group:'svc', hotkey:null, desc:'Éducation — favorise la croissance.'},
+ {id:'hospital', name:'Hôpital', cost:450, upkeep:14, radius:6, group:'svc', hotkey:null, desc:'Santé — augmente le bonheur.'},
+];
+const TOOLBY=Object.fromEntries(TOOLS.map(t=>[t.id,t]));
+const TOOL_RADIUS=Object.fromEntries(TOOLS.filter(t=>t.radius).map(t=>[t.id,t.radius]));
+const TOOL_UPKEEP=Object.fromEntries(TOOLS.filter(t=>t.upkeep).map(t=>[t.id,t.upkeep]));
+const SVC_TYPES=['police','firestation','school','hospital','park'];
+
+const RES_CAP=[0,4,10,20], RES_VALUE=[0,60,150,300];
+const COM_JOBS=[0,3,8,16], COM_VALUE=[0,75,200,400];
+const IND_JOBS=[0,4,10,18], IND_VALUE=[0,80,200,360];
+
+const MILESTONES=[
+ {pop:0,name:'Hameau'},{pop:50,name:'Village'},{pop:300,name:'Bourg'},
+ {pop:1000,name:'Ville'},{pop:5000,name:'Grande Ville'},{pop:15000,name:'Métropole'},{pop:30000,name:'Mégapole'},
+];
+const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function rnd(){return Math.random();}
+
+/* ===================== STATE ===================== */
+let grid=new Array(COLS*ROWS);
+const state={
+  money:5000, population:0, jobs:0, comJobsCap:0, indJobsCap:0, buildingValue:0,
+  happiness:55, taxRate:9, day:1, month:6, year:2026,
+  demandR:0.6, demandC:0.5, demandI:0.45,
+  avgLandValue:40, avgPollution:0, crimeLevel:10, unpoweredRatio:0, unwateredRatio:0,
+  speed:1, paused:true, muted:false, view:'normal', tool:'road',
+  milestoneIdx:0, started:false,
+};
+let dirty=true;
+let activeFires=new Set();
+let cityHall={x:0,y:0};
+let hoverTile=null, isPainting=false, paintTool=null;
+
+function idx(x,y){return y*COLS+x;}
+function inBounds(x,y){return x>=0&&x<COLS&&y>=0&&y<ROWS;}
+function tileAt(x,y){return inBounds(x,y)?grid[idx(x,y)]:null;}
+
+function makeTile(x,y){
+  return {x,y,terrain:'grass',zone:null,type:null,level:0,powered:false,watered:false,
+    landValue:40,pollution:0,_svcCov:0,onFire:false,unservedDays:0,tree:rnd()<0.08,seed:rnd()};
+}
+
+/* ===================== MAP GENERATION ===================== */
+function newGrid(){
+  grid=new Array(COLS*ROWS);
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++) grid[idx(x,y)]=makeTile(x,y);
+  generateLake();
+  placeCityHall();
+  Object.assign(state,{money:5000,population:0,jobs:0,comJobsCap:0,indJobsCap:0,buildingValue:0,
+    happiness:55,taxRate:9,day:1,month:6,year:2026,demandR:0.6,demandC:0.5,demandI:0.45,
+    avgLandValue:40,avgPollution:0,crimeLevel:10,unpoweredRatio:0,unwateredRatio:0,milestoneIdx:0});
+  activeFires=new Set();
+  dirty=true;
+}
+
+function generateLake(){
+  const lakeCx=5+Math.floor(rnd()*(COLS-10));
+  const lakeCy=4+Math.floor(rnd()*(ROWS-8));
+  const visited=new Set([lakeCx+','+lakeCy]);
+  let blob=[{x:lakeCx,y:lakeCy}];
+  let frontier=[{x:lakeCx,y:lakeCy}];
+  const target=16+Math.floor(rnd()*18);
+  let guard=0;
+  while(blob.length<target && frontier.length && guard<2000){
+    guard++;
+    const cur=frontier[Math.floor(rnd()*frontier.length)];
+    const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+    const [dx,dy]=dirs[Math.floor(rnd()*4)];
+    const nx=cur.x+dx, ny=cur.y+dy, key=nx+','+ny;
+    if(inBounds(nx,ny) && !visited.has(key) && rnd()<0.78){
+      visited.add(key); blob.push({x:nx,y:ny}); frontier.push({x:nx,y:ny});
+    } else if(rnd()<0.25 && frontier.length>1){
+      frontier=frontier.filter(f=>f!==cur);
+    }
+  }
+  blob.forEach(t=>{ if(inBounds(t.x,t.y)) grid[idx(t.x,t.y)].terrain='water'; });
+}
+
+function findNearestLand(cx,cy){
+  if(tileAt(cx,cy) && tileAt(cx,cy).terrain==='grass') return {x:cx,y:cy};
+  for(let r=1;r<COLS;r++){
+    for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+      if(Math.max(Math.abs(dx),Math.abs(dy))!==r) continue;
+      const x=cx+dx,y=cy+dy;
+      const t=tileAt(x,y);
+      if(t && t.terrain==='grass') return {x,y};
+    }
+  }
+  return {x:cx,y:cy};
+}
+
+function placeCityHall(){
+  const c=findNearestLand(Math.floor(COLS/2),Math.floor(ROWS/2));
+  cityHall=c;
+  const t=tileAt(c.x,c.y);
+  t.type='cityhall'; t.tree=false;
+  // starter road stub
+  let dir=1;
+  if(tileAt(c.x+1,c.y) && tileAt(c.x+1,c.y).terrain==='water') dir=-1;
+  for(let i=1;i<=5;i++){
+    const rx=c.x+dir*i;
+    const rt=tileAt(rx,c.y);
+    if(!rt || rt.terrain==='water') break;
+    rt.type='road'; rt.tree=false;
+  }
+}
+
+/* ===================== COVERAGE & FIELDS ===================== */
+function applyRadiusBool(cx,cy,r,field){
+  const r2=r*r;
+  for(let dy=-r;dy<=r;dy++){
+    const y=cy+dy; if(y<0||y>=ROWS) continue;
+    for(let dx=-r;dx<=r;dx++){
+      const x=cx+dx; if(x<0||x>=COLS) continue;
+      if(dx*dx+dy*dy<=r2) grid[idx(x,y)][field]=true;
+    }
+  }
+}
+function addFalloff(cx,cy,r,strength,field){
+  for(let dy=-r;dy<=r;dy++){
+    const y=cy+dy; if(y<0||y>=ROWS) continue;
+    for(let dx=-r;dx<=r;dx++){
+      const x=cx+dx; if(x<0||x>=COLS) continue;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d>r) continue;
+      grid[idx(x,y)][field]+=strength*(1-d/r);
+    }
+  }
+}
+function hasRoadAdj(x,y){
+  return (tileAt(x-1,y)&&tileAt(x-1,y).type==='road')||(tileAt(x+1,y)&&tileAt(x+1,y).type==='road')||
+         (tileAt(x,y-1)&&tileAt(x,y-1).type==='road')||(tileAt(x,y+1)&&tileAt(x,y+1).type==='road');
+}
+function nearWater(x,y){
+  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    const t=tileAt(x+dx,y+dy);
+    if(t && t.terrain==='water') return true;
+  }
+  return false;
+}
+
+function recomputeCoverage(){
+  for(const t of grid){ t.powered=false; t.watered=false; }
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const t=grid[idx(x,y)];
+    if(t.type==='power') applyRadiusBool(x,y,9,'powered');
+    if(t.type==='watertower') applyRadiusBool(x,y,8,'watered');
+    if(t.type==='cityhall'){ applyRadiusBool(x,y,4,'powered'); applyRadiusBool(x,y,4,'watered'); }
+  }
+}
+
+function recomputeFields(){
+  for(const t of grid){ t.pollution=0; t._svcCov=0; }
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const t=grid[idx(x,y)];
+    if(t.zone==='I' && t.level>0) addFalloff(x,y,4,t.level*14,'pollution');
+    if(t.type==='power') addFalloff(x,y,5,22,'pollution');
+    if(SVC_TYPES.includes(t.type)) addFalloff(x,y,TOOL_RADIUS[t.type]||6,6,'_svcCov');
+  }
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const t=grid[idx(x,y)];
+    t.pollution=Math.min(100,t.pollution);
+    if(t.terrain==='water') continue;
+    let v=40;
+    v+=Math.min(24,t._svcCov);
+    v-=Math.min(40,t.pollution*0.35);
+    if(nearWater(x,y)) v+=8;
+    if(hasRoadAdj(x,y)) v+=5;
+    t.landValue=clamp(v,0,100);
+  }
+}
+
+/* ===================== GROWTH ===================== */
+const BASE_DEVELOP=0.20, BASE_UPGRADE=0.07;
+function growthPass(){
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const t=grid[idx(x,y)];
+    if(!t.zone || t.terrain==='water') continue;
+    const roadOk=hasRoadAdj(x,y);
+    const served=t.powered&&t.watered;
+    const demand = t.zone==='R'?state.demandR:t.zone==='C'?state.demandC:state.demandI;
+    if(t.level===0){
+      if(roadOk && served && rnd()<BASE_DEVELOP*demand){ t.level=1; dirty=true; }
+    } else {
+      if(roadOk && served){
+        t.unservedDays=0;
+        if(t.level<3){
+          const lvFactor=0.4+t.landValue/100*0.8;
+          if(rnd()<BASE_UPGRADE*demand*lvFactor){ t.level++; dirty=true; }
+        }
+      } else {
+        t.unservedDays++;
+        if(t.unservedDays>5 && rnd()<0.05){ t.level=Math.max(0,t.level-1); dirty=true; }
+      }
+    }
+  }
+}
+
+/* ===================== FIRE ===================== */
+function ignitionPass(){
+  if(activeFires.size>=14) return;
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const t=grid[idx(x,y)];
+    if(!t.zone || t.level<1 || t.onFire || t.type==='rubble') continue;
+    const covered=t._svcCov>0;
+    let chance=0.0006 + t.pollution*0.000014;
+    if(covered) chance*=0.25;
+    if(rnd()<chance){
+      t.onFire=true; activeFires.add(idx(x,y)); dirty=true;
+      log('🔥 Incendie déclaré près de ('+x+','+y+') !','warn');
+      playSound('alarm');
+      if(activeFires.size>=14) return;
+    }
+  }
+}
+function firePass(){
+  const snapshot=Array.from(activeFires);
+  const newFires=[];
+  snapshot.forEach(i=>{
+    const t=grid[i];
+    if(!t.onFire) return;
+    const covered=t._svcCov>0;
+    const extinguishChance=covered?0.5:0.12;
+    if(rnd()<extinguishChance){
+      t.onFire=false; activeFires.delete(i); dirty=true; return;
+    }
+    const burnChance=covered?0.12:0.28;
+    if(rnd()<burnChance){
+      t.onFire=false; t.type='rubble'; t.zone=null; t.level=0; activeFires.delete(i); dirty=true; return;
+    }
+    const spreadChance=covered?0.03:0.12;
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
+      const nt=tileAt(t.x+dx,t.y+dy);
+      if(nt && nt.zone && nt.level>=1 && !nt.onFire && nt.type!=='rubble' && rnd()<spreadChance){
+        newFires.push(idx(nt.x,nt.y));
+      }
+    });
+  });
+  newFires.forEach(i=>{
+    if(!grid[i].onFire){ grid[i].onFire=true; activeFires.add(i); dirty=true; }
+  });
+  ignitionPass();
+}
+
+/* ===================== DISASTERS ===================== */
+function maybeDisasters(){
+  if(rnd()<0.0006) triggerEarthquake();
+  else if(rnd()<0.0003) triggerUFO();
+}
+function triggerEarthquake(){
+  const developed=[];
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const t=grid[idx(x,y)];
+    if(t.zone && t.level>0) developed.push(t);
+  }
+  if(developed.length===0) return;
+  log('🌍 Un séisme secoue la cité !','warn');
+  playSound('quake');
+  shakeScreen();
+  // Sévérité proportionnelle à la taille de la ville : jamais plus de ~1/4 des bâtiments.
+  const n=Math.max(1, Math.min(developed.length, Math.round(developed.length*(0.10+rnd()*0.12))));
+  const hit=new Set();
+  let guard=0;
+  while(hit.size<n && guard<n*8){
+    guard++;
+    const t=developed[Math.floor(rnd()*developed.length)];
+    hit.add(t);
+  }
+  hit.forEach(t=>{
+    if(rnd()<0.5){ t.type='rubble'; t.zone=null; t.level=0; t.onFire=false; activeFires.delete(idx(t.x,t.y)); }
+  });
+  dirty=true;
+}
+let ufo=null;
+function triggerUFO(){
+  log('👽 Une soucoupe volante survole la cité !','warn');
+  playSound('ufo');
+  ufo={x:-40,y:40+rnd()*120,t:0,zapped:false};
+}
+function updateUFO(dt){
+  if(!ufo) return;
+  ufo.t+=dt;
+  ufo.x+=dt*0.16;
+  if(!ufo.zapped && ufo.x>280 && ufo.x<420){
+    ufo.zapped=true;
+    const developed=[];
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+      const t=grid[idx(x,y)];
+      if(t.zone && t.level>0) developed.push(t);
+    }
+    const n=Math.min(developed.length,1+Math.floor(rnd()*3));
+    for(let i=0;i<n;i++){
+      const t=developed[Math.floor(rnd()*developed.length)];
+      t.type='rubble'; t.zone=null; t.level=0; t.onFire=false; activeFires.delete(idx(t.x,t.y));
+    }
+    dirty=true;
+    playSound('zap');
+  }
+  if(ufo.x>680) ufo=null;
+}
+function shakeScreen(){
+  const wrap=document.getElementById('wrap');
+  wrap.classList.remove('shake'); void wrap.offsetWidth; wrap.classList.add('shake');
+  setTimeout(()=>wrap.classList.remove('shake'),550);
+}
+
+/* ===================== AGGREGATES / DEMAND / HAPPINESS ===================== */
+function recomputeAggregates(){
+  let pop=0,comJobs=0,indJobs=0,resVal=0,comVal=0,indVal=0,devCount=0,unpoweredDev=0,unwateredDev=0;
+  let lvSum=0,lvCount=0,polSum=0,roadCount=0,upkeep=0,coveredPop=0;
+  for(const t of grid){
+    if(t.terrain!=='water'){ lvSum+=t.landValue; lvCount++; polSum+=t.pollution; }
+    if(t.type==='road') roadCount++;
+    if(TOOL_UPKEEP[t.type]) upkeep+=TOOL_UPKEEP[t.type];
+    if(t.zone && t.level>0){
+      devCount++;
+      if(!t.powered) unpoweredDev++;
+      if(!t.watered) unwateredDev++;
+      if(t.zone==='R'){ const p=RES_CAP[t.level]; pop+=p; resVal+=RES_VALUE[t.level]; if(t._svcCov>0) coveredPop+=p; }
+      else if(t.zone==='C'){ comJobs+=COM_JOBS[t.level]; comVal+=COM_VALUE[t.level]; }
+      else if(t.zone==='I'){ indJobs+=IND_JOBS[t.level]; indVal+=IND_VALUE[t.level]; }
+    }
+  }
+  state.population=pop;
+  state.jobs=comJobs+indJobs;
+  state.comJobsCap=comJobs; state.indJobsCap=indJobs;
+  state.buildingValue=resVal+comVal+indVal;
+  state.upkeepTotal=upkeep+roadCount*0.4;
+  state.avgLandValue=lvCount?lvSum/lvCount:40;
+  state.avgPollution=lvCount?polSum/lvCount:0;
+  state.unpoweredRatio=devCount?unpoweredDev/devCount:0;
+  state.unwateredRatio=devCount?unwateredDev/devCount:0;
+  state.coveredPopRatio=pop?coveredPop/pop:0;
+  state.crimeLevel=clamp(100-state.coveredPopRatio*100-(state.avgLandValue-50)*0.3,0,100);
+}
+function updateDemand(){
+  const jobsCap=state.comJobsCap+state.indJobsCap, pop=state.population;
+  state.demandR=clamp(0.5+(jobsCap-pop)/260+(state.happiness-50)/160,0,1);
+  state.demandC=clamp(0.45+(pop-state.comJobsCap*2.4)/300,0,1);
+  state.demandI=clamp(0.4+pop/460-state.avgPollution/190,0,1);
+}
+function happinessTarget(){
+  let h=55;
+  h+=(state.avgLandValue-50)*0.25;
+  h-=state.avgPollution*0.22;
+  h-=(state.taxRate-9)*1.7;
+  h+=Math.min(20,(state.coveredPopRatio||0)*22);
+  h-=state.crimeLevel*0.07;
+  if(state.money<0) h-=15;
+  h-=state.unpoweredRatio*28;
+  h-=state.unwateredRatio*28;
+  return clamp(h,0,100);
+}
+
+/* ===================== ECONOMY / TIME ===================== */
+function monthlyBudget(){
+  const tax=state.buildingValue*(state.taxRate/100);
+  const upkeep=state.upkeepTotal;
+  state.money+=tax-upkeep;
+  log('📅 '+MONTHS[state.month-1]+' '+state.year+' — Taxes: +'+Math.round(tax)+'$ · Entretien: -'+Math.round(upkeep)+'$');
+  if(state.money<0) log('⚠️ Budget déficitaire ! Ajustez les taxes ou réduisez les dépenses.','warn');
+}
+function advanceDate(){
+  state.day++;
+  if(state.day>30){ state.day=1; state.month++; }
+  if(state.month>12){ state.month=1; state.year++; }
+}
+function checkMilestone(){
+  let i=state.milestoneIdx;
+  while(i+1<MILESTONES.length && state.population>=MILESTONES[i+1].pop) i++;
+  if(i!==state.milestoneIdx){
+    state.milestoneIdx=i;
+    const name=MILESTONES[i].name;
+    document.getElementById('cityTitle').textContent=name;
+    toast('🎉 Votre cité est maintenant un(e) '+name+' ! (Population : '+state.population+')','good');
+    log('🏆 Nouveau statut : '+name+' !','good');
+    playSound('milestone');
+  }
+}
+
+/* ===================== SIM TICK ===================== */
+function simTick(){
+  advanceDate();
+  if(state.day===1) monthlyBudget();
+  recomputeCoverage();
+  recomputeFields();
+  growthPass();
+  recomputeAggregates();
+  updateDemand();
+  firePass();
+  maybeDisasters();
+  const target=happinessTarget();
+  state.happiness+=(target-state.happiness)*0.12;
+  state.happiness=clamp(state.happiness,0,100);
+  checkMilestone();
+  updateHUD();
+}
+
+/* ===================== RENDERING ===================== */
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const buf=document.createElement('canvas'); buf.width=COLS*TILE; buf.height=ROWS*TILE;
+const bctx=buf.getContext('2d');
+
+function rectF(c,ox,oy,fx,fy,fw,fh,color){
+  c.fillStyle=color;
+  c.fillRect(Math.round(ox+fx*TILE),Math.round(oy+fy*TILE),Math.max(1,Math.round(fw*TILE)),Math.max(1,Math.round(fh*TILE)));
+}
+function triF(c,ox,oy,pts,color){
+  c.fillStyle=color; c.beginPath();
+  pts.forEach((p,i)=>{ const X=ox+p[0]*TILE,Y=oy+p[1]*TILE; if(i===0) c.moveTo(X,Y); else c.lineTo(X,Y); });
+  c.closePath(); c.fill();
+}
+function pick(arr,seed){ return arr[Math.floor(seed*arr.length)%arr.length]; }
+
+function drawGrass(c,ox,oy,t){
+  const base=((t.x+t.y)%2===0)?'#1f7a3f':'#226f3a';
+  c.fillStyle=base; c.fillRect(ox,oy,TILE,TILE);
+  if(t.tree){
+    rectF(c,ox,oy,0.42,0.55,0.16,0.35,'#5b3a22');
+    c.fillStyle='#2e8f4d';
+    c.beginPath(); c.arc(ox+TILE*0.5,oy+TILE*0.42,TILE*0.32,0,Math.PI*2); c.fill();
+    c.fillStyle='#3aa85e';
+    c.beginPath(); c.arc(ox+TILE*0.4,oy+TILE*0.34,TILE*0.18,0,Math.PI*2); c.fill();
+  }
+}
+function drawWater(c,ox,oy,t,time){
+  const phase=Math.sin(time/700+(t.x+t.y)*0.6);
+  c.fillStyle= phase>0?'#1f5fa8':'#2670c2';
+  c.fillRect(ox,oy,TILE,TILE);
+  c.fillStyle='rgba(255,255,255,0.12)';
+  c.fillRect(ox,oy+TILE*0.4+phase*2,TILE,2);
+}
+function roadMask(x,y){
+  const n=t=>t&&t.type==='road';
+  return {N:n(tileAt(x,y-1)),S:n(tileAt(x,y+1)),E:n(tileAt(x+1,y)),W:n(tileAt(x-1,y))};
+}
+function drawRoad(c,ox,oy,t){
+  c.fillStyle='#33384a'; c.fillRect(ox,oy,TILE,TILE);
+  const m=roadMask(t.x,t.y);
+  c.strokeStyle='#f4d35e'; c.lineWidth=Math.max(1,TILE*0.07); c.setLineDash([TILE*0.18,TILE*0.14]);
+  c.beginPath();
+  if(m.W||m.E){ c.moveTo(ox,oy+TILE/2); c.lineTo(ox+TILE,oy+TILE/2); }
+  if(m.N||m.S){ c.moveTo(ox+TILE/2,oy); c.lineTo(ox+TILE/2,oy+TILE); }
+  c.stroke(); c.setLineDash([]);
+  c.fillStyle='#1c1f29';
+  if(!m.N) c.fillRect(ox+TILE*0.42,oy,TILE*0.16,TILE*0.12);
+  if(!m.S) c.fillRect(ox+TILE*0.42,oy+TILE*0.88,TILE*0.16,TILE*0.12);
+  if(!m.W) c.fillRect(ox,oy+TILE*0.42,TILE*0.12,TILE*0.16);
+  if(!m.E) c.fillRect(ox+TILE*0.88,oy+TILE*0.42,TILE*0.12,TILE*0.16);
+}
+function drawZoneEmpty(c,ox,oy,t){
+  drawGrass(c,ox,oy,t);
+  const colors={R:'rgba(123,224,123,0.30)',C:'rgba(90,168,255,0.30)',I:'rgba(255,216,102,0.30)'};
+  c.fillStyle=colors[t.zone]; c.fillRect(ox,oy,TILE,TILE);
+  c.strokeStyle='rgba(255,255,255,0.25)'; c.lineWidth=1;
+  c.strokeRect(ox+1,oy+1,TILE-2,TILE-2);
+}
+const HOUSE_WALL=['#e3a06f','#cf8a63','#e8b97f','#d9926a'];
+const HOUSE_ROOF=['#7a4b3a','#5c3a2e','#8a5a3c','#6a4030'];
+function drawResidential(c,ox,oy,t){
+  drawGrass(c,ox,oy,t);
+  const wall=pick(HOUSE_WALL,t.seed), roof=pick(HOUSE_ROOF,t.seed+0.3);
+  if(t.level===1){
+    rectF(c,ox,oy,0.22,0.45,0.56,0.42,wall);
+    triF(c,ox,oy,[[0.18,0.45],[0.5,0.18],[0.82,0.45]],roof);
+    rectF(c,ox,oy,0.46,0.62,0.1,0.25,'#3a2a1f');
+    rectF(c,ox,oy,0.28,0.5,0.1,0.1,'#bfe6ff');
+    rectF(c,ox,oy,0.62,0.5,0.1,0.1,'#bfe6ff');
+  } else if(t.level===2){
+    rectF(c,ox,oy,0.14,0.36,0.72,0.52,wall);
+    triF(c,ox,oy,[[0.1,0.36],[0.5,0.1],[0.9,0.36]],roof);
+    rectF(c,ox,oy,0.42,0.6,0.16,0.28,'#3a2a1f');
+    rectF(c,ox,oy,0.2,0.44,0.12,0.12,'#bfe6ff');
+    rectF(c,ox,oy,0.68,0.44,0.12,0.12,'#bfe6ff');
+    rectF(c,ox,oy,0.2,0.62,0.12,0.12,'#bfe6ff');
+    rectF(c,ox,oy,0.68,0.62,0.12,0.12,'#bfe6ff');
+    rectF(c,ox,oy,0.72,0.14,0.08,0.2,'#555');
+  } else {
+    rectF(c,ox,oy,0.1,0.08,0.8,0.84,'#8a8fa0');
+    for(let row=0;row<4;row++)for(let col=0;col<3;col++){
+      const lit=(Math.sin(t.seed*40+row*3+col)>0);
+      rectF(c,ox,oy,0.18+col*0.24,0.16+row*0.18,0.14,0.1, lit?'#ffe79a':'#3a4060');
+    }
+  }
+}
+const SHOP_WALL=['#6fa8dc','#5b93cc','#7fb6e0'];
+function drawCommercial(c,ox,oy,t){
+  drawGrass(c,ox,oy,t);
+  const wall=pick(SHOP_WALL,t.seed);
+  if(t.level===1){
+    rectF(c,ox,oy,0.16,0.4,0.68,0.48,wall);
+    rectF(c,ox,oy,0.12,0.32,0.76,0.1,'#ff7ce0');
+    rectF(c,ox,oy,0.2,0.55,0.6,0.3,'#bfe6ff');
+  } else if(t.level===2){
+    rectF(c,ox,oy,0.12,0.22,0.76,0.66,wall);
+    rectF(c,ox,oy,0.08,0.16,0.84,0.1,'#ffd866');
+    for(let i=0;i<3;i++) rectF(c,ox,oy,0.18+i*0.24,0.36,0.16,0.16,'#bfe6ff');
+    rectF(c,ox,oy,0.4,0.66,0.2,0.22,'#3a2a1f');
+  } else {
+    rectF(c,ox,oy,0.08,0.05,0.84,0.88,'#3f6fb0');
+    for(let row=0;row<5;row++)for(let col=0;col<3;col++){
+      const lit=(Math.sin(t.seed*55+row*5+col*2)>0.1);
+      rectF(c,ox,oy,0.16+col*0.26,0.12+row*0.15,0.16,0.09, lit?'#bdf0ff':'#1d3050');
+    }
+    rectF(c,ox,oy,0.46,0,0.08,0.08,'#ddd');
+  }
+}
+function drawSmoke(c,ox,oy,time,seed,count,baseX,baseY){
+  for(let i=0;i<count;i++){
+    const phase=((time/1400)+seed*3+i*0.34)%1;
+    const yOff=phase*0.6, alpha=(1-phase)*0.5;
+    c.fillStyle='rgba(200,200,210,'+alpha.toFixed(2)+')';
+    c.beginPath();
+    c.arc(ox+baseX*TILE+Math.sin(phase*8+i)*2, oy+(baseY-yOff)*TILE, TILE*0.11, 0, Math.PI*2);
+    c.fill();
+  }
+}
+function drawIndustrial(c,ox,oy,t,time){
+  drawGrass(c,ox,oy,t);
+  const wall='#9a8f6f';
+  if(t.level===1){
+    rectF(c,ox,oy,0.14,0.42,0.6,0.46,wall);
+    rectF(c,ox,oy,0.62,0.18,0.14,0.7,'#7a7058');
+    drawSmoke(c,ox,oy,time,t.seed,2,0.69,0.18);
+  } else if(t.level===2){
+    rectF(c,ox,oy,0.1,0.36,0.8,0.52,wall);
+    rectF(c,ox,oy,0.18,0.12,0.12,0.6,'#7a7058');
+    rectF(c,ox,oy,0.62,0.08,0.12,0.64,'#7a7058');
+    drawSmoke(c,ox,oy,time,t.seed,2,0.24,0.12);
+    drawSmoke(c,ox,oy,time+200,t.seed+0.5,2,0.68,0.08);
+  } else {
+    rectF(c,ox,oy,0.06,0.3,0.9,0.6,'#857a5c');
+    rectF(c,ox,oy,0.12,0.06,0.1,0.5,'#6a6048');
+    rectF(c,ox,oy,0.46,0.02,0.1,0.54,'#6a6048');
+    rectF(c,ox,oy,0.78,0.1,0.1,0.46,'#6a6048');
+    rectF(c,ox,oy,0.2,0.55,0.16,0.3,'#444');
+    rectF(c,ox,oy,0.62,0.55,0.16,0.3,'#444');
+    drawSmoke(c,ox,oy,time,t.seed,3,0.17,0.06);
+    drawSmoke(c,ox,oy,time+300,t.seed+0.3,3,0.51,0.02);
+    drawSmoke(c,ox,oy,time+600,t.seed+0.7,3,0.83,0.1);
+  }
+}
+function drawService(c,ox,oy,t,time){
+  drawGrass(c,ox,oy,t);
+  if(t.type==='power'){
+    rectF(c,ox,oy,0.3,0.3,0.4,0.6,'#6a6a78');
+    rectF(c,ox,oy,0.1,0.55,0.18,0.4,'#555');
+    rectF(c,ox,oy,0.72,0.55,0.18,0.4,'#555');
+    const blink=Math.sin(time/200)>0;
+    rectF(c,ox,oy,0.45,0.12,0.1,0.1, blink?'#ff5d6c':'#7a1f24');
+    drawSmoke(c,ox,oy,time,t.seed,2,0.5,0.3);
+  } else if(t.type==='watertower'){
+    rectF(c,ox,oy,0.06,0.62,0.08,0.34,'#777'); rectF(c,ox,oy,0.86,0.62,0.08,0.34,'#777');
+    rectF(c,ox,oy,0.32,0.62,0.08,0.34,'#777'); rectF(c,ox,oy,0.6,0.62,0.08,0.34,'#777');
+    c.fillStyle='#5aa8ff'; c.beginPath(); c.arc(ox+TILE*0.5,oy+TILE*0.45,TILE*0.36,0,Math.PI*2); c.fill();
+    c.fillStyle='rgba(255,255,255,0.3)'; c.beginPath(); c.arc(ox+TILE*0.4,oy+TILE*0.35,TILE*0.1,0,Math.PI*2); c.fill();
+  } else if(t.type==='park'){
+    rectF(c,ox,oy,0.05,0.7,0.9,0.25,'#2e6e44');
+    [[0.2,0.5],[0.5,0.35],[0.78,0.55]].forEach(p=>{
+      c.fillStyle='#2e8f4d'; c.beginPath(); c.arc(ox+p[0]*TILE,oy+p[1]*TILE,TILE*0.16,0,Math.PI*2); c.fill();
+    });
+    c.fillStyle='#5aa8ff'; c.beginPath(); c.arc(ox+TILE*0.5,oy+TILE*0.78,TILE*0.12,0,Math.PI*2); c.fill();
+  } else if(t.type==='police'){
+    rectF(c,ox,oy,0.12,0.32,0.76,0.56,'#dfe3ee');
+    rectF(c,ox,oy,0.1,0.2,0.8,0.14,'#3a5cad');
+    const f=Math.sin(time/180)>0;
+    rectF(c,ox,oy,0.4,0.06,0.08,0.1, f?'#ff5d6c':'#3a5cad');
+    rectF(c,ox,oy,0.52,0.06,0.08,0.1, !f?'#5aa8ff':'#3a5cad');
+  } else if(t.type==='firestation'){
+    rectF(c,ox,oy,0.1,0.3,0.8,0.58,'#b23b3b');
+    rectF(c,ox,oy,0.22,0.5,0.56,0.38,'#dadada');
+    rectF(c,ox,oy,0.42,0.06,0.06,0.26,'#444');
+  } else if(t.type==='school'){
+    rectF(c,ox,oy,0.1,0.32,0.8,0.56,'#cf9b5c');
+    triF(c,ox,oy,[[0.06,0.32],[0.5,0.1],[0.94,0.32]],'#8a5a3c');
+    rectF(c,ox,oy,0.86,0.02,0.04,0.24,'#888');
+    rectF(c,ox,oy,0.9,0.02,0.08,0.06,'#ff5d6c');
+  } else if(t.type==='hospital'){
+    rectF(c,ox,oy,0.08,0.2,0.84,0.68,'#f2f2f2');
+    rectF(c,ox,oy,0.44,0.32,0.12,0.36,'#ff5d6c');
+    rectF(c,ox,oy,0.32,0.44,0.36,0.12,'#ff5d6c');
+  } else if(t.type==='cityhall'){
+    rectF(c,ox,oy,0.06,0.28,0.88,0.6,'#e8d49a');
+    triF(c,ox,oy,[[0.02,0.28],[0.5,0.04],[0.98,0.28]],'#b89856');
+    rectF(c,ox,oy,0.18,0.5,0.14,0.38,'#3a2a1f');
+    rectF(c,ox,oy,0.66,0.5,0.14,0.38,'#3a2a1f');
+    rectF(c,ox,oy,0.46,0,0.08,0.3,'#888');
+    rectF(c,ox,oy,0.5,0.02,0.16,0.08,'#ff5d6c');
+  }
+}
+function drawRubble(c,ox,oy,t){
+  drawGrass(c,ox,oy,t);
+  c.fillStyle='rgba(20,20,20,0.55)'; c.fillRect(ox,oy,TILE,TILE);
+  c.strokeStyle='#1a1a1a'; c.lineWidth=1.5;
+  c.beginPath(); c.moveTo(ox+TILE*0.2,oy+TILE*0.2); c.lineTo(ox+TILE*0.8,oy+TILE*0.8);
+  c.moveTo(ox+TILE*0.8,oy+TILE*0.2); c.lineTo(ox+TILE*0.2,oy+TILE*0.8); c.stroke();
+}
+
+function drawTileStatic(c,t,time){
+  const ox=t.x*TILE, oy=t.y*TILE;
+  if(t.terrain==='water'){ drawWater(c,ox,oy,t,time); return; }
+  if(t.type==='road'){ drawRoad(c,ox,oy,t); return; }
+  if(t.type==='rubble'){ drawRubble(c,ox,oy,t); return; }
+  if(t.type && t.type!=='cityhall'){ drawService(c,ox,oy,t,time); return; }
+  if(t.type==='cityhall'){ drawService(c,ox,oy,t,time); return; }
+  if(t.zone){
+    if(t.level===0){ drawZoneEmpty(c,ox,oy,t); return; }
+    if(t.zone==='R'){ drawResidential(c,ox,oy,t); return; }
+    if(t.zone==='C'){ drawCommercial(c,ox,oy,t); return; }
+    if(t.zone==='I'){ drawIndustrial(c,ox,oy,t,time); return; }
+  }
+  drawGrass(c,ox,oy,t);
+}
+
+function renderStatic(time){
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++) drawTileStatic(bctx,grid[idx(x,y)],time);
+  dirty=false;
+}
+
+function drawOverlay(){
+  if(state.view==='normal') return;
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const t=grid[idx(x,y)];
+    if(t.terrain==='water') continue;
+    let color=null;
+    if(state.view==='power') color=t.powered?'rgba(80,220,255,0.32)':'rgba(255,60,60,0.32)';
+    else if(state.view==='water') color=t.watered?'rgba(80,220,255,0.32)':'rgba(255,60,60,0.32)';
+    else if(state.view==='pollution'){ const a=Math.min(0.7,t.pollution/100*0.7); if(a>0.03) color='rgba(190,40,200,'+a.toFixed(2)+')'; }
+    else if(state.view==='land'){ const v=t.landValue/100; color='rgba('+Math.round(255-v*200)+','+Math.round(v*210)+',90,0.32)'; }
+    if(color){ ctx.fillStyle=color; ctx.fillRect(x*TILE,y*TILE,TILE,TILE); }
+  }
+}
+function drawFireOverlay(time){
+  activeFires.forEach(i=>{
+    const t=grid[i]; const ox=t.x*TILE, oy=t.y*TILE;
+    const flick=0.6+Math.sin(time/90+i)*0.3;
+    ctx.fillStyle='rgba(255,'+Math.round(120*flick)+',40,0.85)';
+    ctx.beginPath();
+    ctx.moveTo(ox+TILE*0.5,oy+TILE*0.15);
+    ctx.lineTo(ox+TILE*0.8,oy+TILE*0.7);
+    ctx.lineTo(ox+TILE*0.5,oy+TILE*0.55);
+    ctx.lineTo(ox+TILE*0.2,oy+TILE*0.7);
+    ctx.closePath(); ctx.fill();
+  });
+}
+function drawUFO(){
+  if(!ufo) return;
+  const x=ufo.x, y=ufo.y;
+  ctx.fillStyle='#7be07b';
+  ctx.beginPath(); ctx.ellipse(x,y,18,7,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#cfffea';
+  ctx.beginPath(); ctx.arc(x,y-6,8,Math.PI,0); ctx.fill();
+  if(!ufo.zapped) return;
+}
+function drawNightTint(time){
+  const phase=(Math.sin(time/9000)+1)/2;
+  const alpha=phase*0.38;
+  if(alpha<0.02) return;
+  ctx.fillStyle='rgba(8,10,40,'+alpha.toFixed(2)+')';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+function drawHover(){
+  if(!hoverTile) return;
+  ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.lineWidth=2;
+  ctx.strokeRect(hoverTile.x*TILE+1,hoverTile.y*TILE+1,TILE-2,TILE-2);
+}
+
+function render(time){
+  if(dirty) renderStatic(time);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(buf,0,0);
+  drawNightTint(time);
+  drawOverlay();
+  drawFireOverlay(time);
+  drawUFO();
+  drawHover();
+}
+
+/* ===================== INPUT ===================== */
+function clientToTile(clientX,clientY){
+  const rect=canvas.getBoundingClientRect();
+  const x=Math.floor((clientX-rect.left)/rect.width*COLS);
+  const y=Math.floor((clientY-rect.top)/rect.height*ROWS);
+  if(!inBounds(x,y)) return null;
+  return {x,y};
+}
+function tileInfoText(t){
+  if(t.terrain==='water') return 'Eau (lac)';
+  let lines=[];
+  if(t.type==='cityhall') return "Hôtel de Ville — cœur de votre cité.";
+  if(t.type==='road') return 'Route';
+  if(t.type==='rubble') return 'Décombres — à déblayer (Démolir).';
+  if(t.type && TOOLBY[t.type]) lines.push(TOOLBY[t.type].name);
+  if(t.zone){
+    const zn={R:'Résidentiel',C:'Commercial',I:'Industriel'}[t.zone];
+    lines.push('Zone : '+zn+' (niveau '+t.level+'/3)');
+    if(t.level>0){
+      if(t.zone==='R') lines.push('Habitants : '+RES_CAP[t.level]);
+      if(t.zone==='C') lines.push('Emplois : '+COM_JOBS[t.level]);
+      if(t.zone==='I') lines.push('Emplois : '+IND_JOBS[t.level]);
+    }
+  }
+  if(!t.type && !t.zone) lines.push('Terrain vide');
+  lines.push('Électricité : '+(t.powered?'✅':'❌')+'  Eau : '+(t.watered?'✅':'❌'));
+  lines.push('Valeur foncière : '+Math.round(t.landValue)+'%');
+  lines.push('Pollution : '+Math.round(t.pollution)+'%');
+  if(t.onFire) lines.push('🔥 EN FEU !');
+  return lines.join('<br>');
+}
+
+function applyTool(toolId,x,y){
+  const t=tileAt(x,y);
+  if(!t) return;
+  const tool=TOOLBY[toolId];
+  if(toolId==='bulldoze'){
+    if(t.type==='cityhall'){ toast("Impossible de détruire l'Hôtel de Ville !",'warn'); playSound('error'); return; }
+    if(!t.type && !t.zone && t.terrain!=='water') return;
+    t.type=null; t.zone=null; t.level=0; t.onFire=false; activeFires.delete(idx(x,y));
+    dirty=true; playSound('bulldoze');
+    return;
+  }
+  if(t.terrain==='water'){ toast('Impossible de construire sur un lac.','warn'); playSound('error'); return; }
+  if(toolId==='road'){
+    if(t.type==='road') return;
+    if(t.type || (t.zone && t.level>0)){ toast('Terrain occupé — démolissez d\'abord.','warn'); playSound('error'); return; }
+    if(state.money<tool.cost){ toast('Fonds insuffisants !','warn'); playSound('error'); return; }
+    state.money-=tool.cost; t.type='road'; t.zone=null; t.level=0; dirty=true; playSound('build');
+    return;
+  }
+  if(toolId==='zoneR'||toolId==='zoneC'||toolId==='zoneI'){
+    const z=toolId==='zoneR'?'R':toolId==='zoneC'?'C':'I';
+    if(t.type){ toast('Terrain occupé — démolissez d\'abord.','warn'); playSound('error'); return; }
+    if(t.zone===z) return;
+    if(t.zone && t.level>0){ toast('Démolissez le bâtiment avant de rezoner.','warn'); playSound('error'); return; }
+    if(state.money<tool.cost){ toast('Fonds insuffisants !','warn'); playSound('error'); return; }
+    state.money-=tool.cost; t.zone=z; t.type=null; t.level=0; dirty=true; playSound('build');
+    return;
+  }
+  // service buildings
+  if(t.type || (t.zone)){ toast('Terrain occupé — démolissez d\'abord.','warn'); playSound('error'); return; }
+  if(state.money<tool.cost){ toast('Fonds insuffisants !','warn'); playSound('error'); return; }
+  state.money-=tool.cost; t.type=toolId; t.zone=null; t.level=1; dirty=true; playSound('build');
+}
+
+canvas.addEventListener('mousedown',e=>{
+  if(!state.started) return;
+  const tp=clientToTile(e.clientX,e.clientY); if(!tp) return;
+  if(e.button===2){ applyTool('bulldoze',tp.x,tp.y); return; }
+  isPainting=true; paintTool=state.tool;
+  applyTool(paintTool,tp.x,tp.y);
+});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('mouseup',()=>{ isPainting=false; paintTool=null; });
+canvas.addEventListener('mousemove',e=>{
+  const tp=clientToTile(e.clientX,e.clientY);
+  hoverTile=tp;
+  if(tp){
+    document.getElementById('tileInfo').innerHTML=tileInfoText(tileAt(tp.x,tp.y));
+    if(isPainting && paintTool) applyTool(paintTool,tp.x,tp.y);
+  }
+});
+canvas.addEventListener('mouseleave',()=>{ hoverTile=null; });
+
+/* ===================== UI / HUD ===================== */
+function buildToolButtons(){
+  const groups={net:document.getElementById('toolsNet'),zone:document.getElementById('toolsZone'),svc:document.getElementById('toolsSvc')};
+  const colorOf={bulldoze:'#888',road:'#555',zoneR:'#7be07b',zoneC:'#5aa8ff',zoneI:'#ffd866',
+    power:'#ff9d5c',watertower:'#5aa8ff',park:'#2e8f4d',police:'#3a5cad',firestation:'#b23b3b',school:'#cf9b5c',hospital:'#f2f2f2'};
+  TOOLS.forEach(t=>{
+    const btn=document.createElement('button');
+    btn.className='tool'; btn.dataset.tool=t.id;
+    btn.innerHTML='<span class="ic" style="background:'+colorOf[t.id]+'"></span>'+
+      '<span class="tname">'+t.name+'</span>'+
+      '<span class="tcost">'+(t.cost?t.cost+'$':'—')+'</span>'+
+      (t.hotkey!==null?'<span class="key">'+t.hotkey+'</span>':'');
+    btn.title=t.desc;
+    btn.addEventListener('click',()=>selectTool(t.id));
+    groups[t.group].appendChild(btn);
+  });
+  selectTool('road');
+}
+function selectTool(id){
+  state.tool=id;
+  document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('sel',b.dataset.tool===id));
+}
+
+function updateHUD(){
+  document.getElementById('valMoney').textContent=Math.round(state.money)+' $';
+  document.getElementById('statMoney').classList.toggle('neg',state.money<0);
+  document.getElementById('valPop').textContent=state.population;
+  document.getElementById('valJobs').textContent=state.jobs;
+  const h=Math.round(state.happiness);
+  const face = h>=70?'😄':h>=50?'🙂':h>=30?'😐':'😟';
+  document.getElementById('valHap').textContent=face+' '+h+'%';
+  document.getElementById('dateLabel').textContent=state.day+' '+MONTHS[state.month-1]+' '+state.year;
+  document.getElementById('fillR').style.width=Math.round(state.demandR*100)+'%';
+  document.getElementById('fillC').style.width=Math.round(state.demandC*100)+'%';
+  document.getElementById('fillI').style.width=Math.round(state.demandI*100)+'%';
+}
+
+let toastId=0;
+function toast(msg,kind){
+  const el=document.createElement('div');
+  el.className='toast'+(kind?(' '+kind):'');
+  el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{ el.classList.add('fade'); setTimeout(()=>el.remove(),400); },4200);
+}
+function log(msg,kind){
+  const box=document.getElementById('logBox');
+  const d=document.createElement('div');
+  if(kind==='warn') d.style.color='var(--red)';
+  else if(kind==='good') d.style.color='var(--gold)';
+  d.textContent='['+state.day+'/'+state.month+'/'+state.year+'] '+msg;
+  box.insertBefore(d,box.firstChild);
+  while(box.children.length>40) box.removeChild(box.lastChild);
+}
+
+/* ===================== SOUND (WebAudio synth) ===================== */
+let actx=null;
+function ensureAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx && actx.state==='suspended') actx.resume(); }
+function tone(freq,dur,type,vol,delay){
+  if(!actx || state.muted) return;
+  const t0=actx.currentTime+(delay||0);
+  const osc=actx.createOscillator(); const gain=actx.createGain();
+  osc.type=type||'square'; osc.frequency.setValueAtTime(freq,t0);
+  gain.gain.setValueAtTime(0,t0);
+  gain.gain.linearRampToValueAtTime(vol||0.15,t0+0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0+dur+0.02);
+  return osc;
+}
+function playSound(name){
+  if(!actx || state.muted) return;
+  if(name==='build') tone(900,0.07,'square',0.12);
+  else if(name==='bulldoze') tone(160,0.1,'square',0.14);
+  else if(name==='error'){ tone(220,0.08,'sawtooth',0.12); tone(150,0.1,'sawtooth',0.1,0.07); }
+  else if(name==='milestone'){ [523,659,784,1047].forEach((f,i)=>tone(f,0.12,'square',0.13,i*0.1)); }
+  else if(name==='alarm'){ tone(880,0.12,'square',0.1); tone(660,0.12,'square',0.1,0.13); }
+  else if(name==='quake'){ const osc=tone(60,0.6,'sawtooth',0.18); if(osc) osc.frequency.linearRampToValueAtTime(40,actx.currentTime+0.6); }
+  else if(name==='ufo'){ const osc=tone(300,0.5,'sine',0.12); if(osc) osc.frequency.linearRampToValueAtTime(900,actx.currentTime+0.5); }
+  else if(name==='zap') tone(1400,0.15,'square',0.14);
+}
+
+/* ===================== SAVE / LOAD ===================== */
+const SAVE_KEY='citeretro_save_v1';
+function serialize(){
+  return JSON.stringify({
+    grid:grid.map(t=>({x:t.x,y:t.y,terrain:t.terrain,zone:t.zone,type:t.type,level:t.level,seed:t.seed,tree:t.tree})),
+    cityHall, state:{money:state.money,taxRate:state.taxRate,day:state.day,month:state.month,year:state.year,
+      happiness:state.happiness,milestoneIdx:state.milestoneIdx,speed:state.speed,muted:state.muted}
+  });
+}
+function saveGame(silent){
+  try{
+    localStorage.setItem(SAVE_KEY,serialize());
+    if(!silent) toast('💾 Partie sauvegardée.','good');
+  }catch(e){ toast('Erreur de sauvegarde.','warn'); }
+}
+function loadGame(){
+  const raw=localStorage.getItem(SAVE_KEY);
+  if(!raw) return false;
+  try{
+    const data=JSON.parse(raw);
+    grid=new Array(COLS*ROWS);
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++) grid[idx(x,y)]=makeTile(x,y);
+    data.grid.forEach(d=>{
+      const t=grid[idx(d.x,d.y)];
+      Object.assign(t,{terrain:d.terrain,zone:d.zone,type:d.type,level:d.level,seed:d.seed,tree:d.tree});
+    });
+    cityHall=data.cityHall;
+    Object.assign(state,data.state);
+    document.getElementById('taxSlider').value=state.taxRate;
+    document.getElementById('taxVal').textContent=state.taxRate+' %';
+    document.getElementById('cityTitle').textContent=MILESTONES[state.milestoneIdx].name;
+    document.getElementById('btnMute').textContent=state.muted?'🔇':'🔊';
+    activeFires=new Set();
+    recomputeCoverage(); recomputeFields(); recomputeAggregates(); updateDemand();
+    dirty=true;
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ===================== MAIN LOOP ===================== */
+let lastTs=0, accumulator=0;
+function loop(ts){
+  const dt=lastTs?ts-lastTs:16; lastTs=ts;
+  if(state.started && !state.paused){
+    accumulator+=dt*state.speed;
+    const dayMs=DAY_MS_BASE;
+    let guard=0;
+    while(accumulator>=dayMs && guard<60){ accumulator-=dayMs; simTick(); guard++; }
+  }
+  updateUFO(dt);
+  render(ts);
+  requestAnimationFrame(loop);
+}
+
+/* ===================== WIRING ===================== */
+function wireUI(){
+  document.querySelectorAll('.speedBtn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      state.speed=parseInt(b.dataset.speed,10);
+      state.paused=false;
+      document.querySelectorAll('.speedBtn').forEach(x=>x.classList.toggle('active',x===b));
+      document.getElementById('btnPause').textContent='⏸';
+    });
+  });
+  document.getElementById('btnPause').addEventListener('click',togglePause);
+  document.getElementById('btnMute').addEventListener('click',()=>{
+    state.muted=!state.muted;
+    document.getElementById('btnMute').textContent=state.muted?'🔇':'🔊';
+  });
+  document.getElementById('btnHelp').addEventListener('click',()=>toggleHelp());
+  document.getElementById('btnCloseHelp').addEventListener('click',()=>toggleHelp(false));
+  document.getElementById('btnSave').addEventListener('click',()=>saveGame(false));
+  document.getElementById('btnReset').addEventListener('click',()=>{
+    if(confirm('Recommencer une nouvelle partie ? Votre progression actuelle sera perdue.')){
+      localStorage.removeItem(SAVE_KEY);
+      newGrid();
+      recomputeCoverage(); recomputeFields(); recomputeAggregates(); updateDemand(); updateHUD();
+      document.getElementById('cityTitle').textContent='Hameau';
+      toast('Nouvelle partie démarrée.','good');
+    }
+  });
+  document.getElementById('taxSlider').addEventListener('input',e=>{
+    state.taxRate=parseInt(e.target.value,10);
+    document.getElementById('taxVal').textContent=state.taxRate+' %';
+  });
+  document.getElementById('viewSelect').addEventListener('change',e=>{ state.view=e.target.value; });
+
+  document.getElementById('btnNewGame').addEventListener('click',()=>{ ensureAudio(); startGame(false); });
+  document.getElementById('btnContinue').addEventListener('click',()=>{ ensureAudio(); startGame(true); });
+
+  window.addEventListener('keydown',e=>{
+    if(e.repeat) return;
+    const k=e.key.toLowerCase();
+    const tool=TOOLS.find(t=>t.hotkey===k);
+    if(tool){ selectTool(tool.id); return; }
+    if(k===' '){ e.preventDefault(); togglePause(); }
+    else if(k==='+'||k==='='){ bumpSpeed(1); }
+    else if(k==='-'||k==='_'){ bumpSpeed(-1); }
+    else if(k==='h'){ toggleHelp(); }
+    else if(k==='escape'){ document.getElementById('helpModal').classList.add('hide'); }
+  });
+}
+function bumpSpeed(dir){
+  const speeds=[1,2,4];
+  let i=speeds.indexOf(state.speed); if(i<0) i=0;
+  i=clamp(i+dir,0,speeds.length-1);
+  state.speed=speeds[i]; state.paused=false;
+  document.querySelectorAll('.speedBtn').forEach(x=>x.classList.toggle('active',parseInt(x.dataset.speed,10)===state.speed));
+}
+function togglePause(){
+  state.paused=!state.paused;
+  document.getElementById('btnPause').textContent=state.paused?'▶':'⏸';
+}
+let helpWasPaused=false;
+function toggleHelp(force){
+  const modal=document.getElementById('helpModal');
+  const show = force!==undefined ? force : modal.classList.contains('hide');
+  if(show){ helpWasPaused=state.paused; state.paused=true; modal.classList.remove('hide'); }
+  else { modal.classList.add('hide'); if(!helpWasPaused) state.paused=false; }
+}
+
+function startGame(fromSave){
+  if(fromSave) loadGame();
+  state.started=true; state.paused=false;
+  document.getElementById('hint').classList.add('hide');
+  document.querySelectorAll('.speedBtn').forEach(x=>x.classList.toggle('active',parseInt(x.dataset.speed,10)===state.speed));
+  document.getElementById('btnPause').textContent='⏸';
+  toast('Bienvenue dans votre cité !','good');
+}
+
+function init(){
+  newGrid();
+  recomputeCoverage(); recomputeFields(); recomputeAggregates(); updateDemand(); updateHUD();
+  buildToolButtons(); wireUI();
+  document.querySelector('.speedBtn[data-speed="1"]').classList.add('active');
+  if(localStorage.getItem(SAVE_KEY)){
+    document.getElementById('btnContinue').style.display='inline-block';
+  }
+  setInterval(()=>{ if(state.started) saveGame(true); },60000);
+  requestAnimationFrame(loop);
+}
+init();
+
+})();
+</script>
+</body>
+</html>

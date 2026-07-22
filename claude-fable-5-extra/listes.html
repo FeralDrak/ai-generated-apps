@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Data structures — le guide interactif</title>
+<style>
+  :root{
+    --bg:#0b0e17; --panel:#131828; --panel2:#1a2138;
+    --text:#e8ecf8; --muted:#8b93ab;
+    --accent:#6c7bff; --accent2:#22d3ee;
+    --ok:#34d399; --warn:#fbbf24; --bad:#f87171;
+    --mono:'JetBrains Mono','Cascadia Code',Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.55}
+  .hero{max-width:1000px;margin:0 auto;padding:38px 16px 18px;text-align:center}
+  .hero h1{font-size:clamp(26px,4.5vw,40px);font-weight:800;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);margin-top:8px;max-width:640px;margin-left:auto;margin-right:auto}
+  .tabs{position:sticky;top:0;z-index:50;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:12px 16px;background:rgba(11,14,23,.85);backdrop-filter:blur(10px);border-bottom:1px solid #ffffff10}
+  .tabbtn{border:1px solid #ffffff1f;background:var(--panel);color:var(--muted);padding:8px 14px;
+    border-radius:999px;cursor:pointer;font-size:13.5px;transition:.15s}
+  .tabbtn:hover{color:var(--text);border-color:var(--accent)}
+  .tabbtn.active{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#0b0e17;font-weight:700;border-color:transparent}
+  main{max-width:1000px;margin:0 auto;padding:26px 16px 80px}
+  .tab{display:none}
+  .tab.active{display:block;animation:fadeup .35s ease}
+  @keyframes fadeup{from{opacity:0;transform:translateY(10px)}}
+  h2{font-size:26px;margin-bottom:6px}
+  h3{font-size:16px;margin-bottom:10px}
+  .lead{color:var(--muted);margin-bottom:20px;max-width:760px}
+  .card{background:var(--panel);border:1px solid #ffffff14;border-radius:16px;padding:20px;margin-bottom:16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .grid2 .card{margin-bottom:0}
+  .grid2{margin-bottom:16px}
+  .card p{font-size:14.5px;color:#c6cde0}
+  .card ul{margin:10px 0 0 18px;font-size:14px;color:#c6cde0}
+  .card li{margin-bottom:6px}
+  /* controls */
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center}
+  input{background:#0d1120;border:1px solid #ffffff1f;color:var(--text);padding:9px 12px;border-radius:10px;
+    width:130px;font-size:14px;font-family:var(--mono)}
+  input:focus{outline:none;border-color:var(--accent)}
+  .btn{border:1px solid #ffffff1f;background:var(--panel2);color:var(--text);padding:9px 14px;border-radius:10px;
+    cursor:pointer;font-size:13.5px;transition:.15s}
+  .btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#0b0e17;font-weight:700;border:none}
+  .btn.danger:hover{border-color:var(--bad)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .log{margin-top:12px;min-height:44px;background:#0d1120;border:1px solid #ffffff12;border-radius:10px;
+    padding:10px 14px;font-size:13.5px;color:var(--muted)}
+  .log.ok{color:#a7f3d0;border-color:#34d39944}
+  .log.warn{color:#fde68a;border-color:#fbbf2444}
+  .log.err{color:#fecaca;border-color:#f8717144}
+  .log b{color:inherit}
+  /* badges */
+  .badge{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:6px;font-weight:700;white-space:nowrap}
+  .o1{background:#34d3991f;color:#6ee7b7}
+  .olog{background:#22d3ee1f;color:#67e8f9}
+  .on{background:#fbbf241f;color:#fcd34d}
+  .onn{background:#f871711f;color:#fca5a5}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:9px 10px;border-bottom:1px solid #ffffff12;text-align:left;font-size:13.5px}
+  th{color:var(--muted);font-weight:600}
+  td:first-child{font-weight:600}
+  .tablewrap{overflow-x:auto}
+  /* viz communs */
+  .viz{display:flex;align-items:center;overflow-x:auto;padding:16px 6px 32px;min-height:100px}
+  .empty{color:var(--muted);font-style:italic;padding:16px}
+  .cell{min-width:54px;height:54px;border:1px solid #ffffff22;border-radius:10px;background:var(--panel2);
+    display:flex;align-items:center;justify-content:center;margin-right:6px;transition:all .25s;position:relative;flex-shrink:0}
+  .cell .val{font-weight:700;font-family:var(--mono);font-size:15px}
+  .cell .idx{position:absolute;bottom:-20px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+  .cell.scan{border-color:var(--accent);box-shadow:0 0 0 3px #6c7bff33;transform:translateY(-4px)}
+  .cell.found{border-color:var(--ok);background:#34d39922;transform:translateY(-4px)}
+  .cell.bad{border-color:var(--bad);background:#f8717122}
+  .cell.shift{border-color:var(--warn);transform:translateX(10px)}
+  /* linked list */
+  .ptr{font-size:12px;color:var(--accent2);border:1px dashed var(--accent2);padding:5px 9px;border-radius:8px;
+    font-family:var(--mono);flex-shrink:0}
+  .arr{margin:0 7px;color:var(--muted);font-size:17px;flex-shrink:0}
+  .lnode{display:flex;border:1px solid #ffffff22;border-radius:10px;overflow:hidden;background:var(--panel2);
+    transition:all .25s;flex-shrink:0}
+  .lnode .lval{padding:11px 13px;font-weight:700;font-family:var(--mono);font-size:14px}
+  .lnode .lnext{padding:11px 9px;border-left:1px dashed #ffffff22;color:var(--accent2);font-size:13px}
+  .lnode.scan{border-color:var(--accent);box-shadow:0 0 0 3px #6c7bff33;transform:translateY(-3px)}
+  .lnode.visited{border-color:#6c7bff66}
+  .lnode.found{border-color:var(--ok);background:#34d39918;transform:translateY(-3px)}
+  .lnode.bad{border-color:var(--bad);background:#f8717118}
+  .nul{color:var(--muted);border:1px dashed #ffffff30;padding:10px 12px;border-radius:10px;
+    font-family:var(--mono);font-size:13px;flex-shrink:0}
+  /* stack */
+  .stackviz{display:flex;flex-direction:column-reverse;align-items:center;justify-content:flex-start;
+    gap:6px;min-height:320px;padding:14px 90px 14px 14px}
+  .stackbase{width:230px;height:5px;background:#ffffff22;border-radius:3px}
+  .sitem{width:200px;text-align:center;padding:11px;border-radius:10px;background:var(--panel2);
+    border:1px solid #ffffff22;font-family:var(--mono);font-size:14px;transition:.25s;position:relative}
+  .sitem.top{border-color:var(--accent2)}
+  .sitem.top::after{content:'◀ top';position:absolute;right:-58px;top:50%;transform:translateY(-50%);
+    color:var(--accent2);font-size:12px;white-space:nowrap}
+  .sitem.in{animation:pop .3s ease}
+  .sitem.bad{border-color:var(--bad);background:#f8717122}
+  .sitem.found{border-color:var(--ok);background:#34d39922}
+  @keyframes pop{from{transform:scale(.6);opacity:0}}
+  /* queue */
+  .queueviz{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:30px 8px}
+  .qside{color:var(--muted);font-size:12px;text-align:center;line-height:1.3;flex-shrink:0;padding:0 4px}
+  .qitem{padding:11px 16px;border-radius:10px;background:var(--panel2);border:1px solid #ffffff22;
+    font-family:var(--mono);font-size:14px;transition:.25s;position:relative;flex-shrink:0}
+  .qitem.front::before{content:'front';position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+    font-size:11px;color:var(--accent2)}
+  .qitem.back::after{content:'back';position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);
+    font-size:11px;color:var(--warn)}
+  .qitem.in{animation:pop .3s ease}
+  .qitem.bad{border-color:var(--bad);background:#f8717122}
+  .qitem.found{border-color:var(--ok);background:#34d39922}
+  /* BST */
+  #bst-viz{overflow-x:auto;padding:10px 0;min-height:120px}
+  .bnode circle{fill:#1a2138;stroke:#ffffff33;stroke-width:1.5;transition:.25s}
+  .bnode text{fill:var(--text);font-size:13px;font-weight:700;text-anchor:middle;font-family:var(--mono)}
+  .bnode.scan circle{stroke:var(--accent);stroke-width:3;fill:#6c7bff22}
+  .bnode.visited circle{stroke:#6c7bff88;fill:#6c7bff11}
+  .bnode.found circle{stroke:var(--ok);stroke-width:3;fill:#34d39926}
+  .bnode.bad circle{stroke:var(--bad);stroke-width:3;fill:#f8717122}
+  .edges line{stroke:#ffffff22;stroke-width:1.5}
+  /* hash */
+  .bucket{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #ffffff14;border-radius:10px;
+    margin-bottom:6px;background:var(--panel2);transition:.25s;min-height:44px;flex-wrap:wrap}
+  .bucket.hl{border-color:var(--accent);box-shadow:0 0 0 3px #6c7bff26}
+  .bidx{font-family:var(--mono);color:var(--muted);min-width:22px;text-align:right;font-size:13px}
+  .bempty{color:#ffffff30;font-family:var(--mono)}
+  .chip{background:#6c7bff2b;border:1px solid #6c7bff55;padding:4px 11px;border-radius:999px;font-size:13px;
+    font-family:var(--mono);transition:.25s}
+  .chip.scan{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 0 0 3px #6c7bff33}
+  .chip.found{background:#34d39930;border-color:var(--ok)}
+  /* use cases + tips */
+  .usecases{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin:12px 0 16px}
+  .uc{background:var(--panel);border:1px solid #ffffff14;border-radius:14px;padding:14px;font-size:13.5px;color:#c6cde0}
+  .uc b{display:block;margin-bottom:5px;color:var(--text);font-size:14px}
+  .tip{border-left:3px solid var(--accent);background:#6c7bff12;padding:13px 16px;border-radius:0 12px 12px 0;
+    font-size:14px;color:#c6cde0}
+  .tip b{color:var(--text)}
+  /* accueil */
+  .home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:14px;margin:20px 0}
+  .hcard{cursor:pointer;background:var(--panel);border:1px solid #ffffff14;border-radius:16px;padding:18px;transition:.2s}
+  .hcard:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .hcard .em{font-size:30px}
+  .hcard h3{margin:8px 0 4px}
+  .hcard p{font-size:13px;color:var(--muted)}
+  /* quiz */
+  .progress{height:6px;background:#ffffff14;border-radius:3px;overflow:hidden;margin-bottom:18px}
+  #quiz-progress{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width .3s}
+  .qnum{color:var(--muted);font-size:13px;margin-bottom:10px}
+  .choice{display:block;width:100%;text-align:left;padding:12px 15px;margin-bottom:8px;border-radius:10px;
+    background:var(--panel2);border:1px solid #ffffff1f;color:var(--text);cursor:pointer;font-size:14.5px;transition:.15s}
+  .choice:hover:not(:disabled){border-color:var(--accent)}
+  .choice.right{border-color:var(--ok);background:#34d39922}
+  .choice.wrong{border-color:var(--bad);background:#f8717122}
+  .choice:disabled{cursor:default}
+  .fb{margin:12px 0;padding:11px 14px;border-radius:10px;font-size:14px}
+  .fb.ok{background:#34d3991a;color:#a7f3d0}
+  .fb.ko{background:#f871711a;color:#fecaca}
+  .quiz-end{text-align:center;padding:34px 10px}
+  .score{font-size:52px;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:8px}
+  .quiz-end p{color:var(--muted);margin-bottom:18px}
+  footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 16px 50px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🧠 Data structures</h1>
+  <p>Le guide interactif pour comprendre — et pas juste réciter — les array, linked list, stack, queue, tree et hash table. Manipule chaque structure, puis teste-toi avec le quiz. Vocabulaire technique en anglais, pour coller au jour de ton entretien.</p>
+</div>
+
+<nav class="tabs">
+  <button class="tabbtn active" data-tab="accueil" onclick="showTab('accueil')">🏠 Accueil</button>
+  <button class="tabbtn" data-tab="array" onclick="showTab('array')">🧮 Array</button>
+  <button class="tabbtn" data-tab="liste" onclick="showTab('liste')">🔗 Linked list</button>
+  <button class="tabbtn" data-tab="pile" onclick="showTab('pile')">🥞 Stack</button>
+  <button class="tabbtn" data-tab="file" onclick="showTab('file')">🚶 Queue</button>
+  <button class="tabbtn" data-tab="bst" onclick="showTab('bst')">🌳 BST</button>
+  <button class="tabbtn" data-tab="hash" onclick="showTab('hash')">🗂️ Hash table</button>
+  <button class="tabbtn" data-tab="comparatif" onclick="showTab('comparatif')">⚖️ Comparatif</button>
+  <button class="tabbtn" data-tab="quiz" onclick="showTab('quiz')">🎯 Quiz</button>
+</nav>
+
+<main>
+
+<!-- ══════════════ ACCUEIL ══════════════ -->
+<section id="tab-accueil" class="tab active">
+  <h2>Pourquoi ces structures tombent à tous les entretiens ?</h2>
+  <p class="lead">Parce que choisir la bonne structure, c'est 80 % de la performance d'un programme. L'intervieweur ne veut pas des définitions par cœur : il veut voir que tu sais <b>quand</b> utiliser quoi, et <b>pourquoi</b>. Chaque section ci-dessous te laisse manipuler la structure pour que ça devienne un réflexe.</p>
+
+  <div class="home-grid">
+    <div class="hcard" onclick="showTab('array')"><span class="em">🧮</span><h3>Array</h3><p>Accès instantané par index. La brique de base de tout le reste.</p></div>
+    <div class="hcard" onclick="showTab('liste')"><span class="em">🔗</span><h3>Linked list</h3><p>Des nodes reliés par des pointers. Insertion en head en O(1).</p></div>
+    <div class="hcard" onclick="showTab('pile')"><span class="em">🥞</span><h3>Stack</h3><p>Dernier arrivé, premier sorti (LIFO). Le moteur du Ctrl+Z et du call stack.</p></div>
+    <div class="hcard" onclick="showTab('file')"><span class="em">🚶</span><h3>Queue</h3><p>Premier arrivé, premier servi (FIFO). Message queues, BFS, event loop.</p></div>
+    <div class="hcard" onclick="showTab('bst')"><span class="em">🌳</span><h3>Binary search tree</h3><p>Petit à left, grand à right : search en O(log n).</p></div>
+    <div class="hcard" onclick="showTab('hash')"><span class="em">🗂️</span><h3>Hash table</h3><p>Key → case directe. Le couteau suisse en O(1) moyen.</p></div>
+  </div>
+
+  <div class="card">
+    <h3>🎯 Les 5 réflexes qui font bonne impression en entretien</h3>
+    <ul>
+      <li><b>Annonce spontanément la complexity</b> de ta solution (« ici c'est O(n) parce que… »).</li>
+      <li><b>LIFO → stack, FIFO → queue</b> : nomme le principe avant la structure.</li>
+      <li><b>Array</b> = access O(1) mais insertion/deletion au milieu O(n) — cite toujours le compromis.</li>
+      <li><b>« Il faut que ce soit rapide »</b> → pense hash map en premier.</li>
+      <li><b>BST degenerate = O(n)</b> → mentionner les balanced trees (AVL, red-black) marque des points.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ══════════════ ARRAY ══════════════ -->
+<section id="tab-array" class="tab">
+  <h2>🧮 L'array</h2>
+  <p class="lead">La structure la plus fondamentale : des cases <b>contiguës en mémoire</b>, indexées à partir de 0. C'est la brique de base de presque tout le reste.</p>
+
+  <div class="card">
+    <h3>🎮 Manipule-le</h3>
+    <div class="controls">
+      <input id="arr-val" type="number" placeholder="value">
+      <input id="arr-idx" type="number" placeholder="index" style="width:90px">
+      <button class="btn primary" onclick="arrAccess()">⚡ Access [i]</button>
+      <button class="btn" onclick="arrSearch()">🔍 Search</button>
+      <button class="btn" onclick="arrInsert()">➕ Insert à [i]</button>
+      <button class="btn" onclick="arrPush()">📥 Push (fin)</button>
+      <button class="btn danger" onclick="arrRemove()">🗑️ Delete [i]</button>
+      <button class="btn" onclick="arrReset()">↺ Reset</button>
+    </div>
+    <div class="viz" id="arr-viz"></div>
+    <div class="log" id="arr-log">Essaie « Access » avec un index, puis « Search » avec une value : compare la différence de vitesse.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>💡 Comment ça marche ?</h3>
+      <p>Les éléments sont stockés côte à côte en mémoire. L'adresse de <code>arr[i]</code> se calcule en une seule opération (<i>start + i × taille</i>) : l'access est instantané. En revanche, insert ou delete au milieu oblige à <b>shift tous les éléments suivants</b>.</p>
+      <ul>
+        <li>Contiguïté mémoire = très <b>cache-friendly</b> : parcourir un array est ultra rapide.</li>
+        <li>Les dynamic arrays (JS <code>Array</code>, Python <code>list</code>, Java <code>ArrayList</code>) se redimensionnent seuls : <b>push en O(1) amorti</b>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⏱️ Complexity</h3>
+      <table>
+        <tr><td>Access par index</td><td><span class="badge o1">O(1)</span></td></tr>
+        <tr><td>Search</td><td><span class="badge on">O(n)</span> — <span class="badge olog">O(log n)</span> si sorted (binary search)</td></tr>
+        <tr><td>Insert / delete en fin</td><td><span class="badge o1">O(1) amorti</span></td></tr>
+        <tr><td>Insert / delete au milieu</td><td><span class="badge on">O(n)</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>💼 Là où tu le croises en vrai</h3>
+  <div class="usecases">
+    <div class="uc"><b>🖥️ Interfaces & listes</b>Le feed d'une app, les rows d'un tableau UI : il y a un array derrière chaque <code>.map()</code> React.</div>
+    <div class="uc"><b>🖼️ Images & son</b>Une image est un array de pixels, un son un array de samples.</div>
+    <div class="uc"><b>📦 Buffers & données brutes</b>Lecture de fichiers, network packets, <code>ArrayBuffer</code>.</div>
+    <div class="uc"><b>🧱 Base des autres structures</b>Stacks, queues, heaps et hash tables sont souvent construits sur un array.</div>
+  </div>
+
+  <div class="tip"><b>🎯 En entretien :</b> annonce toujours le compromis « access O(1) mais insertion/deletion O(n) ». Si l'exercice fait beaucoup d'insertions en head, propose une linked list ou une deque. Et si l'array est sorted, pense <b>binary search O(log n)</b>.</div>
+</section>
+
+<!-- ══════════════ LINKED LIST ══════════════ -->
+<section id="tab-liste" class="tab">
+  <h2>🔗 La linked list</h2>
+  <p class="lead">Des nodes éparpillés en mémoire, reliés par des <b>pointers</b> : chaque node connaît sa value et l'adresse du next.</p>
+
+  <div class="card">
+    <h3>🎮 Manipule-la</h3>
+    <div class="controls">
+      <input id="ll-val" type="text" placeholder="value" maxlength="8">
+      <button class="btn primary" onclick="llAddHead()">⬅️ Add au head</button>
+      <button class="btn" onclick="llAddTail()">➡️ Add au tail</button>
+      <button class="btn" onclick="llSearch()">🔍 Search</button>
+      <button class="btn danger" onclick="llRemoveHead()">🗑️ Remove le head</button>
+      <button class="btn" onclick="llReset()">↺ Reset</button>
+    </div>
+    <div class="viz" id="ll-viz"></div>
+    <div class="log" id="ll-log">Compare « Add au head » (instantané) et « Add au tail » (il faut traverse toute la list).</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>💡 Comment ça marche ?</h3>
+      <p>Pas d'index : pour atteindre le 5<sup>e</sup> élément, on suit les flèches depuis <code>head</code>. En échange, insert ou remove au head ne coûte qu'<b>un changement de pointer</b> — aucun shift.</p>
+      <ul>
+        <li>La version <b>doubly linked</b> ajoute un pointer <code>prev</code> pour circuler dans les deux sens.</li>
+        <li>Avec un pointer <code>tail</code> conservé, l'add au tail redevient O(1).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⏱️ Complexity</h3>
+      <table>
+        <tr><td>Access au i-ème élément</td><td><span class="badge on">O(n)</span></td></tr>
+        <tr><td>Search</td><td><span class="badge on">O(n)</span></td></tr>
+        <tr><td>Insert / delete au head</td><td><span class="badge o1">O(1)</span></td></tr>
+        <tr><td>Insert au tail</td><td><span class="badge on">O(n)</span> — <span class="badge o1">O(1)</span> avec pointer tail</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>💼 Là où tu la croises en vrai</h3>
+  <div class="usecases">
+    <div class="uc"><b>↩️ Undo / redo & historique</b>Chaque state pointe vers le previous et le next : doubly linked list.</div>
+    <div class="uc"><b>⚡ Cache LRU</b>Hash map + doubly linked list : l'implémentation classique (et une question d'entretien culte).</div>
+    <div class="uc"><b>🎵 Playlists & carrousels</b>Morceau next / previous = suivre un pointer.</div>
+    <div class="uc"><b>🧠 Memory allocators</b>Les blocs libres du heap sont chaînés entre eux (<i>free list</i>).</div>
+  </div>
+
+  <div class="tip"><b>🎯 En entretien :</b> trois grands classiques à maîtriser — detect un cycle avec <b>Floyd (fast & slow pointers)</b>, <b>reverse</b> une list en place, trouver le <b>middle</b> avec deux pointers.</div>
+</section>
+
+<!-- ══════════════ STACK ══════════════ -->
+<section id="tab-pile" class="tab">
+  <h2>🥞 Le stack — LIFO</h2>
+  <p class="lead"><b>Dernier arrivé, premier sorti.</b> On n'interagit qu'avec le top : <code>push</code> pour poser, <code>pop</code> pour reprendre. Comme une pile d'assiettes.</p>
+
+  <div class="card">
+    <h3>🎮 Manipule-le</h3>
+    <div class="controls">
+      <input id="st-val" type="text" placeholder="ex : Ctrl+Z" maxlength="12">
+      <button class="btn primary" onclick="stPush()">⬆️ Push</button>
+      <button class="btn" onclick="stPop()">⬇️ Pop</button>
+      <button class="btn" onclick="stPeek()">👀 Peek</button>
+      <button class="btn" onclick="stDemo()">📞 Démo : call stack</button>
+      <button class="btn" onclick="stReset()">↺ Reset</button>
+    </div>
+    <div class="stackviz" id="st-viz"></div>
+    <div class="log" id="st-log">Lance la démo « call stack » pour voir ce que fait le moteur JavaScript à chaque appel de fonction.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>💡 Comment ça marche ?</h3>
+      <p>Impossible de retirer l'assiette du bas sans tout enlever. Deux opérations O(1) suffisent (<code>push</code> / <code>pop</code>), souvent implémentées sur un simple array. Si on push sans limite… <b>stack overflow</b> 💥 (oui, comme le site).</p>
+    </div>
+    <div class="card">
+      <h3>⏱️ Complexity</h3>
+      <table>
+        <tr><td>Push</td><td><span class="badge o1">O(1)</span></td></tr>
+        <tr><td>Pop</td><td><span class="badge o1">O(1)</span></td></tr>
+        <tr><td>Peek (lire le top)</td><td><span class="badge o1">O(1)</span></td></tr>
+        <tr><td>Search</td><td><span class="badge on">O(n)</span> — mais on ne le fait jamais</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>💼 Là où tu la croises en vrai</h3>
+  <div class="usecases">
+    <div class="uc"><b>📞 Le call stack</b>Chaque fonction appelée est pushed ; une récursion infinie = <i>stack overflow</i>.</div>
+    <div class="uc"><b>↩️ Undo / redo</b>Ctrl+Z pop le dernier changement (deux stacks pour gérer le redo).</div>
+    <div class="uc"><b>🌐 Bouton retour</b>Le ← du navigateur pop l'historique des pages visitées.</div>
+    <div class="uc"><b>🧩 Parsing & compilers</b>Parenthèses équilibrées, évaluation d'expressions, DFS traversal.</div>
+  </div>
+
+  <div class="tip"><b>🎯 En entretien :</b> dès que l'énoncé implique de « revenir en arrière » ou de traiter <b>le plus récent d'abord</b> → stack. Exos stars : <i>valid parentheses</i>, <i>min stack</i>, <i>évaluation d'expression postfixée</i>.</div>
+</section>
+
+<!-- ══════════════ QUEUE ══════════════ -->
+<section id="tab-file" class="tab">
+  <h2>🚶 La queue — FIFO</h2>
+  <p class="lead"><b>Premier arrivé, premier servi.</b> On entre par le back (<code>enqueue</code>), on sort par le front (<code>dequeue</code>) — comme une file d'attente à la boulangerie.</p>
+
+  <div class="card">
+    <h3>🎮 Manipule-la</h3>
+    <div class="controls">
+      <input id="qu-val" type="text" placeholder="ex : req-7" maxlength="12">
+      <button class="btn primary" onclick="quEnqueue()">➕ Enqueue</button>
+      <button class="btn" onclick="quDequeue()">➖ Dequeue</button>
+      <button class="btn" onclick="quFront()">👀 Front</button>
+      <button class="btn" onclick="quReset()">↺ Reset</button>
+    </div>
+    <div class="queueviz" id="qu-viz"></div>
+    <div class="log" id="qu-log">Ajoute quelques éléments puis dequeue : le premier entré sort toujours en premier.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>💡 Comment ça marche ?</h3>
+      <p><code>enqueue</code> ajoute au back, <code>dequeue</code> retire au front, les deux en O(1). Deux variantes à citer :</p>
+      <ul>
+        <li>La <b>deque</b> : entrée et sortie <b>des deux côtés</b>.</li>
+        <li>La <b>priority queue</b> : le plus urgent sort d'abord — implémentée avec un <b>heap</b>, opérations en O(log n).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⏱️ Complexity</h3>
+      <table>
+        <tr><td>Enqueue</td><td><span class="badge o1">O(1)</span></td></tr>
+        <tr><td>Dequeue</td><td><span class="badge o1">O(1)</span></td></tr>
+        <tr><td>Front (lire la tête)</td><td><span class="badge o1">O(1)</span></td></tr>
+        <tr><td>Priority queue (heap)</td><td><span class="badge olog">O(log n)</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>💼 Là où tu la croises en vrai</h3>
+  <div class="usecases">
+    <div class="uc"><b>📨 Message queues</b>RabbitMQ, Kafka, SQS… les tâches attendent leur tour entre services.</div>
+    <div class="uc"><b>🔁 Event loop JavaScript</b>Les callbacks patientent dans une queue avant d'être exécutés.</div>
+    <div class="uc"><b>🗺️ BFS</b>Explorer un graph niveau par niveau — le shortest path non pondéré.</div>
+    <div class="uc"><b>📺 Buffering & streaming</b>Vidéo, frappes clavier, imprimante : absorber les pics de débit.</div>
+  </div>
+
+  <div class="tip"><b>🎯 En entretien :</b> <b>BFS = queue, DFS = stack</b> — dis-le explicitement, c'est souvent LE point attendu. Et cite la priority queue (heap) pour les task schedulers.</div>
+</section>
+
+<!-- ══════════════ BST ══════════════ -->
+<section id="tab-bst" class="tab">
+  <h2>🌳 Le binary search tree (BST)</h2>
+  <p class="lead">Tout ce qui est plus petit part à <b>left</b>, tout ce qui est plus grand part à <b>right</b>. Résultat : chercher, c'est éliminer la moitié des candidats à chaque étape.</p>
+
+  <div class="card">
+    <h3>🎮 Manipule-le</h3>
+    <div class="controls">
+      <input id="bst-val" type="number" placeholder="0 – 999" style="width:100px">
+      <button class="btn primary" onclick="bstInsert()">➕ Insert</button>
+      <button class="btn" onclick="bstSearch()">🔍 Search</button>
+      <button class="btn danger" onclick="bstDelete()">🗑️ Delete</button>
+      <button class="btn" onclick="bstInorder()">📜 In-order traversal</button>
+      <button class="btn" onclick="bstRandom()">🌲 Random tree</button>
+      <button class="btn" onclick="bstWorst()">😈 Insert 1→7 dans l'ordre</button>
+      <button class="btn" onclick="bstClear()">🧹 Clear</button>
+    </div>
+    <div id="bst-viz"></div>
+    <div class="log" id="bst-log">Insert une value et regarde le chemin des comparisons. Puis essaie le bouton 😈 pour voir le tree dégénérer…</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>💡 Comment ça marche ?</h3>
+      <p>Chaque node a au plus deux children, avec la règle <code>left &lt; node &lt; right</code>. La search devient une dichotomie naturelle : <b>O(log n) si le tree est balanced</b>.</p>
+      <ul>
+        <li>Inséré dans l'ordre (1, 2, 3…), il <b>degenerate en linked list</b> → O(n).</li>
+        <li>D'où les <b>self-balancing trees</b> (AVL, red-black) utilisés par les standard libraries.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⏱️ Complexity</h3>
+      <table>
+        <tr><td>Search (balanced)</td><td><span class="badge olog">O(log n)</span></td></tr>
+        <tr><td>Insert (balanced)</td><td><span class="badge olog">O(log n)</span></td></tr>
+        <tr><td>Delete (balanced)</td><td><span class="badge olog">O(log n)</span></td></tr>
+        <tr><td>Worst case (degenerate)</td><td><span class="badge on">O(n)</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>💼 Là où tu le croises en vrai</h3>
+  <div class="usecases">
+    <div class="uc"><b>🗄️ Database indexes</b>Les index SQL sont des B-trees, la généralisation du BST.</div>
+    <div class="uc"><b>📚 Sorted maps</b><code>TreeMap</code> (Java), <code>std::map</code> (C++) = red-black trees.</div>
+    <div class="uc"><b>💶 Range search</b>« Tous les prix entre 10 et 50 € » — impossible efficacement avec un hash.</div>
+    <div class="uc"><b>🏆 Classements dynamiques</b>Maintenir un order pendant que les données bougent en permanence.</div>
+  </div>
+
+  <div class="tip"><b>🎯 En entretien :</b> le combo gagnant tient en deux phrases — « <b>in-order traversal = sorted values</b> » et « <b>balanced O(log n), degenerate O(n), d'où AVL / red-black</b> ». Ces deux phrases répondent à 80 % des questions sur les BST.</div>
+</section>
+
+<!-- ══════════════ HASH TABLE ══════════════ -->
+<section id="tab-hash" class="tab">
+  <h2>🗂️ La hash table</h2>
+  <p class="lead">La structure « annuaire » : une <b>hash function</b> transforme la key en numéro de case, et on y va directement. Search, insert, delete : <b>O(1) en moyenne</b>.</p>
+
+  <div class="card">
+    <h3>🎮 Manipule-la (8 buckets)</h3>
+    <div class="controls">
+      <input id="hs-key" type="text" placeholder="key, ex : pomme" maxlength="12">
+      <button class="btn primary" onclick="hashInsert()">➕ Insert</button>
+      <button class="btn" onclick="hashSearch()">🔍 Search</button>
+      <button class="btn danger" onclick="hashRemove()">🗑️ Delete</button>
+      <button class="btn" onclick="hashRandomFill()">🎲 5 keys aléatoires</button>
+      <button class="btn" onclick="hashClear()">🧹 Clear</button>
+    </div>
+    <div id="hs-viz" style="margin-top:8px"></div>
+    <div class="log" id="hs-log">Insert plusieurs keys : quand deux tombent dans le même bucket, c'est une collision → chaining.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>💡 Comment ça marche ?</h3>
+      <p><code>h(key) → index</code> dans un array de buckets. Deux keys peuvent tomber dans le même bucket : c'est une <b>collision</b>, gérée par <b>chaining</b> (list dans le bucket) ou <b>open addressing</b>.</p>
+      <ul>
+        <li>Trop remplie ? On agrandit et on <b>rehash</b> tout.</li>
+        <li>Contrepartie : <b>aucun order</b> — impossible de demander « les keys entre A et C ».</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⏱️ Complexity</h3>
+      <table>
+        <tr><td>Search</td><td><span class="badge o1">O(1) moyen</span></td></tr>
+        <tr><td>Insert</td><td><span class="badge o1">O(1) moyen</span></td></tr>
+        <tr><td>Delete</td><td><span class="badge o1">O(1) moyen</span></td></tr>
+        <tr><td>Worst case (collisions massives)</td><td><span class="badge on">O(n)</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>💼 Là où tu la croises en vrai</h3>
+  <div class="usecases">
+    <div class="uc"><b>🧰 Les objets de ton langage</b><code>{}</code> en JS, <code>dict</code> en Python, <code>HashMap</code> en Java.</div>
+    <div class="uc"><b>⚡ Caches & sessions</b>Redis, Memcached, sessions utilisateur, memoization.</div>
+    <div class="uc"><b>🔁 Deduplication & comptage</b><code>Set</code>, compter des fréquences en un seul passage.</div>
+    <div class="uc"><b>🧭 Routing & index</b>Tables de routing, index inversé d'un moteur de recherche.</div>
+  </div>
+
+  <div class="tip"><b>🎯 En entretien :</b> réflexe — « il faut que ce soit rapide » → hash map. <i>Two Sum</i>, anagrammes, détection de doublons : O(n) avec une map. Bonus : explique les collisions et pourquoi le worst case est O(n).</div>
+</section>
+
+<!-- ══════════════ COMPARATIF ══════════════ -->
+<section id="tab-comparatif" class="tab">
+  <h2>⚖️ Le grand comparatif</h2>
+  <p class="lead">Le tableau à avoir en tête (et à citer spontanément) le jour J.</p>
+
+  <div class="card tablewrap">
+    <table>
+      <tr><th>Structure</th><th>Access</th><th>Search</th><th>Insert</th><th>Delete</th><th>Point fort</th></tr>
+      <tr><td>🧮 Array</td><td><span class="badge o1">O(1)</span></td><td><span class="badge on">O(n)</span></td><td><span class="badge on">O(n)</span></td><td><span class="badge on">O(n)</span></td><td>Access direct, cache-friendly</td></tr>
+      <tr><td>🔗 Linked list</td><td><span class="badge on">O(n)</span></td><td><span class="badge on">O(n)</span></td><td><span class="badge o1">O(1) au head</span></td><td><span class="badge o1">O(1) au head</span></td><td>Insertions aux extrémités</td></tr>
+      <tr><td>🥞 Stack</td><td><span class="badge o1">O(1) top</span></td><td><span class="badge on">O(n)</span></td><td><span class="badge o1">O(1)</span></td><td><span class="badge o1">O(1)</span></td><td>LIFO : le plus récent d'abord</td></tr>
+      <tr><td>🚶 Queue</td><td><span class="badge o1">O(1) front</span></td><td><span class="badge on">O(n)</span></td><td><span class="badge o1">O(1)</span></td><td><span class="badge o1">O(1)</span></td><td>FIFO : ordre d'arrivée</td></tr>
+      <tr><td>🌳 BST balanced</td><td><span class="badge olog">O(log n)</span></td><td><span class="badge olog">O(log n)</span></td><td><span class="badge olog">O(log n)</span></td><td><span class="badge olog">O(log n)</span></td><td>Données sorted, ranges</td></tr>
+      <tr><td>🗂️ Hash table</td><td>—</td><td><span class="badge o1">O(1) moyen</span></td><td><span class="badge o1">O(1) moyen</span></td><td><span class="badge o1">O(1) moyen</span></td><td>Key → value ultra-rapide</td></tr>
+    </table>
+  </div>
+
+  <h3>🧭 Quelle structure pour quel besoin ?</h3>
+  <div class="usecases">
+    <div class="uc"><b>Access par position / parcours rapide</b>→ 🧮 Array</div>
+    <div class="uc"><b>Insertions fréquentes au head, undo/redo, LRU</b>→ 🔗 Linked list</div>
+    <div class="uc"><b>Revenir en arrière, DFS, parenthèses, call stack</b>→ 🥞 Stack</div>
+    <div class="uc"><b>Traiter dans l'ordre d'arrivée, BFS, message queues</b>→ 🚶 Queue</div>
+    <div class="uc"><b>Données sorted, range search, min/max</b>→ 🌳 BST (balanced)</div>
+    <div class="uc"><b>Association key → value, doublons, comptage</b>→ 🗂️ Hash map</div>
+    <div class="uc"><b>Toujours sortir le plus prioritaire</b>→ ⛰️ Heap (priority queue)</div>
+    <div class="uc"><b>Relations entre entités, réseaux, chemins</b>→ 🕸️ Graph (BFS/DFS)</div>
+  </div>
+
+  <div class="tip"><b>🎯 La phrase magique en entretien :</b> « Je choisis <i>X</i> parce que l'opération dominante ici est <i>Y</i>, et <i>X</i> la fait en <i>O(…)</i> ». Structure + opération dominante + complexity : c'est exactement le raisonnement attendu.</div>
+</section>
+
+<!-- ══════════════ QUIZ ══════════════ -->
+<section id="tab-quiz" class="tab">
+  <h2>🎯 Quiz d'entraînement</h2>
+  <p class="lead">14 questions du niveau de celles qu'on pose en entretien. Chaque réponse est expliquée — c'est là qu'on apprend le plus.</p>
+  <div class="card">
+    <div class="progress"><div id="quiz-progress"></div></div>
+    <div id="quiz-box"></div>
+  </div>
+</section>
+
+</main>
+
+<footer>Fait avec ❤️ pour préparer ton entretien — clique, casse, recommence : c'est comme ça qu'on retient. 🍀</footer>
+
+<script>
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+
+function setLog(el, html, cls = '') { el.className = 'log ' + cls; el.innerHTML = html; }
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
+  document.querySelectorAll('.tabbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ══════════════ ARRAY ══════════════ */
+const A = { data: [12, 7, 23, 4, 18], busy: false };
+const aLog = $('#arr-log');
+
+function renderArray(marks = {}) {
+  const box = $('#arr-viz');
+  if (!A.data.length) { box.innerHTML = '<div class="empty">array vide</div>'; return; }
+  box.innerHTML = A.data.map((v, i) =>
+    `<div class="cell ${marks[i] || ''}"><span class="val">${v}</span><span class="idx">${i}</span></div>`
+  ).join('');
+}
+
+async function arrAccess() {
+  if (A.busy) return;
+  const i = parseInt($('#arr-idx').value, 10);
+  if (Number.isNaN(i) || i < 0 || i >= A.data.length) {
+    setLog(aLog, `Entre un index valide (de 0 à ${A.data.length - 1}) dans le champ « index ».`, 'warn'); return;
+  }
+  A.busy = true;
+  try {
+    renderArray({ [i]: 'found' });
+    setLog(aLog, `⚡ arr[${i}] = <b>${A.data[i]}</b> — access direct en <b>O(1)</b> : l'adresse est calculée, pas cherchée.`, 'ok');
+    await sleep(1100); renderArray();
+  } finally { A.busy = false; }
+}
+
+async function arrSearch() {
+  if (A.busy) return;
+  const v = parseInt($('#arr-val').value, 10);
+  if (Number.isNaN(v)) { setLog(aLog, 'Entre une value (nombre) à chercher dans le champ « value ».', 'warn'); return; }
+  A.busy = true;
+  try {
+    for (let i = 0; i < A.data.length; i++) {
+      renderArray({ [i]: 'scan' });
+      setLog(aLog, `Je regarde l'index ${i} : ${A.data[i]} ${A.data[i] === v ? '==' : '≠'} ${v}…`);
+      await sleep(340);
+      if (A.data[i] === v) {
+        renderArray({ [i]: 'found' });
+        setLog(aLog, `✅ Trouvé à l'index ${i} en <b>${i + 1} comparison(s)</b> — linear search <b>O(n)</b>.`, 'ok');
+        return;
+      }
+    }
+    renderArray();
+    setLog(aLog, `❌ ${v} est absent — il a fallu <b>${A.data.length} comparisons</b> pour en être sûr : <b>O(n)</b>.`, 'err');
+  } finally { A.busy = false; }
+}
+
+async function arrInsert() {
+  if (A.busy) return;
+  if (A.data.length >= 10) { setLog(aLog, 'Array plein (10 max pour rester lisible) — delete ou reset.', 'warn'); return; }
+  const p = parseInt($('#arr-val').value, 10);
+  const v = Number.isNaN(p) ? randInt(1, 99) : p;
+  let i = parseInt($('#arr-idx').value, 10);
+  if (Number.isNaN(i)) i = A.data.length;
+  i = Math.max(0, Math.min(i, A.data.length));
+  A.busy = true;
+  try {
+    const nb = A.data.length - i;
+    if (nb > 0) {
+      const marks = {};
+      for (let k = i; k < A.data.length; k++) marks[k] = 'shift';
+      renderArray(marks);
+      setLog(aLog, `On shift <b>${nb} élément(s)</b> vers la droite pour faire de la place…`);
+      await sleep(750);
+    }
+    A.data.splice(i, 0, v);
+    renderArray({ [i]: 'found' });
+    setLog(aLog, `✅ ${v} inséré à l'index ${i} — ${nb} shift(s) : <b>O(n)</b> au pire, O(1) amorti en fin.`, 'ok');
+  } finally { A.busy = false; }
+}
+
+async function arrPush() {
+  if (A.busy) return;
+  if (A.data.length >= 10) { setLog(aLog, 'Array plein (10 max pour rester lisible) — delete ou reset.', 'warn'); return; }
+  const p = parseInt($('#arr-val').value, 10);
+  const v = Number.isNaN(p) ? randInt(1, 99) : p;
+  A.busy = true;
+  try {
+    A.data.push(v);
+    renderArray({ [A.data.length - 1]: 'found' });
+    setLog(aLog, `✅ ${v} ajouté en fin — <b>O(1) amorti</b> : aucun shift, juste la case suivante.`, 'ok');
+    await sleep(900); renderArray();
+  } finally { A.busy = false; }
+}
+
+async function arrRemove() {
+  if (A.busy) return;
+  const i = parseInt($('#arr-idx').value, 10);
+  if (Number.isNaN(i) || i < 0 || i >= A.data.length) {
+    setLog(aLog, `Entre un index valide (de 0 à ${A.data.length - 1}) dans le champ « index ».`, 'warn'); return;
+  }
+  A.busy = true;
+  try {
+    renderArray({ [i]: 'bad' });
+    setLog(aLog, `On delete l'index ${i} (${A.data[i]})…`);
+    await sleep(650);
+    const nb = A.data.length - 1 - i;
+    A.data.splice(i, 1);
+    renderArray();
+    setLog(aLog, `🗑️ Deleted — <b>${nb} élément(s)</b> shifted vers la gauche pour boucher le trou : <b>O(n)</b>.`, 'ok');
+  } finally { A.busy = false; }
+}
+
+function arrReset() {
+  if (A.busy) return;
+  A.data = [12, 7, 23, 4, 18];
+  renderArray();
+  setLog(aLog, '↺ Array réinitialisé.');
+}
+
+/* ══════════════ LINKED LIST ══════════════ */
+const L = { data: ['42', '17', '88'], busy: false };
+const lLog = $('#ll-log');
+
+function renderList(marks = {}) {
+  const box = $('#ll-viz');
+  let h = '<div class="ptr">head</div>';
+  if (!L.data.length) {
+    box.innerHTML = h + '<span class="arr">→</span><div class="nul">∅ (null)</div>'; return;
+  }
+  L.data.forEach((v, i) => {
+    h += `<span class="arr">→</span><div class="lnode ${marks[i] || ''}"><span class="lval">${esc(v)}</span><span class="lnext">●→</span></div>`;
+  });
+  h += '<span class="arr">→</span><div class="nul">∅</div>';
+  box.innerHTML = h;
+}
+
+function llValue() {
+  const raw = $('#ll-val').value.trim();
+  return raw ? raw.slice(0, 8) : String(randInt(1, 99));
+}
+
+async function llAddHead() {
+  if (L.busy) return;
+  if (L.data.length >= 8) { setLog(lLog, 'List pleine (8 nodes max pour rester lisible).', 'warn'); return; }
+  const v = llValue();
+  L.busy = true;
+  try {
+    L.data.unshift(v);
+    renderList({ 0: 'found' });
+    setLog(lLog, `✅ <b>${esc(v)}</b> ajouté au head en <b>O(1)</b> — on crée le node et on repointe <code>head</code>, c'est tout. Aucun shift !`, 'ok');
+    await sleep(1000); renderList();
+  } finally { L.busy = false; }
+}
+
+async function llAddTail() {
+  if (L.busy) return;
+  if (L.data.length >= 8) { setLog(lLog, 'List pleine (8 nodes max pour rester lisible).', 'warn'); return; }
+  const v = llValue();
+  L.busy = true;
+  try {
+    const marks = {};
+    for (let i = 0; i < L.data.length; i++) {
+      marks[i] = 'scan';
+      renderList(marks);
+      setLog(lLog, `Je traverse… node ${i} (${esc(L.data[i])}) → next`);
+      await sleep(400);
+      marks[i] = 'visited';
+    }
+    L.data.push(v);
+    marks[L.data.length - 1] = 'found';
+    renderList(marks);
+    setLog(lLog, `✅ <b>${esc(v)}</b> ajouté au tail après <b>${L.data.length - 1} sauts</b> : <b>O(n)</b>… mais <b>O(1)</b> si on garde un pointer <code>tail</code> — à dire en entretien !`, 'ok');
+  } finally { L.busy = false; }
+}
+
+async function llRemoveHead() {
+  if (L.busy) return;
+  if (!L.data.length) { setLog(lLog, 'La list est déjà vide.', 'warn'); return; }
+  L.busy = true;
+  try {
+    renderList({ 0: 'bad' });
+    setLog(lLog, `On remove le head (${esc(L.data[0])})…`);
+    await sleep(600);
+    L.data.shift();
+    renderList();
+    setLog(lLog, `🗑️ Head removed en <b>O(1)</b> — <code>head</code> pointe maintenant sur le node suivant.`, 'ok');
+  } finally { L.busy = false; }
+}
+
+async function llSearch() {
+  if (L.busy) return;
+  const raw = $('#ll-val').value.trim();
+  if (!raw) { setLog(lLog, 'Entre une value à chercher dans le champ.', 'warn'); return; }
+  L.busy = true;
+  try {
+    const marks = {};
+    for (let i = 0; i < L.data.length; i++) {
+      marks[i] = 'scan';
+      renderList(marks);
+      setLog(lLog, `Node ${i} : « ${esc(L.data[i])} » ${L.data[i] === raw ? '==' : '≠'} « ${esc(raw)} »…`);
+      await sleep(400);
+      if (L.data[i] === raw) {
+        marks[i] = 'found';
+        renderList(marks);
+        setLog(lLog, `✅ Trouvé au node ${i} en <b>${i + 1} saut(s)</b> — pas d'index, on suit les pointers : <b>O(n)</b>.`, 'ok');
+        return;
+      }
+      marks[i] = 'visited';
+    }
+    renderList();
+    setLog(lLog, `❌ « ${esc(raw)} » absent — toute la list traversée : <b>O(n)</b>.`, 'err');
+  } finally { L.busy = false; }
+}
+
+function llReset() {
+  if (L.busy) return;
+  L.data = ['42', '17', '88'];
+  renderList();
+  setLog(lLog, '↺ List réinitialisée.');
+}
+
+/* ══════════════ STACK ══════════════ */
+const S = { data: ['open()', 'write()', 'paste()'], busy: false };
+const sLog = $('#st-log');
+
+function renderStack(topCls = '') {
+  const box = $('#st-viz');
+  box.innerHTML = '<div class="stackbase"></div>';
+  S.data.forEach((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'sitem' + (i === S.data.length - 1 ? ' top ' + topCls : '');
+    d.textContent = v;
+    box.appendChild(d);
+  });
+  if (!S.data.length) {
+    const e = document.createElement('div');
+    e.className = 'empty'; e.textContent = 'stack vide';
+    box.appendChild(e);
+  }
+}
+
+async function stPush() {
+  if (S.busy) return;
+  if (S.data.length >= 7) { setLog(sLog, '💥 <b>Stack overflow !</b> (littéralement) — le stack est plein, pop un peu.', 'err'); return; }
+  const raw = $('#st-val').value.trim();
+  const v = raw ? raw.slice(0, 12) : 'action-' + randInt(1, 99);
+  S.busy = true;
+  try {
+    S.data.push(v);
+    renderStack('in');
+    setLog(sLog, `⬆️ <b>push(${esc(v)})</b> — posé au top en <b>O(1)</b>.`, 'ok');
+  } finally { S.busy = false; }
+}
+
+async function stPop() {
+  if (S.busy) return;
+  if (!S.data.length) { setLog(sLog, 'Le stack est vide — rien à pop (pop sur stack vide = erreur classique à vérifier !).', 'warn'); return; }
+  S.busy = true;
+  try {
+    const v = S.data[S.data.length - 1];
+    renderStack('bad');
+    setLog(sLog, `⬇️ <b>pop()</b> → on retire <b>${esc(v)}</b>, le dernier arrivé…`);
+    await sleep(550);
+    S.data.pop();
+    renderStack();
+    setLog(sLog, `⬇️ <b>pop() = ${esc(v)}</b> — LIFO : le dernier posé est le premier repris. <b>O(1)</b>.`, 'ok');
+  } finally { S.busy = false; }
+}
+
+async function stPeek() {
+  if (S.busy) return;
+  if (!S.data.length) { setLog(sLog, 'Le stack est vide — rien à regarder.', 'warn'); return; }
+  S.busy = true;
+  try {
+    renderStack('found');
+    setLog(sLog, `👀 <b>peek() = ${esc(S.data[S.data.length - 1])}</b> — on lit le top sans le retirer. <b>O(1)</b>.`, 'ok');
+    await sleep(1000); renderStack();
+  } finally { S.busy = false; }
+}
+
+async function stDemo() {
+  if (S.busy) return;
+  S.busy = true;
+  try {
+    S.data = []; renderStack();
+    setLog(sLog, '📞 Simulation : ce que fait le moteur JS quand ton code s\'exécute…');
+    await sleep(700);
+    const frames = ['main()', 'renderPage()', 'loadData()', 'fetch()'];
+    for (const f of frames) {
+      S.data.push(f);
+      renderStack('in');
+      setLog(sLog, `📞 Appel de <b>${esc(f)}</b> → pushed sur le call stack`);
+      await sleep(700);
+    }
+    await sleep(400);
+    while (S.data.length) {
+      const f = S.data[S.data.length - 1];
+      renderStack('bad');
+      setLog(sLog, `✅ <b>${esc(f)}</b> a terminé → popped, on reprend la fonction du dessous`);
+      await sleep(700);
+      S.data.pop();
+      renderStack();
+    }
+    setLog(sLog, '🏁 Stack vide : le programme est terminé. C\'est exactement ça, le <b>call stack</b> — et une récursion infinie le fait déborder : <b>stack overflow</b>.', 'ok');
+  } finally { S.busy = false; }
+}
+
+function stReset() {
+  if (S.busy) return;
+  S.data = ['open()', 'write()', 'paste()'];
+  renderStack();
+  setLog(sLog, '↺ Stack réinitialisé.');
+}
+
+/* ══════════════ QUEUE ══════════════ */
+const Q = { data: ['req-1', 'req-2', 'req-3'], busy: false };
+const qLog = $('#qu-log');
+
+function renderQueue(frontCls = '', backCls = '') {
+  const box = $('#qu-viz');
+  box.innerHTML = '';
+  const out = document.createElement('div');
+  out.className = 'qside'; out.innerHTML = 'out<br>⬅';
+  box.appendChild(out);
+  if (!Q.data.length) {
+    const e = document.createElement('div');
+    e.className = 'empty'; e.textContent = 'queue vide';
+    box.appendChild(e);
+  } else {
+    Q.data.forEach((v, i) => {
+      const d = document.createElement('div');
+      d.className = 'qitem'
+        + (i === 0 ? ' front ' + frontCls : '')
+        + (i === Q.data.length - 1 ? ' back ' + backCls : '');
+      d.textContent = v;
+      box.appendChild(d);
+    });
+  }
+  const inn = document.createElement('div');
+  inn.className = 'qside'; inn.innerHTML = '⬅<br>in';
+  box.appendChild(inn);
+}
+
+async function quEnqueue() {
+  if (Q.busy) return;
+  if (Q.data.length >= 7) { setLog(qLog, 'Queue pleine — en vrai, on appliquerait de la <b>backpressure</b> (ralentir le producer).', 'warn'); return; }
+  const raw = $('#qu-val').value.trim();
+  const v = raw ? raw.slice(0, 12) : 'req-' + randInt(4, 99);
+  Q.busy = true;
+  try {
+    Q.data.push(v);
+    renderQueue('', 'in');
+    setLog(qLog, `➕ <b>enqueue(${esc(v)})</b> — entré au back en <b>O(1)</b>. Il sortira après tous ceux devant lui.`, 'ok');
+  } finally { Q.busy = false; }
+}
+
+async function quDequeue() {
+  if (Q.busy) return;
+  if (!Q.data.length) { setLog(qLog, 'La queue est vide — personne à servir.', 'warn'); return; }
+  Q.busy = true;
+  try {
+    const v = Q.data[0];
+    renderQueue('bad');
+    setLog(qLog, `➖ <b>dequeue()</b> → on sert <b>${esc(v)}</b>, le premier arrivé…`);
+    await sleep(550);
+    Q.data.shift();
+    renderQueue();
+    setLog(qLog, `➖ <b>dequeue() = ${esc(v)}</b> — FIFO : premier arrivé, premier servi. <b>O(1)</b>.`, 'ok');
+  } finally { Q.busy = false; }
+}
+
+async function quFront() {
+  if (Q.busy) return;
+  if (!Q.data.length) { setLog(qLog, 'La queue est vide.', 'warn'); return; }
+  Q.busy = true;
+  try {
+    renderQueue('found');
+    setLog(qLog, `👀 <b>front() = ${esc(Q.data[0])}</b> — le prochain à sortir, lu sans le retirer. <b>O(1)</b>.`, 'ok');
+    await sleep(1000); renderQueue();
+  } finally { Q.busy = false; }
+}
+
+function quReset() {
+  if (Q.busy) return;
+  Q.data = ['req-1', 'req-2', 'req-3'];
+  renderQueue();
+  setLog(qLog, '↺ Queue réinitialisée.');
+}
+
+/* ══════════════ BST ══════════════ */
+const T = { root: null, busy: false };
+const tLog = $('#bst-log');
+
+function bstInsertRaw(v) {
+  const nn = { v, l: null, r: null };
+  if (!T.root) { T.root = nn; return true; }
+  let c = T.root;
+  while (true) {
+    if (v === c.v) return false;
+    if (v < c.v) { if (!c.l) { c.l = nn; return true; } c = c.l; }
+    else { if (!c.r) { c.r = nn; return true; } c = c.r; }
+  }
+}
+
+function bstCount(n) { return n ? 1 + bstCount(n.l) + bstCount(n.r) : 0; }
+
+function renderBST(marks = {}) {
+  const wrap = $('#bst-viz');
+  if (!T.root) { wrap.innerHTML = '<div class="empty">tree vide — insert une value 🌱</div>'; return; }
+  let i = 0, maxD = 0;
+  const nodes = [];
+  (function walk(n, d, parent) {
+    if (!n) return;
+    walk(n.l, d + 1, n);
+    n._x = i++; n._y = d; n._p = parent;
+    maxD = Math.max(maxD, d);
+    nodes.push(n);
+    walk(n.r, d + 1, n);
+  })(T.root, 0, null);
+  const X = x => 36 + x * 50, Y = d => 36 + d * 66;
+  const w = Math.max(320, 72 + (i - 1) * 50), h = 72 + maxD * 66;
+  let edges = '', circles = '';
+  for (const n of nodes) {
+    if (n._p) edges += `<line x1="${X(n._p._x)}" y1="${Y(n._p._y)}" x2="${X(n._x)}" y2="${Y(n._y)}"/>`;
+    circles += `<g class="bnode ${marks[n.v] || ''}"><circle cx="${X(n._x)}" cy="${Y(n._y)}" r="19"/><text x="${X(n._x)}" y="${Y(n._y) + 5}">${n.v}</text></g>`;
+  }
+  wrap.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><g class="edges">${edges}</g>${circles}</svg>`;
+}
+
+function bstReadInput() {
+  const v = parseInt($('#bst-val').value, 10);
+  return Number.isNaN(v) ? null : v;
+}
+
+async function bstInsert() {
+  if (T.busy) return;
+  let v = bstReadInput();
+  if (v === null) {
+    do { v = randInt(0, 99); } while (!bstIsAbsent(v));
+  }
+  if (v < 0 || v > 999) { setLog(tLog, 'Entre un nombre entre 0 et 999 🙂', 'warn'); return; }
+  if (bstCount(T.root) >= 15) { setLog(tLog, 'Tree plein (15 nodes max pour rester lisible) — clear-le ou delete des nodes.', 'warn'); return; }
+  T.busy = true;
+  try {
+    $('#bst-val').value = '';
+    if (!T.root) {
+      T.root = { v, l: null, r: null };
+      renderBST({ [v]: 'found' });
+      setLog(tLog, `🌱 <b>${v}</b> devient le root du tree.`, 'ok');
+      return;
+    }
+    const marks = {};
+    let c = T.root, steps = 0;
+    while (true) {
+      steps++;
+      marks[c.v] = 'scan';
+      renderBST(marks);
+      if (v === c.v) {
+        setLog(tLog, `<b>${v}</b> existe déjà — un BST refuse les doublons.`, 'warn');
+        await sleep(700); renderBST();
+        return;
+      }
+      setLog(tLog, `${v} ${v < c.v ? '&lt;' : '&gt;'} ${c.v} → je descends à ${v < c.v ? 'left' : 'right'}…`);
+      await sleep(560);
+      marks[c.v] = 'visited';
+      const dir = v < c.v ? 'l' : 'r';
+      if (!c[dir]) {
+        c[dir] = { v, l: null, r: null };
+        marks[v] = 'found';
+        renderBST(marks);
+        setLog(tLog, `✅ <b>${v}</b> inséré en <b>${steps} comparison(s)</b> — <b>O(log n)</b> en moyenne : chaque étape élimine la moitié du tree.`, 'ok');
+        return;
+      }
+      c = c[dir];
+    }
+  } finally { T.busy = false; }
+}
+
+function bstIsAbsent(v) {
+  let c = T.root;
+  while (c) { if (v === c.v) return false; c = v < c.v ? c.l : c.r; }
+  return true;
+}
+
+async function bstSearch() {
+  if (T.busy) return;
+  const v = bstReadInput();
+  if (v === null) { setLog(tLog, 'Entre un nombre à chercher.', 'warn'); return; }
+  if (!T.root) { setLog(tLog, 'Le tree est vide.', 'warn'); return; }
+  T.busy = true;
+  try {
+    const marks = {};
+    let c = T.root, steps = 0;
+    while (c) {
+      steps++;
+      marks[c.v] = 'scan';
+      renderBST(marks);
+      if (v === c.v) {
+        marks[c.v] = 'found';
+        renderBST(marks);
+        setLog(tLog, `✅ <b>${v}</b> trouvé en <b>${steps} comparison(s)</b> sur ${bstCount(T.root)} nodes — la dichotomie en action : <b>O(log n)</b> si balanced.`, 'ok');
+        return;
+      }
+      setLog(tLog, `${v} ${v < c.v ? '&lt;' : '&gt;'} ${c.v} → ${v < c.v ? 'left' : 'right'}…`);
+      await sleep(560);
+      marks[c.v] = 'visited';
+      c = v < c.v ? c.l : c.r;
+    }
+    renderBST();
+    setLog(tLog, `❌ <b>${v}</b> absent — verdict en <b>${steps} comparison(s)</b> seulement (pas besoin de tout visiter !).`, 'err');
+  } finally { T.busy = false; }
+}
+
+function delNode(node, v) {
+  if (!node) return null;
+  if (v < node.v) node.l = delNode(node.l, v);
+  else if (v > node.v) node.r = delNode(node.r, v);
+  else {
+    if (!node.l) return node.r;
+    if (!node.r) return node.l;
+    let s = node.r;
+    while (s.l) s = s.l;
+    node.v = s.v;
+    node.r = delNode(node.r, s.v);
+  }
+  return node;
+}
+
+async function bstDelete() {
+  if (T.busy) return;
+  const v = bstReadInput();
+  if (v === null) { setLog(tLog, 'Entre le nombre à delete.', 'warn'); return; }
+  if (!T.root) { setLog(tLog, 'Le tree est vide.', 'warn'); return; }
+  T.busy = true;
+  try {
+    const marks = {};
+    let c = T.root, found = false;
+    while (c) {
+      if (c.v === v) { marks[c.v] = 'bad'; renderBST(marks); found = true; break; }
+      marks[c.v] = 'scan';
+      renderBST(marks);
+      await sleep(480);
+      marks[c.v] = 'visited';
+      c = v < c.v ? c.l : c.r;
+    }
+    if (!found) { renderBST(); setLog(tLog, `<b>${v}</b> n'est pas dans le tree.`, 'warn'); return; }
+    await sleep(600);
+    T.root = delNode(T.root, v);
+    renderBST();
+    setLog(tLog, `🗑️ <b>${v}</b> deleted. Trois cas possibles : leaf (facile), un child (on raccroche), deux children (on le remplace par son <b>in-order successor</b>).`, 'ok');
+  } finally { T.busy = false; }
+}
+
+async function bstInorder() {
+  if (T.busy) return;
+  if (!T.root) { setLog(tLog, 'Le tree est vide — insert quelques values d\'abord.', 'warn'); return; }
+  T.busy = true;
+  try {
+    const seq = [];
+    (function w(n) { if (!n) return; w(n.l); seq.push(n.v); w(n.r); })(T.root);
+    const marks = {}, out = [];
+    for (const v of seq) {
+      marks[v] = 'found';
+      out.push(v);
+      renderBST(marks);
+      setLog(tLog, `In-order traversal (left → node → right) : <b>${out.join(' → ')}</b>`);
+      await sleep(430);
+    }
+    setLog(tLog, `✨ Résultat : <b>${out.join(', ')}</b> — sorted en ordre croissant ! Parcourir un BST in-order = obtenir les values dans l'ordre. À retenir absolument.`, 'ok');
+  } finally { T.busy = false; }
+}
+
+function bstRandom() {
+  if (T.busy) return;
+  T.root = null;
+  const vals = new Set();
+  while (vals.size < 9) vals.add(randInt(1, 99));
+  [...vals].forEach(bstInsertRaw);
+  renderBST();
+  setLog(tLog, "🌲 Nouveau tree aléatoire — remarque : sa forme (et donc son balance) dépend entièrement de l'ordre d'insertion !");
+}
+
+function bstWorst() {
+  if (T.busy) return;
+  T.root = null;
+  [1, 2, 3, 4, 5, 6, 7].forEach(bstInsertRaw);
+  renderBST();
+  setLog(tLog, "😈 Inséré 1→7 dans l'ordre : le tree a <b>degenerate en linked list</b> ! Search en O(n). C'est exactement pour ça que les self-balancing trees (AVL, red-black) existent.", 'err');
+}
+
+function bstClear() {
+  if (T.busy) return;
+  T.root = null;
+  renderBST();
+  setLog(tLog, '🧹 Tree vidé 🌱');
+}
+
+/* ══════════════ HASH ══════════════ */
+const H = { buckets: Array.from({ length: 8 }, () => []), busy: false };
+const hLog = $('#hs-log');
+const HASH_WORDS = ['pomme', 'poire', 'kiwi', 'mangue', 'fraise', 'cerise', 'citron', 'melon', 'raisin', 'prune', 'abricot', 'pêche', 'banane', 'figue', 'datte', 'noix'];
+
+function hashFn(s) {
+  let h = 0;
+  for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h % 8;
+}
+
+function renderHash(hl = -1, keyMarks = {}) {
+  const box = $('#hs-viz');
+  box.innerHTML = H.buckets.map((b, i) => {
+    const chips = b.map(k => `<span class="chip ${keyMarks[k] || ''}">${esc(k)}</span>`)
+      .join('<span class="arr" style="margin:0 2px;font-size:13px">→</span>');
+    return `<div class="bucket${i === hl ? ' hl' : ''}"><span class="bidx">${i}</span>${chips || '<span class="bempty">—</span>'}</div>`;
+  }).join('');
+}
+
+function hashKey() {
+  const k = $('#hs-key').value.trim().toLowerCase().slice(0, 12);
+  if (!k) setLog(hLog, 'Entre une key (un mot) dans le champ.', 'warn');
+  return k;
+}
+
+async function hashInsert() {
+  if (H.busy) return;
+  const key = hashKey();
+  if (!key) return;
+  H.busy = true;
+  try {
+    const idx = hashFn(key);
+    renderHash(idx);
+    setLog(hLog, `h("${esc(key)}") = <b>${idx}</b> — le calcul est instantané, on va directement au bucket ${idx}.`);
+    await sleep(700);
+    const b = H.buckets[idx];
+    if (b.includes(key)) {
+      renderHash(idx, { [key]: 'found' });
+      setLog(hLog, `« ${esc(key)} » existe déjà dans le bucket ${idx} → on mettrait à jour sa value. <b>O(1)</b>.`, 'ok');
+      return;
+    }
+    if (b.length > 0) {
+      setLog(hLog, `💥 <b>Collision !</b> Le bucket ${idx} contient déjà ${b.length} key(s) → on chain « ${esc(key)} » à la suite.`, 'warn');
+      await sleep(800);
+    }
+    b.push(key);
+    renderHash(idx, { [key]: 'found' });
+    setLog(hLog, `✅ « ${esc(key)} » inserted dans le bucket ${idx} — <b>O(1) en moyenne</b>${b.length > 1 ? ' (malgré la collision, la chain reste courte)' : ''}.`, 'ok');
+  } finally { H.busy = false; }
+}
+
+async function hashSearch() {
+  if (H.busy) return;
+  const key = hashKey();
+  if (!key) return;
+  H.busy = true;
+  try {
+    const idx = hashFn(key);
+    renderHash(idx);
+    setLog(hLog, `h("${esc(key)}") = <b>${idx}</b> → je vais directement au bucket ${idx}, sans regarder les autres.`);
+    await sleep(700);
+    const b = H.buckets[idx];
+    if (!b.length) {
+      setLog(hLog, `❌ Bucket ${idx} vide : « ${esc(key)} » est absente — verdict immédiat, <b>O(1)</b> !`, 'err');
+      await sleep(900); renderHash();
+      return;
+    }
+    for (let i = 0; i < b.length; i++) {
+      renderHash(idx, { [b[i]]: 'scan' });
+      await sleep(450);
+      if (b[i] === key) {
+        renderHash(idx, { [key]: 'found' });
+        setLog(hLog, `✅ Trouvée après <b>${i + 1} comparison(s)</b> dans le bucket — <b>O(1) en moyenne</b>. Le worst case (tout dans un bucket) serait O(n).`, 'ok');
+        return;
+      }
+    }
+    renderHash();
+    setLog(hLog, `❌ « ${esc(key)} » absente (le bucket ${idx} contenait ${b.length} autre(s) key(s)).`, 'err');
+  } finally { H.busy = false; }
+}
+
+async function hashRemove() {
+  if (H.busy) return;
+  const key = hashKey();
+  if (!key) return;
+  H.busy = true;
+  try {
+    const idx = hashFn(key);
+    const b = H.buckets[idx];
+    const pos = b.indexOf(key);
+    renderHash(idx, pos >= 0 ? { [key]: 'scan' } : {});
+    setLog(hLog, `h("${esc(key)}") = <b>${idx}</b>…`);
+    await sleep(650);
+    if (pos < 0) {
+      renderHash();
+      setLog(hLog, `« ${esc(key)} » n'est pas dans la table.`, 'warn');
+      return;
+    }
+    b.splice(pos, 1);
+    renderHash(idx);
+    setLog(hLog, `🗑️ « ${esc(key)} » deleted du bucket ${idx} — <b>O(1) en moyenne</b>.`, 'ok');
+  } finally { H.busy = false; }
+}
+
+function hashRandomFill() {
+  if (H.busy) return;
+  const present = new Set(H.buckets.flat());
+  const candidates = HASH_WORDS.filter(w => !present.has(w));
+  for (const w of candidates.sort(() => Math.random() - .5).slice(0, 5)) {
+    H.buckets[hashFn(w)].push(w);
+  }
+  renderHash();
+  setLog(hLog, '🎲 5 keys inserted — observe les <b>collisions</b> : plusieurs keys dans le même bucket → chaining.');
+}
+
+function hashClear() {
+  if (H.busy) return;
+  H.buckets = Array.from({ length: 8 }, () => []);
+  renderHash();
+  setLog(hLog, '🧹 Table cleared.');
+}
+
+/* ══════════════ QUIZ ══════════════ */
+const QUIZ = [
+  { q: "Vous devez implémenter la fonction « Undo » (Ctrl+Z) d'un éditeur. Quelle structure choisir ?",
+    choices: ["Une queue", "Un stack", "Un array sorted", "Un binary search tree"], a: 1,
+    why: "Le dernier changement effectué doit être le premier annulé : c'est du LIFO, donc un stack. (Et un second stack pour le « Redo ».)" },
+  { q: "Quelle est la complexity d'access à arr[i] dans un array ?",
+    choices: ["O(1)", "O(log n)", "O(n)", "O(n log n)"], a: 0,
+    why: "L'adresse mémoire se calcule directement : start + i × taille d'un élément. Aucune search." },
+  { q: "Un serveur d'impression traite les documents dans leur ordre d'arrivée. Quelle structure ?",
+    choices: ["Un stack", "Un BST", "Une queue (FIFO)", "Une hash table"], a: 2,
+    why: "Premier arrivé, premier servi = FIFO = queue. Le document le plus ancien sort en premier." },
+  { q: "Quelle est la complexity d'une search dans un BST balanced de n éléments ?",
+    choices: ["O(1)", "O(log n)", "O(n)", "O(n²)"], a: 1,
+    why: "À chaque comparison, on élimine la moitié du tree restant — comme une dichotomie." },
+  { q: "Quelle est la complexity d'une insertion au head d'une linked list ?",
+    choices: ["O(1)", "O(log n)", "O(n)", "Impossible sans tout recopier"], a: 0,
+    why: "On crée un node et on repointe head : deux opérations, quelle que soit la taille de la list." },
+  { q: "Quelle structure le moteur JavaScript utilise-t-il pour suivre les fonctions en cours d'exécution ?",
+    choices: ["La event queue", "Le call stack", "Un dynamic array", "Un AVL tree"], a: 1,
+    why: "Chaque appel de fonction est pushed ; quand elle se termine, elle est popped. Une récursion infinie provoque un stack overflow." },
+  { q: "Pourquoi insert un élément au milieu d'un array coûte-t-il O(n) ?",
+    choices: ["Il faut recalculer le hash de chaque élément", "Il faut shift tous les éléments suivants", "Il faut sort l'array après", "Il faut réallouer la mémoire à chaque fois"], a: 1,
+    why: "Les cases étant contiguës, faire de la place à l'index i oblige à pousser tous les éléments d'après d'une case vers la droite." },
+  { q: "Le in-order traversal (left, root, right) d'un BST produit :",
+    choices: ["Les values dans un ordre aléatoire", "Les values sorted en ordre croissant", "Seulement les leaves", "Le chemin le plus court vers le root"], a: 1,
+    why: "C'est LA propriété du BST à connaître : in-order = sorted. Elle résout beaucoup d'exercices d'entretien." },
+  { q: "Pour vérifier que les parenthèses/accolades d'un code sont bien équilibrées, on utilise :",
+    choices: ["Une queue", "Un stack", "Une linked list", "Une hash table"], a: 1,
+    why: "On push chaque ouvrante, on pop à chaque fermante : si tout correspond jusqu'au bout, c'est équilibré. Un grand classique d'entretien." },
+  { q: "Quelle est la complexity moyenne d'une search dans une hash table ?",
+    choices: ["O(1)", "O(log n)", "O(n)", "O(n log n)"], a: 0,
+    why: "La hash function donne directement le bon bucket. Le worst case (collisions massives) est O(n), à mentionner en entretien." },
+  { q: "Le breadth-first traversal (BFS) d'un graph s'appuie sur :",
+    choices: ["Un stack", "Une queue", "Un BST", "Deux arrays sorted"], a: 1,
+    why: "BFS explore niveau par niveau : les voisins découverts attendent leur tour dans une queue. DFS, lui, utilise un stack (ou la récursion)." },
+  { q: "Que se passe-t-il si on insert 1, 2, 3, 4, 5… dans l'ordre dans un BST naïf ?",
+    choices: ["La search reste en O(log n)", "La search devient O(1)", "Le tree degenerate en linked list : search O(n)", "Les insertions échouent"], a: 2,
+    why: "Chaque value part à right : le tree devient une simple chain. D'où les self-balancing trees (AVL, red-black) des standard libraries." },
+  { q: "Un cache LRU performant combine classiquement :",
+    choices: ["Deux stacks", "Une hash table + une doubly linked list", "Un BST + une queue", "Un array sorted + un stack"], a: 1,
+    why: "La hash map trouve l'entrée en O(1) ; la doubly linked list déplace/évince l'élément le moins récemment utilisé en O(1). Question d'entretien culte." },
+  { q: "Pour une priority queue (ex : task scheduler), la structure la plus adaptée est :",
+    choices: ["Un heap", "Un stack", "Une linked list sorted", "Un array non sorted"], a: 0,
+    why: "Le heap insère et extrait le min/max en O(log n). Une list sorted coûterait O(n) à chaque insertion." }
+];
+
+let quizOrder = [], qi = 0, score = 0, answered = false;
+
+function quizStart() {
+  quizOrder = [...QUIZ].sort(() => Math.random() - .5);
+  qi = 0; score = 0;
+  renderQuiz();
+}
+
+function quizNext() { qi++; renderQuiz(); }
+
+function renderQuiz() {
+  const box = $('#quiz-box');
+  if (qi >= quizOrder.length) {
+    const pct = Math.round(score / quizOrder.length * 100);
+    const msg = pct === 100 ? 'Sans faute ! Tu es prêt·e pour cet entretien. 🏆'
+      : pct >= 70 ? 'Très solide ! Revois juste les questions ratées et ce sera parfait. 💪'
+      : pct >= 40 ? 'Bonne base — refais un tour des sections interactives, puis retente. 📚'
+      : 'Pas de panique : explore chaque structure en la manipulant, puis reviens. 🌱';
+    box.innerHTML = `<div class="quiz-end"><div class="score">${score} / ${quizOrder.length}</div><p>${msg}</p><button class="btn primary" onclick="quizStart()">🔄 Recommencer (questions mélangées)</button></div>`;
+    $('#quiz-progress').style.width = '100%';
+    return;
+  }
+  const q = quizOrder[qi];
+  answered = false;
+  $('#quiz-progress').style.width = (qi / quizOrder.length * 100) + '%';
+  box.innerHTML = `<div class="qnum">Question ${qi + 1} / ${quizOrder.length} · Score : ${score}</div>
+    <h3>${q.q}</h3>
+    <div class="choices">${q.choices.map((c, i) => `<button class="choice" data-i="${i}">${c}</button>`).join('')}</div>
+    <div id="quiz-fb"></div>`;
+  box.querySelectorAll('.choice').forEach(b => b.addEventListener('click', () => quizAnswer(+b.dataset.i)));
+}
+
+function quizAnswer(i) {
+  if (answered) return;
+  answered = true;
+  const q = quizOrder[qi];
+  document.querySelectorAll('.choice').forEach((b, j) => {
+    b.disabled = true;
+    if (j === q.a) b.classList.add('right');
+    else if (j === i) b.classList.add('wrong');
+  });
+  const good = i === q.a;
+  if (good) score++;
+  $('#quiz-fb').innerHTML = `<div class="fb ${good ? 'ok' : 'ko'}">${good ? '✅ Exact !' : '❌ Raté.'} ${q.why}</div>
+    <button class="btn primary" onclick="quizNext()">${qi + 1 >= quizOrder.length ? 'Voir mon score →' : 'Question suivante →'}</button>`;
+}
+
+/* ══════════════ INIT ══════════════ */
+renderArray();
+renderList();
+renderStack();
+renderQueue();
+[50, 30, 70, 20, 40, 60, 80].forEach(bstInsertRaw);
+renderBST();
+['pomme', 'kiwi', 'banane', 'cerise'].forEach(k => H.buckets[hashFn(k)].push(k));
+renderHash();
+quizStart();
+</script>
+
+</body>
+</html>

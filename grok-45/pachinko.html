@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pachinko des Abysses</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+
+        :root {
+            --bg: #07060f;
+            --neon: #00f0ff;
+            --pink: #ff2a6d;
+            --gold: #ffd700;
+            --purple: #b14cff;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; user-select:none; -webkit-tap-highlight-color:transparent; }
+
+        body {
+            background: var(--bg);
+            color: #e0e8ff;
+            font-family: 'Rajdhani', system-ui, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #wrap {
+            position: relative;
+            box-shadow: 0 0 60px rgba(0,240,255,0.15);
+        }
+
+        canvas {
+            display: block;
+            background: #0a0818;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 10px 14px;
+            display: none;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            text-shadow: 0 0 8px rgba(0,240,255,0.6);
+            z-index: 10;
+        }
+        #hud .left, #hud .right { display:flex; flex-direction:column; gap:4px; }
+        #hud .score-big {
+            font-size: 28px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+        #hud .target { color: var(--neon); }
+        #hud .gold { color: var(--gold); }
+        #hud .balls { color: #7affc0; }
+        #hud .stage { color: var(--purple); font-size: 15px; }
+
+        /* Panels */
+        .panel {
+            position: absolute;
+            inset: 0;
+            background: rgba(5,4,15,0.92);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+        }
+        .panel.active { display: flex; }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: clamp(28px, 7vw, 48px);
+            background: linear-gradient(135deg, #00f0ff, #ff2a6d, #b14cff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+            margin-bottom: 6px;
+            letter-spacing: 2px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #8899cc;
+            margin-bottom: 30px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            background: transparent;
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            padding: 12px 36px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            margin: 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        .btn:hover, .btn:active {
+            background: var(--neon);
+            color: #000;
+            box-shadow: 0 0 25px var(--neon);
+            transform: scale(1.05);
+        }
+        .btn.pink { border-color: var(--pink); color: var(--pink); }
+        .btn.pink:hover { background: var(--pink); color:#000; box-shadow:0 0 25px var(--pink); }
+        .btn.gold { border-color: var(--gold); color: var(--gold); }
+        .btn.gold:hover { background: var(--gold); color:#000; box-shadow:0 0 25px var(--gold); }
+
+        .highscore {
+            margin-top: 24px;
+            font-size: 14px;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+
+        /* Upgrade cards */
+        #upgrade-cards {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 900px;
+            margin: 20px 0;
+        }
+        .card {
+            background: linear-gradient(160deg, rgba(20,15,40,0.95), rgba(10,8,25,0.98));
+            border: 2px solid #2a2a4a;
+            border-radius: 12px;
+            width: 220px;
+            padding: 20px 16px;
+            transition: all 0.25s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(0,240,255,0.05));
+            pointer-events: none;
+        }
+        .card:hover {
+            border-color: var(--neon);
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 10px 40px rgba(0,240,255,0.25);
+        }
+        .card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px;
+            color: var(--neon);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .card p {
+            font-size: 14px;
+            color: #aac;
+            line-height: 1.4;
+            min-height: 60px;
+        }
+        .card .choose {
+            margin-top: 14px;
+            font-size: 13px;
+            color: #7affc0;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .info {
+            color: #778;
+            font-size: 14px;
+            max-width: 520px;
+            line-height: 1.6;
+            margin: 10px 0 20px;
+        }
+
+        #mute-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 30;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #445;
+            color: #aab;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #mute-btn:hover { border-color: var(--neon); color: var(--neon); }
+
+        .stage-clear {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            color: #7affc0;
+            margin-bottom: 8px;
+        }
+
+        #howto-content {
+            text-align: left;
+            max-width: 480px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #b0b8d0;
+        }
+        #howto-content b { color: var(--neon); }
+    </style>
+</head>
+<body>
+<div id="wrap">
+    <canvas id="c"></canvas>
+
+    <div id="hud">
+        <div class="left">
+            <div class="stage" id="hud-stage">ABYSSÉE 1</div>
+            <div class="balls" id="hud-balls">●●●●●●</div>
+        </div>
+        <div style="text-align:center">
+            <div class="score-big" id="hud-score">0</div>
+            <div class="target" id="hud-target">Cible : 100</div>
+        </div>
+        <div class="right" style="text-align:right">
+            <div class="gold" id="hud-gold">◆ 0</div>
+            <div style="font-size:11px;color:#668" id="hud-total">Total 0</div>
+        </div>
+    </div>
+
+    <!-- TITLE -->
+    <div id="title" class="panel active">
+        <h1>PACHINKO<br>DES ABYSSES</h1>
+        <div class="subtitle">Roguelike Pachinko</div>
+        <button class="btn" id="btn-play">Entrer dans l'Abysse</button>
+        <button class="btn pink" id="btn-howto">Comment jouer</button>
+        <div class="highscore" id="title-hs">Record : 0</div>
+    </div>
+
+    <!-- HOWTO -->
+    <div id="howto" class="panel">
+        <h1 style="font-size:28px;margin-bottom:16px">Règles</h1>
+        <div id="howto-content">
+            • <b>Clique / tape</b> en haut pour lancer une balle (position X = ta souris/doigt).<br>
+            • Les balles rebondissent sur les pions et tombent dans les zones du bas.<br>
+            • <b>Atteins le score cible</b> avant d’épuiser tes balles.<br>
+            • Après chaque étage : choisis une <b>amélioration</b> parmi 3 (roguelike draft).<br>
+            • Or = reroll des choix + score de run. Les pions dorés et jackpots rapportent beaucoup.<br>
+            • Astuce : trouve les bons couloirs ! Le layout est fixe pendant l’étage.
+        </div>
+        <button class="btn" id="btn-back">Retour</button>
+    </div>
+
+    <!-- UPGRADE -->
+    <div id="upgrade" class="panel">
+        <div class="stage-clear">ÉTAGE CLAIR !</div>
+        <div id="upgrade-msg" style="color:#9ab;margin-bottom:8px"></div>
+        <div id="upgrade-cards"></div>
+        <button class="btn gold" id="btn-reroll" style="margin-top:12px">Relancer (25 ◆)</button>
+        <div style="margin-top:10px;font-size:13px;color:#668" id="upgrade-gold"></div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="gameover" class="panel">
+        <h1 style="font-size:32px;color:#ff2a6d;-webkit-text-fill-color:#ff2a6d">TOMBÉ</h1>
+        <div id="go-stats" class="info" style="font-size:18px;color:#ccd"></div>
+        <div class="highscore" id="go-hs"></div>
+        <button class="btn" id="btn-retry">Retenter l'Abysse</button>
+        <button class="btn pink" id="btn-menu">Menu</button>
+    </div>
+
+    <button id="mute-btn" title="Mute">🔊</button>
+</div>
+
+<script>
+    /* =========================================================
+       PACHINKO DES ABYSSES - Single File Roguelike Pachinko
+       ========================================================= */
+
+    const LOGICAL_W = 420;
+    const LOGICAL_H = 720;
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    let scale = 1, dpr = 1;
+
+    // ---------- DOM ----------
+    const hud = document.getElementById('hud');
+    const panels = {
+        title: document.getElementById('title'),
+        howto: document.getElementById('howto'),
+        upgrade: document.getElementById('upgrade'),
+        gameover: document.getElementById('gameover')
+    };
+    const upgradeCards = document.getElementById('upgrade-cards');
+
+    // ---------- AUDIO ----------
+    let actx = null;
+    let muted = false;
+    function ensureAudio() {
+        if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+        if (actx.state === 'suspended') actx.resume();
+    }
+    function beep(freq, type='square', dur=0.06, vol=0.04) {
+        if (muted || !actx) return;
+        try {
+            const o = actx.createOscillator();
+            const g = actx.createGain();
+            o.type = type;
+            o.frequency.value = freq;
+            g.gain.value = vol;
+            o.connect(g); g.connect(actx.destination);
+            o.start();
+            g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + dur);
+            o.stop(actx.currentTime + dur);
+        } catch(e){}
+    }
+
+    // ---------- UTILS ----------
+    const rand = (a,b) => a + Math.random()*(b-a);
+    const randi = (a,b) => Math.floor(rand(a,b+1));
+    const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+    const pick = arr => arr[randi(0,arr.length-1)];
+    const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=randi(0,i);[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+    // ---------- STATE ----------
+    let state = 'title'; // title | playing | upgrade | gameover | howto
+    let mouse = {x: LOGICAL_W/2, y: 80};
+    let balls = [];
+    let pegs = [];
+    let particles = [];
+    let popups = [];
+    let shake = 0;
+    let idleTimer = 0;
+    let time = 0;
+    let highScore = parseInt(localStorage.getItem('pachinkoAbyss_hs') || '0');
+
+    const player = {
+        stage: 1,
+        score: 0,
+        totalScore: 0,
+        gold: 0,
+        ballsLeft: 6,
+        baseBalls: 6,
+        elasticity: 0.78,
+        gravity: 0.22,
+        pegScore: 2,
+        goldMult: 1,
+        multiBonus: 0,
+        magnet: 0,
+        launchPower: 1,
+        scatter: 1,
+        lucky: 0,
+        safeOut: false,
+        upgrades: []
+    };
+
+    let targetScore = 120;
+    let currentChoices = [];
+
+    // Zones multiplicateurs (7 slots)
+    const ZONE_MULTIS = [0, 1, 2, 3, 10, 3, 2, 1]; // last one unused if 7
+
+    // ---------- UPGRADES ----------
+    const ALL_UPGRADES = [
+        { id:'balls',   name:'Réserve Abyssale',     desc:'+2 balles de base par étage. Plus de chaos !', apply(){ player.baseBalls += 2; } },
+        { id:'elast',   name:'Âmes Élastiques',      desc:'+12% d’élasticité. Les balles rebondissent beaucoup plus.', apply(){ player.elasticity = Math.min(0.96, player.elasticity + 0.12); } },
+        { id:'pegpt',   name:'Pions Sacrés',         desc:'+4 points à chaque contact de pion.', apply(){ player.pegScore += 4; } },
+        { id:'goldm',   name:'Ruée vers l\'Or',      desc:'Tout l’or gagné ×1.6.', apply(){ player.goldMult *= 1.6; } },
+        { id:'multi',   name:'Multiplicateur+',      desc:'Tous les multiplicateurs de zones +1.', apply(){ player.multiBonus += 1; } },
+        { id:'magnet',  name:'Aimant d\'Or',         desc:'Les balles sont attirées par les pions dorés.', apply(){ player.magnet += 1.2; } },
+        { id:'power',   name:'Lancement Violent',    desc:'Vitesse initiale des balles +35%.', apply(){ player.launchPower *= 1.35; } },
+        { id:'float',   name:'Gravité Fragile',      desc:'Gravité -18%. Les balles planent plus longtemps.', apply(){ player.gravity *= 0.82; } },
+        { id:'lucky',   name:'Faveur du Destin',     desc:'+25% chance de doubler le score à la capture.', apply(){ player.lucky = (player.lucky||0) + 0.25; } },
+        { id:'safe',    name:'Seconde Chance',       desc:'Les zones OUT donnent ×1 au lieu de 0.', apply(){ player.safeOut = true; } },
+        { id:'focus',   name:'Précision Fatale',     desc:'Moins de dispersion au lancement.', apply(){ player.scatter *= 0.45; } },
+        { id:'combo',   name:'Écho des Pins',        desc:'Les points des pions sont doublés.', apply(){ player.pegScore *= 2; } },
+    ];
+
+    // ---------- RESIZE ----------
+    function resize() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const maxW = window.innerWidth * 0.96;
+        const maxH = window.innerHeight * 0.96;
+        scale = Math.min(maxW / LOGICAL_W, maxH / LOGICAL_H);
+
+        canvas.width  = Math.floor(LOGICAL_W * scale * dpr);
+        canvas.height = Math.floor(LOGICAL_H * scale * dpr);
+        canvas.style.width  = Math.floor(LOGICAL_W * scale) + 'px';
+        canvas.style.height = Math.floor(LOGICAL_H * scale) + 'px';
+
+        ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+
+        document.getElementById('wrap').style.width  = canvas.style.width;
+        document.getElementById('wrap').style.height = canvas.style.height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // ---------- INPUT ----------
+    function getLogicalPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX ?? (e.touches && e.touches[0].clientX);
+        const clientY = e.clientY ?? (e.touches && e.touches[0].clientY);
+        return {
+            x: (clientX - rect.left) / scale,
+            y: (clientY - rect.top) / scale
+        };
+    }
+
+    function onPointerMove(e) {
+        const p = getLogicalPos(e);
+        mouse.x = clamp(p.x, 20, LOGICAL_W-20);
+        mouse.y = p.y;
+    }
+    function onPointerDown(e) {
+        e.preventDefault();
+        ensureAudio();
+        onPointerMove(e);
+        if (state === 'playing') launchBall();
+    }
+
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('touchmove', e => { e.preventDefault(); onPointerMove(e); }, {passive:false});
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); onPointerDown(e); }, {passive:false});
+
+    // ---------- PARTICLES & POPUPS ----------
+    function spawnParticle(x, y, col, life=40, speed=3) {
+        particles.push({
+            x, y,
+            vx: rand(-speed, speed),
+            vy: rand(-speed, speed),
+            life, maxLife: life,
+            r: rand(1.5, 3.5),
+            color: col
+        });
+    }
+    function spawnBurst(x, y, col, n=12, speed=4) {
+        for (let i=0;i<n;i++) spawnParticle(x, y, col, rand(25,50), speed);
+    }
+    function spawnPopup(x, y, text, color='#fff') {
+        popups.push({ x, y, text, color, life: 70, vy: -1.2 });
+    }
+
+    // ---------- BOARD GENERATION ----------
+    function generateBoard() {
+        pegs = [];
+        const baseRows = 11 + Math.min(player.stage, 8);
+        const spacingY = Math.max(32, 42 - player.stage * 0.8);
+        const pegR = 6.5;
+
+        for (let row = 0; row < baseRows; row++) {
+            const y = 115 + row * spacingY;
+            const cols = 7 + (row % 2);
+            const spacingX = (LOGICAL_W - 50) / (cols - 0.5);
+            for (let col = 0; col < cols; col++) {
+                if (Math.random() < 0.12 + player.stage * 0.01) continue; // trous
+                let x = 30 + col * spacingX + (row % 2 ? spacingX*0.5 : 0);
+                x += rand(-6, 6);
+                x = clamp(x, 28, LOGICAL_W-28);
+
+                let type = 'normal';
+                const r = Math.random();
+                if (r < 0.07) type = 'gold';
+                else if (r < 0.12) type = 'multi';
+                else if (r < 0.16 && player.stage > 2) type = 'danger';
+                else if (r < 0.185) type = 'bonus';
+
+                pegs.push({
+                    x, y, r: pegR + (type==='multi' ? 1.5 : 0),
+                    type,
+                    pulse: Math.random() * Math.PI * 2,
+                    hitFlash: 0
+                });
+            }
+        }
+
+        // Force a few gold + one multi in good spots
+        for (let i=0; i<3+Math.floor(player.stage/2); i++) {
+            if (pegs.length) pick(pegs).type = Math.random()<0.5 ? 'gold' : 'multi';
+        }
+
+        // Boss crystal every 4 stages
+        if (player.stage % 4 === 0) {
+            pegs.push({
+                x: LOGICAL_W/2, y: 280,
+                r: 18, type: 'boss', pulse:0, hitFlash:0, hp: 8 + player.stage
+            });
+        }
+    }
+
+    // ---------- ZONES ----------
+    function getZoneMulti(x) {
+        const n = 7;
+        const slotW = LOGICAL_W / n;
+        let idx = Math.floor(x / slotW);
+        idx = clamp(idx, 0, n-1);
+        // Center bias better
+        const base = [0, 1, 2, 5, 10, 5, 2][idx];
+        let m = base + player.multiBonus;
+        if (base === 0 && player.safeOut) m = 1 + player.multiBonus;
+        return Math.max(0, m);
+    }
+
+    // ---------- PLAYER ACTIONS ----------
+    function launchBall() {
+        if (state !== 'playing' || player.ballsLeft <= 0 || balls.length > 22) return;
+
+        player.ballsLeft--;
+        updateHUD();
+
+        const b = {
+            x: clamp(mouse.x, 25, LOGICAL_W-25),
+            y: 52,
+            vx: (Math.random()-0.5) * 1.8 * player.scatter,
+            vy: 3.1 * player.launchPower,
+            r: 7.5,
+            hitCount: 0,
+            trail: [],
+            age: 0,
+            dead: false
+        };
+        balls.push(b);
+
+        spawnBurst(b.x, b.y, '#00f0ff', 6, 2);
+        beep(180 + Math.random()*40, 'square', 0.05, 0.03);
+    }
+
+    function hitPeg(ball, peg) {
+        peg.hitFlash = 8;
+        ball.hitCount++;
+
+        const basePts = player.pegScore;
+        player.score += basePts;
+        player.totalScore += basePts;
+
+        // type effects
+        if (peg.type === 'gold') {
+            const g = Math.floor(4 * player.goldMult);
+            player.gold += g;
+            spawnBurst(peg.x, peg.y, '#ffd700', 10, 3);
+            spawnPopup(peg.x, peg.y-10, `+${g}◆`, '#ffd700');
+            beep(660, 'triangle', 0.08, 0.04);
+        } else if (peg.type === 'multi') {
+            ball.hitCount += 3;
+            spawnBurst(peg.x, peg.y, '#ff2a6d', 8, 2.5);
+            beep(440, 'sine', 0.07);
+        } else if (peg.type === 'danger') {
+            ball.dead = true;
+            spawnBurst(ball.x, ball.y, '#ff2244', 18, 5);
+            beep(90, 'sawtooth', 0.15, 0.05);
+        } else if (peg.type === 'bonus') {
+            if (Math.random() < 0.55) {
+                player.ballsLeft++;
+                spawnPopup(peg.x, peg.y, '+1 Balle', '#7affc0');
+                beep(880, 'square', 0.1);
+            }
+        } else if (peg.type === 'boss') {
+            peg.hp--;
+            player.score += 25;
+            player.totalScore += 25;
+            spawnBurst(peg.x, peg.y, '#b14cff', 15, 4);
+            shake = Math.max(shake, 6);
+            beep(120 + peg.hp*15, 'sawtooth', 0.1, 0.05);
+            if (peg.hp <= 0) {
+                player.score += 200;
+                player.totalScore += 200;
+                player.gold += Math.floor(30 * player.goldMult);
+                spawnBurst(peg.x, peg.y, '#fff', 40, 7);
+                spawnPopup(peg.x, peg.y, 'CRISTAL BRISÉ!', '#b14cff');
+                shake = 18;
+                // remove boss
+                const idx = pegs.indexOf(peg);
+                if (idx>-1) pegs.splice(idx,1);
+                beep(200,'square',0.2); setTimeout(()=>beep(400,'square',0.2),80); setTimeout(()=>beep(800,'square',0.3),160);
+            }
+        } else {
+            // normal small spark
+            if (Math.random() < 0.3) spawnParticle(peg.x, peg.y, '#88ccff', 20, 1.5);
+            beep(220 + Math.min(ball.hitCount*12, 200) + Math.random()*30, 'sine', 0.03, 0.025);
+        }
+    }
+
+    function scoreBall(ball) {
+        let multi = getZoneMulti(ball.x);
+        let pts = Math.floor( (12 + ball.hitCount * 2.2) * multi );
+
+        // lucky double
+        if (Math.random() < player.lucky) {
+            pts *= 2;
+            spawnPopup(ball.x, ball.y - 30, 'CHANCE x2!', '#ff2a6d');
+        }
+
+        player.score += pts;
+        player.totalScore += pts;
+
+        if (multi >= 3) {
+            const g = Math.floor(multi * 1.5 * player.goldMult);
+            player.gold += g;
+        }
+
+        const col = multi >= 10 ? '#ffd700' : multi >= 5 ? '#ff2a6d' : multi >= 2 ? '#00f0ff' : '#aaa';
+        spawnPopup(ball.x, ball.y - 10, multi === 0 ? 'OUT' : `+${pts}`, col);
+        spawnBurst(ball.x, ball.y, col, multi >= 5 ? 25 : 10, multi >= 5 ? 5 : 2.5);
+
+        if (multi >= 5) {
+            shake = multi >= 10 ? 16 : 9;
+            beep(523, 'triangle', 0.1); setTimeout(()=>beep(659,'triangle',0.1),60); setTimeout(()=>beep(784,'triangle',0.15),120);
+        } else if (multi > 0) {
+            beep(300 + multi*80, 'triangle', 0.07, 0.035);
+        } else {
+            beep(80, 'sawtooth', 0.12, 0.03);
+        }
+
+        updateHUD();
+    }
+
+    // ---------- UPDATE ----------
+    function update() {
+        time++;
+        if (shake > 0) shake *= 0.88;
+
+        const elast = player.elasticity;
+        const grev = player.gravity;
+
+        for (let i = balls.length - 1; i >= 0; i--) {
+            const b = balls[i];
+            if (b.dead) {
+                balls.splice(i,1);
+                continue;
+            }
+
+            b.age++;
+            b.trail.push({x:b.x, y:b.y});
+            if (b.trail.length > 14) b.trail.shift();
+
+            // magnet toward gold pegs
+            if (player.magnet > 0) {
+                for (const p of pegs) {
+                    if (p.type !== 'gold' && p.type !== 'boss') continue;
+                    const dx = p.x - b.x, dy = p.y - b.y;
+                    const d2 = dx*dx + dy*dy;
+                    if (d2 < 220*220 && d2 > 1) {
+                        const f = player.magnet * 0.0009;
+                        b.vx += dx * f;
+                        b.vy += dy * f;
+                    }
+                }
+            }
+
+            b.vy += grev;
+            b.vx *= 0.996;
+            b.vy *= 0.996;
+            b.x += b.vx;
+            b.y += b.vy;
+
+            // walls
+            const wall = 14;
+            if (b.x < wall + b.r) { b.x = wall + b.r; b.vx = -b.vx * elast; }
+            if (b.x > LOGICAL_W - wall - b.r) { b.x = LOGICAL_W - wall - b.r; b.vx = -b.vx * elast; }
+            if (b.y < 40 + b.r) { b.y = 40 + b.r; b.vy = Math.abs(b.vy) * elast; }
+
+            // pegs (iterate twice for stability)
+            for (let pass=0; pass<2; pass++) {
+                for (const p of pegs) {
+                    const dx = b.x - p.x;
+                    const dy = b.y - p.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minD = b.r + p.r;
+                    if (dist < minD && dist > 0.01) {
+                        const nx = dx / dist, ny = dy / dist;
+                        const overlap = minD - dist;
+                        b.x += nx * overlap;
+                        b.y += ny * overlap;
+
+                        const vdot = b.vx * nx + b.vy * ny;
+                        if (vdot < 0) {
+                            b.vx -= (1 + elast) * vdot * nx;
+                            b.vy -= (1 + elast) * vdot * ny;
+                        }
+
+                        if (pass === 0) hitPeg(b, p);
+                    }
+                }
+            }
+
+            // catch bottom
+            if (b.y > LOGICAL_H - 48) {
+                scoreBall(b);
+                balls.splice(i, 1);
+                continue;
+            }
+
+            // stuck bail
+            if (b.age > 700 && Math.hypot(b.vx, b.vy) < 0.4) {
+                balls.splice(i, 1);
+            }
+        }
+
+        // particles
+        for (let i = particles.length-1; i>=0; i--) {
+            const p = particles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.vy += 0.05;
+            p.life--;
+            if (p.life <= 0) particles.splice(i,1);
+        }
+        // popups
+        for (let i = popups.length-1; i>=0; i--) {
+            const p = popups[i];
+            p.y += p.vy;
+            p.life--;
+            if (p.life <= 0) popups.splice(i,1);
+        }
+
+        // peg flash decay
+        for (const p of pegs) if (p.hitFlash > 0) p.hitFlash--;
+
+        // end stage check
+        if (state === 'playing') {
+            if (balls.length === 0) {
+                if (player.ballsLeft <= 0) {
+                    idleTimer++;
+                    if (idleTimer > 50) endStage();
+                }
+            } else {
+                idleTimer = 0;
+            }
+        }
+
+        updateHUD();
+    }
+
+    // ---------- END / FLOW ----------
+    function endStage() {
+        if (player.score >= targetScore) {
+            const bonusGold = Math.floor(player.score / 25 + player.stage * 3);
+            player.gold += bonusGold;
+            showUpgrade(bonusGold);
+        } else {
+            gameOver();
+        }
+    }
+
+    function showUpgrade(bonusGold) {
+        state = 'upgrade';
+        hud.style.display = 'none';
+        panels.upgrade.classList.add('active');
+        document.getElementById('upgrade-msg').textContent =
+            `Score ${player.score} / ${targetScore}  •  +${bonusGold} ◆`;
+        document.getElementById('upgrade-gold').textContent = `Or actuel : ${Math.floor(player.gold)} ◆`;
+        rollUpgrades();
+    }
+
+    function rollUpgrades() {
+        const pool = shuffle([...ALL_UPGRADES]);
+        currentChoices = pool.slice(0, 3);
+        upgradeCards.innerHTML = '';
+
+        currentChoices.forEach((up, idx) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+      <h3>${up.name}</h3>
+      <p>${up.desc}</p>
+      <div class="choose">CHOISIR</div>
+    `;
+            card.onclick = () => selectUpgrade(up);
+            upgradeCards.appendChild(card);
+        });
+    }
+
+    function selectUpgrade(up) {
+        up.apply();
+        player.upgrades.push(up.id);
+        beep(600, 'triangle', 0.1);
+        setTimeout(() => beep(900, 'triangle', 0.12), 80);
+        nextStage();
+    }
+
+    document.getElementById('btn-reroll').onclick = () => {
+        if (player.gold < 25) {
+            beep(100, 'sawtooth', 0.2);
+            return;
+        }
+        player.gold -= 25;
+        document.getElementById('upgrade-gold').textContent = `Or actuel : ${Math.floor(player.gold)} ◆`;
+        rollUpgrades();
+        beep(400, 'square', 0.08);
+    };
+
+    function nextStage() {
+        panels.upgrade.classList.remove('active');
+        player.stage++;
+        player.score = 0;
+        player.ballsLeft = player.baseBalls + Math.floor((player.stage-1)/3);
+        targetScore = Math.floor(100 * Math.pow(1.42, player.stage-1));
+        balls = [];
+        particles = [];
+        popups = [];
+        generateBoard();
+        state = 'playing';
+        hud.style.display = 'flex';
+        idleTimer = 0;
+        updateHUD();
+        beep(300,'sine',0.05); setTimeout(()=>beep(450,'sine',0.05),50); setTimeout(()=>beep(600,'sine',0.08),100);
+    }
+
+    function gameOver() {
+        state = 'gameover';
+        hud.style.display = 'none';
+        panels.gameover.classList.add('active');
+
+        let newRecord = false;
+        if (player.totalScore > highScore) {
+            highScore = player.totalScore;
+            localStorage.setItem('pachinkoAbyss_hs', highScore);
+            newRecord = true;
+        }
+
+        document.getElementById('go-stats').innerHTML = `
+    Tu as atteint l'<b style="color:#b14cff">étage ${player.stage}</b><br>
+    Score total : <b style="color:#00f0ff">${player.totalScore}</b><br>
+    Or amassé : <b style="color:#ffd700">${Math.floor(player.gold)} ◆</b>
+  `;
+        document.getElementById('go-hs').textContent = newRecord ? '★ NOUVEAU RECORD ! ★' : `Record : ${highScore}`;
+        beep(150,'sawtooth',0.3,0.04); setTimeout(()=>beep(100,'sawtooth',0.4),200);
+    }
+
+    function startRun() {
+        // reset player
+        Object.assign(player, {
+            stage: 1,
+            score: 0,
+            totalScore: 0,
+            gold: 0,
+            ballsLeft: 6,
+            baseBalls: 6,
+            elasticity: 0.78,
+            gravity: 0.22,
+            pegScore: 2,
+            goldMult: 1,
+            multiBonus: 0,
+            magnet: 0,
+            launchPower: 1,
+            scatter: 1,
+            lucky: 0,
+            safeOut: false,
+            upgrades: []
+        });
+        targetScore = 100;
+        balls = [];
+        particles = [];
+        popups = [];
+        generateBoard();
+        state = 'playing';
+
+        Object.values(panels).forEach(p => p.classList.remove('active'));
+        hud.style.display = 'flex';
+        updateHUD();
+        ensureAudio();
+        beep(400,'square',0.08); setTimeout(()=>beep(600,'square',0.1),80);
+    }
+
+    // ---------- HUD ----------
+    function updateHUD() {
+        if (state !== 'playing') return;
+        document.getElementById('hud-stage').textContent = `ABYSSÉE ${player.stage}`;
+        document.getElementById('hud-score').textContent = player.score;
+        document.getElementById('hud-target').textContent = `Cible : ${targetScore}`;
+        document.getElementById('hud-gold').textContent = `◆ ${Math.floor(player.gold)}`;
+        document.getElementById('hud-total').textContent = `Total ${player.totalScore}`;
+
+        // ball icons
+        let icons = '';
+        const show = Math.min(player.ballsLeft, 12);
+        for (let i=0;i<show;i++) icons += '●';
+        if (player.ballsLeft > 12) icons += `+${player.ballsLeft-12}`;
+        document.getElementById('hud-balls').textContent = icons || '∅';
+    }
+
+    // ---------- DRAW ----------
+    function draw() {
+        // background
+        const grd = ctx.createLinearGradient(0,0,0,LOGICAL_H);
+        grd.addColorStop(0, '#0c0a1c');
+        grd.addColorStop(0.6, '#08061a');
+        grd.addColorStop(1, '#05040f');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0,0,LOGICAL_W,LOGICAL_H);
+
+        // subtle vignette stars
+        ctx.fillStyle = 'rgba(100,120,255,0.15)';
+        for (let i=0;i<25;i++) {
+            const sx = (i*97 + time*0.02) % LOGICAL_W;
+            const sy = (i*53) % (LOGICAL_H*0.7);
+            ctx.beginPath();
+            ctx.arc(sx, sy, 1, 0, 6.28);
+            ctx.fill();
+        }
+
+        // shake
+        ctx.save();
+        if (shake > 0.5) {
+            ctx.translate(rand(-shake,shake), rand(-shake,shake));
+        }
+
+        // walls decoration
+        ctx.strokeStyle = 'rgba(0,240,255,0.25)';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(12, 35, LOGICAL_W-24, LOGICAL_H-90);
+
+        // launch zone
+        ctx.fillStyle = 'rgba(0,240,255,0.04)';
+        ctx.fillRect(15, 35, LOGICAL_W-30, 40);
+
+        // bottom zones
+        const n = 7;
+        const slotW = LOGICAL_W / n;
+        const zoneColors = ['#221122','#1a2a1a','#1a2a3a','#2a1a3a','#3a2a00','#2a1a3a','#1a2a3a'];
+        const labels = ['OUT','×1','×2','×3','×10','×3','×2'];
+        for (let i=0;i<n;i++) {
+            const x = i*slotW;
+            ctx.fillStyle = zoneColors[i];
+            ctx.globalAlpha = 0.55;
+            ctx.fillRect(x, LOGICAL_H-48, slotW+1, 48);
+            ctx.globalAlpha = 1;
+
+            // glass line
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.beginPath();
+            ctx.moveTo(x, LOGICAL_H-48);
+            ctx.lineTo(x, LOGICAL_H);
+            ctx.stroke();
+
+            let m = [0,1,2,3,10,3,2][i] + player.multiBonus;
+            if (m === 0 && player.safeOut) m = 1;
+            ctx.fillStyle = i===4 ? '#ffd700' : i===0 ? '#ff6688' : '#88aacc';
+            ctx.font = 'bold 13px Orbitron, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(m === 0 ? 'OUT' : '×'+m, x + slotW/2, LOGICAL_H - 20);
+        }
+
+        // pegs
+        for (const p of pegs) {
+            const pulse = Math.sin(time*0.05 + p.pulse) * 0.5 + 0.5;
+            let col = '#667788';
+            let glow = '#88aacc';
+            let gr = p.r;
+
+            if (p.type === 'gold')   { col = '#ffd700'; glow = '#ffaa00'; }
+            else if (p.type === 'multi') { col = '#ff2a6d'; glow = '#ff2a6d'; gr += pulse; }
+            else if (p.type === 'danger'){ col = '#ff2244'; glow = '#ff0000'; }
+            else if (p.type === 'bonus') { col = '#7affc0'; glow = '#00ffaa'; }
+            else if (p.type === 'boss')  { col = '#b14cff'; glow = '#ff00ff'; gr = p.r + pulse*2; }
+            else { col = `rgba(140,160,200,${0.7+pulse*0.3})`; }
+
+            if (p.hitFlash > 0) {
+                col = '#ffffff';
+                glow = '#fff';
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, gr, 0, Math.PI*2);
+            ctx.fillStyle = col;
+            ctx.shadowColor = glow;
+            ctx.shadowBlur = p.type === 'normal' ? 6 : 14;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // inner highlight
+            ctx.beginPath();
+            ctx.arc(p.x - gr*0.3, p.y - gr*0.3, gr*0.35, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.fill();
+
+            if (p.type === 'boss') {
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.fillText(p.hp, p.x, p.y+4);
+            }
+        }
+
+        // balls + trails
+        for (const b of balls) {
+            // trail
+            for (let t=0; t<b.trail.length; t++) {
+                const tr = b.trail[t];
+                const alpha = t / b.trail.length * 0.4;
+                ctx.beginPath();
+                ctx.arc(tr.x, tr.y, b.r * (t/b.trail.length), 0, 6.28);
+                ctx.fillStyle = `rgba(0,240,255,${alpha})`;
+                ctx.fill();
+            }
+
+            // ball body
+            const g = ctx.createRadialGradient(b.x-2, b.y-2, 1, b.x, b.y, b.r);
+            g.addColorStop(0, '#ffffff');
+            g.addColorStop(0.4, '#a0ffff');
+            g.addColorStop(1, '#00aacc');
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.r, 0, 6.28);
+            ctx.fillStyle = g;
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 12;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        // launch preview
+        if (state === 'playing' && player.ballsLeft > 0) {
+            ctx.beginPath();
+            ctx.arc(mouse.x, 52, 8, 0, 6.28);
+            ctx.strokeStyle = 'rgba(0,240,255,0.7)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(0,240,255,0.15)';
+            ctx.fill();
+
+            // ghost drop line
+            ctx.setLineDash([4,6]);
+            ctx.beginPath();
+            ctx.moveTo(mouse.x, 62);
+            ctx.lineTo(mouse.x, 110);
+            ctx.strokeStyle = 'rgba(0,240,255,0.35)';
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // particles
+        for (const p of particles) {
+            const a = p.life / p.maxLife;
+            ctx.globalAlpha = a;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * a, 0, 6.28);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // popups
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 16px Orbitron, sans-serif';
+        for (const p of popups) {
+            const a = clamp(p.life / 20, 0, 1);
+            ctx.globalAlpha = a;
+            ctx.fillStyle = p.color;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 8;
+            ctx.fillText(p.text, p.x, p.y);
+        }
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+
+        // tip
+        if (state === 'playing' && balls.length === 0 && player.ballsLeft > 0 && time % 120 < 80) {
+            ctx.font = '13px Rajdhani, sans-serif';
+            ctx.fillStyle = 'rgba(180,200,255,0.5)';
+            ctx.textAlign = 'center';
+            ctx.fillText('Clique pour lancer  •  vise les bons couloirs', LOGICAL_W/2, 95);
+        }
+
+        ctx.restore();
+    }
+
+    // ---------- LOOP ----------
+    function loop() {
+        if (state === 'playing') update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    // ---------- BUTTONS ----------
+    document.getElementById('btn-play').onclick = startRun;
+    document.getElementById('btn-howto').onclick = () => {
+        panels.title.classList.remove('active');
+        panels.howto.classList.add('active');
+    };
+    document.getElementById('btn-back').onclick = () => {
+        panels.howto.classList.remove('active');
+        panels.title.classList.add('active');
+    };
+    document.getElementById('btn-retry').onclick = () => {
+        panels.gameover.classList.remove('active');
+        startRun();
+    };
+    document.getElementById('btn-menu').onclick = () => {
+        panels.gameover.classList.remove('active');
+        panels.title.classList.add('active');
+        document.getElementById('title-hs').textContent = `Record : ${highScore}`;
+        state = 'title';
+    };
+
+    document.getElementById('mute-btn').onclick = () => {
+        muted = !muted;
+        document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
+    };
+
+    // ---------- INIT ----------
+    document.getElementById('title-hs').textContent = `Record : ${highScore}`;
+    loop();
+</script>
+</body>
+</html>

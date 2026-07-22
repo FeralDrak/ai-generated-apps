@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RETRO CITY — Pixel City Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d17; --panel:#151a2e; --panel2:#1d2440; --edge:#2c3560;
+    --edge-lt:#4a5690; --txt:#cdd6f4; --dim:#8a93c0;
+    --cyan:#73eff7; --green:#a7f070; --yellow:#ffcd75; --red:#ff6b6b;
+    --blue:#5aa8ff; --orange:#ef9b5a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:'VT323',monospace; font-size:20px;
+    overflow:hidden; user-select:none; -webkit-user-select:none;
+    image-rendering:pixelated;
+  }
+  .pix{ font-family:'Press Start 2P','VT323',monospace; }
+
+  #app{ display:flex; flex-direction:column; height:100vh; width:100vw; }
+
+  /* ---------- Top bar ---------- */
+  #topbar{
+    display:flex; align-items:center; gap:18px; padding:8px 14px;
+    background:linear-gradient(180deg,#1d2440,#11152a);
+    border-bottom:3px solid var(--edge);
+    flex-wrap:wrap;
+  }
+  .logo{ font-size:15px; color:var(--yellow);
+    text-shadow:2px 2px 0 #000, 0 0 8px rgba(255,205,117,.4);
+    letter-spacing:1px; white-space:nowrap;}
+  .logo b{color:var(--cyan);}
+  .blink{ animation:bl 1s steps(1) infinite;}
+  @keyframes bl{50%{opacity:0;}}
+  .stats{ display:flex; gap:14px; flex-wrap:wrap; margin-left:auto;}
+  .stat{ display:flex; flex-direction:column; align-items:flex-start; line-height:1;
+    background:#0e1226; border:2px solid var(--edge); padding:4px 9px; min-width:78px;}
+  .stat .lab{ font-family:'Press Start 2P'; font-size:7px; color:var(--dim); margin-bottom:4px;}
+  .stat .val{ font-size:23px; color:var(--cyan);}
+  #money .val{color:var(--green);}
+
+  /* ---------- Main ---------- */
+  main{ display:flex; flex:1; min-height:0; }
+  #stage{ flex:1; display:flex; align-items:center; justify-content:center;
+    padding:8px; background:radial-gradient(ellipse at center,#12172b,#070912 90%); position:relative; min-width:0; min-height:0; overflow:hidden;}
+  #wrap{ position:relative; width:640px; height:480px; }
+  canvas{ display:block; width:100%; height:100%; image-rendering:pixelated;
+    border:3px solid var(--edge); background:#0b0d17;
+    box-shadow:0 0 0 3px #000, 0 0 24px rgba(0,0,0,.7); cursor:crosshair;}
+
+  /* tutorial / help overlay */
+  #hint{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(7,9,18,.86); padding:20px; text-align:center; z-index:5; cursor:pointer;}
+  #hint .card{ background:var(--panel); border:3px solid var(--edge-lt); padding:22px 26px; max-width:440px;
+    box-shadow:0 8px 0 #000;}
+  #hint h2{ font-family:'Press Start 2P'; font-size:13px; color:var(--yellow); margin-bottom:16px; line-height:1.6;}
+  #hint ul{ list-style:none; text-align:left; font-size:21px; line-height:1.55;}
+  #hint li{ margin:5px 0;}
+  #hint .k{ color:var(--cyan);} #hint .start{ margin-top:16px; color:var(--green); font-size:22px; animation:bl 1.1s steps(1) infinite;}
+  #hint.hide{ display:none;}
+
+  /* ---------- Panel ---------- */
+  aside#panel{ width:228px; background:var(--panel); border-left:3px solid var(--edge);
+    display:flex; flex-direction:column; overflow-y:auto;}
+  .ptitle{ font-family:'Press Start 2P'; font-size:8px; color:var(--yellow);
+    padding:10px 12px 6px; letter-spacing:1px;}
+  #tools{ display:flex; flex-direction:column; gap:4px; padding:0 8px;}
+  .tool{ display:flex; align-items:center; gap:8px; padding:5px 7px; cursor:pointer;
+    background:var(--panel2); border:2px solid; border-color:var(--edge-lt) #0c1024 #0c1024 var(--edge-lt);
+    color:var(--txt); text-align:left; font-family:'VT323'; font-size:19px; line-height:1;}
+  .tool:hover{ background:#262e52;}
+  .tool.sel{ border-color:#0c1024 var(--edge-lt) var(--edge-lt) #0c1024; background:#2e376a;
+    box-shadow:inset 0 0 0 1px var(--cyan);}
+  .tool .sw{ width:16px; height:16px; flex:none; border:1px solid #000; image-rendering:pixelated;}
+  .tool .nm{ flex:1;}
+  .tool .cost{ color:var(--green); font-size:17px;}
+  .tool .hk{ font-family:'Press Start 2P'; font-size:7px; color:var(--dim); background:#0c1024;
+    padding:2px 3px; border:1px solid var(--edge);}
+
+  #rci{ display:flex; gap:12px; justify-content:center; padding:6px 12px 10px;}
+  .rci-col{ display:flex; flex-direction:column; align-items:center; gap:4px;}
+  .rci-track{ width:26px; height:62px; background:#0c1024; border:2px solid var(--edge);
+    position:relative; overflow:hidden;}
+  .rci-mid{ position:absolute; left:0; right:0; top:50%; height:1px; background:var(--edge-lt);}
+  .rci-fill{ position:absolute; left:0; right:0; bottom:50%; height:0; transition:height .25s, background .25s;}
+  .rci-lab{ font-family:'Press Start 2P'; font-size:9px;}
+
+  #budget{ padding:2px 12px 10px; font-size:19px;}
+  .brow{ display:flex; justify-content:space-between; line-height:1.4;}
+  .brow .g{color:var(--green);} .brow .r{color:var(--red);}
+  .taxrow{ margin-top:6px;}
+  #tax{ width:100%; accent-color:var(--yellow); cursor:pointer;}
+
+  #speed{ display:flex; gap:5px; padding:2px 12px 10px;}
+  .spd{ flex:1; background:var(--panel2); border:2px solid; border-color:var(--edge-lt) #0c1024 #0c1024 var(--edge-lt);
+    color:var(--txt); font-family:'VT323'; font-size:18px; cursor:pointer; padding:5px 0;}
+  .spd.sel{ background:#2e376a; border-color:#0c1024 var(--edge-lt) var(--edge-lt) #0c1024; color:var(--cyan);}
+
+  #misc{ display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:2px 12px 14px; margin-top:auto;}
+  .mbtn{ background:var(--panel2); border:2px solid; border-color:var(--edge-lt) #0c1024 #0c1024 var(--edge-lt);
+    color:var(--txt); font-family:'VT323'; font-size:18px; cursor:pointer; padding:6px 0;}
+  .mbtn:hover{ background:#262e52;} .mbtn:active{ border-color:#0c1024 var(--edge-lt) var(--edge-lt) #0c1024;}
+  .mbtn.off{ color:var(--dim);}
+
+  /* ---------- Footer ---------- */
+  #footer{ display:flex; gap:14px; padding:5px 14px; background:#0e1226;
+    border-top:3px solid var(--edge); font-size:19px; align-items:center; min-height:30px;}
+  #hoverInfo{ color:var(--dim); white-space:nowrap;}
+  #msg{ margin-left:auto; color:var(--cyan); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  #msg.warn{ color:var(--red);} #msg.good{ color:var(--green);}
+
+  /* ---------- CRT overlay ---------- */
+  #crt{ position:fixed; inset:0; pointer-events:none; z-index:50;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0, rgba(0,0,0,.16) 1px, transparent 1px, transparent 3px),
+      radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.45) 100%);
+    mix-blend-mode:multiply; animation:flick 7s infinite;}
+  @keyframes flick{ 0%,97%,100%{opacity:1;} 98%{opacity:.92;} 99%{opacity:.97;}}
+
+  @media (max-width:820px){
+    main{ flex-direction:column;} aside#panel{ width:100%; border-left:none; border-top:3px solid var(--edge);
+      flex-direction:row; flex-wrap:wrap; overflow-x:auto; max-height:38vh;}
+    #tools{ flex-direction:row; flex-wrap:wrap;} .stats{ font-size:0;}
+  }
+  ::-webkit-scrollbar{width:10px;height:10px;} ::-webkit-scrollbar-track{background:#0c1024;}
+  ::-webkit-scrollbar-thumb{background:var(--edge); border:1px solid #000;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="logo pix">▙▟ RETRO&nbsp;CITY<span class="blink">_</span></div>
+    <div class="stats">
+      <div class="stat" id="money"><span class="lab">FUNDS</span><span class="val">$20,000</span></div>
+      <div class="stat" id="pop"><span class="lab">POPULATION</span><span class="val">0</span></div>
+      <div class="stat" id="date"><span class="lab">DATE</span><span class="val">JAN 1900</span></div>
+      <div class="stat" id="power"><span class="lab">POWER</span><span class="val">0/0</span></div>
+      <div class="stat" id="rank"><span class="lab">RANK</span><span class="val">Hamlet</span></div>
+    </div>
+  </header>
+
+  <main>
+    <div id="stage">
+      <div id="wrap">
+        <canvas id="cv" width="640" height="480"></canvas>
+        <div id="hint">
+          <div class="card">
+            <h2>WELCOME,<br>MAYOR!</h2>
+            <ul>
+              <li>① Build <span class="k">ROADS</span> to connect the land</li>
+              <li>② Zone <span class="k">R / C / I</span> next to roads</li>
+              <li>③ Place a <span class="k">POWER PLANT</span> &amp; wire it via roads</li>
+              <li>④ Balance demand &amp; budget</li>
+              <li>⑤ Grow your pixel city!</li>
+            </ul>
+            <div class="start">▶ CLICK TO START</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside id="panel">
+      <div class="ptitle">TOOLS</div>
+      <div id="tools"></div>
+
+      <div class="ptitle">RCI DEMAND</div>
+      <div id="rci">
+        <div class="rci-col"><div class="rci-track"><div class="rci-mid"></div><div class="rci-fill" id="rfR"></div></div><div class="rci-lab" style="color:var(--green)">R</div></div>
+        <div class="rci-col"><div class="rci-track"><div class="rci-mid"></div><div class="rci-fill" id="rfC"></div></div><div class="rci-lab" style="color:var(--blue)">C</div></div>
+        <div class="rci-col"><div class="rci-track"><div class="rci-mid"></div><div class="rci-fill" id="rfI"></div></div><div class="rci-lab" style="color:var(--yellow)">I</div></div>
+      </div>
+
+      <div class="ptitle">BUDGET / MONTH</div>
+      <div id="budget">
+        <div class="brow"><span>Income</span><span class="g" id="bInc">+$0</span></div>
+        <div class="brow"><span>Upkeep</span><span class="r" id="bExp">-$0</span></div>
+        <div class="brow"><span>Net</span><span id="bNet">$0</span></div>
+        <div class="taxrow"><div class="brow"><span>Tax rate</span><span id="taxLab">9%</span></div>
+          <input type="range" id="tax" min="0" max="20" value="9"></div>
+      </div>
+
+      <div class="ptitle">SPEED</div>
+      <div id="speed">
+        <button class="spd" data-ms="0">⏸</button>
+        <button class="spd" data-ms="700">▶</button>
+        <button class="spd sel" data-ms="330">▶▶</button>
+        <button class="spd" data-ms="120">▶▶▶</button>
+      </div>
+
+      <div id="misc">
+        <button class="mbtn" id="bSave">💾 Save</button>
+        <button class="mbtn" id="bNew">✚ New City</button>
+        <button class="mbtn" id="bSound">🔊 Sound</button>
+        <button class="mbtn" id="bHelp">? Help</button>
+      </div>
+    </aside>
+  </main>
+
+  <footer id="footer">
+    <span id="hoverInfo">Hover the map…</span>
+    <span id="msg">Welcome to Retro City!</span>
+  </footer>
+</div>
+<div id="crt"></div>
+
+<script>
+"use strict";
+(function(){
+/* ============================================================= CONFIG */
+const COLS=40, ROWS=30, TILE=16, N=COLS*ROWS;
+const START_MONEY=20000, PLANT_CAP=120;
+const SAVE_KEY='retrocity_save_v1';
+
+const COST={ bulldoze:1, road:10, bridge:40, res:100, com:100, ind:100, park:50, power:3000 };
+
+const TOOLS=[
+  {id:'bulldoze',name:'Bulldoze', key:'1', sw:'#b04a3a'},
+  {id:'road',    name:'Road',     key:'2', sw:'#54585f'},
+  {id:'res',     name:'Resident.',key:'3', sw:'#6fdc6f'},
+  {id:'com',     name:'Commerc.', key:'4', sw:'#5aa8ff'},
+  {id:'ind',     name:'Industr.', key:'5', sw:'#ffd23f'},
+  {id:'park',    name:'Park',     key:'6', sw:'#2c7a40'},
+  {id:'power',   name:'Power',    key:'7', sw:'#ffd23f'},
+];
+
+const MONTHS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const RANKS=[[0,'Hamlet'],[150,'Village'],[600,'Town'],[2500,'City'],[10000,'Metropolis'],[50000,'Megalopolis']];
+
+/* palette */
+const C={
+  bg:'#0b0d17',
+  g0:'#2f6b39', g1:'#3f8a47', g2:'#56a85f',
+  soil:'#7a5a3a',
+  w0:'#274a9e', w1:'#2e64b0', w2:'#3f86d6', wf:'#9fd0f5',
+  road:'#54585f', roadDk:'#34373d', line:'#e0c662',
+  trunk:'#6b4423', tree0:'#2c7a40', tree1:'#39a155',
+  house:'#e6d3a3', houseDk:'#c2a877', roofR:'#c0473b', roofR2:'#9c382e', door:'#6b4423', winY:'#ffd86b',
+  com0:'#2f6cae', com1:'#3f86d6', comGlass:'#9fd6f5',
+  ind0:'#9c7b3e', ind1:'#b89a55', indDk:'#5e4a24', smoke:'#aab0b8', win:'#ffd86b',
+  pwr:'#3a3d47', pwrDk:'#26282f', bolt:'#ffd23f',
+  winOff:'#3a4a66',
+  resTint:'rgba(120,230,120,.16)', comTint:'rgba(90,168,255,.16)', indTint:'rgba(255,210,90,.16)',
+  resMk:'#6fdc6f', comMk:'#5aa8ff', indMk:'#ffd23f',
+  noPow:'#ff4d4d', grid:'rgba(120,150,220,.07)',
+};
+
+/* ============================================================= STATE */
+let grid;                          // array of cells
+const pollution=new Float32Array(N), amenity=new Float32Array(N), natAmenity=new Float32Array(N);
+let money=START_MONEY, month=0, taxRate=0.09;
+let population=0, jobsCom=0, jobsInd=0, devZones=0, roadsN=0, plantsN=0, parksN=0;
+let demR=0, demC=0, demI=0;
+let powerCap=0, powerUsed=0, powerDemand=0, powerShort=false;
+let lastIncome=0, lastExpense=0;
+let lastRank='Hamlet', wasNeg=false;
+
+let curTool='road';
+let frame=0, paused=false, tickMs=330;
+let showGrid=true;
+let hover=null, down=false, lastPlaced=null;
+let muted=false;
+
+/* ============================================================= HELPERS */
+const idx=(x,y)=>y*COLS+x;
+const inb=(x,y)=>x>=0&&x<COLS&&y>=0&&y<ROWS;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const randInt=n=>Math.floor(Math.random()*n);
+const fmt=n=>n.toLocaleString('en-US');
+const isZone=t=>t==='res'||t==='com'||t==='ind';
+const isConductor=t=>t==='road'||t==='res'||t==='com'||t==='ind'||t==='power';
+function hsh(x,y){ let h=(x*374761393+y*668265263)>>>0; h=((h^(h>>13))*1274126177)>>>0; return h; }
+function cell(t){ return {t:t||'grass', lvl:0, pow:false, acc:false, flash:0, bridge:false, _r:false}; }
+function rankFor(p){ let r=RANKS[0][1]; for(const a of RANKS){ if(p>=a[0]) r=a[1]; } return r; }
+function rankIdx(n){ for(let i=0;i<RANKS.length;i++) if(RANKS[i][1]===n) return i; return 0; }
+
+/* ============================================================= AUDIO */
+let actx=null;
+function audioInit(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  if(actx&&actx.state==='suspended') actx.resume(); }
+function beep(freq,dur,type,vol){
+  if(muted||!actx) return;
+  const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
+  o.type=type||'square'; o.frequency.setValueAtTime(freq,t);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(vol||0.05,t+0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g).connect(actx.destination); o.start(t); o.stop(t+dur+0.02);
+}
+const sfx={
+  place:()=>beep(440,0.08,'square',0.05),
+  road:()=>beep(300,0.06,'square',0.045),
+  bull:()=>beep(120,0.13,'sawtooth',0.05),
+  err:()=>beep(110,0.18,'square',0.06),
+  click:()=>beep(660,0.04,'square',0.035),
+  level:()=>{ beep(523,0.07,'square',0.04); setTimeout(()=>beep(659,0.07,'square',0.04),70); setTimeout(()=>beep(784,0.1,'square',0.04),140); },
+};
+
+/* ============================================================= TERRAIN */
+function genTerrain(){
+  grid=new Array(N);
+  for(let i=0;i<N;i++) grid[i]=cell('grass');
+  // meandering river
+  let cx=COLS*0.52;
+  for(let y=0;y<ROWS;y++){
+    cx += Math.sin(y*0.45)*1.25 + (Math.random()-0.5)*0.8;
+    const w=1.4+(Math.sin(y*0.25)+1)*0.9;
+    for(let x=Math.floor(cx-w); x<=Math.ceil(cx+w); x++)
+      if(inb(x,y)) grid[idx(x,y)].t='water';
+  }
+  // tree clusters
+  for(let k=0;k<16;k++){
+    const tx=randInt(COLS), ty=randInt(ROWS), r=1+randInt(3);
+    for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++){
+      const x=tx+dx, y=ty+dy;
+      if(inb(x,y) && grid[idx(x,y)].t==='grass' && dx*dx+dy*dy<=r*r && Math.random()<0.6)
+        grid[idx(x,y)].t='tree';
+    }
+  }
+  computeNatAmenity();
+}
+function spread(arr,x,y,amt,rad){
+  for(let dy=-rad;dy<=rad;dy++) for(let dx=-rad;dx<=rad;dx++){
+    const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
+    const d=Math.sqrt(dx*dx+dy*dy); if(d>rad) continue;
+    arr[idx(nx,ny)] += amt*(1-d/(rad+1));
+  }
+}
+function computeNatAmenity(){
+  natAmenity.fill(0);
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+    const t=grid[idx(x,y)].t;
+    if(t==='water') spread(natAmenity,x,y,0.22,2);
+    else if(t==='tree') spread(natAmenity,x,y,0.11,1);
+  }
+}
+
+/* ============================================================= SIMULATION */
+function tick(){
+  computeMaps();
+  recomputeAccess();
+  recomputePower();
+  computeDemand();
+  develop();
+  recomputeTotals();
+  finances();
+  month++;
+  checkEvents();
+  updateStats();
+  if(month%15===0) saveGame(true);
+}
+
+function computeMaps(){
+  pollution.fill(0); amenity.fill(0);
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+    const c=grid[idx(x,y)];
+    if(c.t==='ind' && c.lvl>0) spread(pollution,x,y,0.06*c.lvl,4);
+    else if(c.t==='com' && c.lvl>0) spread(pollution,x,y,0.018*c.lvl,2);
+    else if(c.t==='power') spread(pollution,x,y,0.5,5);
+    else if(c.t==='park') spread(amenity,x,y,0.35,3);
+  }
+}
+function recomputeAccess(){
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+    const c=grid[idx(x,y)];
+    if(isZone(c.t)) c.acc=roadNear(x,y);
+  }
+}
+function roadNear(x,y){
+  for(let dy=-3;dy<=3;dy++) for(let dx=-3;dx<=3;dx++){
+    const nx=x+dx, ny=y+dy;
+    if(inb(nx,ny) && grid[idx(nx,ny)].t==='road') return true;
+  }
+  return false;
+}
+function recomputePower(){
+  let supply=0; const plants=[];
+  for(let i=0;i<N;i++){ const c=grid[i]; c.pow=false; c._r=false;
+    if(c.t==='power'){ supply+=PLANT_CAP; plants.push(i); } }
+  powerCap=supply;
+  const q=plants.slice(), order=[];
+  for(const i of plants) grid[i]._r=true;
+  let qi=0;
+  while(qi<q.length){
+    const i=q[qi++]; order.push(i);
+    const x=i%COLS, y=(i/COLS)|0;
+    const nb=[[x,y-1],[x,y+1],[x-1,y],[x+1,y]];
+    for(const p of nb){ if(!inb(p[0],p[1])) continue; const j=idx(p[0],p[1]); const c=grid[j];
+      if(c._r||!isConductor(c.t)) continue; c._r=true; q.push(j); }
+  }
+  let budget=supply, demand=0;
+  for(const i of order){ const c=grid[i];
+    if(isZone(c.t) && c.lvl>0){ demand+=c.lvl;
+      if(budget>=c.lvl){ c.pow=true; budget-=c.lvl; } else c.pow=false;
+    } else c.pow=true;
+  }
+  powerUsed=Math.max(0,supply-budget); powerDemand=demand; powerShort=demand>supply;
+}
+function computeDemand(){
+  const jobs=jobsCom+jobsInd;
+  // Residents are wanted as long as jobs keep pace (>1 job-pull per resident),
+  // so a balanced city keeps growing; shops & industry scale with population.
+  demR=(jobs*1.7+24)-population;
+  demC=(population*0.42+10)-jobsCom;
+  demI=(population*0.48+10)-jobsInd;
+}
+function landVal(x,y){
+  const i=idx(x,y);
+  let v=0.45 + natAmenity[i]*0.6 + amenity[i] - pollution[i];
+  return v<0?0:v>1?1:v;
+}
+function develop(){
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+    const c=grid[idx(x,y)];
+    if(!isZone(c.t)) continue;
+    if(!c.acc || !c.pow){ if(c.lvl>0 && Math.random()<0.06){ c.lvl--; c.flash=frame; } continue; }
+    const dem = c.t==='res'?demR : c.t==='com'?demC : demI;
+    const lv=landVal(x,y);
+    let maxL;
+    if(c.t==='res') maxL=1+Math.round(lv*4);
+    else if(c.t==='com') maxL=2+Math.round(lv*3);
+    else maxL=2+Math.round(lv*2);
+    maxL=clamp(maxL,1,5);
+    if(c.lvl<maxL && dem>0){
+      // demand present and room to grow toward the land-value ceiling
+      if(Math.random() < Math.min(0.45, 0.10+dem/300)){ c.lvl++; c.flash=frame; }
+    } else if(c.lvl>maxL){
+      // land value fell below the current level -> slow decline
+      if(Math.random()<0.05){ c.lvl--; c.flash=frame; }
+    } else if(dem < -10 && c.lvl>1){
+      // genuine, large oversupply -> slow decline (small dips don't churn)
+      if(Math.random()<0.025){ c.lvl--; c.flash=frame; }
+    }
+    // otherwise: at the ceiling with healthy demand -> stable, no flicker
+  }
+}
+function recomputeTotals(){
+  population=0; jobsCom=0; jobsInd=0; devZones=0; roadsN=0; plantsN=0; parksN=0;
+  for(let i=0;i<N;i++){ const c=grid[i];
+    switch(c.t){
+      case 'res': if(c.lvl>0){ population+=c.lvl*8; devZones++; } break;
+      case 'com': if(c.lvl>0){ jobsCom+=c.lvl*6; devZones++; } break;
+      case 'ind': if(c.lvl>0){ jobsInd+=c.lvl*8; devZones++; } break;
+      case 'road': roadsN++; break;
+      case 'power': plantsN++; break;
+      case 'park': parksN++; break;
+    }
+  }
+}
+function finances(){
+  lastIncome=Math.round((population*0.85 + jobsCom*1.1 + jobsInd*0.95)*taxRate);
+  lastExpense=Math.round(roadsN*0.4 + plantsN*30 + parksN*1 + devZones*0.15);
+  money += lastIncome-lastExpense;
+}
+function checkEvents(){
+  const r=rankFor(population);
+  if(r!==lastRank){ if(rankIdx(r)>rankIdx(lastRank)) msg('Your city is now a '+r+'!','good',true); lastRank=r; }
+  if(powerShort && month%2===0) msg('⚠ Power demand exceeds supply!','warn');
+  if(money<0){ if(!wasNeg){ msg('⚠ You are in debt!','warn'); wasNeg=true; } }
+  else { wasNeg=false; if(money<800 && money>=0 && month%6===0) msg('Funds running low…','warn'); }
+}
+
+/* ============================================================= DRAWING */
+const canvas=document.getElementById('cv');
+const ctx=canvas.getContext('2d');
+ctx.imageSmoothingEnabled=false;
+let OX=0, OY=0;
+function R(px,py,w,h,c){ ctx.fillStyle=c; ctx.fillRect(OX+px,OY+py,w,h); }
+
+function sGrass(cx,cy){
+  R(0,0,16,16,C.g1);
+  const h=hsh(cx,cy);
+  if(h&1) R(3,4,2,2,C.g0); if(h&2) R(10,9,2,2,C.g0);
+  if(h&4) R(7,12,2,1,C.g2); if(h&8) R(12,3,1,2,C.g2);
+  if(h&16) R(2,11,2,1,C.g0);
+}
+function sWater(cx,cy){
+  R(0,0,16,16,C.w1);
+  const o=((frame>>3)+cx+cy);
+  R(0,(o)&15,16,1,C.w2);
+  R(0,(o+8)&15,16,1,C.w0);
+  if(((frame>>4)+cx*3+cy)%7===0) R((cx*5+frame)%13+1,(cy*3+frame>>2)%13+1,1,1,C.wf);
+}
+function tree(tx,ty){ R(tx+1,ty+5,1,3,C.trunk); R(tx-1,ty+1,5,4,C.tree0); R(tx,ty,3,2,C.tree1); }
+function sTree(){ R(0,0,16,16,C.g1); tree(6,5); }
+function roadAt(x,y){ return inb(x,y)&&grid[idx(x,y)].t==='road'; }
+function sRoad(cx,cy,bridge){
+  const n=roadAt(cx,cy-1),s=roadAt(cx,cy+1),w=roadAt(cx-1,cy),e=roadAt(cx+1,cy), m=4;
+  if(bridge){
+    sWater(cx,cy);                                  // river flows underneath
+    const horiz=(e||w)||(!n&&!s), vert=(n||s);
+    if(horiz){ R(0,11,16,1,C.pwrDk); R(0,5,16,1,C.pwrDk); R(0,6,16,5,C.road); }  // deck + supports
+    if(vert){ R(11,0,1,16,C.pwrDk); R(5,0,1,16,C.pwrDk); R(6,0,5,16,C.road); }
+    R(7,7,2,2,C.line);
+    return;
+  }
+  R(0,0,16,16,C.roadDk);
+  R(m,m,16-2*m,16-2*m,C.road);
+  if(n)R(m,0,16-2*m,m,C.road); if(s)R(m,16-m,16-2*m,m,C.road);
+  if(w)R(0,m,m,16-2*m,C.road); if(e)R(16-m,m,m,16-2*m,C.road);
+  R(7,7,2,2,C.line);
+  if(n)R(7,1,2,3,C.line); if(s)R(7,12,2,3,C.line); if(w)R(1,7,3,2,C.line); if(e)R(12,7,3,2,C.line);
+}
+function smoke(sx,sy,amt){
+  for(let i=0;i<amt;i++){
+    const t=(((frame>>2)+i*5)%16);
+    const yy=sy-t, xx=sx+Math.round(Math.sin((t+i)*0.5));
+    if(yy>-3){ const s=t<8?2:1; ctx.globalAlpha=Math.max(0,1-t/16); R(xx,yy,s,s,C.smoke); ctx.globalAlpha=1; }
+  }
+}
+function tower(bx,by,bw,bh,wall,topc,win){
+  R(bx,by,bw,bh,wall); R(bx,by,bw,1,topc);
+  for(let yy=by+2; yy<by+bh-1; yy+=3) for(let xx=bx+1; xx<bx+bw-1; xx+=2){
+    const on=((hsh(xx,yy)+(frame>>5))%5)!==0;
+    R(xx,yy,1,2,on?win:C.winOff);
+  }
+}
+function sRes(lvl){
+  R(0,0,16,16,C.g1);
+  if(lvl===1){
+    R(4,8,8,6,C.house); R(4,8,8,1,C.houseDk);
+    R(3,6,10,2,C.roofR); R(5,5,6,1,C.roofR2);
+    R(7,10,2,4,C.door); R(5,9,2,2,C.winY); R(9,9,2,2,C.winY);
+  } else if(lvl===2){
+    R(2,9,5,5,C.house); R(9,8,5,6,C.house);
+    R(1,7,7,2,C.roofR); R(8,6,7,2,C.roofR);
+    R(3,11,1,3,C.door); R(10,11,2,3,C.door); R(4,10,1,1,C.winY); R(11,9,2,2,C.winY);
+  } else if(lvl===3){
+    R(3,6,10,8,C.house); R(3,6,10,1,C.houseDk);
+    R(2,4,12,2,C.roofR); R(4,3,8,1,C.roofR2); R(11,2,1,2,C.houseDk);
+    R(5,8,2,2,C.winY); R(9,8,2,2,C.winY); R(5,11,2,2,C.winY); R(9,11,2,3,C.door);
+  } else if(lvl===4){
+    tower(3,3,10,11,C.house,C.roofR,C.winY);
+  } else {
+    tower(2,1,12,13,C.house,C.roofR,C.winY); R(6,0,4,1,C.roofR2);
+  }
+}
+function sCom(lvl){
+  R(0,0,16,16,C.g1);
+  const bh=[0,6,8,10,12,14][lvl], bw=[0,9,10,11,12,13][lvl];
+  const bx=Math.floor((16-bw)/2), by=15-bh;
+  tower(bx,by,bw,bh,C.com0,C.com1,C.comGlass);
+  R(bx,14,bw,1,C.roofR2);
+}
+function sInd(lvl){
+  R(0,0,16,16,C.g1);
+  R(2,8,12,6,C.ind0); R(2,8,12,1,C.ind1); R(2,7,12,1,C.indDk);
+  for(let x=3;x<13;x+=3) R(x,10,2,2,C.win);
+  R(11,2,2,6,C.indDk);
+  if(lvl>=3){ R(3,5,3,3,C.ind0); R(3,4,3,1,C.indDk); }
+  smoke(11, 1, Math.min(lvl,4));
+}
+function sPow(){
+  R(0,0,16,16,C.g1);
+  R(1,5,14,9,C.pwr); R(1,5,14,1,C.pwrDk);
+  R(3,2,2,4,C.pwrDk); R(7,2,2,4,C.pwrDk);
+  smoke(4,1,3); smoke(8,1,3);
+  for(let x=3;x<13;x+=3) R(x,9,2,2,C.win);
+  R(11,6,1,3,C.bolt); R(10,8,3,1,C.bolt); R(12,8,1,3,C.bolt);
+}
+function sPark(){
+  R(0,0,16,16,C.g2);
+  R(0,7,16,2,C.soil);
+  tree(2,2); tree(11,2); tree(6,9);
+  R(9,10,5,4,C.w1); R(9,10,5,1,C.w2);
+}
+function sLot(mk,tint){
+  R(0,0,16,16,C.g1);
+  ctx.fillStyle=tint; ctx.fillRect(OX,OY,16,16);
+  R(1,1,2,2,mk); R(13,1,2,2,mk); R(1,13,2,2,mk); R(13,13,2,2,mk);
+  for(let x=5;x<11;x+=4){ R(x,0,2,1,mk); R(x,15,2,1,mk); R(0,x,1,2,mk); R(15,x,1,2,mk); }
+}
+function drawCell(cx,cy){
+  OX=cx*TILE; OY=cy*TILE;
+  const c=grid[idx(cx,cy)];
+  switch(c.t){
+    case 'grass': sGrass(cx,cy); break;
+    case 'water': sWater(cx,cy); break;
+    case 'tree':  sTree(); break;
+    case 'road':  sRoad(cx,cy,c.bridge); break;
+    case 'park':  sPark(); break;
+    case 'power': sPow(); break;
+    case 'res': c.lvl>0?sRes(c.lvl):sLot(C.resMk,C.resTint); break;
+    case 'com': c.lvl>0?sCom(c.lvl):sLot(C.comMk,C.comTint); break;
+    case 'ind': c.lvl>0?sInd(c.lvl):sLot(C.indMk,C.indTint); break;
+  }
+  if(isZone(c.t) && c.lvl>0 && !c.pow && ((frame>>3)&1)) R(11,1,4,4,C.noPow);
+  if(c.flash){ const a=1-(frame-c.flash)/15; if(a>0){ ctx.globalAlpha=a*0.8; R(0,0,16,16,'#ffffff'); ctx.globalAlpha=1; } else c.flash=0; }
+}
+function render(){
+  ctx.fillStyle=C.bg; ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) drawCell(x,y);
+  if(showGrid){
+    ctx.fillStyle=C.grid;
+    for(let x=1;x<COLS;x++) ctx.fillRect(x*TILE,0,1,canvas.height);
+    for(let y=1;y<ROWS;y++) ctx.fillRect(0,y*TILE,canvas.width,1);
+  }
+  if(hover){
+    const hx=hover.x*TILE, hy=hover.y*TILE;
+    const valid=canPlace(hover.x,hover.y);
+    if(curTool!=='bulldoze' && valid){
+      ctx.globalAlpha=0.35; const t=TOOLS.find(t=>t.id===curTool); ctx.fillStyle=t.sw;
+      ctx.fillRect(hx,hy,TILE,TILE); ctx.globalAlpha=1;
+    }
+    ctx.strokeStyle=valid?'#9bffa0':'#ff5a5a'; ctx.lineWidth=1;
+    ctx.strokeRect(hx+0.5,hy+0.5,TILE-1,TILE-1);
+    if(curTool==='bulldoze'){ ctx.strokeStyle='#ff5a5a'; ctx.beginPath();
+      ctx.moveTo(hx+3,hy+3); ctx.lineTo(hx+TILE-3,hy+TILE-3);
+      ctx.moveTo(hx+TILE-3,hy+3); ctx.lineTo(hx+3,hy+TILE-3); ctx.stroke(); }
+  }
+}
+
+/* ============================================================= PLACEMENT */
+function canPlace(x,y){
+  const c=grid[idx(x,y)];
+  if(curTool==='bulldoze') return c.t!=='grass' && !(c.t==='water' && !c.bridge);
+  if(c.t==='water') return curTool==='road';   // only roads (bridges) cross water
+  if(c.t===curTool) return false;
+  return true;
+}
+function setCell(x,y,t){ const c=grid[idx(x,y)]; c.t=t; c.lvl=0; c.pow=false; c.acc=false; c.bridge=false; c.flash=frame; }
+function place(x,y){
+  const c=grid[idx(x,y)];
+  if(curTool==='bulldoze'){
+    if(c.t==='grass') return;
+    if(c.t==='water' && !c.bridge) return;          // open water can't be filled
+    const wasNature=(c.t==='tree');
+    const wasBridge=c.bridge;
+    money-=COST.bulldoze; sfx.bull();
+    setCell(x,y, wasBridge?'water':'grass');         // removing a bridge restores water
+    if(wasNature||wasBridge) computeNatAmenity();
+    hideHint(); updateStats(); return;
+  }
+  if(c.t==='water' && curTool!=='road'){ sfx.err(); msg('Only roads can bridge water','warn'); return; }
+  if(c.t===curTool) return;
+  const bridge=(c.t==='water');                       // a road on water becomes a bridge
+  const cost=bridge?COST.bridge:COST[curTool];
+  if(money<cost){ sfx.err(); msg('Insufficient funds!','warn'); return; }
+  const wasNature=(c.t==='tree'||c.t==='water');
+  money-=cost; setCell(x,y,curTool);
+  if(bridge) grid[idx(x,y)].bridge=true;
+  if(wasNature) computeNatAmenity();
+  if(curTool==='road') sfx.road(); else sfx.place();
+  hideHint(); updateStats();
+}
+function placeLine(a,b){
+  let x0=a.x,y0=a.y,x1=b.x,y1=b.y;
+  const dx=Math.abs(x1-x0), dy=Math.abs(y1-y0), sx=x0<x1?1:-1, sy=y0<y1?1:-1;
+  let err=dx-dy;
+  while(true){ place(x0,y0);
+    if(x0===x1&&y0===y1) break;
+    const e2=2*err; if(e2>-dy){ err-=dy; x0+=sx; } if(e2<dx){ err+=dx; y0+=sy; } }
+}
+
+/* ============================================================= UI */
+const $=id=>document.getElementById(id);
+function buildToolbar(){
+  const box=$('tools'); box.innerHTML='';
+  TOOLS.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='tool'+(t.id===curTool?' sel':''); b.dataset.id=t.id;
+    b.innerHTML=`<span class="sw" style="background:${t.sw}"></span>`+
+      `<span class="nm">${t.name}</span>`+
+      `<span class="cost">$${t.id==='bulldoze'?1:COST[t.id]}</span>`+
+      `<span class="hk">${t.key}</span>`;
+    b.onclick=()=>{ selectTool(t.id); audioInit(); sfx.click(); };
+    box.appendChild(b);
+  });
+}
+function selectTool(id){
+  curTool=id;
+  document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('sel',b.dataset.id===id));
+}
+function updateStats(){
+  const m=$('money'); m.querySelector('.val').textContent='$'+fmt(money);
+  m.querySelector('.val').style.color = money<0?'var(--red)':'var(--green)';
+  $('pop').querySelector('.val').textContent=fmt(population);
+  $('date').querySelector('.val').textContent=MONTHS[month%12]+' '+(1900+((month/12)|0));
+  const pw=$('power').querySelector('.val'); pw.textContent=powerUsed+'/'+powerCap;
+  pw.style.color=powerShort?'var(--red)':'var(--cyan)';
+  $('rank').querySelector('.val').textContent=rankFor(population);
+  // budget
+  $('bInc').textContent='+$'+fmt(lastIncome);
+  $('bExp').textContent='-$'+fmt(lastExpense);
+  const net=lastIncome-lastExpense; const bn=$('bNet');
+  bn.textContent=(net>=0?'+$':'-$')+fmt(Math.abs(net)); bn.style.color=net>=0?'var(--green)':'var(--red)';
+  // rci
+  setRCI('rfR',demR,'var(--green)'); setRCI('rfC',demC,'var(--blue)'); setRCI('rfI',demI,'var(--yellow)');
+}
+function setRCI(id,val,col){
+  const el=$(id), maxD=120, h=clamp(Math.abs(val)/maxD,0,1)*31;
+  if(val>=0){ el.style.bottom='50%'; el.style.top='auto'; el.style.background=col; }
+  else { el.style.top='50%'; el.style.bottom='auto'; el.style.background='var(--red)'; }
+  el.style.height=h+'px';
+}
+let msgTimer=null;
+function msg(text,type,sound){
+  const m=$('msg'); m.textContent=text; m.className=type||'';
+  if(sound&&type==='good') sfx.level();
+  clearTimeout(msgTimer);
+  msgTimer=setTimeout(()=>{ m.textContent=''; m.className=''; },5000);
+}
+function updateHover(){
+  const h=$('hoverInfo');
+  if(!hover){ h.textContent='Hover the map…'; return; }
+  const c=grid[idx(hover.x,hover.y)];
+  let s=({grass:'Grassland',water:'Water',tree:'Forest',road:'Road',park:'Park',power:'Power Plant',
+    res:'Residential',com:'Commercial',ind:'Industrial'})[c.t]||c.t;
+  if(c.t==='road'&&c.bridge) s='Bridge';
+  if(isZone(c.t)){ s+= c.lvl>0?(' Lv'+c.lvl+(c.pow?' ⚡':' ✕pwr')+(c.acc?'':' ✕road')):' (empty lot)'; }
+  h.textContent=`[${hover.x},${hover.y}] ${s}`;
+}
+
+/* speed buttons */
+document.querySelectorAll('.spd').forEach(b=>{
+  b.onclick=()=>{ audioInit(); sfx.click();
+    const ms=+b.dataset.ms;
+    if(ms===0){ paused=true; } else { paused=false; tickMs=ms; }
+    document.querySelectorAll('.spd').forEach(x=>x.classList.toggle('sel',x===b));
+  };
+});
+/* tax */
+$('tax').oninput=e=>{ taxRate=(+e.target.value)/100; $('taxLab').textContent=e.target.value+'%'; };
+/* misc */
+$('bSave').onclick=()=>{ audioInit(); sfx.click(); saveGame(false); };
+$('bNew').onclick=()=>{ audioInit(); sfx.click();
+  if(confirm('Abandon this city and start a new one?')) newCity(); };
+$('bSound').onclick=()=>{ muted=!muted; audioInit();
+  $('bSound').textContent=muted?'🔇 Muted':'🔊 Sound'; $('bSound').classList.toggle('off',muted);
+  if(!muted) sfx.click(); };
+$('bHelp').onclick=()=>{ audioInit(); sfx.click(); $('hint').classList.remove('hide'); };
+
+/* ============================================================= INPUT */
+function cellFromEvent(e){
+  const r=canvas.getBoundingClientRect();
+  const px=(e.clientX-r.left)*(canvas.width/r.width);
+  const py=(e.clientY-r.top)*(canvas.height/r.height);
+  const x=Math.floor(px/TILE), y=Math.floor(py/TILE);
+  return inb(x,y)?{x,y}:null;
+}
+canvas.addEventListener('pointerdown',e=>{
+  audioInit();
+  const c=cellFromEvent(e); if(!c) return;
+  canvas.setPointerCapture(e.pointerId);
+  down=true; lastPlaced=c;
+  if(e.button===2){ const save=curTool; curTool='bulldoze'; place(c.x,c.y); curTool=save; }
+  else place(c.x,c.y);
+});
+canvas.addEventListener('pointermove',e=>{
+  const c=cellFromEvent(e); hover=c; updateHover();
+  if(down && c){
+    if(e.buttons===2){ const save=curTool; curTool='bulldoze'; if(lastPlaced) placeLine(lastPlaced,c); else place(c.x,c.y); curTool=save; }
+    else if(lastPlaced) placeLine(lastPlaced,c); else place(c.x,c.y);
+    lastPlaced=c;
+  }
+});
+window.addEventListener('pointerup',()=>{ down=false; lastPlaced=null; });
+canvas.addEventListener('mouseleave',()=>{ hover=null; updateHover(); });
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT') return;
+  const k=e.key.toLowerCase();
+  const t=TOOLS.find(t=>t.key===e.key); if(t){ selectTool(t.id); sfx.click(); return; }
+  if(k==='b'){ selectTool('bulldoze'); sfx.click(); }
+  else if(k==='g'){ showGrid=!showGrid; }
+  else if(k===' '){ e.preventDefault(); paused=!paused;
+    document.querySelectorAll('.spd').forEach(x=>x.classList.toggle('sel', paused? x.dataset.ms==='0' : +x.dataset.ms===tickMs)); }
+  else if(k==='m'){ $('bSound').click(); }
+  else if(k==='h'){ $('hint').classList.toggle('hide'); }
+});
+
+/* hint */
+$('hint').addEventListener('click',()=>{ audioInit(); hideHint(); });
+function hideHint(){ $('hint').classList.add('hide'); }
+
+/* ============================================================= SAVE / LOAD */
+function saveGame(silent){
+  try{
+    const data={ v:1, month, money, taxRate, rank:lastRank,
+      g: grid.map(c=> c.bridge?[c.t,c.lvl,1]:[c.t,c.lvl]) };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    if(!silent) msg('City saved!','good');
+  }catch(err){ if(!silent) msg('Save failed (storage blocked)','warn'); }
+}
+function loadGame(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY); if(!raw) return false;
+    const d=JSON.parse(raw); if(!d.g || d.g.length!==N) return false;
+    grid=d.g.map(a=>{ const c=cell(a[0]); c.lvl=a[1]; if(a[2]) c.bridge=true; return c; });
+    month=d.month||0; money=d.money!=null?d.money:START_MONEY;
+    taxRate=d.taxRate!=null?d.taxRate:0.09; lastRank=d.rank||'Hamlet';
+    $('tax').value=Math.round(taxRate*100); $('taxLab').textContent=Math.round(taxRate*100)+'%';
+    computeNatAmenity(); computeMaps(); recomputeAccess(); recomputePower();
+    computeDemand(); recomputeTotals(); finances();
+    return true;
+  }catch(err){ return false; }
+}
+function newCity(){
+  genTerrain(); money=START_MONEY; month=0; taxRate=0.09; lastRank='Hamlet'; wasNeg=false;
+  $('tax').value=9; $('taxLab').textContent='9%';
+  computeMaps(); recomputeAccess(); recomputePower(); computeDemand(); recomputeTotals(); finances();
+  $('hint').classList.remove('hide'); msg('A new plot of land awaits!','good');
+  updateStats();
+}
+
+/* ============================================================= RESPONSIVE */
+function fitCanvas(){
+  const stage=document.getElementById('stage'), wrap=document.getElementById('wrap');
+  const aw=stage.clientWidth-16, ah=stage.clientHeight-16, ar=4/3;
+  let w=aw, h=w/ar;
+  if(h>ah){ h=ah; w=h*ar; }
+  if(w<160){ w=160; h=120; }
+  wrap.style.width=Math.floor(w)+'px';
+  wrap.style.height=Math.floor(h)+'px';
+}
+window.addEventListener('resize',fitCanvas);
+
+/* ============================================================= MAIN LOOP */
+let lastT=performance.now(), acc=0;
+function loop(now){
+  const dt=now-lastT; lastT=now;
+  if(!paused){ acc+=dt; let guard=0;
+    while(acc>=tickMs && guard<6){ tick(); acc-=tickMs; guard++; }
+    if(acc>tickMs*6) acc=0;
+  }
+  frame++;
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================= INIT */
+function init(){
+  buildToolbar();
+  if(!loadGame()){ genTerrain(); computeMaps(); recomputeAccess(); recomputePower();
+    computeDemand(); recomputeTotals(); finances(); }
+  else { $('hint').classList.add('hide'); msg('City loaded.','good'); }
+  selectTool('road');
+  updateStats();
+  fitCanvas(); requestAnimationFrame(fitCanvas);
+  requestAnimationFrame(loop);
+}
+init();
+})();
+</script>
+</body>
+</html>

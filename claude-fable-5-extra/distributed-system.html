@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DistribuLab — Apprends les systèmes distribués</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰️</text></svg>">
+<style>
+:root{
+  --bg:#0a0e17; --bg2:#0d1322; --panel:#131b2e; --panel2:#1a2440; --line:#26314f;
+  --text:#e9edf7; --mut:#94a1bf; --acc:#818cf8; --acc2:#22d3ee;
+  --ok:#4ade80; --warn:#fbbf24; --bad:#f87171; --pink:#f472b6;
+  --grad:linear-gradient(120deg,#818cf8,#22d3ee);
+  --r:14px; --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+  background:var(--bg); color:var(--text); min-height:100vh; line-height:1.6;
+  background-image:radial-gradient(900px 500px at 15% -10%,rgba(129,140,248,.14),transparent 60%),
+                   radial-gradient(800px 500px at 95% 0%,rgba(34,211,238,.10),transparent 55%);
+  background-attachment:fixed;
+}
+::selection{background:rgba(129,140,248,.35)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2b3a5e;border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ===== Header ===== */
+header.top{
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:12px 22px;background:rgba(10,14,23,.82);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.logo{font-size:1.25rem;font-weight:800;letter-spacing:.3px;white-space:nowrap}
+.logo b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+nav.tabs{display:flex;gap:6px;flex:1;overflow-x:auto;scrollbar-width:none;padding:2px}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{
+  border:1px solid transparent;background:transparent;color:var(--mut);font:inherit;
+  font-size:.92rem;font-weight:600;padding:7px 13px;border-radius:999px;cursor:pointer;
+  white-space:nowrap;transition:.18s;
+}
+.tab:hover{color:var(--text);background:var(--panel)}
+.tab.active{color:#0b1020;background:var(--grad);border-color:transparent}
+.xp-pill{
+  display:flex;flex-direction:column;gap:3px;min-width:170px;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:7px 12px;
+}
+.xp-pill .lvl{font-size:.78rem;font-weight:700;display:flex;justify-content:space-between;gap:10px}
+.xp-pill .lvl span:last-child{color:var(--mut);font-weight:600}
+.xp-bar{height:6px;background:#0e1526;border-radius:99px;overflow:hidden}
+.xp-bar i{display:block;height:100%;background:var(--grad);border-radius:99px;transition:width .5s}
+
+/* ===== Layout ===== */
+main{max-width:1060px;margin:0 auto;padding:26px 20px 60px}
+.fade{animation:fade .35s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h1.page{font-size:1.7rem;font-weight:800;margin-bottom:4px}
+h1.page em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+p.sub{color:var(--mut);margin-bottom:22px}
+.grid{display:grid;gap:14px}
+.grid.c2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.grid.c3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.grid.c4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px;transition:.2s;position:relative;
+}
+.card.click{cursor:pointer}
+.card.click:hover{transform:translateY(-3px);border-color:var(--acc);box-shadow:var(--shadow)}
+.card .ico{font-size:1.8rem;line-height:1;margin-bottom:8px;display:block}
+.card h3{font-size:1.03rem;margin-bottom:4px}
+.card p{font-size:.88rem;color:var(--mut)}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:700;
+  padding:3px 10px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);color:var(--mut)
+}
+.chip.done{color:var(--ok);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.08)}
+.chip.todo{color:var(--acc2)}
+
+.btn{
+  font:inherit;font-weight:700;font-size:.95rem;border:none;cursor:pointer;
+  padding:11px 20px;border-radius:12px;transition:.18s;color:#0b1020;background:var(--grad);
+}
+.btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--acc)}
+.btn.small{padding:7px 14px;font-size:.85rem;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none}
+
+/* ===== Leçons ===== */
+.mod-row{display:flex;gap:14px;align-items:center}
+.mod-row .ico{font-size:1.7rem;margin:0}
+.mod-row .grow{flex:1;min-width:0}
+.lesson-body h3{
+  margin:26px 0 10px;font-size:1.12rem;
+  padding-left:12px;border-left:3px solid var(--acc);
+}
+.lesson-body p{margin:0 0 12px;color:#cdd6ea}
+.lesson-body ul,.lesson-body ol{margin:0 0 14px 22px;color:#cdd6ea}
+.lesson-body li{margin-bottom:6px}
+.lesson-body b{color:var(--text)}
+.kw{color:var(--acc2);font-weight:700}
+.callout{
+  border-radius:12px;padding:13px 16px;margin:14px 0;font-size:.93rem;
+  border:1px solid var(--line);background:var(--panel2);
+}
+.callout.tip{border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.06)}
+.callout.warn{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.06)}
+.callout.itw{border-color:rgba(129,140,248,.45);background:rgba(129,140,248,.08)}
+table.cmp{width:100%;border-collapse:collapse;margin:12px 0 18px;font-size:.88rem}
+table.cmp th{
+  text-align:left;padding:8px 10px;background:var(--panel2);color:var(--acc2);
+  border:1px solid var(--line);font-size:.82rem;text-transform:uppercase;letter-spacing:.4px;
+}
+table.cmp td{padding:8px 10px;border:1px solid var(--line);color:#cdd6ea;vertical-align:top}
+.tablewrap{overflow-x:auto}
+svg.diag{display:block;max-width:100%;margin:10px auto 18px}
+svg.diag rect{fill:var(--panel2);stroke:var(--acc);stroke-width:1.3;rx:9}
+svg.diag text{fill:var(--text);font-size:13px;font-weight:600}
+svg.diag line,svg.diag path.link{stroke:#4a5a85;stroke-width:1.6;fill:none}
+svg.diag .lbl{fill:var(--mut);font-size:11px;font-weight:500}
+
+/* ===== Quiz / options ===== */
+.qbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-bottom:16px}
+.qbox .qt{font-size:1.06rem;font-weight:700;margin-bottom:14px}
+.opts{display:grid;gap:9px}
+.opt{
+  text-align:left;font:inherit;font-size:.94rem;color:var(--text);cursor:pointer;
+  background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 15px;transition:.15s;
+}
+.opt:hover:not(:disabled){border-color:var(--acc);transform:translateX(3px)}
+.opt.sel{border-color:var(--acc2);background:rgba(34,211,238,.10)}
+.opt.correct{border-color:var(--ok);background:rgba(74,222,128,.13)}
+.opt.wrong{border-color:var(--bad);background:rgba(248,113,113,.12)}
+.opt:disabled{cursor:default;opacity:.92}
+.explain{
+  margin-top:13px;padding:12px 15px;border-radius:11px;font-size:.9rem;
+  background:var(--panel2);border:1px solid var(--line);color:#cdd6ea;
+}
+.progressbar{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;margin:10px 0 20px}
+.progressbar i{display:block;height:100%;background:var(--grad);transition:width .35s;border-radius:99px}
+.bigscore{font-size:3.2rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ===== Flashcards ===== */
+.fc-scene{perspective:1400px;max-width:560px;margin:0 auto 18px}
+.fc-card{position:relative;height:280px;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,1.4,.6,1);cursor:pointer}
+.fc-card.flipped{transform:rotateY(180deg)}
+.fc-face{
+  position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:26px;border-radius:18px;border:1px solid var(--line);
+}
+.fc-front{background:linear-gradient(160deg,var(--panel),var(--panel2));font-size:1.35rem;font-weight:800}
+.fc-back{background:linear-gradient(160deg,#16233f,#101a30);transform:rotateY(180deg);font-size:.98rem;color:#d7dff0}
+.fc-hint{font-size:.75rem;color:var(--mut);margin-top:16px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.fc-actions{display:flex;gap:12px;justify-content:center}
+
+/* ===== Badges ===== */
+.badge{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 8px;
+}
+.badge .bico{font-size:1.9rem;filter:none}
+.badge .bname{font-size:.8rem;font-weight:700}
+.badge .bdesc{font-size:.7rem;color:var(--mut)}
+.badge.locked{opacity:.38}
+.badge.locked .bico{filter:grayscale(1)}
+
+/* ===== Stats accueil ===== */
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px 18px}
+.stat .v{font-size:1.55rem;font-weight:800}
+.stat .l{font-size:.78rem;color:var(--mut);font-weight:600}
+.hero{
+  background:linear-gradient(140deg,rgba(129,140,248,.16),rgba(34,211,238,.09));
+  border:1px solid rgba(129,140,248,.35);border-radius:18px;padding:28px;margin-bottom:20px;
+}
+.hero h2{font-size:1.45rem;margin-bottom:6px}
+.hero p{color:#c3cce4;max-width:640px;margin-bottom:16px}
+
+/* ===== Labo ===== */
+.sim{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:22px}
+.sim h3{margin-bottom:4px}
+.sim .simdesc{color:var(--mut);font-size:.88rem;margin-bottom:14px}
+.sim-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;font-size:.88rem}
+.sim-controls label{color:var(--mut);font-weight:600}
+.sim-controls select,.sim-controls input[type=range]{accent-color:var(--acc)}
+.sim-controls select{
+  font:inherit;font-size:.86rem;background:var(--panel2);color:var(--text);
+  border:1px solid var(--line);border-radius:9px;padding:6px 10px;
+}
+#lbArena{position:relative;display:flex;align-items:center;gap:40px;min-height:280px;padding:10px}
+.lb-node{
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;font-weight:700;font-size:.9rem;text-align:center;
+}
+#lbServers{display:flex;flex-direction:column;gap:10px;flex:1;max-width:340px;margin-left:auto}
+.server{
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px 13px;
+  cursor:pointer;transition:border-color .2s;user-select:none;
+}
+.server:hover{border-color:var(--acc)}
+.server .srow{display:flex;justify-content:space-between;font-size:.84rem;font-weight:700}
+.server .srow .meta{color:var(--mut);font-weight:600}
+.server .sbar{height:6px;background:#0e1526;border-radius:99px;margin-top:6px;overflow:hidden}
+.server .sbar i{display:block;height:100%;background:var(--ok);border-radius:99px;transition:width .2s,background .2s}
+.server.hot .sbar i{background:var(--bad)}
+.server.slow{border-color:rgba(251,191,36,.5)}
+.req-dot{
+  position:absolute;width:11px;height:11px;border-radius:50%;background:var(--acc2);
+  box-shadow:0 0 8px var(--acc2);transition:left .4s linear,top .4s linear;z-index:5;pointer-events:none;
+}
+.legend-chip{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;margin:3px 10px 3px 0;color:#cdd6ea}
+.legend-chip i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.verdict{border-radius:12px;padding:13px 16px;font-weight:700;font-size:.95rem;margin-top:12px}
+.verdict.good{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.4);color:var(--ok)}
+.verdict.meh{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.4);color:var(--warn)}
+.replicas{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.replica{
+  width:74px;height:74px;border-radius:14px;background:var(--panel2);border:2px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;gap:2px;
+  transition:.2s;
+}
+.replica .ric{font-size:1.3rem}
+.replica.w{border-color:var(--acc)}
+.replica.r{border-color:var(--acc2)}
+.replica.wr{border-color:var(--ok);box-shadow:0 0 12px rgba(74,222,128,.25)}
+.rtags{display:flex;gap:3px}
+.rtag{font-size:.62rem;padding:1px 6px;border-radius:6px;font-weight:800}
+.rtag.tw{background:rgba(129,140,248,.25);color:#b6befc}
+.rtag.tr{background:rgba(34,211,238,.22);color:#7ee7f5}
+
+/* ===== Toasts / divers ===== */
+#toasts{position:fixed;right:18px;bottom:18px;z-index:100;display:flex;flex-direction:column;gap:9px}
+.toast{
+  background:var(--panel2);border:1px solid var(--acc);border-radius:12px;padding:11px 17px;
+  font-size:.9rem;font-weight:700;box-shadow:var(--shadow);animation:tin .3s ease both;max-width:320px;
+}
+@keyframes tin{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+.toast.out{animation:tout .3s ease both}
+@keyframes tout{to{opacity:0;transform:translateX(30px)}}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:99}
+footer{
+  max-width:1060px;margin:0 auto;padding:18px 20px 34px;color:var(--mut);font-size:.8rem;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+}
+footer button{
+  font:inherit;font-size:.78rem;background:none;border:1px solid var(--line);color:var(--mut);
+  border-radius:9px;padding:5px 12px;cursor:pointer;
+}
+footer button:hover{color:var(--bad);border-color:var(--bad)}
+.backlink{
+  display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--acc2);
+  font:inherit;font-size:.88rem;font-weight:700;cursor:pointer;padding:0;margin-bottom:14px;
+}
+.backlink:hover{text-decoration:underline}
+@media(max-width:640px){
+  header.top{padding:10px 12px}
+  .xp-pill{min-width:130px;flex:1}
+  main{padding:18px 14px 50px}
+  #lbArena{flex-direction:column;gap:18px;align-items:stretch}
+  #lbServers{max-width:none;margin:0}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="logo">🛰️ <b>DistribuLab</b></div>
+  <nav class="tabs" id="nav"></nav>
+  <div class="xp-pill" id="xpPill"></div>
+</header>
+
+<main id="view"></main>
+
+<footer>
+  <span>Fait avec ❤️ pour préparer ton entretien — progression sauvegardée en local (v1)</span>
+  <button onclick="resetAll()">Réinitialiser la progression</button>
+</footer>
+
+<div id="toasts"></div>
+<canvas id="confetti"></canvas>
+
+<script>
+'use strict';
+/* ============================================================
+   DistribuLab — apprendre le design de systèmes distribués
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const LS = 'distribulab-v1';
+
+/* ---------- État & persistance ---------- */
+const DEFAULT_STATE = {
+  xp: 0,
+  lessons: {},        // {m1:true}
+  chall: {},          // {url: bestScore}
+  quiz: { played: 0, best: 0, perfect: 0 },
+  decks: 0,
+  badges: {},
+  labTouched: false
+};
+let S;
+try { S = Object.assign({}, DEFAULT_STATE, JSON.parse(localStorage.getItem(LS) || '{}')); }
+catch(e){ S = Object.assign({}, DEFAULT_STATE); }
+S.quiz = Object.assign({}, DEFAULT_STATE.quiz, S.quiz);
+function save(){ localStorage.setItem(LS, JSON.stringify(S)); }
+function resetAll(){
+  if(confirm('Effacer toute ta progression (XP, badges, leçons) ?')){
+    localStorage.removeItem(LS);
+    location.reload();
+  }
+}
+
+/* ---------- Niveaux ---------- */
+const LEVELS = [0,100,250,450,700,1000,1400,1850,2400,3000];
+const TITLES = ['Intern','Junior Dev','Dev','Mid-level Dev','Senior','Staff Engineer',
+                'Principal Engineer','Architect','Principal Architect','Distributed Systems Legend'];
+function levelInfo(xp){
+  let lvl = 0;
+  for(let i=0;i<LEVELS.length;i++) if(xp>=LEVELS[i]) lvl=i;
+  const cur = LEVELS[lvl], next = LEVELS[lvl+1];
+  const pct = next===undefined ? 100 : Math.min(100, Math.round((xp-cur)/(next-cur)*100));
+  return { lvl, title: TITLES[lvl], pct, next };
+}
+function renderXp(){
+  const li = levelInfo(S.xp);
+  $('#xpPill').innerHTML =
+    '<div class="lvl"><span>Niv. '+(li.lvl+1)+' · '+li.title+'</span><span>'+S.xp+' XP</span></div>'+
+    '<div class="xp-bar"><i style="width:'+li.pct+'%"></i></div>';
+}
+function addXp(n, label){
+  const before = levelInfo(S.xp).lvl;
+  S.xp += n; save(); renderXp();
+  toast('+'+n+' XP — '+label, '✨');
+  const after = levelInfo(S.xp).lvl;
+  if(after>before){ toast('Niveau '+(after+1)+' : '+TITLES[after]+' !', '🚀'); confetti(); }
+  checkBadges();
+}
+
+/* ---------- Badges ---------- */
+const BADGES = [
+  {id:'b_first',  ico:'🎓', name:'Premier cours',      desc:'Termine ta première leçon',      test:()=>Object.keys(S.lessons).length>=1},
+  {id:'b_theory', ico:'📚', name:'Théoricien',         desc:'Termine les 8 leçons',           test:()=>Object.keys(S.lessons).length>=8},
+  {id:'b_quiz5',  ico:'⚡', name:'Quizzeur',           desc:'Joue 5 sessions de quiz',        test:()=>S.quiz.played>=5},
+  {id:'b_perfect',ico:'💯', name:'Sans faute',         desc:'Fais un 10/10 au quiz',          test:()=>S.quiz.perfect>=1},
+  {id:'b_arch',   ico:'🏗️', name:'Architecte en herbe',desc:'Termine un défi de conception',  test:()=>Object.keys(S.chall).length>=1},
+  {id:'b_grand',  ico:'🏆', name:'Grand Architecte',   desc:'Réussis les 3 défis (≥ 9 pts)',  test:()=>Object.values(S.chall).filter(v=>v>=9).length>=3},
+  {id:'b_lab',    ico:'🧪', name:'Expérimentateur',    desc:'Manipule une simulation du Labo',test:()=>S.labTouched},
+  {id:'b_lvl5',   ico:'🚀', name:'Décollage',          desc:'Atteins le niveau 5',            test:()=>levelInfo(S.xp).lvl>=4}
+];
+function checkBadges(){
+  BADGES.forEach(b=>{
+    if(!S.badges[b.id] && b.test()){
+      S.badges[b.id]=true; save();
+      toast('Badge débloqué : '+b.ico+' '+b.name, '🏅'); confetti();
+    }
+  });
+}
+
+/* ---------- Toasts & confettis ---------- */
+function toast(msg, ico){
+  const t = document.createElement('div');
+  t.className='toast'; t.textContent=(ico?ico+' ':'')+msg;
+  $('#toasts').appendChild(t);
+  setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),300); }, 3200);
+}
+function confetti(){
+  const cv=$('#confetti'), ctx=cv.getContext('2d');
+  cv.width=innerWidth; cv.height=innerHeight;
+  const cols=['#818cf8','#22d3ee','#4ade80','#fbbf24','#f472b6'];
+  const P=[];
+  for(let i=0;i<130;i++)P.push({
+    x:Math.random()*cv.width, y:-30-Math.random()*cv.height*.4,
+    r:3+Math.random()*4, c:cols[i%5],
+    vy:2.2+Math.random()*3, vx:-1+Math.random()*2, rot:Math.random()*6, vr:.05+Math.random()*.12
+  });
+  let t=0;
+  (function f(){
+    ctx.clearRect(0,0,cv.width,cv.height); t++;
+    P.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r); ctx.restore();
+    });
+    if(t<170) requestAnimationFrame(f); else ctx.clearRect(0,0,cv.width,cv.height);
+  })();
+}
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+/* ============================================================
+   LEÇONS
+   ============================================================ */
+const MODULES = [
+{
+id:'m1', ico:'🧱', title:'Scalability : les fondamentaux',
+desc:'Vertical vs horizontal scaling, stateless, latency, availability et back-of-the-envelope estimations.',
+html:`
+<p>Un <span class="kw">distributed system</span>, c'est un ensemble de machines qui coopèrent pour se comporter comme un seul service. On y vient pour trois raisons : une seule machine ne suffit plus (<b>load</b>), une seule machine peut tomber (<b>availability</b>), et les utilisateurs sont partout sur la planète (<b>latency</b>).</p>
+
+<h3>Vertical scaling vs horizontal scaling</h3>
+<div class="tablewrap"><table class="cmp">
+<tr><th></th><th>Vertical (scale up)</th><th>Horizontal (scale out)</th></tr>
+<tr><td><b>Principe</b></td><td>Une machine plus grosse (CPU, RAM)</td><td>Plus de machines identiques</td></tr>
+<tr><td><b>Avantages</b></td><td>Simple, zéro changement de code</td><td>Quasi illimité, tolère les failures</td></tr>
+<tr><td><b>Limites</b></td><td>Plafond physique, coût exponentiel, <span class="kw">single point of failure</span> (SPOF)</td><td>Complexité : load balancing, data consistency, réseau</td></tr>
+</table></div>
+<p>En entretien : on commence souvent en <b>scale up</b> (simple), puis on passe en <b>scale out</b> quand la charge ou l'availability l'exigent. Dire ça montre que tu ne fais pas d'<b>over-engineering</b>.</p>
+
+<h3>Stateless : la clé du scale out</h3>
+<p>Un serveur <span class="kw">stateless</span> ne garde aucune donnée propre à un utilisateur entre deux requêtes. N'importe quel serveur peut alors traiter n'importe quelle request : on peut en ajouter ou en retirer librement derrière un load balancer.</p>
+<ul>
+<li>Les sessions sont externalisées dans un <b>shared store</b> (Redis) ou portées par le client (<b>JWT</b>).</li>
+<li>Les fichiers uploadés vont dans un <b>object storage</b> (S3), jamais sur le disque local.</li>
+</ul>
+<div class="callout warn">⚠️ Les <span class="kw">sticky sessions</span> (coller un utilisateur à un serveur) sont un pansement : elles déséquilibrent la charge et perdent la session si le serveur meurt. À mentionner comme solution de transition, pas comme cible.</div>
+
+<h3>Les 3 métriques à connaître par cœur</h3>
+<ul>
+<li><span class="kw">Latency</span> : temps d'une request. On parle en <b>percentiles</b> — <b>p50</b> (médiane), <b>p99</b> (les 1 % les pires). Le p99 compte : c'est souvent lui que vivent tes plus gros clients.</li>
+<li><span class="kw">Throughput</span> : requêtes par seconde (QPS/RPS).</li>
+<li><span class="kw">Availability</span> : % du temps où le service répond. Se mesure en <b>nines</b>.</li>
+</ul>
+<div class="tablewrap"><table class="cmp">
+<tr><th>Availability</th><th>Downtime max / an</th></tr>
+<tr><td>99 % (« two nines »)</td><td>≈ 3,65 jours</td></tr>
+<tr><td>99,9 % (« three nines »)</td><td>≈ 8,8 heures</td></tr>
+<tr><td>99,99 % (« four nines »)</td><td>≈ 53 minutes</td></tr>
+<tr><td>99,999 % (« five nines »)</td><td>≈ 5 minutes</td></tr>
+</table></div>
+
+<h3>Back-of-the-envelope estimation</h3>
+<p>Les entretiens adorent ça. Deux réflexes :</p>
+<ul>
+<li>1 jour ≈ 86 400 s ≈ <b>10⁵ s</b>. Donc <b>1 million de requêtes/jour ≈ 12 QPS</b> en moyenne. Multiplie par 2 à 5 pour le <b>peak traffic</b>.</li>
+<li>Ordres de grandeur de latency : RAM ≈ 100 ns · SSD ≈ 100 µs · disque ≈ 10 ms · <b>round trip</b> même datacenter ≈ 0,5 ms · <b>cross-continent ≈ 100–150 ms</b>.</li>
+</ul>
+<div class="callout tip">💡 Retiens : lire en RAM est ~100 000× plus rapide que lire sur disque. C'est toute la justification du caching (leçon 3).</div>
+<div class="callout itw">💬 <b>Question d'entretien :</b> « Your app goes from 1,000 to 1,000,000 users. What do you do? » — Réponds par étapes : mesurer (metrics), séparer web/database, load balancer + stateless servers, cache, read replicas, puis sharding si nécessaire.</div>
+`,
+quiz:[
+{q:"Le horizontal scaling (scale out) consiste à…", o:["Acheter un serveur plus puissant","Ajouter davantage de machines","Optimiser le code","Compresser les données"], a:1, why:"Scale out = plus de machines. Scale up = une machine plus grosse."},
+{q:"Un service stateless peut…", o:["Garder les sessions en mémoire locale","Être répliqué librement derrière un load balancer","Fonctionner sans database","Éviter tout cache"], a:1, why:"Sans état local, n'importe quel serveur traite n'importe quelle request : on peut en ajouter/retirer à volonté."},
+{q:"99,9 % d'availability ≈ combien de downtime par an ?", o:["5 minutes","53 minutes","≈ 8,8 heures","3,65 jours"], a:2, why:"0,1 % de 365 jours ≈ 8,8 h. Chaque « nine » divise le downtime par 10."}
+]
+},
+{
+id:'m2', ico:'⚖️', title:'Load balancing & API gateway',
+desc:'Répartir la charge, health checks, L4 vs L7, service discovery.',
+html:`
+<p>Le <span class="kw">load balancer</span> (LB) est la porte d'entrée du trafic : il répartit les requêtes entre plusieurs serveurs, masque les failures et permet d'ajouter des machines sans que le client ne voie rien.</p>
+<svg class="diag" viewBox="0 0 560 170">
+<rect x="8" y="63" width="92" height="44"/><text x="54" y="90" text-anchor="middle">Clients</text>
+<line x1="100" y1="85" x2="185" y2="85"/>
+<rect x="185" y="58" width="100" height="54"/><text x="235" y="82" text-anchor="middle">⚖️ LB</text><text x="235" y="100" text-anchor="middle" class="lbl">health checks</text>
+<line x1="285" y1="75" x2="400" y2="28"/><line x1="285" y1="85" x2="400" y2="85"/><line x1="285" y1="95" x2="400" y2="142"/>
+<rect x="400" y="10" width="140" height="36"/><text x="470" y="33" text-anchor="middle">Server A</text>
+<rect x="400" y="67" width="140" height="36"/><text x="470" y="90" text-anchor="middle">Server B</text>
+<rect x="400" y="124" width="140" height="36"/><text x="470" y="147" text-anchor="middle">Server C</text>
+</svg>
+
+<h3>Les algorithmes de répartition</h3>
+<div class="tablewrap"><table class="cmp">
+<tr><th>Algorithme</th><th>Principe</th><th>Quand l'utiliser</th></tr>
+<tr><td><b>Round robin</b></td><td>Chacun son tour</td><td>Serveurs identiques, requêtes homogènes</td></tr>
+<tr><td><b>Weighted round robin</b></td><td>Tour de rôle pondéré</td><td>Serveurs de capacités différentes</td></tr>
+<tr><td><b>Least connections</b></td><td>Vers le serveur le moins occupé</td><td>Requêtes de durées très variables</td></tr>
+<tr><td><b>IP hash</b></td><td>hash(client IP) → serveur</td><td>Session affinity sans cookie</td></tr>
+</table></div>
+<div class="callout tip">💡 Va voir la simulation <b>« Load balancer »</b> dans le <button class="backlink" onclick="show('lab')" style="margin:0">🧪 Labo</button> : rends un serveur lent et compare round robin vs least connections.</div>
+
+<h3>Layer 4 vs Layer 7</h3>
+<ul>
+<li><span class="kw">L4 (transport layer)</span> : route sur IP/port TCP. Très rapide, mais aveugle au contenu.</li>
+<li><span class="kw">L7 (application layer)</span> : lit la request HTTP → peut router par URL path (<b>/api → services API</b>, /img → CDN), par header, faire la <b>TLS termination</b>, la compression, le rate limiting.</li>
+</ul>
+
+<h3>Détecter les failures : health checks</h3>
+<p>Le LB interroge régulièrement chaque serveur (ex. <b>GET /health</b> toutes les 5 s). Un serveur qui échoue N fois de suite est retiré du <b>pool</b>, puis réintégré quand il répond à nouveau. C'est ce qui rend le <span class="kw">failover</span> automatique et invisible.</p>
+
+<h3>Et si le load balancer tombe ? (question piège favorite)</h3>
+<p>Le LB devient lui-même un <b>SPOF</b>. Réponses attendues :</p>
+<ul>
+<li>Paire de LB en <span class="kw">active-passive</span> avec une <b>floating IP</b> (heartbeat entre les deux).</li>
+<li>Plusieurs LB derrière du <b>DNS round robin</b> ou de l'<b>anycast</b> (les grands clouds font ça pour toi).</li>
+</ul>
+
+<h3>API Gateway : le LB « intelligent »</h3>
+<p>Devant des microservices, une <span class="kw">API gateway</span> centralise les <b>cross-cutting concerns</b> : authentication, rate limiting, routing, agrégation de réponses, API versioning. Un LB répartit ; une gateway <b>filtre et orchestre</b>.</p>
+<div class="callout itw">💬 <b>Question d'entretien :</b> « How does the load balancer know about your app servers? » — Mentionne le <span class="kw">service discovery</span> (registry type Consul/etcd, ou celui du cloud/Kubernetes) : les instances s'enregistrent au démarrage, le LB lit le registry.</div>
+`,
+quiz:[
+{q:"Quel algorithme envoie la request vers le serveur ayant le moins de requêtes en cours ?", o:["Round robin","IP hash","Least connections","Random"], a:2, why:"Least connections regarde la charge active — idéal quand les requêtes ont des durées variables."},
+{q:"Un load balancer L7 peut router selon…", o:["Uniquement l'adresse IP","L'URL path et les HTTP headers","La température du serveur","Le port TCP uniquement"], a:1, why:"L7 comprend HTTP : routing par path, headers, cookies, TLS termination…"},
+{q:"Comment le LB sait-il qu'un serveur est mort ?", o:["Il attend les plaintes des clients","Grâce aux health checks périodiques","Il lit les logs","Un humain le prévient"], a:1, why:"Des sondes régulières (ex. GET /health) permettent de retirer automatiquement un serveur défaillant du pool."}
+]
+},
+{
+id:'m3', ico:'🚀', title:'Caching, ton meilleur ami',
+desc:'Cache-aside, write-through, eviction policies, CDN et les pièges classiques.',
+html:`
+<p>Le <span class="kw">cache</span> exploite un fait simple : la RAM est <b>~100 000× plus rapide</b> que le disque, et la plupart des reads portent sur une petite fraction « chaude » des données (loi de Pareto : 20 % des données génèrent 80 % du trafic).</p>
+
+<h3>Où peut-on cacher ?</h3>
+<ul>
+<li><b>Browser cache</b> (Cache-Control) → zéro requête réseau.</li>
+<li><span class="kw">CDN</span> (Content Delivery Network) → contenu statique (images, vidéos, JS) servi au plus près de l'utilisateur.</li>
+<li><b>Application cache</b> (Redis, Memcached) → résultats de queries, sessions, objets calculés.</li>
+<li><b>Database cache</b> → buffer pool, query cache.</li>
+</ul>
+
+<h3>Caching strategies</h3>
+<div class="tablewrap"><table class="cmp">
+<tr><th>Strategy</th><th>Fonctionnement</th><th>À savoir</th></tr>
+<tr><td><span class="kw">Cache-aside</span> (lazy loading)</td><td>L'app lit le cache ; en cas de <b>miss</b> elle lit la database puis remplit le cache</td><td>La plus courante. Simple, mais 1er read lent et risque de <b>stale data</b></td></tr>
+<tr><td><span class="kw">Read-through</span></td><td>Le cache va lui-même chercher en database lors d'un miss</td><td>Même logique, déplacée dans la couche cache</td></tr>
+<tr><td><span class="kw">Write-through</span></td><td>Write dans le cache ET la database de façon synchrone</td><td>Cache toujours à jour, mais writes plus lents</td></tr>
+<tr><td><span class="kw">Write-back</span> (write-behind)</td><td>Write dans le cache, <b>flush</b> asynchrone vers la database</td><td>Writes ultra rapides, mais <b>data loss</b> possible si crash avant le flush</td></tr>
+</table></div>
+
+<h3>Eviction policies : le cache est petit</h3>
+<ul>
+<li><span class="kw">LRU</span> (Least Recently Used) : on évince le moins récemment utilisé — le défaut raisonnable.</li>
+<li><span class="kw">LFU</span> (Least Frequently Used) : le moins fréquemment utilisé.</li>
+<li><span class="kw">TTL</span> (Time To Live) : chaque entrée expire après un délai — borne la fraîcheur des données.</li>
+</ul>
+
+<h3>Les pièges à connaître (ça impressionne en entretien)</h3>
+<ul>
+<li><span class="kw">Cache invalidation</span> : quand la donnée change, il faut supprimer/mettre à jour l'entrée. Stratégies : invalider au write, ou accepter un TTL court (« stale acceptable pendant 30 s »).</li>
+<li><span class="kw">Cache stampede</span> (thundering herd) : une clé très demandée expire → des milliers de requêtes frappent la database en même temps. Parades : <b>lock</b> (une seule request régénère), <b>TTL jitter</b> (éviter les expirations synchronisées), <b>early refresh</b>.</li>
+<li><span class="kw">Hot key</span> : une key unique reçoit trop de trafic (un tweet viral) → répliquer la key sur plusieurs nodes ou ajouter un <b>local cache</b> en amont.</li>
+<li><span class="kw">Cache penetration</span> : requêtes sur des clés inexistantes qui percent toujours vers la database → cacher aussi les <b>negative results</b>, ou <b>Bloom filter</b>.</li>
+</ul>
+<div class="callout warn">⚠️ Phrase culte à replacer : « There are only two hard things in computer science: cache invalidation and naming things. » Montre que tu sais que le cache introduit un problème de <b>consistency</b>, pas juste un gain de vitesse.</div>
+<div class="callout itw">💬 <b>Question d'entretien :</b> « What do you cache, and for how long? » — Réponds par type de donnée : statique → CDN + TTL long ; user profile → cache-aside + invalidation au write ; compteurs temps réel → TTL court ou pas de cache.</div>
+`,
+quiz:[
+{q:"Dans le pattern cache-aside, que se passe-t-il lors d'un cache miss ?", o:["La request échoue","Le cache interroge la database tout seul","L'application lit la database puis remplit le cache","On attend le prochain TTL"], a:2, why:"C'est l'application qui orchestre : read database, puis SET dans le cache pour les prochains reads."},
+{q:"Le principal risque du write-back (write-behind) ?", o:["Des writes trop lents","La data loss si le cache crashe avant le flush","Un cache trop volumineux","Des reads plus lents"], a:1, why:"Les writes ne sont persistés qu'après coup : un crash du cache peut perdre les writes non flushés."},
+{q:"Un « cache stampede », c'est…", o:["Un cache plein à 100 %","L'expiration d'une hot key qui déclenche une avalanche de requêtes vers la database","Un vol de données du cache","Une clé répliquée trop souvent"], a:1, why:"Parades : lock de régénération unique, TTL jitter, early refresh."}
+]
+},
+{
+id:'m4', ico:'🗄️', title:'Databases at scale',
+desc:'SQL vs NoSQL, indexing, replication, sharding et leurs pièges.',
+html:`
+<h3>SQL ou NoSQL ? (la vraie réponse : « it depends »)</h3>
+<div class="tablewrap"><table class="cmp">
+<tr><th>Type</th><th>Exemples</th><th>Idéal pour</th></tr>
+<tr><td><b>Relational (SQL)</b></td><td>PostgreSQL, MySQL</td><td><span class="kw">ACID</span> transactions, joins, requêtes riches, données structurées (payments, orders)</td></tr>
+<tr><td><b>Key-value store</b></td><td>Redis, DynamoDB</td><td>Lookups ultra rapides par key : sessions, caches, paniers</td></tr>
+<tr><td><b>Document store</b></td><td>MongoDB</td><td>Objets à <b>flexible schema</b> : profils, catalogues produits</td></tr>
+<tr><td><b>Wide-column store</b></td><td>Cassandra, HBase</td><td><b>Write-heavy</b> workloads, time series, historiques de messages</td></tr>
+<tr><td><b>Graph database</b></td><td>Neo4j</td><td>Relations profondes : réseaux sociaux, recommandations, fraude</td></tr>
+</table></div>
+<div class="callout tip">💡 En entretien, justifie par les <span class="kw">access patterns</span> (« I always read by key, never by range → key-value store ») plutôt que par la mode.</div>
+
+<h3>Indexing</h3>
+<p>Un <span class="kw">index</span> (souvent un <b>B-tree</b>) transforme un <b>full table scan</b> en recherche logarithmique. Trade-off : chaque index <b>accélère les reads</b> mais <b>ralentit les writes</b> (il faut le maintenir) et consomme de l'espace. Indexe les colonnes de tes queries fréquentes, pas tout.</p>
+
+<h3>Replication : survivre et scaler les reads</h3>
+<ul>
+<li><span class="kw">Leader-follower</span> (aussi appelé primary-replica, le standard) : les <b>writes vont au leader</b>, répliqués vers des <b>followers</b> qui servent les reads. Scale les reads + failover si le leader meurt.</li>
+<li><span class="kw">Multi-leader</span> : plusieurs nodes acceptent les writes (multi-region) → il faut résoudre les <b>write conflicts</b>. À ne proposer que si nécessaire.</li>
+<li>Replication <b>synchrone</b> (aucune perte, plus lent) vs <b>asynchrone</b> (rapide, mais <span class="kw">replication lag</span>).</li>
+</ul>
+<div class="callout warn">⚠️ Le <b>replication lag</b> crée un piège classique : l'utilisateur write (sur le leader) puis read (sur un follower en retard) et ne voit pas son propre write. Solution : <span class="kw">read-your-writes consistency</span> — lire depuis le leader juste après un write, ou router l'utilisateur vers un replica à jour.</div>
+
+<h3>Sharding : quand une seule database ne suffit plus</h3>
+<p>Le <span class="kw">sharding</span> (horizontal partitioning) découpe les données entre plusieurs machines selon une <span class="kw">partition key</span> (ou shard key).</p>
+<div class="tablewrap"><table class="cmp">
+<tr><th>Méthode</th><th>Avantage</th><th>Inconvénient</th></tr>
+<tr><td><b>Range-based</b> (A–M, N–Z)</td><td><b>Range queries</b> efficaces</td><td><b>Hot spots</b> (tout le monde sur la même plage)</td></tr>
+<tr><td><b>Hash-based</b></td><td>Distribution uniforme</td><td>Range queries impossibles, <b>resharding</b> pénible</td></tr>
+<tr><td><b>Geo-based</b></td><td>Latency locale, compliance (GDPR)</td><td>Trafic inégal entre régions</td></tr>
+</table></div>
+<p>Problèmes que le sharding apporte (à citer spontanément) :</p>
+<ul>
+<li><b>Cross-shard joins et transactions</b> : coûteux ou impossibles → <b>denormalize</b>, ou co-localiser les données liées.</li>
+<li><span class="kw">Rebalancing</span> : ajouter un node avec un « hash % N » naïf redistribue presque tout → <span class="kw">consistent hashing</span> (démo dans le 🧪 Labo !).</li>
+<li><b>Celebrity problem / hot partition</b> : une key trop populaire écrase son shard → sous-découper cette key ou la traiter à part.</li>
+</ul>
+<div class="callout itw">💬 <b>Question d'entretien :</b> « Your users table hits 5 TB. What now? » — Ordre attendu : archiver/purger, optimiser indexes et queries, <b>read replicas</b>, <b>vertical partitioning</b> (séparer les colonnes volumineuses), et enfin <b>horizontal sharding</b> par user_id.</div>
+`,
+quiz:[
+{q:"Le hash-based sharding rend difficile…", o:["Les lookups par key","Les range queries","Les writes","La replication"], a:1, why:"Le hash disperse les clés voisines sur des shards différents : parcourir un range oblige à interroger tous les shards."},
+{q:"En replication leader-follower, les writes vont…", o:["Vers n'importe quel node","Vers le leader uniquement","Vers les followers","Vers le cache"], a:1, why:"Le leader sérialise les writes et les propage aux followers, qui servent les reads."},
+{q:"Ajouter un index sur une colonne…", o:["Accélère reads et writes","Accélère les reads mais ralentit les writes","Ralentit tout","Ne change rien aux writes"], a:1, why:"L'index doit être maintenu à chaque INSERT/UPDATE : read plus rapide, write plus coûteux."}
+]
+},
+{
+id:'m5', ico:'🔺', title:'CAP, consistency & quorums',
+desc:'Le CAP theorem sans mythe, consistency models, quorums N/W/R, PACELC.',
+html:`
+<h3>Le CAP theorem, correctement énoncé</h3>
+<p>Dans un distributed system, les <span class="kw">network partitions</span> (P) arrivent forcément — câble coupé, switch en panne, GC pause trop longue. <b>Pendant</b> une partition, tu dois choisir entre :</p>
+<ul>
+<li><span class="kw">Consistency (C)</span> : tous les nodes renvoient la même donnée, quitte à refuser de répondre.</li>
+<li><span class="kw">Availability (A)</span> : tous les nodes répondent, quitte à renvoyer de la <b>stale data</b>.</li>
+</ul>
+<svg class="diag" viewBox="0 0 460 240">
+<path class="link" d="M230 25 L60 205 L400 205 Z"/>
+<circle cx="230" cy="25" r="26" fill="#1a2440" stroke="#818cf8" stroke-width="1.5"/><text x="230" y="30" text-anchor="middle">C</text>
+<circle cx="60" cy="205" r="26" fill="#1a2440" stroke="#22d3ee" stroke-width="1.5"/><text x="60" y="210" text-anchor="middle">A</text>
+<circle cx="400" cy="205" r="26" fill="#1a2440" stroke="#fbbf24" stroke-width="1.5"/><text x="400" y="210" text-anchor="middle">P</text>
+<text x="125" y="105" text-anchor="middle" class="lbl">CA : impossible dès</text>
+<text x="125" y="119" text-anchor="middle" class="lbl">qu'il y a un réseau</text>
+<text x="337" y="105" text-anchor="middle" class="lbl">CP : refuse plutôt</text>
+<text x="337" y="119" text-anchor="middle" class="lbl">que mentir</text>
+<text x="230" y="228" text-anchor="middle" class="lbl">AP : répond, parfois stale</text>
+</svg>
+<div class="callout warn">⚠️ Piège d'entretien : dire « pick 2 out of 3 ». Non — P n'est pas optionnel. Le vrai choix, <b>uniquement pendant une partition</b>, c'est C ou A.</div>
+<ul>
+<li><b>CP systems</b> : coordination, configuration, locks, argent (ZooKeeper/etcd, transactions bancaires). Mieux vaut une erreur qu'un solde faux.</li>
+<li><b>AP systems</b> : shopping carts, likes, timelines, DNS (Cassandra, Dynamo). Mieux vaut une réponse un peu vieille que pas de réponse.</li>
+</ul>
+
+<h3>Consistency models</h3>
+<ul>
+<li><span class="kw">Strong consistency</span> : tout read voit le dernier write. Confortable, mais coûteux en latency.</li>
+<li><span class="kw">Eventual consistency</span> : si les writes s'arrêtent, tous les replicas <b>convergent</b>. Entre-temps, des <b>stale reads</b> sont possibles.</li>
+<li><span class="kw">Read-your-writes</span> : je vois toujours mes propres writes (le minimum pour une bonne UX).</li>
+<li><span class="kw">Monotonic reads</span> : je ne « remonte » jamais dans le temps entre deux reads.</li>
+</ul>
+
+<h3>Quorums : régler le curseur avec N, W, R</h3>
+<p>Avec <b>N</b> replicas, un write confirmé par <b>W</b> nodes et un read interrogeant <b>R</b> nodes :</p>
+<div class="callout tip">💡 <b>W + R &gt; N</b> ⇒ read set et write set se chevauchent forcément ⇒ <b>strong consistency</b>. Exemple classique : N=3, W=2, R=2. Joue avec les curseurs dans le <button class="backlink" onclick="show('lab')" style="margin:0">🧪 Labo</button> !</div>
+<ul>
+<li>W=1 : writes rapides et très available, reads risqués.</li>
+<li>R=1 : reads rapides ; il faut alors W=N pour rester consistent (writes fragiles).</li>
+</ul>
+
+<h3>PACELC : le raffinement qui fait pro</h3>
+<p><span class="kw">PACELC</span> : en cas de <b>P</b>artition → A ou C (c'est CAP) ; <b>E</b>lse (fonctionnement normal) → trade-off entre <b>L</b>atency et <b>C</b>onsistency. Même sans failure, attendre la confirmation de tous les replicas coûte de la latency.</p>
+
+<h3>Consensus (à citer, pas à détailler)</h3>
+<p>Pour qu'un cluster s'accorde sur UNE valeur (qui est le leader ? quelle config ?), on utilise des <span class="kw">consensus algorithms</span> : <b>Raft</b>, <b>Paxos</b>. Ils sont au cœur d'etcd, ZooKeeper, Consul. En entretien : « I would not reimplement this, I would use etcd/ZooKeeper ».</p>
+<div class="callout itw">💬 <b>Question d'entretien :</b> « Like counter: strong or eventual consistency? » — Eventual, évidemment : personne ne remarque 10 likes de retard, et exiger un consensus mondial par like serait ruineux. Montre que tu choisis la consistency <b>par use case</b>.</div>
+`,
+quiz:[
+{q:"Pendant une network partition, un système doit choisir entre…", o:["Latency et throughput","Consistency et availability","SQL et NoSQL","Read et write"], a:1, why:"C'est le cœur de CAP : pendant P, soit on répond (A, au risque du stale), soit on refuse (C)."},
+{q:"N=3, W=2, R=2 : quelle garantie ?", o:["Eventual consistency seulement","Strong consistency (W+R>N)","Aucun write possible","Data loss"], a:1, why:"2+2>3 : le read set recoupe forcément le write set, on lit toujours la dernière version."},
+{q:"L'eventual consistency garantit que…", o:["Les reads sont toujours à jour","Les replicas convergent si les writes cessent","Rien ne converge jamais","Les writes sont refusés"], a:1, why:"C'est une garantie de convergence, pas de fraîcheur immédiate."}
+]
+},
+{
+id:'m6', ico:'📬', title:'Async : queues & event streaming',
+desc:'Message queues, pub/sub, Kafka vs RabbitMQ, delivery guarantees, idempotency.',
+html:`
+<h3>Pourquoi passer en asynchrone ?</h3>
+<ul>
+<li><span class="kw">Decoupling</span> : le <b>producer</b> n'attend pas le <b>consumer</b> (l'API répond « order received » sans attendre l'email de confirmation).</li>
+<li><span class="kw">Buffering</span> : la queue absorbe les pics — 50 000 commandes/min au Black Friday, traitées à ton rythme.</li>
+<li><b>Reliability</b> : si le consumer crashe, le message reste dans la queue et sera retraité.</li>
+</ul>
+
+<h3>Message queue vs Pub/Sub</h3>
+<ul>
+<li><span class="kw">Point-to-point queue</span> : chaque message est consommé par <b>un seul</b> worker (tâches à répartir : redimensionner des images).</li>
+<li><span class="kw">Pub/Sub</span> : un event publié sur un <b>topic</b> est reçu par <b>tous les subscribers</b> (« OrderCreated » → billing + inventory + notifications, sans que le producer les connaisse). C'est le <b>fan-out</b>.</li>
+</ul>
+
+<h3>RabbitMQ vs Kafka (le duel classique)</h3>
+<div class="tablewrap"><table class="cmp">
+<tr><th></th><th>RabbitMQ (message broker)</th><th>Kafka (distributed log)</th></tr>
+<tr><td><b>Modèle</b></td><td>Le message est supprimé après <b>ack</b></td><td>Les messages restent dans un <b>log</b> ; chaque consumer avance son <b>offset</b></td></tr>
+<tr><td><b>Forces</b></td><td>Routing riche, task queues, simplicité</td><td>Throughput énorme, <b>replay</b> possible, plusieurs consumer groups indépendants, ordre garanti <b>par partition</b></td></tr>
+<tr><td><b>Use case</b></td><td>Background jobs, async RPC</td><td>Event streaming, data pipelines, event sourcing</td></tr>
+</table></div>
+
+<h3>Delivery guarantees</h3>
+<ul>
+<li><span class="kw">At-most-once</span> : on peut perdre des messages (métriques peu critiques).</li>
+<li><span class="kw">At-least-once</span> : le standard. Conséquence : <b>des duplicates arriveront</b>.</li>
+<li><span class="kw">Exactly-once</span> : le Graal… en pratique on le <b>simule</b> : at-least-once + deduplication/idempotency côté consumer.</li>
+</ul>
+<div class="callout tip">💡 <span class="kw">Idempotency</span> = rejouer la même opération donne le même résultat. Techniques : <b>idempotency key</b> (l'API de paiement Stripe fait ça), UPSERT, vérifier « already processed? » avant d'agir. Mot-clé qui fait mouche en entretien.</div>
+
+<h3>L'hygiène d'un système à messages</h3>
+<ul>
+<li><span class="kw">DLQ</span> (dead-letter queue) : après N échecs, le message part dans une queue « poison » pour analyse, au lieu de bloquer la chaîne en boucle.</li>
+<li><span class="kw">Backpressure</span> : quand le consumer sature, ralentir ou rejeter en amont plutôt que de s'effondrer. Surveille le <span class="kw">consumer lag</span>.</li>
+<li><b>Ordering</b> : global ordering = très cher. Par entité (par user, par conversation) = une partition par key, suffisant dans 99 % des cas.</li>
+</ul>
+<div class="callout itw">💬 <b>Question d'entretien :</b> « The email service takes 2s and slows down your checkout. What do you do? » — Le checkout publie un event dans une queue et répond immédiatement ; un worker envoie l'email en async, avec retries et DLQ. Latency perçue : divisée par 10.</div>
+`,
+quiz:[
+{q:"Avec de l'at-least-once delivery, les consumers doivent être…", o:["Rapides","Idempotents","Synchrones","Stateless"], a:1, why:"At-least-once ⇒ duplicates possibles ⇒ retraiter un message ne doit pas produire d'effet double."},
+{q:"À quoi sert une dead-letter queue (DLQ) ?", o:["Accélérer la queue","Stocker les messages qui échouent en boucle pour analyse","Supprimer les vieux messages","Chiffrer les messages"], a:1, why:"Elle isole les « poison messages » au lieu de bloquer le flux avec des retries infinis."},
+{q:"Dans Kafka, les messages consommés…", o:["Sont supprimés immédiatement","Restent dans le log et peuvent être replayed","Sont renvoyés au producer","Passent en DLQ"], a:1, why:"Kafka est un log : chaque consumer gère son offset et peut rejouer l'historique pendant la retention."}
+]
+},
+{
+id:'m7', ico:'🧩', title:'Microservices & resilience',
+desc:'Monolith vs microservices, circuit breaker, retries, rate limiting, observability.',
+html:`
+<h3>Monolith vs microservices : sois honnête</h3>
+<div class="tablewrap"><table class="cmp">
+<tr><th></th><th>Monolith</th><th>Microservices</th></tr>
+<tr><td><b>Pour</b></td><td>Simple à développer, déployer, debugger ; transactions faciles</td><td>Deployments indépendants, scaling ciblé, équipes autonomes, <b>fault isolation</b></td></tr>
+<tr><td><b>Contre</b></td><td>Tout scale ensemble ; une équipe nombreuse se marche dessus</td><td>Complexité opérationnelle, network latency, data consistency, distributed debugging</td></tr>
+</table></div>
+<div class="callout tip">💡 Réponse qui fait mûr : « I would start with a modular monolith and only extract a service when a constraint justifies it » (scaling différencié, équipe dédiée, techno spécifique). Les microservices résolvent un problème <b>d'organisation</b> autant que de technique.</div>
+
+<h3>Communication entre services</h3>
+<ul>
+<li><b>REST/JSON</b> : universel, lisible. <b>gRPC</b> : binaire, typé, rapide — idéal en interne.</li>
+<li><b>Event-driven</b> (leçon 6) dès que possible : moins de <b>temporal coupling</b>.</li>
+<li><span class="kw">Service discovery</span> : les instances s'enregistrent (Consul, etcd, DNS Kubernetes) ; on n'écrit jamais d'IP en dur.</li>
+</ul>
+
+<h3>Resilience : survivre aux failures des autres</h3>
+<p>Dans un distributed system, <b>tout appel réseau peut échouer ou traîner</b>. L'arsenal :</p>
+<ul>
+<li><span class="kw">Timeouts</span> partout : jamais d'appel sans limite. Un service lent est plus dangereux qu'un service mort (il bloque des threads).</li>
+<li><span class="kw">Retries</span> avec <b>exponential backoff + jitter</b> (100 ms, 200, 400… + aléa). Sans jitter, tous les clients réessaient en même temps → <b>self-inflicted DDoS</b>. Ne retenter que les opérations <b>idempotentes</b> !</li>
+<li><span class="kw">Circuit breaker</span> : après trop d'échecs vers un service, on <b>ouvre le circuit</b> → échec immédiat sans appel (ou <b>fallback</b>), puis on teste prudemment (<b>half-open</b>) avant de refermer. Évite les <span class="kw">cascading failures</span>.</li>
+<li><span class="kw">Bulkhead</span> : cloisonner les ressources (connection pools séparés par dépendance) pour qu'une dépendance malade ne coule pas tout le navire.</li>
+<li><span class="kw">Graceful degradation</span> : mieux vaut un feed sans recommandations qu'une page d'erreur.</li>
+</ul>
+
+<h3>Rate limiting : se protéger de ses clients</h3>
+<div class="tablewrap"><table class="cmp">
+<tr><th>Algorithme</th><th>Principe</th><th>Caractéristique</th></tr>
+<tr><td><b>Token bucket</b></td><td>Un bucket de tokens se remplit à débit fixe ; chaque request consomme un token</td><td>Autorise les <b>bursts</b> (tant qu'il reste des tokens)</td></tr>
+<tr><td><b>Leaky bucket</b></td><td>Queue vidée à débit constant</td><td><b>Lisse</b> le trafic</td></tr>
+<tr><td><b>Sliding window</b></td><td>Compte les requêtes sur les N dernières secondes</td><td>Précis, un peu plus coûteux</td></tr>
+</table></div>
+<p>À placer dans l'API gateway, avec réponse <b>429 Too Many Requests</b> et header <b>Retry-After</b>. Compteurs partagés en Redis pour que la limite soit globale et pas par serveur.</p>
+
+<h3>Observability : les 3 piliers</h3>
+<ul>
+<li><b>Logs</b> structurés (JSON) et centralisés.</li>
+<li><b>Metrics</b> — le trio <span class="kw">RED</span> : Rate, Errors, Duration (latency p50/p99). Alertes sur les <b>SLO</b>.</li>
+<li><span class="kw">Distributed tracing</span> : un <b>correlation ID</b> (trace ID) suit la request à travers tous les services — indispensable pour déboguer « why did this checkout take 8 seconds? ».</li>
+</ul>
+<div class="callout itw">💬 <b>Question d'entretien :</b> « A downstream service gets slow. How do you prevent a cascading failure? » — Timeout court + circuit breaker + fallback dégradé + bulkhead. Cite les quatre, explique-en un en détail.</div>
+`,
+quiz:[
+{q:"Le rôle d'un circuit breaker est de…", o:["Chiffrer les appels","Couper les appels vers un service en échec pour éviter la cascading failure","Faire du load balancing","Compresser les réponses"], a:1, why:"Circuit open = échec immédiat / fallback sans appeler le service malade, qui peut ainsi récupérer."},
+{q:"La bonne pratique pour les retries ?", o:["Réessayer immédiatement en boucle","Exponential backoff avec jitter, sur des opérations idempotentes","Un seul retry après 10 min","Jamais de retry"], a:1, why:"Le backoff espace les tentatives, le jitter désynchronise les clients, l'idempotency évite les effets doubles."},
+{q:"Le token bucket se distingue parce qu'il…", o:["Interdit tout burst","Autorise des bursts tant qu'il reste des tokens","Ne limite que les writes","Est stateless"], a:1, why:"Le bucket accumule des tokens pendant les périodes calmes : un client peut les dépenser d'un coup (burst)."}
+]
+},
+{
+id:'m8', ico:'🎯', title:'Réussir le system design interview',
+desc:'Le framework en 4 étapes, la checklist, les erreurs fatales et les questions à pratiquer.',
+html:`
+<h3>Le déroulé type (45 min)</h3>
+<ol>
+<li><b>Requirements clarification (5–10 min)</b> — NE fonce PAS. Pose des questions : quelles features exactement ? Combien de <b>DAU</b> (daily active users) ? <b>Read/write ratio</b> ? Contraintes de latency, consistency, availability ? Distingue <b>functional</b> et <b>non-functional requirements</b>. Puis fais tes <b>back-of-the-envelope estimations</b> : QPS, storage, bandwidth.</li>
+<li><b>High-level design (10–15 min)</b> — Définis l'<b>API design</b> (endpoints, paramètres), le <b>data model</b> (entités, keys), puis dessine les boîtes : client → DNS/CDN → load balancer → services → cache → database → message queue. Vérifie avec l'interviewer : « does it make sense if I deep dive into X next? »</li>
+<li><b>Deep dive (15–20 min)</b> — L'interviewer choisit (ou propose toi-même) 1–2 sujets : comment scaler la database, gérer le hot spot, garantir l'ordering… C'est ici qu'on sort sharding, quorums, idempotency.</li>
+<li><b>Wrap up (5 min)</b> — <b>Bottlenecks</b> restants, single points of failure, monitoring, évolutions futures. Termine par les <b>trade-offs</b> assumés.</li>
+</ol>
+
+<h3>La checklist mentale (à dérouler dans ta tête)</h3>
+<ul>
+<li>🌐 Entrée : DNS, CDN, load balancer (L7 ? failover ?)</li>
+<li>🖥️ Stateless services, horizontal scaling, API gateway</li>
+<li>🚀 Caching : où, quoi, TTL, invalidation</li>
+<li>🗄️ Data : SQL/NoSQL ? replication ? sharding ? indexes ?</li>
+<li>📬 Async : queues, events, idempotency</li>
+<li>🛡️ Resilience : timeouts, retries, circuit breaker, rate limiting</li>
+<li>📊 Observability : metrics, logs, tracing, alerting</li>
+<li>🔒 Security : authentication, HTTPS, least privilege (une phrase suffit souvent)</li>
+</ul>
+
+<h3>L'antisèche des estimations</h3>
+<ul>
+<li>1 jour ≈ 10⁵ s → <b>1 M req/jour ≈ 12 QPS</b> (peak ≈ ×2 à ×5).</li>
+<li>Un tweet ≈ 300 bytes ; une photo ≈ 300 KB ; une minute de vidéo ≈ 50 MB.</li>
+<li>Un app server moderne encaisse grossièrement <b>10³–10⁴ QPS</b> simples ; une SQL database, quelques milliers de QPS avant replicas/sharding.</li>
+<li><b>Read-heavy</b> ≫ write (souvent 100:1) → pense caching et read replicas d'abord.</li>
+</ul>
+
+<h3>Les erreurs qui coûtent l'offre</h3>
+<ul>
+<li>❌ <b>Foncer sans clarifier</b> — la moitié de l'évaluation porte sur le requirements gathering.</li>
+<li>❌ <b>Name-dropping</b> (« let's use Kafka ») sans justifier — chaque techno doit répondre à un besoin chiffré.</li>
+<li>❌ <b>Over-engineering</b> : pas de microservices ni de sharding pour 1 000 users. Start simple, then scale.</li>
+<li>❌ <b>Ignorer les trade-offs</b> — il n'y a jamais de solution parfaite, seulement des compromis assumés.</li>
+<li>❌ <b>Monologuer</b> — c'est une conversation : vérifie régulièrement avec l'interviewer.</li>
+</ul>
+<div class="callout tip">💡 Phrases magiques en anglais : « It depends on… », « The trade-off here is… », « At this scale I would keep it simple; if we go 10x, I would… », « I'd choose eventual consistency here because the user won't notice X ».</div>
+
+<h3>Les sujets à pratiquer (par ordre de fréquence)</h3>
+<ul>
+<li>🔗 URL shortener · 💬 Chat system · 📰 News feed — <b>les trois sont dans l'onglet Défis !</b></li>
+<li>🚦 Rate limiter · 🔔 Notification system · 🔍 Search autocomplete</li>
+<li>🎬 Video streaming (YouTube) · 🚗 Proximity service (Uber) · 🎟️ Ticket booking (concurrence sur le stock)</li>
+</ul>
+<div class="callout itw">💬 Dernier conseil : <b>think out loud</b>. L'interviewer évalue ton <b>raisonnement</b>, pas un schéma final parfait. Un candidat qui se trompe puis se corrige en expliquant pourquoi marque plus de points qu'un candidat silencieux qui a « juste ».</div>
+`,
+quiz:[
+{q:"Quelle est la première étape d'un system design interview ?", o:["Dessiner l'architecture","Clarifier les requirements et estimer la scale","Choisir la database","Lister les technologies"], a:1, why:"Requirements clarification d'abord : features, DAU, QPS, contraintes. Foncer sans clarifier est l'erreur n°1."},
+{q:"Quand tu proposes un choix technique, tu dois…", o:["Le présenter comme la seule option","Énoncer son trade-off et l'alternative","Citer le plus de technos possible","Éviter d'en parler"], a:1, why:"Tout choix distribué est un trade-off ; l'expliciter est exactement ce qu'on évalue."},
+{q:"≈ 86 400 s par jour : 1 million de requêtes/jour ≈ ?", o:["1 200 QPS","120 QPS","12 QPS","1,2 QPS"], a:2, why:"10⁶ / 86 400 ≈ 11,6 → retiens « 1 M/day ≈ 12 QPS », et multiplie par 2–5 pour le peak."}
+]
+}
+];
+/* ============================================================
+   BANQUE DE QUIZ (sessions de 10 questions aléatoires)
+   ============================================================ */
+const QUIZ = [
+{q:"Quel est l'avantage principal d'une architecture stateless ?", o:["Moins de code","Horizontal scaling facile : tout serveur peut traiter toute request","Pas besoin de database","Sécurité renforcée"], a:1, why:"Sans état local, on ajoute/retire des serveurs librement derrière le load balancer."},
+{q:"Serveurs de puissances très différentes derrière un LB : quel algorithme ?", o:["Round robin simple","Weighted round robin ou least connections","IP hash","Random"], a:1, why:"Il faut tenir compte de la capacité (weight) ou de la charge réelle (connexions actives)."},
+{q:"Que fait la TLS termination sur un load balancer L7 ?", o:["Elle chiffre la database","Elle déchiffre le HTTPS au niveau du LB pour soulager les serveurs","Elle bloque les attaques DDoS","Elle compresse les images"], a:1, why:"Le LB gère le coût crypto et peut alors lire la request HTTP pour router intelligemment."},
+{q:"Quel cache réduit le plus la latency pour des images vues mondialement ?", o:["Application cache Redis","CDN (edge locations proches des utilisateurs)","Buffer pool de la database","Browser cache uniquement"], a:1, why:"Le CDN rapproche physiquement le contenu statique : on économise les ~100 ms cross-continent."},
+{q:"En cache-aside, qui écrit la donnée dans le cache après un miss ?", o:["La database","L'application","Le load balancer","Le CDN"], a:1, why:"L'app lit la database puis fait un SET dans le cache — c'est elle qui orchestre."},
+{q:"Pour borner la fraîcheur des données en cache, on utilise…", o:["LRU","Un TTL (time to live)","Plus de RAM","Le sharding"], a:1, why:"Le TTL garantit qu'une entrée stale disparaît au bout d'un délai connu."},
+{q:"Une hot key expire et la database s'écroule sous les requêtes. C'est…", o:["Un hot shard","Un cache stampede (thundering herd)","Une memory leak","Un deadlock"], a:1, why:"Parades : lock de régénération, TTL jitter, early refresh."},
+{q:"Quand choisir une SQL database plutôt que NoSQL ?", o:["Toujours, c'est plus rapide","Quand on a besoin d'ACID transactions et de joins complexes","Quand les données sont volumineuses","Quand on veut du JSON"], a:1, why:"Le relationnel excelle sur l'intégrité transactionnelle et les queries riches (payments, orders)."},
+{q:"Cassandra ou HBase (wide-column stores) sont taillées pour…", o:["Les joins complexes","Les write-heavy workloads et les time series","Les petits projets","Les transactions bancaires"], a:1, why:"Writes séquentiels très rapides, partitioning natif : messagerie, historique, metrics."},
+{q:"Le replication lag peut causer…", o:["Une perte du leader","Un utilisateur qui ne voit pas son propre write","Un cache stampede","Un débordement de queue"], a:1, why:"Write sur le leader puis read sur un follower en retard : il faut du read-your-writes."},
+{q:"Le range-based sharding (A–M, N–Z) risque surtout…", o:["Des range queries lentes","Des hot spots si une plage concentre le trafic","La data loss","Des indexes cassés"], a:1, why:"La distribution suit les données réelles : certaines plages sont bien plus chaudes que d'autres."},
+{q:"Un utilisateur « celebrity » écrase le shard qui l'héberge. Que faire ?", o:["Supprimer le compte","Traiter cette key à part (sous-partitionner, cache dédié)","Réduire le nombre de shards","Passer en SQL"], a:1, why:"Les hot keys se gèrent individuellement : sous-découpage, replication de la key, cache en amont."},
+{q:"Système AP typique (availability avant consistency) ?", o:["Distributed lock ZooKeeper","Shopping cart / DNS","Transaction bancaire","Leader election"], a:1, why:"Mieux vaut un cart légèrement stale qu'un cart indisponible — la convergence suffira."},
+{q:"PACELC ajoute à CAP l'idée que, même sans partition, on arbitre entre…", o:["Prix et performance","Latency et consistency","Read et write","SQL et NoSQL"], a:1, why:"Attendre l'accord de tous les replicas coûte de la latency, même quand tout va bien (Else → L vs C)."},
+{q:"Pourquoi mettre une message queue devant un traitement lourd ?", o:["Pour chiffrer les données","Pour absorber les pics et découpler producer/consumer","Pour accélérer la database","Pour éviter le cache"], a:1, why:"La queue fait tampon : l'API répond vite, les workers consomment à leur rythme, rien n'est perdu."},
+{q:"En pub/sub, un event publié est reçu par…", o:["Un seul subscriber au hasard","Tous les subscribers du topic","Le producer","La DLQ"], a:1, why:"C'est le fan-out : billing, inventory et notifications réagissent au même « OrderCreated »."},
+{q:"« Exactly-once » en pratique, c'est…", o:["Le mode par défaut de Kafka","At-least-once + idempotency/deduplication côté consumer","Impossible même à simuler","Un paramètre TCP"], a:1, why:"On accepte les duplicates de delivery mais on neutralise leur effet (idempotency key, upsert)."},
+{q:"Le backpressure consiste à…", o:["Compresser les messages","Ralentir ou rejeter en amont quand l'aval sature","Augmenter la RAM","Dupliquer les consumers"], a:1, why:"Plutôt que de s'effondrer, le système signale la saturation et régule le débit entrant."},
+{q:"Principal inconvénient des microservices ?", o:["Impossible à scaler","Complexité opérationnelle et distributed debugging","Trop de langages","Ils sont lents"], a:1, why:"Réseau, deployments multiples, data consistency, distributed tracing… ça se paie."},
+{q:"Des retries sans backoff ni jitter provoquent…", o:["Une meilleure availability","Des vagues synchronisées qui aggravent la failure (self-inflicted DDoS)","Rien de spécial","Des memory leaks"], a:1, why:"Tous les clients réessaient au même instant : le service qui se relevait retombe."},
+{q:"États d'un circuit breaker ?", o:["On / Off","Closed, open, half-open","Active, passive","Read, write"], a:1, why:"Closed = normal ; open = échec immédiat sans appel ; half-open = on teste la guérison."},
+{q:"Quel algorithme de rate limiting autorise les bursts ?", o:["Leaky bucket","Token bucket","Fixed window","Round robin"], a:1, why:"Les tokens s'accumulent pendant les périodes calmes et peuvent être dépensés d'un coup."},
+{q:"Quel code HTTP renvoyer quand un client dépasse sa limite ?", o:["404","429 Too Many Requests","500","301"], a:1, why:"429, idéalement avec un header Retry-After."},
+{q:"Le consistent hashing sert à…", o:["Chiffrer les mots de passe","Minimiser les keys remappées quand on ajoute/retire un node","Accélérer les joins","Compresser les données"], a:1, why:"Contrairement au « hash % N », seule une petite fraction des keys change d’owner."},
+{q:"Un Bloom filter peut répondre…", o:["« présent » à tort (false positive), jamais « absent » à tort","« absent » à tort, jamais « présent » à tort","Toujours juste","Toujours faux"], a:0, why:"S'il dit « absent », c'est sûr. Parfait pour éviter des reads inutiles (cache, database) à moindre coût mémoire."},
+{q:"Pour un chat temps réel, la connexion idéale est…", o:["Polling toutes les 5 s","WebSocket (bidirectionnel persistant)","FTP","Un email par message"], a:1, why:"Le WebSocket maintient un canal bidirectionnel : latency minimale, pas de requêtes répétées inutiles."},
+{q:"8,6 millions de requêtes par jour ≈ quel QPS moyen ?", o:["10","100","1 000","10 000"], a:1, why:"8,6 M / 86 400 s ≈ 100 QPS. L'astuce : 86 400 ≈ 10⁵."},
+{q:"Une opération idempotente est une opération qui…", o:["S'exécute en O(1)","Produit le même résultat si on la rejoue","Ne modifie jamais rien","Est toujours asynchrone"], a:1, why:"Ex : « set status to PAID » est idempotent ; « add 10 € » ne l'est pas."},
+{q:"Où stocker les fichiers uploadés par les utilisateurs ?", o:["Sur le disque du serveur web","Dans un object storage (S3) + CDN","Dans la table SQL en BLOB","Dans Redis"], a:1, why:"L'object storage est durable, illimité et laisse les serveurs stateless ; le CDN distribue."},
+{q:"Le trio de metrics RED, c'est…", o:["RAM, Errors, Disk","Rate, Errors, Duration","Read, Edit, Delete","Rien d'officiel"], a:1, why:"Les trois metrics à suivre pour chaque service, avec alertes sur les percentiles (p99)."},
+{q:"Pourquoi préférer les percentiles (p99) à la moyenne pour la latency ?", o:["C'est plus simple à calculer","La moyenne masque la tail latency : le p99 montre ce que vivent les pires requêtes","Le p99 est toujours plus bas","Aucune raison"], a:1, why:"Une moyenne à 50 ms peut cacher 1 % de requêtes à 5 s — souvent vos utilisateurs les plus actifs."},
+{q:"Un heartbeat sert à…", o:["Mesurer le CPU","Détecter qu'un node est vivant via des signaux périodiques","Synchroniser les horloges","Chiffrer le trafic"], a:1, why:"Plus de heartbeat après N intervalles ⇒ le node est présumé mort ⇒ failover."},
+{q:"Le fan-out on write (précalculer les feeds) devient problématique quand…", o:["Il y a trop de lecteurs","Un compte a des millions de followers (write storm)","La database est SQL","On utilise un CDN"], a:1, why:"Un post d'une celebrity déclencherait des millions de writes → modèle hybride : push pour tous, pull pour les celebrities."},
+{q:"Deux services doivent modifier leurs données dans une même « transaction ». Pattern courant ?", o:["Global lock","Saga : suite de transactions locales avec compensations en cas d'échec","Partager la même table","Espérer que tout marche"], a:1, why:"Les distributed transactions (2PC) sont fragiles ; la saga enchaîne des transactions locales + compensating actions."}
+];
+
+/* ============================================================
+   FLASHCARDS
+   ============================================================ */
+const CARDS = [
+{f:"CAP theorem", b:"Pendant une network partition (P, inévitable), il faut choisir entre Consistency (refuser plutôt que mentir) et Availability (répondre, parfois stale)."},
+{f:"PACELC", b:"En cas de Partition → A ou C ; Else (fonctionnement normal) → trade-off Latency vs Consistency. Attendre tous les replicas coûte de la latency même sans failure."},
+{f:"Eventual consistency", b:"Si les writes cessent, tous les replicas convergent vers la même valeur. Entre-temps, des stale reads sont possibles. (BASE, Dynamo, Cassandra)"},
+{f:"Quorum : W + R > N", b:"Avec N replicas, si (nodes confirmant le write) + (nodes interrogés au read) > N, les ensembles se recoupent : strong consistency. Classique : N=3, W=2, R=2."},
+{f:"Sharding", b:"Partitionner les données entre plusieurs machines selon une partition key (hash, range, geo). Apporte : rebalancing, hot spots, cross-shard joins difficiles."},
+{f:"Consistent hashing", b:"Nodes et keys placés sur un ring ; chaque key appartient au premier node dans le sens horaire. Ajouter/retirer un node ne déplace que ~1/N des keys (vs presque tout avec hash % N)."},
+{f:"Leader-follower replication", b:"Writes sur le leader, propagés aux followers qui servent les reads. Attention au replication lag → read-your-writes."},
+{f:"Read-your-writes consistency", b:"Garantie qu'un utilisateur voit toujours ses propres writes. Ex : lire depuis le leader juste après avoir écrit."},
+{f:"Cache-aside (lazy loading)", b:"L'app lit le cache ; en cas de miss, elle lit la database puis remplit le cache. La caching strategy la plus courante."},
+{f:"Write-through / Write-back", b:"Write-through : écrire cache + database en synchrone (sûr, plus lent). Write-back : écrire le cache, flush asynchrone (rapide, risque de data loss au crash)."},
+{f:"Cache stampede", b:"Une hot key expire → avalanche de requêtes simultanées vers la database. Parades : lock de régénération, TTL jitter, early refresh."},
+{f:"LRU", b:"Least Recently Used : eviction policy qui évince l'entrée la moins récemment utilisée quand le cache est plein."},
+{f:"CDN", b:"Content Delivery Network : edge locations proches des utilisateurs qui cachent le contenu statique (images, vidéos, JS). Économise la latency cross-continent (~100–150 ms)."},
+{f:"Hot key / hot partition", b:"Une key ou un shard reçoit une part disproportionnée du trafic (celebrity, produit viral). Solutions : sous-partitionner, répliquer la key, cache dédié."},
+{f:"Idempotency", b:"Rejouer l'opération produit le même résultat. Indispensable avec at-least-once. Techniques : idempotency key, UPSERT, vérification « already processed »."},
+{f:"At-least-once / at-most-once", b:"At-least-once : rien n'est perdu mais duplicates possibles (le standard). At-most-once : pas de duplicates mais data loss possible. Exactly-once : simulé via idempotency."},
+{f:"DLQ (dead-letter queue)", b:"Queue où sont rangés les messages qui échouent après N tentatives, pour analyse — évite qu'un poison message bloque le flux."},
+{f:"Backpressure", b:"Quand l'aval sature, ralentir/rejeter en amont plutôt que s'effondrer. Signal : consumer lag qui grandit, queues qui gonflent."},
+{f:"Kafka (distributed log)", b:"Les messages persistent dans un log partitionné ; chaque consumer avance son offset et peut replay. Ordering garanti par partition, throughput énorme."},
+{f:"Circuit breaker", b:"Après trop d'échecs : circuit open = échec immédiat/fallback sans appeler le service malade. Half-open : on teste la guérison. Évite les cascading failures."},
+{f:"Bulkhead", b:"Cloisonner les ressources (thread/connection pools par dépendance) pour qu'une dépendance défaillante ne coule pas tout le service — comme les compartiments d'un navire."},
+{f:"Exponential backoff + jitter", b:"Espacer les retries (100, 200, 400 ms…) avec un aléa pour désynchroniser les clients. Sans jitter : vagues de retries synchronisées = self-inflicted DDoS."},
+{f:"Token bucket", b:"Rate limiting : un bucket se remplit de tokens à débit fixe, chaque request en consomme un. Autorise les bursts tant qu'il reste des tokens. Réponse si vide : 429."},
+{f:"API Gateway", b:"Point d'entrée unique devant les microservices : authentication, rate limiting, routing, agrégation. Un load balancer répartit, une gateway filtre et orchestre."},
+{f:"Service discovery", b:"Registry (Consul, etcd, DNS Kubernetes) où les instances s'enregistrent au démarrage — personne n'écrit d'IP en dur."},
+{f:"Saga pattern", b:"Alternative aux distributed transactions : suite de transactions locales, chacune avec une compensating action si une étape échoue."},
+{f:"CQRS", b:"Command Query Responsibility Segregation : séparer le write model des queries, souvent avec des stores différents optimisés chacun pour son usage."},
+{f:"Bloom filter", b:"Structure probabiliste ultra compacte : peut dire « présent » à tort (false positive) mais jamais « absent » à tort. Sert à éviter des reads inutiles."},
+{f:"p99 / tail latency", b:"Latency sous laquelle se trouvent 99 % des requêtes. Plus honnête que la moyenne : elle révèle la tail latency que vivent vos utilisateurs les plus actifs."},
+{f:"SLA / SLO / SLI", b:"SLI : la mesure (latency, availability). SLO : l'objectif interne (99,9 %). SLA : le contrat externe avec pénalités. Les nines : 99,9 % ≈ 8,8 h de downtime/an."},
+{f:"Fan-out on write vs on read", b:"News feed : push (précalculer le feed de chaque follower au write) vs pull (assembler au read). Hybride : push pour tous, pull pour les celebrities."},
+{f:"Heartbeat & failover", b:"Signaux périodiques prouvant qu'un node est vivant. Silence prolongé ⇒ présumé mort ⇒ promotion d'un remplaçant (failover)."}
+];
+/* ============================================================
+   DÉFIS DE CONCEPTION (mini-entretiens guidés)
+   ============================================================ */
+const CHALLENGES = [
+{
+id:'url', ico:'🔗', title:"URL shortener", lvl:'Facile',
+brief:"Design a service like bit.ly : 100 M de nouvelles URLs par mois, read/write ratio de 100:1, redirection en moins de 100 ms.",
+steps:[
+{q:"Étape 1 — Estimation. 100 M de writes/mois avec un read/write ratio de 100:1. Quel est le read QPS moyen approximatif ?",
+o:[
+{t:"≈ 40 QPS", p:0, fb:"❌ 40 QPS, c'est le WRITE throughput (100 M / 2,6 M s ≈ 38/s). Les reads sont 100× plus nombreux."},
+{t:"≈ 400 QPS", p:1, fb:"🟡 Ordre de grandeur sous-estimé d'un facteur 10. Writes ≈ 40/s, donc reads ≈ 40 × 100 = 4 000 QPS."},
+{t:"≈ 4 000 QPS", p:3, fb:"✅ Exact ! ~38 writes/s × 100 ≈ 4 000 reads/s en moyenne (le double ou plus en peak). Ce chiffre justifie le caching à venir."},
+{t:"≈ 40 000 QPS", p:1, fb:"🟡 Trop d'un facteur 10 — mais surestimer vaut mieux que sous-estimer. Le calcul : 100 M/mois ≈ 38 writes/s × 100 ≈ 4 000 QPS."}
+]},
+{q:"Étape 2 — Comment générer le short code (ex. abc123) ?",
+o:[
+{t:"Un UUID complet dans l'URL", p:0, fb:"❌ 36 caractères — l'inverse du but d'un URL shortener !"},
+{t:"MD5 hash de l'URL, tronqué à 7 caractères", p:1, fb:"🟡 Possible, mais tronquer crée des collisions qu'il faut détecter et re-résoudre à chaque insertion."},
+{t:"Distributed counter encodé en base62", p:3, fb:"✅ Le classique : un counter (ou des ranges de counters pré-allouées par serveur) encodé en base62. 7 caractères ≈ 3 500 milliards de codes, zéro collision. Bonus entretien : mentionner que c'est prédictible (séquentiel) et proposer un brouillage léger si besoin."},
+{t:"Un mot du dictionnaire au hasard", p:0, fb:"❌ Trop peu de mots, collisions rapides, et vocabulaire embarrassant possible."}
+]},
+{q:"Étape 3 — Quel storage pour la table short code → long URL ?",
+o:[
+{t:"PostgreSQL sans index sur le code", p:0, fb:"❌ Sans index, chaque redirection fait un full table scan : intenable à 4 000 QPS."},
+{t:"Un key-value store (DynamoDB, Redis persistant…)", p:3, fb:"✅ L'access pattern est un pur lookup par key, sans join : le key-value store est taillé pour ça et scale horizontalement sans effort."},
+{t:"SQL indexé + read replicas", p:2, fb:"🟡 Tout à fait défendable à cette scale (dis-le en entretien !). Le key-value a juste un chemin de scaling plus simple pour un accès purement key → value."},
+{t:"Des fichiers JSON sur le disque du serveur", p:0, fb:"❌ Pas de scaling, pas de replication, serveur stateful : tout ce qu'on évite."}
+]},
+{q:"Étape 4 — Comment tenir une latency < 100 ms sur les reads ?",
+o:[
+{t:"Cache-aside (Redis) sur les hot URLs, TTL raisonnable", p:3, fb:"✅ Le trafic suit une loi de Pareto : un petit cache absorbe l'énorme majorité des 4 000 QPS. Les hot redirections ne touchent plus la database."},
+{t:"Pas de cache, la database tiendra", p:0, fb:"❌ Elle tiendrait peut-être, mais tu rates l'occasion : read-heavy + données immuables = cas d'école du caching."},
+{t:"Write-through de TOUTES les URLs en cache", p:1, fb:"🟡 Ça marche mais gaspille : la long tail des URLs n'est presque jamais lue. Cache-aside ne garde que ce qui sert."},
+{t:"Stocker les URLs dans la session utilisateur", p:0, fb:"❌ Les visiteurs d'un lien court n'ont pas de session — et ça ne partage rien entre utilisateurs."}
+]},
+{q:"Étape 5 — Redirect : 301 ou 302, et pourquoi ?",
+o:[
+{t:"301 (permanent) : le browser cache la redirection", p:2, fb:"🟡 Défendable : moins de trafic sur ton service. Mais le browser ne repassera plus par toi → tu perds les click analytics, souvent le cœur du business."},
+{t:"302 (temporary) : chaque clic repasse par le service", p:3, fb:"✅ Le choix courant : tu gardes le contrôle (analytics, désactivation d'un lien, A/B testing). Coût : un peu plus de trafic — que ton cache absorbe. Exposer ce trade-off 301/302 EST la bonne réponse d'entretien."},
+{t:"Renvoyer une page HTML avec meta-refresh", p:0, fb:"❌ Lent, mauvais pour le SEO et l'accessibilité — les HTTP status codes existent pour ça."},
+{t:"Charger l'URL cible dans une iframe", p:0, fb:"❌ Casse l'URL affichée, la sécurité (X-Frame-Options) et l'expérience. À proscrire."}
+]}
+]},
+{
+id:'chat', ico:'💬', title:"Chat system", lvl:'Moyen',
+brief:"Design a chat app like WhatsApp : 50 M de DAU, real-time delivery, aucun message perdu, historique consultable.",
+steps:[
+{q:"Étape 1 — Comment livrer les messages en temps réel au destinataire ?",
+o:[
+{t:"Le client interroge le serveur toutes les 5 s (polling)", p:0, fb:"❌ 50 M de clients qui pollent = un déluge de requêtes vides, et 5 s de latency perçue."},
+{t:"WebSocket : connexion persistante bidirectionnelle", p:3, fb:"✅ Le standard du chat : latency minimale, le serveur push. Bonus : mentionner qu'il faut un registry « user → connection server » pour router les messages vers la bonne machine."},
+{t:"Server-Sent Events (SSE)", p:1, fb:"🟡 Le server push marche, mais SSE est unidirectionnel : il faut du HTTP à côté pour envoyer. WebSocket fait les deux."},
+{t:"Long polling", p:1, fb:"🟡 Acceptable en fallback (vieux proxys), mais plus coûteux et moins fluide qu'un WebSocket."}
+]},
+{q:"Étape 2 — Le destinataire est offline. On fait quoi du message ?",
+o:[
+{t:"On le jette : tant pis", p:0, fb:"❌ « No message loss » est une exigence de l'énoncé !"},
+{t:"On le garde en RAM du serveur jusqu'à son retour", p:0, fb:"❌ Un redéploiement ou un crash et tout disparaît. La RAM n'est pas un lieu de persistance."},
+{t:"Mailbox persistée (queue par user) + push notification", p:3, fb:"✅ Le message est écrit dans un store durable, une push notification (APNs/FCM) réveille l'app, qui synchronise à la reconnexion. Delivery garantie."},
+{t:"Le client de l'expéditeur retry jusqu'à ce que l'autre revienne", p:1, fb:"🟡 Ça « marche » si l'expéditeur reste online… c'est-à-dire rarement. La responsabilité de delivery doit être côté serveur."}
+]},
+{q:"Étape 3 — Comment garantir le message ordering dans une conversation ?",
+o:[
+{t:"Timestamp posé par le téléphone de l'expéditeur", p:0, fb:"❌ Les horloges des clients dérivent (ou trichent) : l'ordering serait incohérent entre participants."},
+{t:"Timestamp du serveur de réception", p:1, fb:"🟡 Mieux, mais avec plusieurs serveurs les horloges divergent aussi (clock skew) : deux messages proches peuvent s'inverser."},
+{t:"Sequence ID par conversation, attribué par le serveur", p:3, fb:"✅ Une séquence monotone PAR conversation (pas globale — trop cher) donne un total ordering au sein du fil. C'est l'échelle de consistency dont on a réellement besoin."},
+{t:"Un identifiant aléatoire", p:0, fb:"❌ Aucune information d'ordering."}
+]},
+{q:"Étape 4 — Où stocker des milliards de messages d'historique ?",
+o:[
+{t:"Une instance MySQL unique", p:0, fb:"❌ Des milliards de rows en write-heavy sur une seule machine : mur garanti."},
+{t:"Wide-column store (Cassandra/HBase), partitionné par conversation, clusterisé par temps", p:3, fb:"✅ Le cas d'école : partition key = conversation_id (tous les reads sont « les N derniers messages de ce fil »), clustering key = sequence ID. Write-heavy natif."},
+{t:"Redis uniquement", p:0, fb:"❌ Tout l'historique en RAM coûterait une fortune — Redis sert de cache des conversations récentes, pas de source of truth."},
+{t:"Un document par message dans MongoDB", p:1, fb:"🟡 Possible, mais le wide-column model colle mieux au pattern « append + range read par temps » à ce volume."}
+]},
+{q:"Étape 5 — Presence (« online / last seen 14h32 ») pour 50 M d'utilisateurs ?",
+o:[
+{t:"Chaque changement est broadcasté en continu à tous les contacts", p:0, fb:"❌ Fan-out permanent × 50 M d'utilisateurs = tempête de messages pour une info peu critique."},
+{t:"Heartbeat périodique du client + last_seen en cache, lu à l'ouverture", p:3, fb:"✅ Le client ping toutes les ~30 s ; le statut vit dans Redis avec TTL. Les contacts le lisent quand ils ouvrent la conversation (+ push seulement aux conversations ouvertes). Eventual consistency : personne ne remarque 30 s d'écart."},
+{t:"Query SQL à chaque affichage de la liste de contacts", p:1, fb:"🟡 Fonctionne mais frappe la database pour une donnée volatile et tolérante au stale — un cache TTL est fait pour ça."},
+{t:"Stocker le statut dans un fichier partagé", p:0, fb:"❌ Un fichier partagé entre serveurs n'est ni rapide ni concurrent-safe."}
+]}
+]},
+{
+id:'feed', ico:'📰', title:"News feed", lvl:'Difficile',
+brief:"Design a social feed like Twitter/X : 200 M de users, certains comptes ont 100 M de followers, le feed doit se charger en < 200 ms.",
+steps:[
+{q:"Étape 1 — Comment construire le feed d'un utilisateur ?",
+o:[
+{t:"Fan-out on read (pull) : query les posts de tous ses follows à chaque ouverture", p:1, fb:"🟡 Simple et toujours frais, mais ouvrir le feed = interroger 500 comptes suivis → lent et coûteux, dur de tenir 200 ms."},
+{t:"Fan-out on write (push) : à chaque post, l'insérer dans le feed précalculé de chaque follower", p:2, fb:"🟡 Read instantané (le feed est prêt) — mais tu vas voir à l'étape 2 que les celebrities cassent ce modèle."},
+{t:"Hybride : push pour la plupart, pull pour les comptes énormes", p:3, fb:"✅ La réponse attendue : push (feed précalculé en cache) pour 99,9 % des comptes, et les celebrities sont mergées au read. Meilleur des deux mondes."},
+{t:"Recalculer tout le feed en SQL à chaque request, sans cache", p:0, fb:"❌ Joins sur des centaines de comptes × millions de requêtes : impossible à 200 ms."}
+]},
+{q:"Étape 2 — Une celebrity (100 M de followers) publie. Avec du pur fan-out on write, que se passe-t-il ?",
+o:[
+{t:"Rien de spécial, c'est un write comme un autre", p:0, fb:"❌ Un seul tweet = 100 M d'inserts dans 100 M de feeds. Multiplié par chaque post de chaque celebrity…"},
+{t:"On exclut ces comptes du push : leurs posts sont mergés au read", p:3, fb:"✅ Exactement le correctif hybride : un seuil (ex. > 100 k followers) bascule le compte en mode pull. Le lecteur merge son feed précalculé + les posts frais des celebrities suivies."},
+{t:"On rajoute des serveurs pour encaisser les 100 M de writes", p:1, fb:"🟡 La force brute repousse le mur sans le supprimer — et coûte une fortune pour un peak par post. L'interviewer attend un changement de modèle."},
+{t:"On limite les celebrities à un post par jour", p:0, fb:"❌ On ne « corrige » pas une architecture en bridant le produit."}
+]},
+{q:"Étape 3 — Le like counter d'un post viral prend 20 000 likes/s. Comment le gérer ?",
+o:[
+{t:"UPDATE posts SET likes = likes + 1 à chaque like", p:1, fb:"🟡 Correct fonctionnellement, mais 20 000 UPDATE/s sur LA même row = lock contention maximale. La database souffre."},
+{t:"Incrémenter un counter Redis, flush périodique en database", p:3, fb:"✅ INCR Redis est quasi gratuit et sans contention ; un job agrège vers la database toutes les N secondes. Eventual consistency parfaitement acceptable pour un like counter."},
+{t:"Recompter les rows de la table likes à chaque affichage", p:0, fb:"❌ Un COUNT(*) sur des millions de rows par affichage de post : non."},
+{t:"Stocker le counter dans le JSON du post", p:0, fb:"❌ Réécrire tout le document du post à chaque like — même contention, en pire."}
+]},
+{q:"Étape 4 — Comment servir le feed en < 200 ms ?",
+o:[
+{t:"Liste de post IDs par user dans Redis, puis hydratation des posts (eux-mêmes cachés)", p:3, fb:"✅ Le pattern réel : le feed = liste d'IDs en cache (compacte), les contenus de posts sont cachés séparément et réutilisés entre tous les lecteurs. Deux reads cache, zéro database dans le cas chaud."},
+{t:"Cacher le HTML complet du feed de chaque user", p:1, fb:"🟡 Rapide mais rigide : invalidation dès qu'un post change, aucun partage entre users, énorme en mémoire."},
+{t:"Pas de cache, des read replicas SQL suffiront", p:0, fb:"❌ Les replicas scalent les reads simples, pas l'assemblage d'un feed complet en 200 ms à cette scale."},
+{t:"Envoyer tout le feed dans un cookie", p:0, fb:"❌ Les cookies font 4 KB et voyagent à chaque request. Non."}
+]},
+{q:"Étape 5 — Et les images/vidéos des posts ?",
+o:[
+{t:"Object storage (S3) + CDN ; la database ne garde que les URLs", p:3, fb:"✅ Le standard absolu : upload direct vers l'object storage (presigned URL), distribution par CDN, metadata seule en database. Serveurs stateless, latency mondiale maîtrisée."},
+{t:"BLOB dans la database", p:0, fb:"❌ La database gonfle, les backups explosent, chaque read média consomme une connexion database précieuse."},
+{t:"Sur le disque des app servers", p:0, fb:"❌ Serveurs stateful, pas de replication, et l'horizontal scaling devient un cauchemar."},
+{t:"S3 mais sans CDN, servi en direct", p:1, fb:"🟡 Durable et scalable, mais chaque affichage paie la latency vers la région du bucket. Le CDN est la moitié de la réponse pour du média social mondial."}
+]}
+]}
+];
+/* ============================================================
+   ROUTEUR
+   ============================================================ */
+const TABS = [
+  {id:'home',    ico:'🏠', label:'Accueil'},
+  {id:'lessons', ico:'📚', label:'Leçons'},
+  {id:'quiz',    ico:'⚡', label:'Quiz'},
+  {id:'cards',   ico:'🃏', label:'Cartes'},
+  {id:'chall',   ico:'🏗️', label:'Défis'},
+  {id:'lab',     ico:'🧪', label:'Labo'}
+];
+let currentTab = 'home';
+let labTimers = [];
+function clearLab(){ labTimers.forEach(t=>clearInterval(t)); labTimers=[]; }
+
+function show(tab){
+  clearLab();
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  const V = { home:vHome, lessons:vLessons, quiz:vQuiz, cards:vCards, chall:vChall, lab:vLab };
+  V[tab]();
+  window.scrollTo({top:0});
+}
+function setView(html){
+  const v = $('#view');
+  v.innerHTML = html;
+  v.classList.remove('fade'); void v.offsetWidth; v.classList.add('fade');
+}
+
+/* ============================================================
+   ACCUEIL
+   ============================================================ */
+const TIPS = [
+  "En entretien, commence TOUJOURS par la requirements clarification et les estimations (QPS, storage).",
+  "1 M de requêtes/jour ≈ 12 QPS. Ce réflexe de back-of-the-envelope impressionne à tous les coups.",
+  "Chaque choix technique doit être accompagné de son trade-off : « I gain X, I pay Y ».",
+  "Ne propose pas de microservices ou de sharding pour 1 000 users : start simple, then scale.",
+  "Le p99 compte plus que la moyenne : c'est la tail latency que vivent tes users les plus actifs.",
+  "W + R > N ⇒ strong consistency. Retiens l'exemple N=3, W=2, R=2.",
+  "At-least-once ⇒ duplicates possibles ⇒ consumers idempotents. Ce mot-clé fait mouche.",
+  "Un service lent est plus dangereux qu'un service mort : timeouts partout, circuit breaker.",
+  "Think out loud : l'interviewer évalue ton raisonnement, pas ton schéma final.",
+  "Le cache résout la latency mais introduit un problème de consistency. Dis-le, ça montre du recul."
+];
+function vHome(){
+  const nl = Object.keys(S.lessons).length;
+  const nc = Object.keys(S.chall).length;
+  const li = levelInfo(S.xp);
+  const nextLesson = MODULES.find(m=>!S.lessons[m.id]);
+  const tip = TIPS[new Date().getDate() % TIPS.length];
+  setView(`
+    <div class="hero">
+      <h2>Salut, futur <em style="font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">architecte</em> 👋</h2>
+      <p>Prépare ton entretien de <b>system design</b> : 8 leçons ciblées, un quiz de ${QUIZ.length} questions, ${CARDS.length} flashcards, 3 défis type entretien et un labo de simulations interactives.</p>
+      <button class="btn" onclick="show('lessons')">${nl===0?'🚀 Commencer la première leçon':(nextLesson?'📚 Reprendre : '+nextLesson.title:'📚 Revoir les leçons')}</button>
+      <button class="btn ghost" style="margin-left:8px" onclick="show('quiz')">⚡ Quiz éclair</button>
+    </div>
+    <div class="grid c4" style="margin-bottom:20px">
+      <div class="stat"><div class="v">${S.xp}</div><div class="l">XP · Niv. ${li.lvl+1} ${li.title}</div></div>
+      <div class="stat"><div class="v">${nl}/8</div><div class="l">Leçons terminées</div></div>
+      <div class="stat"><div class="v">${nc}/3</div><div class="l">Défis relevés</div></div>
+      <div class="stat"><div class="v">${S.quiz.best}/10</div><div class="l">Meilleur quiz (${S.quiz.played} joués)</div></div>
+    </div>
+    <div class="callout tip" style="margin-bottom:22px">💡 <b>Conseil du jour :</b> ${tip}</div>
+    <h1 class="page" style="font-size:1.2rem">🏅 Badges</h1>
+    <div class="grid c4" style="margin-top:12px">
+      ${BADGES.map(b=>`
+        <div class="badge ${S.badges[b.id]?'':'locked'}">
+          <span class="bico">${b.ico}</span>
+          <span class="bname">${b.name}</span>
+          <span class="bdesc">${b.desc}</span>
+        </div>`).join('')}
+    </div>
+  `);
+}
+
+/* ============================================================
+   LEÇONS
+   ============================================================ */
+function vLessons(){
+  setView(`
+    <h1 class="page">📚 <em>Leçons</em></h1>
+    <p class="sub">Huit modules pour couvrir l'essentiel d'un entretien. Valide le mini-quiz de fin (2/3 minimum) pour gagner 60 XP.</p>
+    <div class="grid" style="grid-template-columns:1fr">
+      ${MODULES.map((m,i)=>`
+        <div class="card click" onclick="vLesson('${m.id}')">
+          <div class="mod-row">
+            <span class="ico">${m.ico}</span>
+            <div class="grow">
+              <h3>${i+1}. ${m.title}</h3>
+              <p>${m.desc}</p>
+            </div>
+            <span class="chip ${S.lessons[m.id]?'done':'todo'}">${S.lessons[m.id]?'✅ Terminée':'À faire'}</span>
+          </div>
+        </div>`).join('')}
+    </div>
+  `);
+}
+
+let lqSel = {};
+function vLesson(id){
+  clearLab();
+  const m = MODULES.find(x=>x.id===id);
+  const idx = MODULES.indexOf(m);
+  lqSel = {};
+  setView(`
+    <button class="backlink" onclick="show('lessons')">← Toutes les leçons</button>
+    <h1 class="page">${m.ico} <em>${m.title}</em></h1>
+    <p class="sub">Leçon ${idx+1}/8 ${S.lessons[id]?'· <span style="color:var(--ok)">✅ déjà validée</span>':''}</p>
+    <div class="lesson-body card" style="padding:24px">${m.html}</div>
+    <div class="qbox" style="margin-top:20px">
+      <div class="qt">🧠 Mini-quiz de validation <span style="color:var(--mut);font-size:.8rem;font-weight:600">(2/3 minimum)</span></div>
+      ${m.quiz.map((q,qi)=>`
+        <p style="font-weight:700;margin:${qi?'20px':'8px'} 0 9px">${qi+1}. ${q.q}</p>
+        <div class="opts" id="lq${qi}">
+          ${q.o.map((o,oi)=>`<button class="opt" onclick="lqPick(${qi},${oi},this)">${o}</button>`).join('')}
+        </div>
+        <div class="explain" id="lqx${qi}" style="display:none"></div>
+      `).join('')}
+      <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn" id="lqBtn" onclick="lqValidate('${id}')">Valider mes réponses</button>
+        <span id="lqRes" style="font-weight:700"></span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:18px">
+      ${idx>0?`<button class="btn ghost small" onclick="vLesson('${MODULES[idx-1].id}')">← ${MODULES[idx-1].title}</button>`:'<span></span>'}
+      ${idx<MODULES.length-1?`<button class="btn ghost small" onclick="vLesson('${MODULES[idx+1].id}')">${MODULES[idx+1].title} →</button>`:'<span></span>'}
+    </div>
+  `);
+}
+function lqPick(qi, oi, btn){
+  if(btn.disabled) return;
+  lqSel[qi]=oi;
+  document.querySelectorAll('#lq'+qi+' .opt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function lqValidate(id){
+  const m = MODULES.find(x=>x.id===id);
+  if(Object.keys(lqSel).length < m.quiz.length){ toast('Réponds aux '+m.quiz.length+' questions d\'abord !', '🤔'); return; }
+  let ok=0;
+  m.quiz.forEach((q,qi)=>{
+    const opts = document.querySelectorAll('#lq'+qi+' .opt');
+    opts.forEach((b,oi)=>{
+      b.disabled=true;
+      if(oi===q.a) b.classList.add('correct');
+      else if(lqSel[qi]===oi) b.classList.add('wrong');
+    });
+    if(lqSel[qi]===q.a) ok++;
+    const x=$('#lqx'+qi); x.style.display='block';
+    x.innerHTML=(lqSel[qi]===q.a?'✅ ':'❌ ')+q.why;
+  });
+  $('#lqBtn').style.display='none';
+  const res=$('#lqRes');
+  if(ok>=2){
+    res.innerHTML='<span style="color:var(--ok)">'+ok+'/3 — Leçon validée ! 🎉</span>';
+    if(!S.lessons[id]){ S.lessons[id]=true; save(); addXp(60,'Leçon « '+m.title+' » validée'); }
+  } else {
+    res.innerHTML='<span style="color:var(--bad)">'+ok+'/3 — Relis la leçon et réessaie !</span> '+
+      '<button class="btn ghost small" onclick="vLesson(\''+id+'\')">🔁 Réessayer</button>';
+  }
+}
+
+/* ============================================================
+   QUIZ
+   ============================================================ */
+let qz = null;
+function vQuiz(){
+  setView(`
+    <h1 class="page">⚡ <em>Quiz éclair</em></h1>
+    <p class="sub">10 questions aléatoires parmi ${QUIZ.length}, comme un tir groupé de questions d'entretien. +10 XP par bonne réponse, +50 XP si sans-faute.</p>
+    <div class="grid c3" style="margin-bottom:22px">
+      <div class="stat"><div class="v">${S.quiz.played}</div><div class="l">Sessions jouées</div></div>
+      <div class="stat"><div class="v">${S.quiz.best}/10</div><div class="l">Meilleur score</div></div>
+      <div class="stat"><div class="v">${S.quiz.perfect}</div><div class="l">Sans-faute 💯</div></div>
+    </div>
+    <button class="btn" onclick="qzStart()">🎯 Lancer une session</button>
+  `);
+}
+function qzStart(){
+  const qs = shuffle([...QUIZ]).slice(0,10).map(q=>{
+    const order = shuffle(q.o.map((t,i)=>({t,i})));
+    return {q:q.q, why:q.why, order, correct:q.a};
+  });
+  qz = {qs, i:0, score:0};
+  qzRender();
+}
+function qzRender(){
+  const cur = qz.qs[qz.i];
+  setView(`
+    <h1 class="page">⚡ Question <em>${qz.i+1}/10</em> <span style="font-size:1rem;color:var(--mut);font-weight:600;margin-left:8px">Score : ${qz.score}</span></h1>
+    <div class="progressbar"><i style="width:${qz.i*10}%"></i></div>
+    <div class="qbox">
+      <div class="qt">${cur.q}</div>
+      <div class="opts" id="qzOpts">
+        ${cur.order.map((o,k)=>`<button class="opt" onclick="qzPick(${k})">${o.t}</button>`).join('')}
+      </div>
+      <div class="explain" id="qzX" style="display:none"></div>
+      <div style="margin-top:16px"><button class="btn" id="qzNext" style="display:none" onclick="qzNext()">${qz.i===9?'Voir mon score →':'Question suivante →'}</button></div>
+    </div>
+  `);
+}
+function qzPick(k){
+  const cur = qz.qs[qz.i];
+  const good = cur.order[k].i === cur.correct;
+  if(good) qz.score++;
+  document.querySelectorAll('#qzOpts .opt').forEach((b,bi)=>{
+    b.disabled=true;
+    if(cur.order[bi].i===cur.correct) b.classList.add('correct');
+    else if(bi===k) b.classList.add('wrong');
+  });
+  const x=$('#qzX'); x.style.display='block';
+  x.innerHTML=(good?'✅ Bien vu ! ':'❌ ')+cur.why;
+  $('#qzNext').style.display='inline-block';
+}
+function qzNext(){
+  qz.i++;
+  if(qz.i<10){ qzRender(); return; }
+  const sc=qz.score;
+  S.quiz.played++;
+  if(sc>S.quiz.best) S.quiz.best=sc;
+  if(sc===10){ S.quiz.perfect++; confetti(); }
+  save();
+  const msg = sc===10?'Sans-faute, niveau entretien ! 💯':sc>=8?'Très solide, tu es presque prêt ! 🔥':sc>=5?'Bonne base — retourne piocher dans les leçons.':'Les leçons sont tes amies, courage ! 💪';
+  setView(`
+    <div class="qbox" style="text-align:center;padding:44px 24px">
+      <div class="bigscore">${sc}/10</div>
+      <p style="color:var(--mut);margin:8px 0 24px;font-weight:600">${msg}</p>
+      <button class="btn" onclick="qzStart()">🔁 Rejouer</button>
+      <button class="btn ghost" style="margin-left:8px" onclick="show('lessons')">📚 Réviser</button>
+    </div>
+  `);
+  const gained = sc*10 + (sc===10?50:0);
+  if(gained>0) addXp(gained, 'Quiz terminé ('+sc+'/10)');
+  else checkBadges();
+}
+/* ============================================================
+   FLASHCARDS
+   ============================================================ */
+let cd = null;
+function vCards(){
+  cd = { deck: shuffle([...CARDS]), known:0, seen:0, flipped:false };
+  cdRender();
+}
+function cdRender(){
+  if(cd.deck.length===0){
+    setView(`
+      <div class="qbox" style="text-align:center;padding:44px 24px">
+        <div class="bigscore">🎉</div>
+        <p style="font-weight:700;font-size:1.1rem;margin:10px 0 4px">Paquet terminé !</p>
+        <p style="color:var(--mut);margin-bottom:24px">${cd.known} cartes maîtrisées sur ${cd.seen} vues.</p>
+        <button class="btn" onclick="vCards()">🔁 Nouveau paquet</button>
+      </div>
+    `);
+    S.decks++; save();
+    addXp(30,'Paquet de flashcards terminé');
+    return;
+  }
+  const c = cd.deck[0];
+  cd.flipped=false;
+  setView(`
+    <h1 class="page">🃏 <em>Flashcards</em> <span style="font-size:.95rem;color:var(--mut);font-weight:600;margin-left:8px">${cd.deck.length} restantes · ${cd.known} maîtrisées</span></h1>
+    <p class="sub">Clique la carte pour la retourner. Sois honnête : « à revoir » la remet en fin de paquet.</p>
+    <div class="fc-scene">
+      <div class="fc-card" id="fcCard" onclick="cdFlip()">
+        <div class="fc-face fc-front"><div>${c.f}</div><div class="fc-hint">👆 clique pour retourner</div></div>
+        <div class="fc-face fc-back"><div>${c.b}</div></div>
+      </div>
+    </div>
+    <div class="fc-actions">
+      <button class="btn ghost" onclick="cdMark(false)">🔁 À revoir</button>
+      <button class="btn" onclick="cdMark(true)">✅ Je la maîtrise</button>
+    </div>
+  `);
+}
+function cdFlip(){ cd.flipped=!cd.flipped; $('#fcCard').classList.toggle('flipped', cd.flipped); }
+function cdMark(known){
+  const c = cd.deck.shift();
+  cd.seen++;
+  if(known) cd.known++;
+  else cd.deck.push(c);
+  cdRender();
+}
+
+/* ============================================================
+   DÉFIS
+   ============================================================ */
+let ch = null;
+function vChall(){
+  setView(`
+    <h1 class="page">🏗️ <em>Défis de conception</em></h1>
+    <p class="sub">Trois mini-entretiens guidés : à chaque étape, choisis la meilleure décision d'architecture et lis le feedback comme si un interviewer te répondait. 15 points max par défi.</p>
+    <div class="grid" style="grid-template-columns:1fr">
+      ${CHALLENGES.map(c=>{
+        const best = S.chall[c.id];
+        return `
+        <div class="card click" onclick="chStart('${c.id}')">
+          <div class="mod-row">
+            <span class="ico">${c.ico}</span>
+            <div class="grow">
+              <h3>${c.title} <span class="chip" style="margin-left:6px">${c.lvl}</span></h3>
+              <p>${c.brief}</p>
+            </div>
+            <span class="chip ${best!==undefined?'done':'todo'}">${best!==undefined?'🏆 '+best+'/15':'À relever'}</span>
+          </div>
+        </div>`;}).join('')}
+    </div>
+  `);
+}
+function chStart(id){
+  const c = CHALLENGES.find(x=>x.id===id);
+  ch = {c, step:0, score:0, picked:null};
+  setView(`
+    <button class="backlink" onclick="show('chall')">← Tous les défis</button>
+    <h1 class="page">${c.ico} <em>${c.title}</em></h1>
+    <div class="callout itw">📋 <b>Énoncé de l'interviewer :</b> ${c.brief}</div>
+    <div class="qbox" style="text-align:center;padding:30px">
+      <p style="margin-bottom:18px;color:var(--mut)">5 décisions d'architecture t'attendent. Réponds comme en entretien : la meilleure option rapporte 3 points, les options défendables 1 ou 2.</p>
+      <button class="btn" onclick="chRender()">🎬 C'est parti</button>
+    </div>
+  `);
+}
+function chRender(){
+  const st = ch.c.steps[ch.step];
+  ch.picked=null;
+  setView(`
+    <button class="backlink" onclick="show('chall')">← Abandonner</button>
+    <h1 class="page">${ch.c.ico} <em>${ch.c.title}</em> <span style="font-size:.95rem;color:var(--mut);font-weight:600;margin-left:8px">Étape ${ch.step+1}/5 · ${ch.score} pts</span></h1>
+    <div class="progressbar"><i style="width:${ch.step*20}%"></i></div>
+    <div class="qbox">
+      <div class="qt">${st.q}</div>
+      <div class="opts" id="chOpts">
+        ${st.o.map((o,i)=>`<button class="opt" onclick="chPick(${i})">${o.t}</button>`).join('')}
+      </div>
+      <div class="explain" id="chX" style="display:none"></div>
+      <div style="margin-top:16px"><button class="btn" id="chNext" style="display:none" onclick="chNext()">${ch.step===4?'Verdict de l\'interviewer →':'Étape suivante →'}</button></div>
+    </div>
+  `);
+}
+function chPick(i){
+  if(ch.picked!==null) return;
+  ch.picked=i;
+  const st = ch.c.steps[ch.step];
+  const best = st.o.reduce((m,o,k)=>o.p>st.o[m].p?k:m,0);
+  ch.score += st.o[i].p;
+  document.querySelectorAll('#chOpts .opt').forEach((b,bi)=>{
+    b.disabled=true;
+    if(bi===best) b.classList.add('correct');
+    else if(bi===i && st.o[i].p===0) b.classList.add('wrong');
+    else if(bi===i) b.classList.add('sel');
+  });
+  const x=$('#chX'); x.style.display='block';
+  x.innerHTML = st.o[i].fb + ' <b style="color:var(--acc2)">(+'+st.o[i].p+' pt'+(st.o[i].p>1?'s':'')+')</b>';
+  $('#chNext').style.display='inline-block';
+}
+function chNext(){
+  ch.step++;
+  if(ch.step<5){ chRender(); return; }
+  const sc = ch.score, id = ch.c.id;
+  const old = S.chall[id];
+  const verdict = sc>=13?['🏆','« Hire ! Design solide, trade-offs assumés. »']:
+                  sc>=9 ?['👍','« Solide. Encore un ou deux réflexes à affûter. »']:
+                  sc>=5 ?['🤔','« Des bases, mais retourne réviser les leçons 3, 4 et 6. »']:
+                          ['📚','« On se revoit après quelques leçons ! »'];
+  if(old===undefined || sc>old){ S.chall[id]=sc; save(); }
+  setView(`
+    <div class="qbox" style="text-align:center;padding:44px 24px">
+      <div style="font-size:3rem">${verdict[0]}</div>
+      <div class="bigscore">${sc}/15</div>
+      <p style="color:var(--mut);margin:8px 0 6px;font-weight:600;font-style:italic">${verdict[1]}</p>
+      ${old!==undefined?`<p style="color:var(--mut);font-size:.85rem;margin-bottom:18px">Record précédent : ${old}/15</p>`:'<div style="height:18px"></div>'}
+      <button class="btn" onclick="chStart('${id}')">🔁 Rejouer</button>
+      <button class="btn ghost" style="margin-left:8px" onclick="show('chall')">Autres défis</button>
+    </div>
+  `);
+  if(sc>=13) confetti();
+  const gain = old===undefined ? sc*8 : Math.max(0,(sc-old))*8;
+  if(gain>0) addXp(gain,'Défi « '+ch.c.title+' » : '+sc+'/15');
+  else checkBadges();
+}
+
+/* ============================================================
+   LABO — simulations
+   ============================================================ */
+function labTouch(){ if(!S.labTouched){ S.labTouched=true; save(); checkBadges(); } }
+
+function vLab(){
+  setView(`
+    <h1 class="page">🧪 <em>Le Labo</em></h1>
+    <p class="sub">Trois simulations pour « voir » les concepts. Manipule tout : c'est fait pour.</p>
+
+    <div class="sim">
+      <h3>⚖️ Load balancer en action</h3>
+      <p class="simdesc">Les points cyan sont des requests. <b>Clique un server</b> pour le rendre lent 🐢, puis compare <b>round robin</b> (aveugle) et <b>least connections</b> (qui l'évite).</p>
+      <div class="sim-controls">
+        <label>Algorithme</label>
+        <select id="lbAlgo" onchange="labTouch()">
+          <option value="rr">Round robin</option>
+          <option value="lc">Least connections</option>
+          <option value="rand">Random</option>
+        </select>
+        <label>Throughput <span id="lbRateV">6</span> QPS</label>
+        <input type="range" id="lbRate" min="1" max="20" value="6" oninput="lbSetRate()">
+        <button class="btn ghost small" onclick="lbAdd()">+ Server</button>
+        <button class="btn ghost small" onclick="lbRemove()">− Server</button>
+      </div>
+      <div id="lbArena">
+        <div class="lb-node" id="lbLB">⚖️<br>LB</div>
+        <div id="lbServers"></div>
+      </div>
+    </div>
+
+    <div class="sim">
+      <h3>💍 Consistent hashing</h3>
+      <p class="simdesc">80 keys réparties sur le <b>ring</b>. Ajoute ou retire un node et compare : combien de keys bougent avec le <b>consistent hashing</b> vs un <b>« hash % N » naïf</b> ?</p>
+      <div class="sim-controls">
+        <button class="btn ghost small" onclick="chsAdd()">+ Node</button>
+        <button class="btn ghost small" onclick="chsRemove()">− Node</button>
+        <label><input type="checkbox" id="chsVn" onchange="chsRedraw(null)"> Virtual nodes (×4)</label>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+        <svg id="chsSvg" width="320" height="320" viewBox="0 0 320 320" style="max-width:100%"></svg>
+        <div style="flex:1;min-width:220px">
+          <div id="chsLegend"></div>
+          <div id="chsInfo" class="verdict good" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sim">
+      <h3>🗳️ Quorums : N, W, R</h3>
+      <p class="simdesc">Règle le nombre de replicas (N), de write confirmations (W) et de reads (R) — et observe quand la <b>strong consistency</b> est garantie.</p>
+      <div class="sim-controls">
+        <label>N = <span id="qNv">3</span></label><input type="range" id="qN" min="1" max="9" value="3" oninput="qmDraw()">
+        <label>W = <span id="qWv">2</span></label><input type="range" id="qW" min="1" max="9" value="2" oninput="qmDraw()">
+        <label>R = <span id="qRv">2</span></label><input type="range" id="qR" min="1" max="9" value="2" oninput="qmDraw()">
+      </div>
+      <div class="replicas" id="qReplicas"></div>
+      <div id="qVerdict"></div>
+      <p id="qNotes" style="color:var(--mut);font-size:.86rem;margin-top:10px"></p>
+    </div>
+  `);
+  lbInit(); chsInit(); qmDraw(true);
+}
+
+/* ---- Sim 1 : load balancer ---- */
+let lb = null;
+function lbInit(){
+  lb = { servers:[], rr:0, spawner:null };
+  for(let i=0;i<3;i++) lbAddServer();
+  lbSetRate(true);
+}
+function lbAddServer(){
+  const i = lb.servers.length;
+  const el = document.createElement('div');
+  el.className='server';
+  el.onclick = ()=>{ labTouch(); const s=lb.servers.find(x=>x.el===el); s.slow=!s.slow; el.classList.toggle('slow',s.slow); lbPaint(s); };
+  $('#lbServers').appendChild(el);
+  const s = {el, active:0, total:0, slow:false, name:'Server '+String.fromCharCode(65+i)};
+  lb.servers.push(s);
+  lbPaint(s);
+}
+function lbPaint(s){
+  const pct = Math.min(100, s.active*12);
+  s.el.classList.toggle('hot', s.active>=8);
+  s.el.innerHTML = `
+    <div class="srow"><span>🖥️ ${s.name}${s.slow?' 🐢':''}</span><span class="meta">in-flight : ${s.active} · total : ${s.total}</span></div>
+    <div class="sbar"><i style="width:${pct}%"></i></div>`;
+}
+function lbAdd(){ labTouch(); if(lb.servers.length<6) lbAddServer(); }
+function lbRemove(){
+  labTouch();
+  if(lb.servers.length>1){ const s=lb.servers.pop(); s.el.remove(); }
+}
+function lbSetRate(silent){
+  if(!silent) labTouch();
+  const rate = +$('#lbRate').value;
+  $('#lbRateV').textContent = rate;
+  if(lb.spawner) clearInterval(lb.spawner);
+  lb.spawner = setInterval(lbSpawn, 1000/rate);
+  labTimers.push(lb.spawner);
+}
+function lbPick(){
+  const algo = $('#lbAlgo').value;
+  if(algo==='rand') return Math.floor(Math.random()*lb.servers.length);
+  if(algo==='lc') return lb.servers.reduce((m,s,i)=>s.active<lb.servers[m].active?i:m,0);
+  lb.rr = (lb.rr+1) % lb.servers.length;
+  return lb.rr;
+}
+function lbSpawn(){
+  if(currentTab!=='lab' || !lb.servers.length) return;
+  const i = lbPick(), s = lb.servers[i];
+  const arena = $('#lbArena'); if(!arena) return;
+  const a = arena.getBoundingClientRect();
+  const from = $('#lbLB').getBoundingClientRect();
+  const to = s.el.getBoundingClientRect();
+  const dot = document.createElement('div');
+  dot.className='req-dot';
+  dot.style.left=(from.right-a.left-6)+'px';
+  dot.style.top =(from.top+from.height/2-a.top-6)+'px';
+  arena.appendChild(dot);
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+    dot.style.left=(to.left-a.left+4)+'px';
+    dot.style.top =(to.top+to.height/2-a.top-6)+'px';
+  });});
+  setTimeout(()=>{
+    dot.remove();
+    if(!lb.servers.includes(s)) return;
+    s.active++; s.total++; lbPaint(s);
+    const dur = (350+Math.random()*450)*(s.slow?3.5:1);
+    setTimeout(()=>{ s.active=Math.max(0,s.active-1); if(lb.servers.includes(s)) lbPaint(s); }, dur);
+  }, 420);
+}
+
+/* ---- Sim 2 : consistent hashing ---- */
+const CHS_COLORS = ['#818cf8','#22d3ee','#4ade80','#fbbf24','#f472b6','#fb923c','#a78bfa','#34d399'];
+let chs = null;
+function hash32(str){
+  let h = 2166136261;
+  for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h,16777619); }
+  return h>>>0;
+}
+function chsInit(){
+  chs = { nodes:['N1','N2','N3'], nextId:4, keys:[] };
+  for(let i=0;i<80;i++) chs.keys.push('clé-'+i);
+  chsRedraw(null);
+}
+function chsOwners(nodes){
+  const vn = $('#chsVn') && $('#chsVn').checked ? 4 : 1;
+  const ring = [];
+  nodes.forEach(n=>{ for(let v=0;v<vn;v++) ring.push({h:hash32(n+'#'+v), n}); });
+  ring.sort((a,b)=>a.h-b.h);
+  const owners = {};
+  chs.keys.forEach(k=>{
+    const h = hash32(k);
+    let o = ring.find(r=>r.h>=h);
+    if(!o) o = ring[0];
+    owners[k]=o.n;
+  });
+  return {owners, ring};
+}
+function chsRedraw(prev){
+  const {owners, ring} = chsOwners(chs.nodes);
+  const cx=160, cy=160, R=130;
+  const colorOf = {}; chs.nodes.forEach((n,i)=>colorOf[n]=CHS_COLORS[i%CHS_COLORS.length]);
+  let svg = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#26314f" stroke-width="2"/>`;
+  chs.keys.forEach(k=>{
+    const ang = hash32(k)/4294967296*2*Math.PI - Math.PI/2;
+    const x=cx+Math.cos(ang)*(R-16), y=cy+Math.sin(ang)*(R-16);
+    svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.4" fill="${colorOf[owners[k]]}" opacity=".85"/>`;
+  });
+  ring.forEach(r=>{
+    const ang = r.h/4294967296*2*Math.PI - Math.PI/2;
+    const x=cx+Math.cos(ang)*R, y=cy+Math.sin(ang)*R;
+    svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="${colorOf[r.n]}" stroke="#0a0e17" stroke-width="2"/>`;
+  });
+  $('#chsSvg').innerHTML = svg;
+  const counts = {};
+  Object.values(owners).forEach(n=>counts[n]=(counts[n]||0)+1);
+  $('#chsLegend').innerHTML = chs.nodes.map(n=>
+    `<span class="legend-chip"><i style="background:${colorOf[n]}"></i>${n} — ${counts[n]||0} keys</span>`).join('');
+  if(prev){
+    let movedCH=0;
+    chs.keys.forEach(k=>{ if(prev.owners[k]!==owners[k]) movedCH++; });
+    let movedMod=0;
+    chs.keys.forEach(k=>{
+      const h=hash32(k);
+      if(h % prev.n !== h % chs.nodes.length) movedMod++;
+    });
+    const pCH=Math.round(movedCH/chs.keys.length*100), pMod=Math.round(movedMod/chs.keys.length*100);
+    const info=$('#chsInfo');
+    info.style.display='block';
+    info.className='verdict '+(pCH<=pMod?'good':'meh');
+    info.innerHTML=`Consistent hashing : <b>${pCH} %</b> des keys remappées 🆚 hash % N naïf : <b>${pMod} %</b>`;
+  }
+  return owners;
+}
+function chsAdd(){
+  labTouch();
+  if(chs.nodes.length>=8) return;
+  const prev = {owners: chsOwners(chs.nodes).owners, n: chs.nodes.length};
+  chs.nodes.push('N'+chs.nextId++);
+  chsRedraw(prev);
+}
+function chsRemove(){
+  labTouch();
+  if(chs.nodes.length<=2) return;
+  const prev = {owners: chsOwners(chs.nodes).owners, n: chs.nodes.length};
+  chs.nodes.pop();
+  chsRedraw(prev);
+}
+
+/* ---- Sim 3 : quorums ---- */
+function qmDraw(silent){
+  if(silent!==true) labTouch();
+  const N=+$('#qN').value;
+  let W=Math.min(+$('#qW').value,N), R=Math.min(+$('#qR').value,N);
+  $('#qW').max=N; $('#qR').max=N;
+  $('#qW').value=W; $('#qR').value=R;
+  $('#qNv').textContent=N; $('#qWv').textContent=W; $('#qRv').textContent=R;
+  let html='';
+  for(let i=0;i<N;i++){
+    const w=i<W, r=i>=N-R;
+    html+=`<div class="replica ${w&&r?'wr':w?'w':r?'r':''}">
+      <span class="ric">🗄️</span>Replica ${i+1}
+      <span class="rtags">${w?'<span class="rtag tw">W</span>':''}${r?'<span class="rtag tr">R</span>':''}</span>
+    </div>`;
+  }
+  $('#qReplicas').innerHTML=html;
+  const strong = W+R>N;
+  $('#qVerdict').innerHTML = strong
+    ? `<div class="verdict good">✅ W + R = ${W+R} &gt; N = ${N} → <b>strong consistency</b> : tout read recoupe le dernier write (replicas verts).</div>`
+    : `<div class="verdict meh">⚠️ W + R = ${W+R} ≤ N = ${N} → <b>eventual consistency</b> : un read peut manquer le dernier write (stale read).</div>`;
+  $('#qNotes').textContent =
+    `Fault tolerance : les writes survivent à ${N-W} replica(s) down, les reads à ${N-R}. `+
+    (W===N?'W = N : la moindre failure bloque les writes. ':'')+
+    (R===1?'R = 1 : reads très rapides, mais il faut W = N pour rester strongly consistent. ':'')+
+    'Le classique en production : N=3, W=2, R=2.';
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+$('#nav').innerHTML = TABS.map(t=>
+  `<button class="tab" data-tab="${t.id}" onclick="show('${t.id}')">${t.ico} ${t.label}</button>`).join('');
+renderXp();
+checkBadges();
+show('home');
+</script>
+</body>
+</html>

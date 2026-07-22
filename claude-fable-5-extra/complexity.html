@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Big-O Dojo — apprendre la complexité algorithmique</title>
+<style>
+  /* ================= Thème & tokens ================= */
+  :root {
+    color-scheme: light;
+    --bg: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, .10);
+    --accent: #2a78d6;
+    --accent-soft: rgba(42, 120, 214, .12);
+    --good: #006300;
+    --good-soft: rgba(12, 163, 12, .12);
+    --bad: #d03b3b;
+    --bad-soft: rgba(208, 59, 59, .10);
+    --shadow: 0 1px 2px rgba(11,11,11,.05), 0 6px 24px rgba(11,11,11,.06);
+    /* Palette catégorielle validée (ordre = classes de complexité) */
+    --c1: #2a78d6;  /* O(1)       */
+    --c2: #1baf7a;  /* O(log n)   */
+    --c3: #eda100;  /* O(n)       */
+    --c4: #008300;  /* O(n log n) */
+    --c5: #4a3aa7;  /* O(n²)      */
+    --c6: #e34948;  /* O(2^n)     */
+    --c7: #e87ba4;  /* O(n!)      */
+    --tok-k: #2a78d6;
+    --tok-s: #008300;
+    --tok-n: #4a3aa7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --bg: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, .10);
+      --accent: #3987e5;
+      --accent-soft: rgba(57, 135, 229, .16);
+      --good: #0ca30c;
+      --good-soft: rgba(12, 163, 12, .14);
+      --bad: #e66767;
+      --bad-soft: rgba(230, 103, 103, .12);
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 24px rgba(0,0,0,.35);
+      --c1: #3987e5; --c2: #199e70; --c3: #c98500; --c4: #008300;
+      --c5: #9085e9; --c6: #e66767; --c7: #d55181;
+      --tok-k: #3987e5; --tok-s: #0ca30c; --tok-n: #9085e9;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, .10);
+    --accent: #3987e5;
+    --accent-soft: rgba(57, 135, 229, .16);
+    --good: #0ca30c;
+    --good-soft: rgba(12, 163, 12, .14);
+    --bad: #e66767;
+    --bad-soft: rgba(230, 103, 103, .12);
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 24px rgba(0,0,0,.35);
+    --c1: #3987e5; --c2: #199e70; --c3: #c98500; --c4: #008300;
+    --c5: #9085e9; --c6: #e66767; --c7: #d55181;
+    --tok-k: #3987e5; --tok-s: #0ca30c; --tok-n: #9085e9;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.55;
+    transition: background .25s ease, color .25s ease;
+  }
+  code, pre, .mono { font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace; }
+
+  /* ================= Header ================= */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-inner {
+    max-width: 1100px; margin: 0 auto; padding: 10px 20px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.15rem;
+    letter-spacing: -.01em;
+  }
+  .logo-badge {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--c1), var(--c5));
+    color: #fff; display: grid; place-items: center;
+    font-family: ui-monospace, Consolas, monospace; font-size: .95rem; font-weight: 700;
+  }
+  .logo small { display: block; font-weight: 500; font-size: .72rem; color: var(--ink2); letter-spacing: 0; }
+  .spacer { flex: 1; }
+  .xp-pill {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 14px 5px 10px; font-size: .82rem;
+  }
+  .xp-pill .lvl { font-weight: 700; white-space: nowrap; }
+  .xp-bar { width: 90px; height: 6px; border-radius: 3px; background: var(--grid); overflow: hidden; }
+  .xp-bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); transition: width .4s ease; }
+  .xp-pts { color: var(--ink2); white-space: nowrap; }
+  .theme-btn {
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+    border-radius: 999px; width: 38px; height: 38px; font-size: 1.05rem; cursor: pointer;
+    display: grid; place-items: center; transition: transform .15s ease;
+  }
+  .theme-btn:hover { transform: scale(1.08); }
+
+  /* ================= Nav / onglets ================= */
+  nav.tabs {
+    max-width: 1100px; margin: 0 auto; padding: 10px 20px 0;
+    display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+  }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    border: 1px solid transparent; background: transparent; color: var(--ink2);
+    font: inherit; font-weight: 600; font-size: .92rem;
+    padding: 8px 16px; border-radius: 12px 12px 0 0; cursor: pointer; white-space: nowrap;
+    transition: background .15s ease, color .15s ease;
+  }
+  .tab-btn:hover { background: var(--accent-soft); color: var(--ink); }
+  .tab-btn[aria-selected="true"] {
+    background: var(--surface); color: var(--ink);
+    border-color: var(--border); border-bottom-color: var(--surface);
+    box-shadow: 0 -2px 0 var(--accent) inset;
+  }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 26px 20px 70px; }
+  section.tab-panel { display: none; animation: fadeIn .25s ease; }
+  section.tab-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  h1 { font-size: 1.55rem; margin: 0 0 4px; letter-spacing: -.02em; }
+  h2 { font-size: 1.2rem; margin: 34px 0 12px; letter-spacing: -.01em; }
+  .lead { color: var(--ink2); margin: 0 0 22px; max-width: 68ch; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow);
+  }
+
+  /* ================= Apprendre ================= */
+  .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .class-card {
+    position: relative; text-align: left; cursor: pointer; font: inherit; color: inherit;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 16px 18px 14px; box-shadow: var(--shadow);
+    transition: transform .15s ease, border-color .15s ease;
+    border-top: 4px solid var(--cc);
+  }
+  .class-card:hover { transform: translateY(-3px); border-color: var(--cc); }
+  .class-card .big-o { font-family: ui-monospace, Consolas, monospace; font-size: 1.35rem; font-weight: 700; }
+  .class-card .cname { font-weight: 600; color: var(--ink2); font-size: .9rem; margin-top: 2px; }
+  .class-card .hint { font-size: .84rem; color: var(--ink2); margin-top: 8px; min-height: 2.6em; }
+  .class-card .n1000 { font-size: .8rem; color: var(--muted); margin-top: 8px; }
+  .class-card .n1000 b { color: var(--ink); font-weight: 600; }
+  .class-card .emoji { position: absolute; top: 12px; right: 14px; font-size: 1.3rem; }
+  .class-card .seen { position: absolute; bottom: 12px; right: 14px; font-size: .8rem; }
+
+  .rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .rule { display: flex; gap: 12px; align-items: flex-start; }
+  .rule .num {
+    flex: none; width: 30px; height: 30px; border-radius: 9px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 800; display: grid; place-items: center; font-size: .95rem;
+  }
+  .rule b { display: block; margin-bottom: 2px; }
+  .rule p { margin: 0; font-size: .88rem; color: var(--ink2); }
+
+  /* ================= Modal ================= */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.45);
+    display: grid; place-items: center; padding: 20px; animation: fadeIn .18s ease;
+  }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    max-width: 640px; width: 100%; max-height: 86vh; overflow: auto;
+    padding: 26px 28px; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    border-top: 5px solid var(--cc);
+  }
+  .modal h3 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+  .modal h3 .mono { font-size: 1.3rem; }
+  .modal .close {
+    float: right; border: 1px solid var(--border); background: transparent; color: var(--ink);
+    border-radius: 10px; width: 32px; height: 32px; cursor: pointer; font-size: 1rem;
+  }
+  .modal .subtitle { color: var(--ink2); margin: 2px 0 16px; font-weight: 600; }
+  .modal dl { margin: 0; }
+  .modal dt { font-weight: 700; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 16px; }
+  .modal dd { margin: 4px 0 0; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .tag { background: var(--accent-soft); color: var(--ink); border-radius: 999px; padding: 3px 11px; font-size: .8rem; }
+  .phrase {
+    margin-top: 18px; padding: 12px 14px; border-radius: 12px;
+    background: var(--accent-soft); border-left: 3px solid var(--accent); font-size: .92rem;
+  }
+
+  pre.code {
+    background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; font-size: .84rem; line-height: 1.6;
+    margin: 8px 0 0; tab-size: 2;
+  }
+  .tok-k { color: var(--tok-k); font-weight: 600; }
+  .tok-s { color: var(--tok-s); }
+  .tok-n { color: var(--tok-n); }
+  .tok-c { color: var(--muted); font-style: italic; }
+
+  /* ================= Courbes ================= */
+  .chart-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink2);
+    border-radius: 999px; padding: 5px 13px; font: inherit; font-size: .84rem; font-weight: 600;
+    cursor: pointer; transition: all .15s ease;
+  }
+  .chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--cc); flex: none; }
+  .chip[aria-pressed="true"] { background: color-mix(in srgb, var(--cc) 14%, var(--surface)); color: var(--ink); border-color: color-mix(in srgb, var(--cc) 50%, var(--border)); }
+  .chip[aria-pressed="false"] .dot { opacity: .3; }
+  .chip[aria-pressed="false"] { text-decoration: line-through; opacity: .75; }
+
+  .ctrl-group { display: flex; align-items: center; gap: 8px; margin-left: auto; font-size: .84rem; color: var(--ink2); }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .seg button {
+    border: none; background: var(--surface); color: var(--ink2); font: inherit; font-size: .82rem;
+    font-weight: 600; padding: 5px 13px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  input[type="range"] { accent-color: var(--accent); }
+
+  .chart-wrap { position: relative; }
+  #chart { width: 100%; height: 430px; display: block; border-radius: 12px; touch-action: pan-y; }
+  .chart-tooltip {
+    position: absolute; pointer-events: none; z-index: 5;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 9px 12px; font-size: .8rem; min-width: 170px;
+    display: none;
+  }
+  .chart-tooltip .tt-n { font-weight: 700; margin-bottom: 5px; }
+  .chart-tooltip .tt-row { display: flex; align-items: center; gap: 7px; padding: 1.5px 0; }
+  .chart-tooltip .tt-row .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .chart-tooltip .tt-row .val { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink2); }
+
+  details.table-view { margin-top: 14px; font-size: .88rem; }
+  details.table-view summary { cursor: pointer; color: var(--ink2); font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: .87rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--grid); }
+  th { color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .dot-inline { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: baseline; }
+
+  /* ================= Course ================= */
+  .race-setup { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .race-note { font-size: .84rem; color: var(--ink2); margin: 6px 0 18px; }
+  .btn {
+    border: none; background: var(--accent); color: #fff; font: inherit; font-weight: 700;
+    padding: 10px 22px; border-radius: 12px; cursor: pointer; font-size: .95rem;
+    transition: transform .12s ease, opacity .15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:disabled { opacity: .5; cursor: default; transform: none; }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--border); }
+
+  .race-clock { font-size: .9rem; color: var(--ink2); margin: 14px 0 10px; min-height: 1.4em; }
+  .race-clock b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .runner { display: grid; grid-template-columns: 150px 1fr 200px; gap: 12px; align-items: center; padding: 9px 0; }
+  .runner .who { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: .9rem; }
+  .runner .who .mono { font-size: .92rem; }
+  .runner .track { position: relative; height: 22px; background: var(--grid); border-radius: 11px; overflow: hidden; }
+  .runner .track i {
+    position: absolute; inset: 0 auto 0 0; width: 0%; background: var(--cc);
+    border-radius: 11px; transition: width .1s linear;
+  }
+  .runner .track .sprite { position: absolute; top: 50%; transform: translate(-60%, -50%); left: 0%; font-size: 15px; transition: left .1s linear; }
+  .runner .result { font-size: .84rem; color: var(--ink2); text-align: right; font-variant-numeric: tabular-nums; }
+  .runner .result b { color: var(--ink); }
+  .runner .result .medal { font-size: 1rem; }
+  .runner .ops { font-size: .74rem; color: var(--muted); }
+  @media (max-width: 640px) {
+    .runner { grid-template-columns: 110px 1fr; }
+    .runner .result { grid-column: 1 / -1; text-align: left; padding-left: 2px; }
+  }
+
+  /* ================= Quiz ================= */
+  .quiz-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; font-size: .9rem; color: var(--ink2); }
+  .quiz-head .score b, .quiz-head .streak b { color: var(--ink); }
+  .quiz-progress { flex: 1; min-width: 120px; height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; }
+  .quiz-progress i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s ease; }
+  .quiz-q { font-weight: 700; font-size: 1.05rem; margin: 0 0 10px; }
+  .answers { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 16px; }
+  .answer-btn {
+    border: 1.5px solid var(--border); background: var(--surface); color: var(--ink);
+    font: inherit; font-family: ui-monospace, Consolas, monospace; font-size: .95rem; font-weight: 600;
+    padding: 12px 14px; border-radius: 12px; cursor: pointer; transition: all .15s ease;
+  }
+  .answer-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+  .answer-btn:disabled { cursor: default; }
+  .answer-btn.correct { border-color: var(--good); background: var(--good-soft); }
+  .answer-btn.correct::after { content: " ✓"; color: var(--good); }
+  .answer-btn.wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .answer-btn.wrong::after { content: " ✗"; color: var(--bad); }
+  .answer-btn.dim { opacity: .45; }
+  .feedback { margin-top: 16px; padding: 14px 16px; border-radius: 12px; font-size: .92rem; animation: fadeIn .2s ease; }
+  .feedback.ok { background: var(--good-soft); border-left: 3px solid var(--good); }
+  .feedback.ko { background: var(--bad-soft); border-left: 3px solid var(--bad); }
+  .feedback b.verdict { display: block; margin-bottom: 4px; }
+  .quiz-actions { margin-top: 18px; display: flex; gap: 10px; align-items: center; }
+  .quiz-end { text-align: center; padding: 30px 20px; }
+  .quiz-end .big-emoji { font-size: 3.2rem; }
+  .quiz-end h3 { font-size: 1.5rem; margin: 10px 0 4px; }
+  .quiz-end p { color: var(--ink2); margin: 4px 0 22px; }
+
+  /* ================= Antisèche ================= */
+  .sheet-grid { display: grid; gap: 18px; }
+  .table-scroll { overflow-x: auto; }
+  .phrase-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 10px; }
+  .phrase-list li {
+    background: var(--accent-soft); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 10px 14px; font-size: .9rem;
+  }
+  .cost-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 7px; font-size: .9rem; }
+  .cost-list code { background: color-mix(in srgb, var(--ink) 5%, var(--surface)); padding: 1px 7px; border-radius: 6px; font-size: .85em; }
+  .footnote { font-size: .78rem; color: var(--muted); margin-top: 8px; }
+
+  footer { text-align: center; color: var(--muted); font-size: .82rem; padding: 30px 20px 40px; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: var(--bg); padding: 9px 20px; border-radius: 999px;
+    font-size: .86rem; font-weight: 600; z-index: 200; opacity: 0; transition: all .3s ease;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-badge">O(n)</div>
+      <div>Big-O Dojo<small>Maîtrise la complexité avant ton entretien</small></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="xp-pill" title="Gagne des XP en lisant les fiches et en réussissant le quiz">
+      <span class="lvl" id="xp-level">Novice</span>
+      <span class="xp-bar"><i id="xp-fill" style="width:0%"></i></span>
+      <span class="xp-pts" id="xp-pts">0 XP</span>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="Basculer clair / sombre" aria-label="Basculer le thème">🌗</button>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn" role="tab" data-tab="apprendre" aria-selected="true">📚 Apprendre</button>
+    <button class="tab-btn" role="tab" data-tab="courbes" aria-selected="false">📈 Courbes</button>
+    <button class="tab-btn" role="tab" data-tab="course" aria-selected="false">🏁 Course</button>
+    <button class="tab-btn" role="tab" data-tab="quiz" aria-selected="false">🧠 Quiz</button>
+    <button class="tab-btn" role="tab" data-tab="antiseche" aria-selected="false">📋 Antisèche</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ APPRENDRE ============ -->
+  <section class="tab-panel active" id="tab-apprendre">
+    <h1>Les 7 classes de complexité à connaître</h1>
+    <p class="lead">La notation Big-O décrit comment le temps (ou la mémoire) d'un algorithme grandit quand la taille des données <span class="mono">n</span> grandit. Clique sur une carte pour ouvrir la fiche complète — avec analogie, code et la phrase à sortir en entretien.</p>
+    <div class="class-grid" id="class-grid"></div>
+
+    <h2>🏅 Les 6 règles d'or pour évaluer une complexité</h2>
+    <div class="rules-grid">
+      <div class="card rule"><span class="num">1</span><div><b>On garde le terme dominant</b><p>O(n² + n + 40) = O(n²). Quand n devient grand, seul le terme qui croît le plus vite compte.</p></div></div>
+      <div class="card rule"><span class="num">2</span><div><b>Les constantes disparaissent</b><p>O(3n) = O(n). Parcourir un tableau 3 fois reste linéaire — Big-O décrit la <i>forme</i> de la croissance, pas la vitesse exacte.</p></div></div>
+      <div class="card rule"><span class="num">3</span><div><b>Boucles imbriquées → on multiplie</b><p>Une boucle de n tours contenant une boucle de n tours = n × n = O(n²).</p></div></div>
+      <div class="card rule"><span class="num">4</span><div><b>Boucles successives → on additionne</b><p>Deux boucles l'une après l'autre = n + n = O(n). L'addition ne change pas la classe, la multiplication si.</p></div></div>
+      <div class="card rule"><span class="num">5</span><div><b>Diviser par 2 à chaque étape → log n</b><p>Recherche binaire, arbres équilibrés… Dès qu'on coupe le problème en deux, on entend « logarithme ».</p></div></div>
+      <div class="card rule"><span class="num">6</span><div><b>Méfie-toi des coûts cachés</b><p><code>includes</code>, <code>slice</code>, <code>unshift</code>, <code>str +=</code>… Une seule ligne peut cacher un O(n) entier. Un O(n) caché dans une boucle = O(n²).</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ COURBES ============ -->
+  <section class="tab-panel" id="tab-courbes">
+    <h1>Visualise la croissance</h1>
+    <p class="lead">Le meilleur réflexe d'entretien : avoir ces courbes en tête. Active/désactive les classes, fais glisser <span class="mono">n</span>, passe en échelle logarithmique et survole le graphique pour comparer les valeurs exactes.</p>
+    <div class="card">
+      <div class="chart-controls" id="chart-chips" role="group" aria-label="Classes affichées"></div>
+      <div class="chart-controls">
+        <div class="ctrl-group" style="margin-left:0">
+          <label for="n-slider">n max : <b class="mono" id="n-label">60</b></label>
+          <input type="range" id="n-slider" min="10" max="120" step="1" value="60">
+        </div>
+        <div class="ctrl-group">
+          <span>Échelle :</span>
+          <div class="seg" role="group" aria-label="Échelle de l'axe vertical">
+            <button id="scale-lin" aria-pressed="true">Linéaire</button>
+            <button id="scale-log" aria-pressed="false">Log</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart" aria-label="Courbes de croissance des complexités"></canvas>
+        <div class="chart-tooltip" id="chart-tooltip"></div>
+      </div>
+      <details class="table-view">
+        <summary>Voir les valeurs en tableau (pour n max)</summary>
+        <div class="table-scroll"><table id="values-table"></table></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ COURSE ============ -->
+  <section class="tab-panel" id="tab-course">
+    <h1>La grande course des algorithmes</h1>
+    <p class="lead">Chaque coureur doit exécuter <span class="mono">f(n)</span> opérations. Choisis la taille des données et regarde qui franchit la ligne d'arrivée… et qui ne la franchira <i>jamais</i>.</p>
+    <div class="card">
+      <div class="race-setup">
+        <span style="font-size:.9rem;color:var(--ink2);font-weight:600">Taille n :</span>
+        <span id="race-n-chips"></span>
+      </div>
+      <p class="race-note">💡 Heuristique d'entretien : un ordinateur fait environ <b>10⁸ opérations simples par seconde</b>. La barre de progression est en temps logarithmique (sinon O(2ⁿ) bloquerait l'écran jusqu'à la fin de l'Univers).</p>
+      <button class="btn" id="race-start">🏁 Lancer la course</button>
+      <div class="race-clock" id="race-clock"></div>
+      <div id="race-runners"></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="tab-panel" id="tab-quiz">
+    <h1>Quiz d'entretien</h1>
+    <p class="lead">10 extraits de code tirés au sort — exactement le genre de questions qu'on te posera. Lis le code, évalue la complexité en temps, réponds. Chaque bonne réponse rapporte des XP, les séries de bonnes réponses encore plus.</p>
+    <div class="card" id="quiz-box"></div>
+  </section>
+
+  <!-- ============ ANTISÈCHE ============ -->
+  <section class="tab-panel" id="tab-antiseche">
+    <h1>Antisèche d'entretien</h1>
+    <p class="lead">Tout ce qu'il faut savoir réciter, condensé. Relis cette page juste avant l'entretien. ☕</p>
+    <div class="sheet-grid">
+
+      <div class="card">
+        <h2 style="margin-top:0">🗃️ Data Structures (average case)</h2>
+        <div class="table-scroll">
+        <table>
+          <thead><tr><th>Structure</th><th>Access</th><th>Search</th><th>Insertion</th><th>Deletion</th></tr></thead>
+          <tbody>
+            <tr><td>Array</td><td class="mono" data-o="O(1)"></td><td class="mono" data-o="O(n)"></td><td class="mono" data-o="O(n)"></td><td class="mono" data-o="O(n)"></td></tr>
+            <tr><td>Linked List</td><td class="mono" data-o="O(n)"></td><td class="mono" data-o="O(n)"></td><td class="mono" data-o="O(1)"></td><td class="mono" data-o="O(1)"></td></tr>
+            <tr><td>Hash Map (<code>Map</code>, <code>Set</code>, object)</td><td>—</td><td class="mono" data-o="O(1)">*</td><td class="mono" data-o="O(1)">*</td><td class="mono" data-o="O(1)">*</td></tr>
+            <tr><td>Balanced Binary Search Tree (BST)</td><td class="mono" data-o="O(log n)"></td><td class="mono" data-o="O(log n)"></td><td class="mono" data-o="O(log n)"></td><td class="mono" data-o="O(log n)"></td></tr>
+            <tr><td>Binary Heap</td><td class="mono" data-o="O(1)">min/max</td><td class="mono" data-o="O(n)"></td><td class="mono" data-o="O(log n)"></td><td class="mono" data-o="O(log n)"></td></tr>
+            <tr><td>Stack / Queue</td><td class="mono" data-o="O(1)">top</td><td class="mono" data-o="O(n)"></td><td class="mono" data-o="O(1)"></td><td class="mono" data-o="O(1)"></td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="footnote">* En moyenne (average case). Worst case O(n) en cas de collisions massives — à mentionner en entretien, ça fait toujours bonne impression.</p>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">🔀 Sorting Algorithms</h2>
+        <div class="table-scroll">
+        <table>
+          <thead><tr><th>Sort</th><th>Best</th><th>Average</th><th>Worst</th><th>Space</th><th>Stable</th></tr></thead>
+          <tbody>
+            <tr><td>Bubble Sort</td><td class="mono" data-o="O(n)"></td><td class="mono" data-o="O(n²)"></td><td class="mono" data-o="O(n²)"></td><td class="mono">O(1)</td><td>✅</td></tr>
+            <tr><td>Insertion Sort</td><td class="mono" data-o="O(n)"></td><td class="mono" data-o="O(n²)"></td><td class="mono" data-o="O(n²)"></td><td class="mono">O(1)</td><td>✅</td></tr>
+            <tr><td>Selection Sort</td><td class="mono" data-o="O(n²)"></td><td class="mono" data-o="O(n²)"></td><td class="mono" data-o="O(n²)"></td><td class="mono">O(1)</td><td>❌</td></tr>
+            <tr><td>Merge Sort</td><td class="mono" data-o="O(n log n)"></td><td class="mono" data-o="O(n log n)"></td><td class="mono" data-o="O(n log n)"></td><td class="mono">O(n)</td><td>✅</td></tr>
+            <tr><td>Quicksort</td><td class="mono" data-o="O(n log n)"></td><td class="mono" data-o="O(n log n)"></td><td class="mono" data-o="O(n²)"></td><td class="mono">O(log n)</td><td>❌</td></tr>
+            <tr><td>Heapsort</td><td class="mono" data-o="O(n log n)"></td><td class="mono" data-o="O(n log n)"></td><td class="mono" data-o="O(n log n)"></td><td class="mono">O(1)</td><td>❌</td></tr>
+            <tr><td>Timsort (<code>.sort()</code> in JS/Python)</td><td class="mono" data-o="O(n)"></td><td class="mono" data-o="O(n log n)"></td><td class="mono" data-o="O(n log n)"></td><td class="mono">O(n)</td><td>✅</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="footnote">Graphs : BFS et DFS sont en O(V + E). Dijkstra avec un heap : O((V + E) log V).</p>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">🪤 Les coûts cachés de JavaScript</h2>
+        <ul class="cost-list">
+          <li><code>arr.includes(x)</code>, <code>indexOf</code>, <code>find</code> → <b>O(n)</b> — dans une boucle, ça devient O(n²) !</li>
+          <li><code>arr.slice()</code>, <code>[...arr]</code>, <code>concat</code> → <b>O(n)</b> — chaque copie parcourt tout.</li>
+          <li><code>arr.unshift(x)</code>, <code>splice</code> → <b>O(n)</b> — tout le tableau est décalé.</li>
+          <li><code>arr.push(x)</code>, <code>pop()</code> → <b>O(1)</b> amorti — les seuls « gratuits ».</li>
+          <li><code>arr.sort()</code> → <b>O(n log n)</b> — souvent le terme dominant d'une solution.</li>
+          <li><code>str += mot</code> en boucle → <b>O(n²)</b> — les chaînes sont immuables, chaque += recopie. Préfère <code>parts.push(...)</code> puis <code>join("")</code>.</li>
+          <li><code>map.get(k)</code>, <code>set.has(x)</code> → <b>O(1)</b> en moyenne — l'arme secrète pour passer de O(n²) à O(n).</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">💬 Les phrases qui font mouche en entretien</h2>
+        <ul class="phrase-list">
+          <li>« Je commence par la solution naïve en O(n²), puis je l'optimise — souvent avec une hash map pour descendre en O(n). »</li>
+          <li>« Une hash map, c'est échanger de la mémoire contre du temps : recherche O(n) → O(1). »</li>
+          <li>« Le tableau est trié ? Ça sent la recherche binaire ou les deux pointeurs. »</li>
+          <li>« Ma solution est en O(n log n) en temps à cause du tri, et O(n) en espace pour la copie. » <i>(toujours donner temps ET espace)</i></li>
+          <li>« Le pire cas du quicksort est O(n²), mais en pratique le pivot aléatoire le rend O(n log n). »</li>
+          <li>« En dessous de n ≈ 10⁸ opérations, ça tient en une seconde — donc O(n²) passe pour n ≤ 10 000 environ. »</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer>Big-O Dojo — un seul fichier HTML, zéro dépendance. Bonne chance pour ton entretien 💪</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ================================================================
+   Utilitaires
+================================================================ */
+const $  = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const SUP = { "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻" };
+const sup = (x) => String(x).split("").map(c => SUP[c] ?? c).join("");
+const nfFR = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+const LOG10_2 = Math.log10(2);
+
+/* Formate un nombre à partir de son log10 (gère les valeurs astronomiques). */
+function fmtFromLog(log10x) {
+  if (!isFinite(log10x)) return "∞";
+  if (log10x < 0) return "< 1";
+  if (log10x < 6.5) return nfFR.format(Math.round(Math.pow(10, log10x)));
+  const e = Math.floor(log10x);
+  const mant = Math.pow(10, log10x - e);
+  return mant.toFixed(1).replace(".", ",") + " × 10" + sup(e);
+}
+const fmtNum = (x) => x < 1 ? "< 1" : (isFinite(x) ? fmtFromLog(Math.log10(x)) : "∞");
+
+/* log10(n!) — exact par somme jusqu'à 5000, Stirling au-delà. */
+function log10Fact(n) {
+  if (n < 2) return 0;
+  if (n <= 5000) {
+    let s = 0;
+    for (let i = 2; i <= n; i++) s += Math.log10(i);
+    return s;
+  }
+  return (n * Math.log(n) - n + 0.5 * Math.log(2 * Math.PI * n)) / Math.LN10;
+}
+
+/* Durée lisible à partir de log10(secondes). */
+const LOG10_YEAR = Math.log10(3.156e7);      // ≈ 7,5
+const LOG10_UNIVERSE = Math.log10(1.38e10);  // âge de l'Univers en années
+function fmtDuree(log10sec) {
+  if (log10sec < -7.5) return "< 0,1 µs";
+  if (log10sec < -3) return (Math.pow(10, log10sec + 6)).toPrecision(2).replace(".", ",") + " µs";
+  if (log10sec < 0)  return (Math.pow(10, log10sec + 3)).toPrecision(2).replace(".", ",") + " ms";
+  if (log10sec < Math.log10(60))    return Math.pow(10, log10sec).toPrecision(2).replace(".", ",") + " s";
+  if (log10sec < Math.log10(3600))  return (Math.pow(10, log10sec) / 60).toPrecision(2).replace(".", ",") + " min";
+  if (log10sec < Math.log10(86400)) return (Math.pow(10, log10sec) / 3600).toPrecision(2).replace(".", ",") + " h";
+  if (log10sec < LOG10_YEAR)        return Math.round(Math.pow(10, log10sec) / 86400) + " jours";
+  const logYears = log10sec - LOG10_YEAR;
+  if (logYears < 6) return "≈ " + nfFR.format(Math.round(Math.pow(10, logYears))) + " ans";
+  const txt = "≈ 10" + sup(Math.round(logYears)) + " années";
+  return logYears > LOG10_UNIVERSE ? txt + " 🌌 (≫ âge de l'Univers)" : txt;
+}
+
+/* Mini-coloration syntaxique (le code est échappé avant). */
+function highlight(code) {
+  const esc = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return esc.replace(
+    /(\/\/[^\n]*)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(function|return|const|let|var|for|while|if|else|of|in|new|break|continue)\b|\b(\d+(?:\.\d+)?)\b/g,
+    (m, com, str, kw, num) =>
+      com ? `<span class="tok-c">${com}</span>` :
+      str ? `<span class="tok-s">${str}</span>` :
+      kw  ? `<span class="tok-k">${kw}</span>` :
+            `<span class="tok-n">${num}</span>`
+  );
+}
+
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* ================================================================
+   État persistant (XP, thème, meilleur score)
+================================================================ */
+const store = (() => {
+  const KEY = "bigODojo-v1";
+  let data = { xp: 0, best: 0, theme: "", seen: {} };
+  try { Object.assign(data, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} };
+  return { data, save };
+})();
+
+const LEVELS = ["Novice", "Apprenti·e", "Chasseur·se de boucles", "Dompteur·se de log", "Ninja du n log n", "Sensei Big-O", "Légende de l'algo"];
+const XP_PER_LEVEL = 120;
+function renderXp() {
+  const xp = store.data.xp;
+  const lvl = Math.min(LEVELS.length - 1, Math.floor(xp / XP_PER_LEVEL));
+  $("#xp-level").textContent = LEVELS[lvl];
+  $("#xp-pts").textContent = xp + " XP";
+  const pct = lvl === LEVELS.length - 1 ? 100 : ((xp % XP_PER_LEVEL) / XP_PER_LEVEL) * 100;
+  $("#xp-fill").style.width = pct + "%";
+}
+function gainXp(n, msg) {
+  const before = Math.floor(store.data.xp / XP_PER_LEVEL);
+  store.data.xp += n;
+  store.save();
+  renderXp();
+  const after = Math.min(LEVELS.length - 1, Math.floor(store.data.xp / XP_PER_LEVEL));
+  if (after > before) toast(`🎉 Niveau supérieur : ${LEVELS[after]} !`);
+  else if (msg) toast(msg);
+}
+
+/* ================================================================
+   Thème
+================================================================ */
+if (store.data.theme) document.documentElement.dataset.theme = store.data.theme;
+$("#theme-toggle").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme ||
+    (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  store.data.theme = next;
+  store.save();
+  drawChart();
+});
+
+/* ================================================================
+   Les 7 classes de complexité
+================================================================ */
+const CLASSES = [
+  {
+    id: "c1", big: "O(1)", nom: "Constant", emoji: "⚡", varName: "--c1",
+    f: n => 1, log10f: n => 0,
+    hint: "Le temps ne dépend pas de la taille des données.",
+    analogie: "Prendre le livre du dessus d'une pile : que la pile fasse 10 ou 10 000 livres, c'est le même geste.",
+    exemples: ["Array access arr[i]", "push / pop", "Map.get / Set.has", "Arithmetic operation"],
+    code: `function first(arr) {
+  return arr[0]; // 1 operation, regardless of n
+}`,
+    phrase: "« C'est un accès direct (direct access), donc O(1) — le temps est constant quelle que soit la taille de l'entrée. »"
+  },
+  {
+    id: "c2", big: "O(log n)", nom: "Logarithmic", emoji: "🚀", varName: "--c2",
+    f: n => Math.max(1, Math.log2(n)), log10f: n => Math.log10(Math.max(1, Math.log2(n))),
+    hint: "On divise le problème par 2 à chaque étape.",
+    analogie: "Chercher un mot dans le dictionnaire : on ouvre au milieu, on élimine la moitié, et on recommence. 1 000 000 de pages → seulement ~20 ouvertures.",
+    exemples: ["Binary search", "Balanced BST (binary search tree)", "Fast exponentiation"],
+    code: `function binarySearch(arr, target) {
+  let lo = 0, hi = arr.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;      // midpoint
+    if (arr[mid] === target) return mid;
+    if (arr[mid] < target) lo = mid + 1;
+    else hi = mid - 1;               // eliminate one half
+  }
+  return -1;
+}`,
+    phrase: "« On divise l'espace de recherche (search space) par deux à chaque itération, donc O(log n). »"
+  },
+  {
+    id: "c3", big: "O(n)", nom: "Linear", emoji: "🏃", varName: "--c3",
+    f: n => n, log10f: n => Math.log10(n),
+    hint: "On visite chaque élément une fois.",
+    analogie: "Compter les personnes dans une file d'attente, une par une. Deux fois plus de monde = deux fois plus de temps.",
+    exemples: ["Array traversal", "Min / max / sum", "Linear search", "includes / indexOf"],
+    code: `function sum(arr) {
+  let total = 0;
+  for (const x of arr) total += x; // n iterations
+  return total;
+}`,
+    phrase: "« Une seule passe (single pass) sur les données, donc O(n) — c'est optimal si on doit toucher chaque élément. »"
+  },
+  {
+    id: "c4", big: "O(n log n)", nom: "Linearithmic", emoji: "🚴", varName: "--c4",
+    f: n => n * Math.max(1, Math.log2(n)), log10f: n => Math.log10(n) + Math.log10(Math.max(1, Math.log2(n))),
+    hint: "Le coût des bons algorithmes de tri.",
+    analogie: "Trier un jeu de cartes en fusionnant des petites piles déjà triées : log n niveaux de fusion, chacun parcourt les n cartes.",
+    exemples: ["Merge sort", "Quicksort (average case)", "Heapsort", "JS .sort()"],
+    code: `function median(arr) {
+  const sorted = [...arr].sort((a, b) => a - b); // O(n log n)
+  return sorted[Math.floor(sorted.length / 2)];  // sorting dominates
+}`,
+    phrase: "« Le tri (sorting) domine, donc O(n log n) — on ne peut pas trier par comparaison plus vite. »"
+  },
+  {
+    id: "c5", big: "O(n²)", nom: "Quadratic", emoji: "🐢", varName: "--c5",
+    f: n => n * n, log10f: n => 2 * Math.log10(n),
+    hint: "Pour chaque élément, on reparcourt tout.",
+    analogie: "Une soirée où chacun serre la main de tous les autres : 10 invités = 45 poignées, 100 invités = 4 950. Ça explose vite.",
+    exemples: ["Nested double loops", "Bubble sort / insertion sort", "Compare all pairs"],
+    code: `function pairs(arr) {
+  const res = [];
+  for (const a of arr)        // n iterations
+    for (const b of arr)      // × n iterations
+      res.push([a, b]);       // = n² operations
+  return res;
+}`,
+    phrase: "« Deux nested loops (boucles imbriquées) sur les mêmes données : n × n, donc O(n²). Je peux souvent l'éviter avec une hash map. »"
+  },
+  {
+    id: "c6", big: "O(2ⁿ)", nom: "Exponential", emoji: "🐌", varName: "--c6",
+    f: n => Math.pow(2, n), log10f: n => n * LOG10_2,
+    hint: "Chaque élément en plus double le travail.",
+    analogie: "Tous les sous-ensembles d'un sac : chaque objet ajouté double le nombre de combinaisons. 40 objets = mille milliards de cas.",
+    exemples: ["Naive Fibonacci", "All subsets (power set)", "Brute-force knapsack"],
+    code: `function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+  // each call triggers 2 more → a tree of 2^n calls
+}`,
+    phrase: "« C'est exponentiel (exponential) — chaque appel en génère deux. La memoization le ramène à O(n). »"
+  },
+  {
+    id: "c7", big: "O(n!)", nom: "Factorial", emoji: "💀", varName: "--c7",
+    f: n => { let r = 1; for (let i = 2; i <= Math.min(n, 170); i++) r *= i; return n > 170 ? Infinity : r; },
+    log10f: log10Fact,
+    hint: "Tous les ordres possibles. La fin du monde.",
+    analogie: "Tester tous les itinéraires possibles pour visiter n villes : 10 villes = 3,6 millions d'ordres, 20 villes = plus que de secondes depuis le Big Bang.",
+    exemples: ["Generate permutations", "Traveling Salesman Problem (brute force)"],
+    code: `function permutations(arr) {
+  if (arr.length <= 1) return [arr];
+  const res = [];
+  for (let i = 0; i < arr.length; i++) {
+    const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+    for (const p of permutations(rest))
+      res.push([arr[i], ...p]);   // n! results
+  }
+  return res;
+}`,
+    phrase: "« Générer toutes les permutations est O(n!) — au-delà de n ≈ 11, c'est mort. Il faut du backtracking avec pruning. »"
+  },
+];
+const classById = Object.fromEntries(CLASSES.map(c => [c.id, c]));
+const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/* ================================================================
+   Onglets
+================================================================ */
+$$(".tab-btn").forEach(btn => btn.addEventListener("click", () => {
+  $$(".tab-btn").forEach(b => b.setAttribute("aria-selected", b === btn ? "true" : "false"));
+  $$(".tab-panel").forEach(p => p.classList.toggle("active", p.id === "tab-" + btn.dataset.tab));
+  if (btn.dataset.tab === "courbes") drawChart(); // le panneau vient d'être affiché : layout déjà à jour
+}));
+
+/* ================================================================
+   Onglet Apprendre : cartes + modal
+================================================================ */
+function renderClassGrid() {
+  $("#class-grid").innerHTML = CLASSES.map(c => `
+    <button class="class-card" data-id="${c.id}" style="--cc:var(${c.varName})">
+      <span class="emoji">${c.emoji}</span>
+      <div class="big-o">${c.big}</div>
+      <div class="cname">${c.nom}</div>
+      <div class="hint">${c.hint}</div>
+      <div class="n1000">n = 1 000 → <b>${fmtFromLog(c.log10f(1000))}</b> opérations</div>
+      <span class="seen">${store.data.seen[c.id] ? "✅" : ""}</span>
+    </button>`).join("");
+  $$(".class-card").forEach(el => el.addEventListener("click", () => openModal(el.dataset.id)));
+}
+
+function openModal(id) {
+  const c = classById[id];
+  const back = document.createElement("div");
+  back.className = "modal-backdrop";
+  back.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Fiche ${c.big}" style="--cc:var(${c.varName})">
+      <button class="close" aria-label="Fermer">✕</button>
+      <h3>${c.emoji} <span class="mono">${c.big}</span> — ${c.nom}</h3>
+      <p class="subtitle">${c.hint}</p>
+      <dl>
+        <dt>🧩 L'analogie à retenir</dt><dd>${c.analogie}</dd>
+        <dt>🛠️ Où on le croise</dt><dd><div class="tag-row">${c.exemples.map(e => `<span class="tag">${e}</span>`).join("")}</div></dd>
+        <dt>💻 Exemple de code</dt><dd><pre class="code">${highlight(c.code)}</pre></dd>
+        <dt>📏 Ordres de grandeur</dt>
+        <dd>n = 100 → <b>${fmtFromLog(c.log10f(100))}</b> · n = 1 000 → <b>${fmtFromLog(c.log10f(1000))}</b> · n = 10⁶ → <b>${fmtFromLog(c.log10f(1e6))}</b> opérations</dd>
+      </dl>
+      <div class="phrase">💬 <b>En entretien :</b> ${c.phrase}</div>
+    </div>`;
+  document.body.appendChild(back);
+  const close = () => { back.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  back.addEventListener("click", (e) => { if (e.target === back) close(); });
+  $(".close", back).addEventListener("click", close);
+  document.addEventListener("keydown", onKey);
+  if (!store.data.seen[id]) {
+    store.data.seen[id] = true;
+    store.save();
+    gainXp(3, `+3 XP — fiche ${c.big} lue`);
+    renderClassGrid();
+  }
+}
+
+/* ================================================================
+   Onglet Courbes : graphe canvas
+================================================================ */
+const chartState = {
+  n: 60,
+  scale: "lin",
+  on: Object.fromEntries(CLASSES.map(c => [c.id, true])),
+  hoverN: null,
+};
+const canvas = $("#chart");
+const ctx = canvas.getContext("2d");
+const M = { top: 22, right: 96, bottom: 36, left: 56 }; // marges du tracé
+
+function renderChips() {
+  $("#chart-chips").innerHTML = CLASSES.map(c => `
+    <button class="chip" data-id="${c.id}" aria-pressed="${chartState.on[c.id]}" style="--cc:var(${c.varName})">
+      <span class="dot"></span>${c.big}
+    </button>`).join("");
+  $$("#chart-chips .chip").forEach(chip => chip.addEventListener("click", () => {
+    const id = chip.dataset.id;
+    chartState.on[id] = !chartState.on[id];
+    chip.setAttribute("aria-pressed", chartState.on[id]);
+    drawChart();
+  }));
+}
+
+function niceTicks(max, count = 5) {
+  const raw = max / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => max / s <= count) || 10 * mag;
+  const ticks = [];
+  for (let v = 0; v <= max * 1.0001; v += step) ticks.push(v);
+  return ticks;
+}
+
+function drawChart() {
+  const wrap = canvas.parentElement;
+  if (!wrap.offsetWidth) return; // onglet caché
+  const dpr = window.devicePixelRatio || 1;
+  const W = wrap.offsetWidth, H = 430;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const col = {
+    surface: cssVar("--surface"), grid: cssVar("--grid"), axis: cssVar("--axis"),
+    muted: cssVar("--muted"), ink: cssVar("--ink"), ink2: cssVar("--ink2"),
+  };
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = col.surface;
+  ctx.fillRect(0, 0, W, H);
+
+  const N = chartState.n;
+  const isLog = chartState.scale === "log";
+  const visible = CLASSES.filter(c => chartState.on[c.id]);
+  const plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
+  const xOf = (n) => M.left + ((n - 1) / (N - 1)) * plotW;
+
+  // Échelle Y : linéaire bornée (les grosses courbes sortent du cadre : c'est le but),
+  // ou log10(opérations).
+  let yMax;
+  if (isLog) yMax = Math.max(3, ...visible.map(c => c.log10f(N)));
+  else yMax = N * 2.5;
+  const yOf = (v) => M.top + plotH - (Math.min(v, yMax * 1.06) / yMax) * plotH;
+
+  // Grille + graduations Y
+  ctx.font = "11px system-ui, sans-serif";
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  const yTicks = isLog
+    ? (() => { const step = Math.max(1, Math.ceil(yMax / 5)); const t = []; for (let v = 0; v <= yMax; v += step) t.push(v); return t; })()
+    : niceTicks(yMax);
+  for (const v of yTicks) {
+    const y = yOf(v);
+    ctx.strokeStyle = col.grid; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(M.left, y); ctx.lineTo(W - M.right, y); ctx.stroke();
+    ctx.fillStyle = col.muted;
+    ctx.fillText(isLog ? (v === 0 ? "1" : "10" + sup(v)) : (v >= 1000 ? (v / 1000) + " k" : String(v)), M.left - 8, y);
+  }
+  // Axe X
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  const xTicks = niceTicks(N, 6).filter(v => v >= 1 || v === 0);
+  for (const v of xTicks) {
+    const n = Math.max(1, v);
+    ctx.fillStyle = col.muted;
+    ctx.fillText(String(Math.round(n)), xOf(n), H - M.bottom + 8);
+  }
+  ctx.strokeStyle = col.axis; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(M.left, H - M.bottom); ctx.lineTo(W - M.right, H - M.bottom); ctx.stroke();
+
+  // Titres d'axes
+  ctx.fillStyle = col.muted; ctx.textAlign = "left";
+  ctx.fillText("opérations" + (isLog ? " (échelle log)" : ""), M.left, 4);
+  ctx.textAlign = "right";
+  ctx.fillText("n (taille des données)", W - M.right, H - M.bottom + 8);
+
+  // Courbes (dans une zone de découpe)
+  ctx.save();
+  ctx.beginPath(); ctx.rect(M.left, M.top - 2, plotW, plotH + 4); ctx.clip();
+  const labels = []; // { y, text, color } — étiquettes directes en bout de courbe
+  for (const c of visible) {
+    const color = cssVar(c.varName);
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.lineCap = "round";
+    ctx.beginPath();
+    const steps = 240;
+    let lastIn = null; // dernier point encore visible
+    for (let i = 0; i <= steps; i++) {
+      const n = 1 + (i / steps) * (N - 1);
+      const v = isLog ? c.log10f(n) : c.f(n);
+      const x = xOf(n), y = yOf(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      if (y >= M.top - 1) lastIn = { x, y };
+      if (y < M.top - 1) break; // la courbe est sortie par le haut
+    }
+    ctx.stroke();
+    if (lastIn) labels.push({ y: Math.max(M.top + 7, lastIn.y), x: lastIn.x, text: c.big, color, exits: lastIn.x < W - M.right - 4 });
+  }
+  ctx.restore();
+
+  // Étiquettes directes, anti-collision (tri par y puis écartement min 15 px)
+  labels.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labels.length; i++)
+    if (labels[i].y - labels[i - 1].y < 15) labels[i].y = labels[i - 1].y + 15;
+  ctx.font = "600 11.5px system-ui, sans-serif";
+  ctx.textBaseline = "middle";
+  for (const l of labels) {
+    const atExit = l.exits; // la courbe est sortie par le haut avant n max
+    ctx.textAlign = atExit ? "center" : "left";
+    const lx = atExit ? Math.min(l.x, W - M.right - 14) : W - M.right + 8;
+    ctx.fillStyle = l.color;
+    ctx.fillText(l.text + (atExit ? " ↑" : ""), lx, atExit ? M.top + 8 : l.y);
+  }
+
+  // Survol : réticule + points + tooltip
+  const tt = $("#chart-tooltip");
+  if (chartState.hoverN && chartState.hoverN >= 1 && chartState.hoverN <= N && visible.length) {
+    const hn = chartState.hoverN;
+    const hx = xOf(hn);
+    ctx.strokeStyle = col.axis; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(hx, M.top); ctx.lineTo(hx, H - M.bottom); ctx.stroke();
+    ctx.setLineDash([]);
+    const rows = [];
+    for (const c of visible) {
+      const v = isLog ? c.log10f(hn) : c.f(hn);
+      const y = yOf(v);
+      if (y >= M.top - 1) {
+        ctx.beginPath(); ctx.arc(hx, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = cssVar(c.varName); ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = col.surface; ctx.stroke();
+      }
+      rows.push({ c, log: c.log10f(hn) });
+    }
+    rows.sort((a, b) => b.log - a.log);
+    tt.innerHTML = `<div class="tt-n">n = ${nfFR.format(hn)}</div>` + rows.map(r =>
+      `<div class="tt-row"><span class="dot" style="background:${cssVar(r.c.varName)}"></span>${r.c.big}<span class="val">${fmtFromLog(r.log)}</span></div>`).join("");
+    tt.style.display = "block";
+    const wrapRect = wrap.getBoundingClientRect();
+    const ttW = tt.offsetWidth;
+    let left = hx + 14;
+    if (left + ttW > wrapRect.width - 4) left = hx - ttW - 14;
+    tt.style.left = Math.max(4, left) + "px";
+    tt.style.top = (M.top + 6) + "px";
+  } else {
+    tt.style.display = "none";
+  }
+
+  renderValuesTable();
+}
+
+function renderValuesTable() {
+  const N = chartState.n;
+  $("#values-table").innerHTML =
+    `<thead><tr><th>Classe</th><th>Nom</th><th>Opérations pour n = ${nfFR.format(N)}</th></tr></thead><tbody>` +
+    CLASSES.filter(c => chartState.on[c.id]).map(c =>
+      `<tr><td class="mono"><span class="dot-inline" style="background:var(${c.varName})"></span>${c.big}</td><td>${c.nom}</td><td class="num">${fmtFromLog(c.log10f(N))}</td></tr>`
+    ).join("") + "</tbody>";
+}
+
+// Contrôles du graphe
+$("#n-slider").addEventListener("input", (e) => {
+  chartState.n = +e.target.value;
+  $("#n-label").textContent = chartState.n;
+  drawChart();
+});
+$("#scale-lin").addEventListener("click", () => setScale("lin"));
+$("#scale-log").addEventListener("click", () => setScale("log"));
+function setScale(s) {
+  chartState.scale = s;
+  $("#scale-lin").setAttribute("aria-pressed", s === "lin");
+  $("#scale-log").setAttribute("aria-pressed", s === "log");
+  drawChart();
+}
+
+// Survol (souris + tactile)
+function onHover(clientX) {
+  const rect = canvas.getBoundingClientRect();
+  const x = clientX - rect.left;
+  const plotW = rect.width - M.left - M.right;
+  const n = Math.round(1 + ((x - M.left) / plotW) * (chartState.n - 1));
+  chartState.hoverN = (n >= 1 && n <= chartState.n) ? n : null;
+  drawChart();
+}
+canvas.addEventListener("mousemove", (e) => onHover(e.clientX));
+canvas.addEventListener("mouseleave", () => { chartState.hoverN = null; drawChart(); });
+canvas.addEventListener("touchstart", (e) => onHover(e.touches[0].clientX), { passive: true });
+canvas.addEventListener("touchmove", (e) => onHover(e.touches[0].clientX), { passive: true });
+new ResizeObserver(() => drawChart()).observe(canvas.parentElement);
+
+/* ================================================================
+   Onglet Course
+================================================================ */
+const OPS_PER_SEC_LOG = 8; // 10^8 opérations / seconde
+const RACE_NS = [10, 20, 30, 50, 100, 1000, 100000, 1000000];
+let raceN = 30;
+let raceAnim = null;
+
+function renderRaceChips() {
+  $("#race-n-chips").innerHTML = RACE_NS.map(n =>
+    `<button class="chip" data-n="${n}" aria-pressed="${n === raceN}" style="--cc:var(--accent)">${nfFR.format(n)}</button>`).join(" ");
+  $$("#race-n-chips .chip").forEach(chip => chip.addEventListener("click", () => {
+    raceN = +chip.dataset.n;
+    renderRaceChips();
+    renderRunners();
+  }));
+}
+
+function runnersData() {
+  return CLASSES.map(c => {
+    const logOps = c.log10f(raceN);
+    return { c, logOps, logSec: Math.max(-9, logOps - OPS_PER_SEC_LOG) };
+  });
+}
+
+function renderRunners(final) {
+  const data = runnersData();
+  $("#race-runners").innerHTML = data.map(r => {
+    const ops = fmtFromLog(r.logOps);
+    return `
+    <div class="runner" data-id="${r.c.id}" style="--cc:var(${r.c.varName})">
+      <div>
+        <div class="who"><span class="mono">${r.c.big}</span></div>
+        <div class="ops">≈ ${ops} opération${ops === "1" ? "" : "s"}</div>
+      </div>
+      <div class="track"><i></i><span class="sprite">${r.c.emoji}</span></div>
+      <div class="result"></div>
+    </div>`;
+  }).join("");
+  if (!final) $("#race-clock").textContent = "";
+}
+
+function startRace() {
+  if (raceAnim) clearInterval(raceAnim);
+  renderRunners();
+  const data = runnersData();
+  const START_LOG = -9;
+  const CAP_LOG = LOG10_YEAR + LOG10_UNIVERSE; // on arrête l'horloge à l'âge de l'Univers
+  const endLog = Math.min(CAP_LOG, Math.max(-6, ...data.map(r => r.logSec)));
+  const DURATION = 6000; // durée réelle de l'animation
+  const t0 = performance.now();
+  const els = data.map(r => {
+    const el = $(`.runner[data-id="${r.c.id}"]`);
+    return { r, bar: $(".track i", el), sprite: $(".sprite", el), result: $(".result", el), done: false };
+  });
+  let finishRank = 0;
+  $("#race-start").disabled = true;
+
+  function frame() {
+    const p = Math.min(1, (performance.now() - t0) / DURATION);
+    const curLog = START_LOG + p * (endLog - START_LOG);
+    $("#race-clock").innerHTML = "⏱️ Temps simulé écoulé : <b>" + fmtDuree(curLog) + "</b>";
+    for (const e of els) {
+      const prog = Math.min(1, (curLog - START_LOG) / (e.r.logSec - START_LOG || 1e-9));
+      const pct = (prog * 100).toFixed(1) + "%";
+      e.bar.style.width = pct;
+      e.sprite.style.left = pct;
+      if (!e.done && prog >= 1) {
+        e.done = true;
+        finishRank++;
+        const medal = ["🥇", "🥈", "🥉"][finishRank - 1] || "🏁";
+        e.result.innerHTML = `<span class="medal">${medal}</span> <b>${fmtDuree(e.r.logSec)}</b>`;
+      }
+    }
+    if (p >= 1) {
+      clearInterval(raceAnim);
+      raceAnim = null;
+      for (const e of els) {
+        if (!e.done) {
+          e.result.innerHTML = `💀 ne finit pas — il faudrait <b>${fmtDuree(e.r.logSec)}</b>`;
+          e.sprite.textContent = "💀";
+        }
+      }
+      $("#race-clock").innerHTML += " — course terminée !";
+      $("#race-start").disabled = false;
+    }
+  }
+  raceAnim = setInterval(frame, 33); // ~30 i/s, fiable même si rAF est suspendu
+  frame();
+}
+$("#race-start").addEventListener("click", startRace);
+
+/* ================================================================
+   Onglet Quiz
+================================================================ */
+const QUESTIONS = [
+  {
+    titre: "Sum of elements",
+    code: `function sum(arr) {
+  let total = 0;
+  for (const x of arr) total += x;
+  return total;
+}`,
+    options: ["O(1)", "O(log n)", "O(n)", "O(n²)"], bonne: "O(n)",
+    expl: "Une seule boucle qui visite chaque élément une fois : n opérations → O(n)."
+  },
+  {
+    titre: "All pairs",
+    code: `function pairs(arr) {
+  const res = [];
+  for (let i = 0; i < arr.length; i++)
+    for (let j = 0; j < arr.length; j++)
+      res.push([arr[i], arr[j]]);
+  return res;
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(2ⁿ)"], bonne: "O(n²)",
+    expl: "Deux nested loops sur le même tableau : n × n = O(n²). Règle 3 : boucles imbriquées → on multiplie."
+  },
+  {
+    titre: "The mystery doubler",
+    code: `function mystery(n) {
+  let i = 1, count = 0;
+  while (i < n) { i *= 2; count++; }
+  return count;
+}`,
+    options: ["O(n)", "O(log n)", "O(n log n)", "O(1)"], bonne: "O(log n)",
+    expl: "i double à chaque tour : il faut log₂(n) tours pour atteindre n. Multiplier/diviser par 2 → log n."
+  },
+  {
+    titre: "Two sequential passes",
+    code: `function range(arr) {
+  let max = -Infinity, min = Infinity;
+  for (const x of arr) max = Math.max(max, x);
+  for (const x of arr) min = Math.min(min, x);
+  return max - min;
+}`,
+    options: ["O(n)", "O(2n)", "O(n²)", "O(n log n)"], bonne: "O(n)",
+    expl: "Boucles successives → on additionne : n + n = 2n. Et les constantes disparaissent : O(2n) = O(n). O(2n) n'est pas une notation qu'on donne comme réponse finale."
+  },
+  {
+    titre: "Two different arrays",
+    code: `function cross(a, b) {
+  for (const x of a)
+    for (const y of b)
+      process(x, y);
+}`,
+    options: ["O(n²)", "O(n · m)", "O(n + m)", "O(n)"], bonne: "O(n · m)",
+    expl: "Piège classique ! Les deux tableaux ont des tailles différentes (n et m) : c'est O(n·m), pas O(n²). Dire n² supposerait qu'ils ont la même taille."
+  },
+  {
+    titre: "Binary search",
+    code: `function search(arr, target) { // arr is sorted
+  let lo = 0, hi = arr.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] === target) return mid;
+    if (arr[mid] < target) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  return -1;
+}`,
+    options: ["O(1)", "O(log n)", "O(n)", "O(n log n)"], bonne: "O(log n)",
+    expl: "On élimine la moitié des candidats à chaque tour : log₂(n) itérations max. LE grand classique d'entretien."
+  },
+  {
+    titre: "The triangular loop",
+    code: `function triangle(n) {
+  let count = 0;
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < i; j++)
+      count++;
+  return count;
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(n!)"], bonne: "O(n²)",
+    expl: "La boucle interne fait 0+1+2+…+(n−1) = n(n−1)/2 tours. Le terme dominant est n²/2 → O(n²). Le « triangle » reste quadratique."
+  },
+  {
+    titre: "Naive Fibonacci",
+    code: `function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+}`,
+    options: ["O(n)", "O(n²)", "O(2ⁿ)", "O(n!)"], bonne: "O(2ⁿ)",
+    expl: "Chaque appel en déclenche deux : l'arbre d'appels a ~2ⁿ nœuds. fib(50) naïf = plusieurs minutes ; avec memoization, O(n)."
+  },
+  {
+    titre: "Sorting a copy",
+    code: `function sortCopy(arr) {
+  return [...arr].sort((a, b) => a - b);
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(log n)"], bonne: "O(n log n)",
+    expl: "La copie [...arr] coûte O(n), le tri O(n log n). On garde le terme dominant : O(n log n)."
+  },
+  {
+    titre: "Duplicate hunt v1",
+    code: `function hasDuplicate(arr) {
+  for (let i = 0; i < arr.length; i++)
+    if (arr.slice(i + 1).includes(arr[i]))
+      return true;
+  return false;
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(2ⁿ)"], bonne: "O(n²)",
+    expl: "slice et includes sont chacun O(n), et ils sont DANS une boucle O(n) : n × n = O(n²). Les coûts cachés, règle 6 !"
+  },
+  {
+    titre: "Duplicate hunt v2",
+    code: `function hasDuplicate(arr) {
+  const seen = new Set();
+  for (const x of arr) {
+    if (seen.has(x)) return true;
+    seen.add(x);
+  }
+  return false;
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(1)"], bonne: "O(n)",
+    expl: "Set.has et Set.add sont O(1) en moyenne → une passe O(n). C'est LA transformation à connaître : hash map = O(n²) → O(n)."
+  },
+  {
+    titre: "The fake nested loop",
+    code: `function weird(arr) {
+  for (const x of arr)
+    for (let k = 0; k < 500; k++)
+      process(x, k);
+}`,
+    options: ["O(n²)", "O(500n)", "O(n)", "O(n log n)"], bonne: "O(n)",
+    expl: "La boucle interne fait toujours 500 tours : c'est une CONSTANTE, pas une fonction de n. 500n → O(n). Ne pas confondre « imbriqué » et « dépend de n »."
+  },
+  {
+    titre: "Division inside a loop",
+    code: `function combo(n) {
+  for (let i = 0; i < n; i++) {
+    let j = n;
+    while (j > 1) j = Math.floor(j / 2);
+  }
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(log n)"], bonne: "O(n log n)",
+    expl: "Boucle externe : n tours. Boucle interne : division par 2 → log n tours. On multiplie : O(n log n)."
+  },
+  {
+    titre: "String concatenation",
+    code: `function join(words) {
+  let s = "";
+  for (const w of words) s += w;
+  return s;
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(1)"], bonne: "O(n²)",
+    expl: "Les chaînes sont immuables : chaque += recopie toute la chaîne déjà construite (1+2+…+n) → O(n²). La bonne réponse d'entretien : utiliser un tableau + join(), qui est O(n). (Certains moteurs optimisent, mais en entretien on répond O(n²).)"
+  },
+  {
+    titre: "All permutations",
+    code: `function permutations(arr) {
+  if (arr.length <= 1) return [arr];
+  const res = [];
+  for (let i = 0; i < arr.length; i++) {
+    const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+    for (const p of permutations(rest))
+      res.push([arr[i], ...p]);
+  }
+  return res;
+}`,
+    options: ["O(n²)", "O(2ⁿ)", "O(n!)", "O(n log n)"], bonne: "O(n!)",
+    expl: "Il y a n! permutations, et il faut toutes les produire. n choix × (n−1) × (n−2)… → factorielle. Au-delà de n ≈ 11, c'est intraitable."
+  },
+  {
+    titre: "Fibonacci with memoization",
+    code: `const memo = new Map();
+function fib(n) {
+  if (n <= 1) return n;
+  if (memo.has(n)) return memo.get(n);
+  const result = fib(n - 1) + fib(n - 2);
+  memo.set(n, result);
+  return result;
+}`,
+    options: ["O(2ⁿ)", "O(n²)", "O(n)", "O(log n)"], bonne: "O(n)",
+    expl: "Chaque valeur de fib(k) n'est calculée qu'UNE fois grâce au cache : n calculs à O(1) chacun → O(n). La memoization tue l'exponentielle."
+  },
+  {
+    titre: "Sum of an n × n matrix",
+    code: `function sumMatrix(m) { // m is n × n
+  let s = 0;
+  for (const row of m)
+    for (const val of row)
+      s += val;
+  return s;
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(2ⁿ)"], bonne: "O(n²)",
+    expl: "n lignes × n colonnes = n² cases visitées → O(n²) en fonction du côté n. Nuance à mentionner : c'est linéaire par rapport au NOMBRE DE CASES."
+  },
+  {
+    titre: "Two pointers",
+    code: `function hasPairSum(sortedArr, target) {
+  let lo = 0, hi = sortedArr.length - 1;
+  while (lo < hi) {
+    const s = sortedArr[lo] + sortedArr[hi];
+    if (s === target) return true;
+    if (s < target) lo++; else hi--;
+  }
+  return false;
+}`,
+    options: ["O(n²)", "O(n log n)", "O(n)", "O(log n)"], bonne: "O(n)",
+    expl: "À chaque tour, lo avance ou hi recule : ils se croisent après au plus n étapes → O(n). La technique « two pointers » sur tableau trié, à connaître absolument."
+  },
+  {
+    titre: "Insert at head",
+    code: `function reverseArr(arr) {
+  const res = [];
+  for (const x of arr)
+    res.unshift(x); // insert at the front
+  return res;
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(1)"], bonne: "O(n²)",
+    expl: "unshift décale TOUS les éléments existants : O(n) par appel, dans une boucle O(n) → O(n²). Avec push puis reverse : O(n)."
+  },
+  {
+    titre: "Log loop × n loop",
+    code: `function strange(n) {
+  for (let i = n; i > 1; i = Math.floor(i / 2))
+    for (let j = 0; j < n; j++)
+      work();
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(log n)"], bonne: "O(n log n)",
+    expl: "Boucle externe : i est divisé par 2 → log n tours. Boucle interne : n tours. log n × n = O(n log n). L'ordre des boucles ne change rien."
+  },
+  {
+    titre: "Frequency counter",
+    code: `function countFreq(words) {
+  const freq = {};
+  for (const w of words)
+    freq[w] = (freq[w] || 0) + 1;
+  return freq;
+}`,
+    options: ["O(n²)", "O(n log n)", "O(n)", "O(1)"], bonne: "O(n)",
+    expl: "Une passe, et l'accès à une clé d'objet (hash) est O(1) en moyenne → O(n). Le pattern « frequency counter », omniprésent en entretien."
+  },
+  {
+    titre: "Recursion + slice",
+    code: `function reverseStr(str) {
+  if (str.length === 0) return "";
+  return reverseStr(str.slice(1)) + str[0];
+}`,
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(2ⁿ)"], bonne: "O(n²)",
+    expl: "n appels récursifs, et CHAQUE appel fait un slice + une concaténation en O(n) → O(n²). La récursion était innocente ; c'est le slice qui coûte."
+  },
+];
+
+const quiz = { deck: [], idx: 0, score: 0, streak: 0, answered: false, xpRun: 0 };
+const QUIZ_LEN = 10;
+
+function shuffled(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderQuizStart() {
+  $("#quiz-box").innerHTML = `
+    <div class="quiz-end">
+      <div class="big-emoji">🧠</div>
+      <h3>Prêt·e pour la session ?</h3>
+      <p>${QUIZ_LEN} questions tirées au sort parmi ${QUESTIONS.length} · Meilleur score : <b>${store.data.best}/${QUIZ_LEN}</b></p>
+      <button class="btn" id="quiz-go">🚀 Démarrer le quiz</button>
+    </div>`;
+  $("#quiz-go").addEventListener("click", startQuiz);
+}
+
+function startQuiz() {
+  quiz.deck = shuffled(QUESTIONS).slice(0, QUIZ_LEN);
+  quiz.idx = 0; quiz.score = 0; quiz.streak = 0; quiz.xpRun = 0;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = quiz.deck[quiz.idx];
+  quiz.answered = false;
+  $("#quiz-box").innerHTML = `
+    <div class="quiz-head">
+      <span>Question <b>${quiz.idx + 1}</b> / ${QUIZ_LEN}</span>
+      <span class="quiz-progress"><i style="width:${(quiz.idx / QUIZ_LEN) * 100}%"></i></span>
+      <span class="score">Score : <b>${quiz.score}</b></span>
+      <span class="streak">${quiz.streak >= 2 ? "🔥" : ""} Série : <b>${quiz.streak}</b></span>
+    </div>
+    <p class="quiz-q">${q.titre} — quelle est la complexité en temps ?</p>
+    <pre class="code">${highlight(q.code)}</pre>
+    <div class="answers">${shuffled(q.options).map(o => `<button class="answer-btn" data-o="${o}">${o}</button>`).join("")}</div>
+    <div id="quiz-feedback"></div>
+    <div class="quiz-actions" id="quiz-actions"></div>`;
+  $$(".answer-btn").forEach(b => b.addEventListener("click", () => answer(b, q)));
+}
+
+function answer(btn, q) {
+  if (quiz.answered) return;
+  quiz.answered = true;
+  const choix = btn.dataset.o;
+  const ok = choix === q.bonne;
+  $$(".answer-btn").forEach(b => {
+    b.disabled = true;
+    if (b.dataset.o === q.bonne) b.classList.add("correct");
+    else if (b === btn) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  let gained = 0;
+  if (ok) {
+    quiz.score++;
+    quiz.streak++;
+    gained = 10 + (quiz.streak >= 3 ? 5 : 0);
+    quiz.xpRun += gained;
+    gainXp(gained);
+  } else {
+    quiz.streak = 0;
+  }
+  $("#quiz-feedback").innerHTML = `
+    <div class="feedback ${ok ? "ok" : "ko"}">
+      <b class="verdict">${ok ? `✅ Exact ! +${gained} XP${quiz.streak >= 3 ? " (bonus série 🔥)" : ""}` : `❌ Raté — la bonne réponse était ${q.bonne}`}</b>
+      ${q.expl}
+    </div>`;
+  const last = quiz.idx === QUIZ_LEN - 1;
+  $("#quiz-actions").innerHTML = `<button class="btn" id="quiz-next">${last ? "🏁 Voir le résultat" : "Question suivante →"}</button>`;
+  $("#quiz-next").addEventListener("click", () => {
+    if (last) renderQuizEnd();
+    else { quiz.idx++; renderQuestion(); }
+  });
+}
+
+function renderQuizEnd() {
+  const s = quiz.score;
+  const isBest = s > store.data.best;
+  if (isBest) { store.data.best = s; store.save(); }
+  const emoji = s === QUIZ_LEN ? "🏆" : s >= 8 ? "🌟" : s >= 6 ? "💪" : s >= 4 ? "📚" : "🌱";
+  const msg =
+    s === QUIZ_LEN ? "Sans faute ! Tu es prêt·e pour l'entretien." :
+    s >= 8 ? "Excellent niveau — encore une session et c'est le sans-faute." :
+    s >= 6 ? "Solide ! Relis les fiches des questions ratées." :
+    s >= 4 ? "Bon début. Repasse par l'onglet Apprendre puis retente." :
+    "Chaque expert a commencé ici. Va lire les fiches et reviens !";
+  $("#quiz-box").innerHTML = `
+    <div class="quiz-end">
+      <div class="big-emoji">${emoji}</div>
+      <h3>${s} / ${QUIZ_LEN}</h3>
+      <p>${msg}<br>+${quiz.xpRun} XP gagnés ${isBest ? "· 🎖️ Nouveau record !" : `· Record : ${store.data.best}/${QUIZ_LEN}`}</p>
+      <button class="btn" id="quiz-again">🔄 Rejouer (nouvelles questions)</button>
+    </div>`;
+  $("#quiz-again").addEventListener("click", startQuiz);
+}
+
+/* ================================================================
+   Antisèche : pastilles colorées sur les notations
+================================================================ */
+const O_COLOR = {
+  "O(1)": "--c1", "O(log n)": "--c2", "O(n)": "--c3",
+  "O(n log n)": "--c4", "O(n²)": "--c5", "O(2ⁿ)": "--c6", "O(n!)": "--c7",
+};
+function renderSheetDots() {
+  $$("[data-o]").forEach(td => {
+    const o = td.dataset.o;
+    const varName = O_COLOR[o];
+    const extra = td.textContent.trim();
+    td.innerHTML = `<span class="dot-inline" style="background:var(${varName})"></span>${o}${extra ? ` <small style="color:var(--muted)">${extra}</small>` : ""}`;
+  });
+}
+
+/* ================================================================
+   Init
+================================================================ */
+renderXp();
+renderClassGrid();
+renderChips();
+renderRaceChips();
+renderRunners();
+renderQuizStart();
+renderSheetDots();
+drawChart();
+</script>
+</body>
+</html>

@@ -1,0 +1,2338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>PIXOPOLIS — City Builder Rétro</title>
+<style>
+:root{
+  --bg:#0c1024; --pan:#1a2142; --pan2:#222b56; --pan3:#141a38;
+  --hi:#4a5cae; --lo:#0d1128; --txt:#dbe4ff; --dim:#8fa0d8;
+  --gold:#ffd75e; --grn:#5fd97a; --red:#ff6b5e; --cyan:#6fd3e0; --org:#f0a050;
+}
+*{box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none}
+html,body{height:100%; overflow:hidden}
+body{
+  background:var(--bg); color:var(--txt);
+  font-family:'Lucida Console','Consolas','Courier New',monospace;
+  font-size:12px;
+}
+#app{display:flex; flex-direction:column; height:100%}
+.bv{background:var(--pan); border:3px solid; border-color:var(--hi) var(--lo) var(--lo) var(--hi)}
+.bv-in{background:var(--pan3); border:3px solid; border-color:var(--lo) var(--hi) var(--hi) var(--lo)}
+.hidden{display:none !important}
+
+/* ---------- HUD ---------- */
+#hud{
+  display:flex; align-items:center; gap:6px; padding:4px 8px;
+  flex-wrap:wrap; z-index:5; border-top:none; border-left:none; border-right:none;
+}
+#logo{
+  font-weight:bold; font-size:15px; letter-spacing:2px; color:var(--gold);
+  text-shadow:2px 2px 0 #7a3010, 4px 4px 0 #000; padding:0 6px 0 2px;
+}
+.chip{padding:3px 8px; white-space:nowrap; font-size:12px; line-height:16px}
+.chip b{color:var(--gold)}
+#chMoney{cursor:pointer}
+#chMoney.neg b{color:var(--red)}
+#chMoney.flash{animation:flashRed .5s}
+@keyframes flashRed{0%,100%{background:var(--pan3)}50%{background:#7a1c14}}
+#hHap.h0{color:var(--red)} #hHap.h1{color:var(--org)} #hHap.h2{color:var(--txt)} #hHap.h3{color:var(--grn)}
+#rci{display:flex; align-items:flex-end; gap:3px; padding:2px 6px; height:30px}
+.rciCol{width:11px; height:24px; background:var(--lo); position:relative; border:1px solid #000}
+.rciFill{position:absolute; bottom:0; left:0; right:0; height:0%}
+.rciCol span{position:absolute; top:100%; left:1px; font-size:8px; color:var(--dim)}
+#rR .rciFill{background:var(--grn)} #rC .rciFill{background:#5d9df0} #rI .rciFill{background:var(--org)}
+.hbtn{
+  background:var(--pan2); border:3px solid; border-color:var(--hi) var(--lo) var(--lo) var(--hi);
+  color:var(--txt); font-family:inherit; font-size:11px; padding:2px 7px; cursor:pointer;
+  line-height:16px; white-space:nowrap;
+}
+.hbtn:active,.hbtn.on{border-color:var(--lo) var(--hi) var(--hi) var(--lo); background:var(--pan3)}
+.hbtn.on{color:var(--gold)}
+.hbtn.off{color:#5a648f}
+#spdBox,#optBox{display:flex; gap:3px; align-items:center}
+#optBox{margin-left:auto}
+
+/* ---------- Milieu ---------- */
+#mid{flex:1; display:flex; min-height:0}
+#tools{
+  width:196px; overflow-y:auto; overflow-x:hidden; padding:5px;
+  border-bottom:none; border-left:none; flex-shrink:0; z-index:4;
+}
+#tools::-webkit-scrollbar{width:10px}
+#tools::-webkit-scrollbar-thumb{background:var(--hi); border:2px solid var(--pan)}
+.tcat{color:var(--gold); font-size:10px; letter-spacing:1px; margin:7px 2px 3px; border-bottom:1px solid var(--hi); padding-bottom:2px}
+.tbtn{
+  display:flex; align-items:center; gap:6px; width:100%; margin:3px 0; padding:3px 4px;
+  background:var(--pan2); border:3px solid; border-color:var(--hi) var(--lo) var(--lo) var(--hi);
+  color:var(--txt); font-family:inherit; cursor:pointer; text-align:left; position:relative;
+}
+.tbtn:hover{background:#2a3568}
+.tbtn.sel{border-color:var(--lo) var(--hi) var(--hi) var(--lo); background:var(--pan3); outline:2px solid var(--gold)}
+.tbtn canvas{width:32px; height:32px; image-rendering:pixelated; background:#0a0e20; border:1px solid #000; flex-shrink:0}
+.tbtn .tname{font-size:10px; line-height:12px; flex:1}
+.tbtn .tcost{color:var(--gold); font-size:10px; white-space:nowrap}
+.tbtn.lock{opacity:.45; cursor:not-allowed}
+.tbtn.lock .tlock{position:absolute; right:4px; bottom:2px; font-size:9px; color:var(--red)}
+#vp{flex:1; position:relative; overflow:hidden; background:#05070f; border-right:none; border-bottom:none}
+#cv{position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; cursor:crosshair}
+#mmBox{position:absolute; right:10px; bottom:10px; padding:3px; z-index:3}
+#mm{display:block; width:96px; height:96px; image-rendering:pixelated; cursor:pointer}
+#pauseTag{
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  color:var(--gold); font-size:16px; font-weight:bold; letter-spacing:3px;
+  text-shadow:2px 2px 0 #000; animation:blink 1s steps(2) infinite; z-index:3;
+}
+@keyframes blink{50%{opacity:0}}
+#crt{position:absolute; inset:0; pointer-events:none; z-index:6;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px);
+}
+#crt::after{content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,10,.38) 100%);
+}
+#ghostTip{
+  position:absolute; pointer-events:none; z-index:4; background:#000c; color:var(--gold);
+  padding:2px 5px; font-size:10px; border:1px solid var(--gold); white-space:pre;
+}
+#ghostTip.bad{color:var(--red); border-color:var(--red)}
+
+/* ---------- Panneau d'info ---------- */
+#info{position:absolute; left:10px; bottom:10px; width:230px; padding:7px; z-index:3; font-size:11px}
+#info h3{color:var(--gold); font-size:12px; margin-bottom:5px; padding-right:18px}
+#info .row{display:flex; justify-content:space-between; margin:2px 0; color:var(--dim)}
+#info .row b{color:var(--txt)}
+#info .etat{margin:4px 0; padding:2px 4px; text-align:center; font-weight:bold}
+#info .etOk{background:#1d4a2a; color:var(--grn)} #info .etKo{background:#5a1c14; color:#ffb0a8}
+#infoX{position:absolute; top:2px; right:4px; cursor:pointer; color:var(--red); font-weight:bold; padding:2px 4px}
+
+/* ---------- Pied / ticker ---------- */
+#foot{display:flex; align-items:center; gap:10px; padding:3px 8px; height:28px;
+  border-bottom:none; border-left:none; border-right:none; z-index:5}
+#toolHint{color:var(--gold); white-space:nowrap; font-size:11px}
+#tickBox{flex:1; overflow:hidden; position:relative; height:18px; background:var(--pan3);
+  border:2px solid; border-color:var(--lo) var(--hi) var(--hi) var(--lo)}
+#ticker{position:absolute; white-space:nowrap; line-height:14px; color:var(--cyan); font-size:11px;
+  animation:scrollTick linear infinite}
+@keyframes scrollTick{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+
+/* ---------- Modales / toasts / budget ---------- */
+#modalBg{position:fixed; inset:0; background:#000a; z-index:20; display:flex; align-items:center; justify-content:center}
+#modal{max-width:560px; width:92%; max-height:88vh; overflow-y:auto; padding:16px}
+#modal h1{color:var(--gold); font-size:26px; letter-spacing:4px; text-align:center;
+  text-shadow:3px 3px 0 #7a3010, 5px 5px 0 #000; margin-bottom:2px}
+#modal .sub{text-align:center; color:var(--cyan); margin-bottom:12px; font-size:11px; letter-spacing:1px}
+#modal h2{color:var(--gold); font-size:12px; margin:11px 0 4px; letter-spacing:1px}
+#modal p,#modal li{color:var(--txt); font-size:11px; line-height:16px}
+#modal ul{padding-left:18px}
+#modal .keys li b{color:var(--cyan)}
+#modal .btns{display:flex; gap:10px; justify-content:center; margin-top:14px}
+.bigbtn{
+  background:var(--pan2); border:3px solid; border-color:var(--hi) var(--lo) var(--lo) var(--hi);
+  color:var(--gold); font-family:inherit; font-size:13px; font-weight:bold; letter-spacing:1px;
+  padding:8px 16px; cursor:pointer;
+}
+.bigbtn:hover{background:#2a3568}
+.bigbtn:active{border-color:var(--lo) var(--hi) var(--hi) var(--lo)}
+.bigbtn.sec{color:var(--dim); font-weight:normal}
+#toasts{position:fixed; top:52px; left:50%; transform:translateX(-50%); z-index:15;
+  display:flex; flex-direction:column; gap:6px; align-items:center; pointer-events:none}
+.toast{
+  background:var(--pan); border:3px solid; border-color:var(--hi) var(--lo) var(--lo) var(--hi);
+  padding:7px 14px; color:var(--txt); font-size:12px; text-align:center;
+  animation:toastIn .25s; box-shadow:4px 4px 0 #0008;
+}
+.toast b{color:var(--gold)}
+.toast.big{font-size:14px; border-color:var(--gold) #7a5010 #7a5010 var(--gold)}
+@keyframes toastIn{from{transform:translateY(-18px); opacity:0}}
+.toast.out{transition:opacity .4s; opacity:0}
+#budget{position:fixed; top:46px; left:8px; z-index:14; width:250px; padding:9px; font-size:11px}
+#budget h3{color:var(--gold); margin-bottom:6px; font-size:12px}
+#budget .row{display:flex; justify-content:space-between; margin:3px 0; color:var(--dim)}
+#budget .row b{color:var(--txt)} #budget .row b.pos{color:var(--grn)} #budget .row b.neg{color:var(--red)}
+#budget hr{border:none; border-top:1px solid var(--hi); margin:5px 0}
+#taxRange{width:100%; margin-top:3px}
+@media (max-width:820px){
+  #tools{width:150px}
+  .tbtn .tname{font-size:9px}
+  #logo{font-size:12px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hud" class="bv">
+    <div id="logo">PIXOPOLIS</div>
+    <div class="chip bv-in" id="chMoney" title="Trésorerie — cliquez pour le budget">💰 <b id="hMoney">0</b></div>
+    <div class="chip bv-in" title="Population">👥 <b id="hPop">0</b></div>
+    <div class="chip bv-in" title="Bonheur des citoyens">☺ <b id="hHap">—</b></div>
+    <div class="chip bv-in" id="hDate">Janv 1985</div>
+    <div class="chip bv-in" id="hJalon" title="Rang de la ville">Campement</div>
+    <div id="rci" class="bv-in" title="Demande : Résidentiel / Commerce / Industrie">
+      <div class="rciCol" id="rR"><div class="rciFill"></div></div>
+      <div class="rciCol" id="rC"><div class="rciFill"></div></div>
+      <div class="rciCol" id="rI"><div class="rciFill"></div></div>
+    </div>
+    <div id="spdBox">
+      <button class="hbtn" id="bPause" title="Pause (P)">⏸</button>
+      <button class="hbtn" id="bSp1" title="Vitesse normale">1×</button>
+      <button class="hbtn" id="bSp2" title="Vitesse rapide">2×</button>
+      <button class="hbtn" id="bSp4" title="Vitesse très rapide">4×</button>
+    </div>
+    <div id="optBox">
+      <button class="hbtn" id="bAide" title="Aide (H)">?</button>
+      <button class="hbtn" id="bSfx" title="Effets sonores">🔊</button>
+      <button class="hbtn" id="bMus" title="Musique (M)">♪</button>
+      <button class="hbtn" id="bNuit" title="Cycle jour/nuit (N)">🌙</button>
+      <button class="hbtn" id="bCrt" title="Effet CRT">CRT</button>
+      <button class="hbtn" id="bSave" title="Sauvegarder">💾</button>
+      <button class="hbtn" id="bNew" title="Nouvelle ville">⟳</button>
+    </div>
+  </header>
+  <div id="mid">
+    <aside id="tools" class="bv"></aside>
+    <div id="vp" class="bv-in">
+      <canvas id="cv"></canvas>
+      <div id="mmBox" class="bv"><canvas id="mm" width="96" height="96"></canvas></div>
+      <div id="info" class="bv hidden"></div>
+      <div id="ghostTip" class="hidden"></div>
+      <div id="pauseTag" class="hidden">▐▐ PAUSE</div>
+      <div id="crt"></div>
+    </div>
+  </div>
+  <footer id="foot" class="bv">
+    <span id="toolHint">Inspecter</span>
+    <div id="tickBox"><span id="ticker"></span></div>
+  </footer>
+</div>
+<div id="modalBg" class="hidden"><div id="modal" class="bv"></div></div>
+<div id="budget" class="bv hidden"></div>
+<div id="toasts"></div>
+
+<script>
+'use strict';
+/* ================================================================
+   PIXOPOLIS — city builder rétro en un fichier
+   Tout est généré par le code : sprites, terrain, sons, musique.
+   ================================================================ */
+
+/* ---------- Constantes ---------- */
+const W = 48, H = 48, TS = 16, WPX = W * TS;      // carte 48×48, tuiles 16 px
+const TICK_MS = 600, TPM = 8;                      // 8 ticks par mois
+const START_MONEY = 2500, START_YEAR = 1985;
+const SAVE_KEY = 'pixopolis_v1', OPTS_KEY = 'pixopolis_opts';
+const T_GRASS = 0, T_WATER = 1, T_SAND = 2, T_TREE = 3;
+const MOIS = ['Janv','Févr','Mars','Avril','Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc'];
+const POPS  = [0, 6, 16, 40];       // habitants par niveau résidentiel
+const JOBS_C = [0, 5, 12, 30];      // emplois par niveau commercial
+const JOBS_I = [0, 7, 16, 38];      // emplois par niveau industriel
+const INCOME_RES = 0.06, INCOME_JOB = 0.045;       // $ par (hab|emploi) et par % d'impôt
+const ROAD_MAINT = 0.5;
+// seuils de valeur foncière pour monter de niveau [_, lv1, lv2, lv3]
+const GROW_REQ = { res:[0,0,38,62], com:[0,0,34,58], ind:[0,0,0,0] };
+
+/* ---------- Outils / bâtiments ---------- */
+const TOOLS = [
+ {id:'select', cat:'Général', nom:'Inspecter',          desc:'Examiner une case (clic)',                          cost:0,   key:'1'},
+ {id:'bull',   cat:'Général', nom:'Bulldozer',          desc:'Démolir bâtiments, routes, arbres, gravats',        cost:5,   drag:1, key:'2'},
+ {id:'road',   cat:'Général', nom:'Route',              desc:'Relie les bâtiments à la ville. Indispensable !',   cost:10,  maint:ROAD_MAINT, drag:1, key:'3'},
+ {id:'res',    cat:'Zones',   nom:'Zone résidentielle', desc:'Des logements y poussent selon la demande (R)',     cost:25,  drag:1, key:'4'},
+ {id:'com',    cat:'Zones',   nom:'Zone commerciale',   desc:'Boutiques et bureaux selon la demande (C)',         cost:25,  drag:1, key:'5'},
+ {id:'ind',    cat:'Zones',   nom:'Zone industrielle',  desc:'Usines : emplois mais pollution (I)',               cost:25,  drag:1, key:'6'},
+ {id:'wind',   cat:'Énergie', nom:'Éolienne',           desc:'Énergie propre, petit rayon (6)',                   cost:200, maint:8,  powerR:6,  key:'7'},
+ {id:'coal',   cat:'Énergie', nom:'Centrale à charbon', desc:'Grand rayon (12) mais très polluante',              cost:500, maint:30, powerR:12, size:2, unlock:100, key:'8'},
+ {id:'fusion', cat:'Énergie', nom:'Centrale à fusion',  desc:'Alimente toute la carte, propre',                   cost:2500,maint:70, powerR:99, size:2, unlock:8000},
+ {id:'police', cat:'Services',nom:'Poste de police',    desc:'Réduit la criminalité (rayon 9)',                   cost:300, maint:25, covR:9,  unlock:100, key:'9'},
+ {id:'fire',   cat:'Services',nom:'Caserne de pompiers',desc:'Prévient et éteint les incendies (rayon 9)',        cost:300, maint:25, covR:9,  unlock:400},
+ {id:'school', cat:'Services',nom:'École',              desc:'Augmente la valeur foncière (rayon 10)',            cost:350, maint:20, covR:10, unlock:400},
+ {id:'hospital',cat:'Services',nom:'Hôpital',           desc:'Bonheur et santé (rayon 12)',                       cost:450, maint:35, covR:12, size:2, unlock:1200},
+ {id:'park',   cat:'Loisirs', nom:'Parc',               desc:'Valeur foncière et bonheur alentour',               cost:40,  maint:2,  drag:1, key:'0'},
+ {id:'fountain',cat:'Loisirs',nom:'Fontaine',           desc:'Grand bonus de valeur foncière',                    cost:150, maint:5,  unlock:1200},
+ {id:'statue', cat:'Loisirs', nom:'Statue dorée',       desc:'Prestige énorme pour le quartier',                  cost:600, maint:0,  unlock:3000},
+ {id:'stadium',cat:'Loisirs', nom:'Stade',              desc:'Bonheur pour toute la ville',                       cost:1200,maint:45, size:2, unlock:3000},
+];
+const TOOL_BY_ID = {}; TOOLS.forEach(t => TOOL_BY_ID[t.id] = t);
+
+/* ---------- Jalons ---------- */
+const JALONS = [
+ {pop:0,    nom:'Campement',    prime:0},
+ {pop:100,  nom:'Village',      prime:300,  deb:['coal','police']},
+ {pop:400,  nom:'Bourg',        prime:500,  deb:['fire','school']},
+ {pop:1200, nom:'Ville',        prime:900,  deb:['hospital','fountain']},
+ {pop:3000, nom:'Grande Ville', prime:1500, deb:['statue','stadium']},
+ {pop:8000, nom:'Métropole',    prime:3000, deb:['fusion'], victoire:true},
+];
+
+/* ---------- Utilitaires ---------- */
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+const irnd = n => (Math.random()*n)|0;
+const chance = p => Math.random() < p;
+const idx = (x,y) => y*W + x;
+const inb = (x,y) => x>=0 && y>=0 && x<W && y<H;
+const fmt$ = n => Math.round(n).toLocaleString('fr-FR') + ' $';
+const fmtN = n => Math.round(n).toLocaleString('fr-FR');
+function mkC(w,h){ const c = document.createElement('canvas'); c.width=w; c.height=h; return c; }
+
+function mulberry(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed>>>15, 1|seed);
+    t = t + Math.imul(t ^ t>>>7, 61|t) ^ t;
+    return ((t ^ t>>>14) >>> 0) / 4294967296;
+  };
+}
+function hash2(x,y,s){
+  let h = (x*374761393 + y*668265263 + s*1442695041) | 0;
+  h = (h ^ h>>>13) | 0; h = Math.imul(h, 1274126177);
+  return ((h ^ h>>>16) >>> 0) / 4294967296;
+}
+function vnoise(x,y,s){
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x-xi, yf = y-yi;
+  const sm = t => t*t*(3-2*t);
+  const a = hash2(xi,yi,s),   b = hash2(xi+1,yi,s);
+  const c = hash2(xi,yi+1,s), d = hash2(xi+1,yi+1,s);
+  const u = sm(xf), v = sm(yf);
+  return a + (b-a)*u + (c-a)*v + (a-b-c+d)*u*v;
+}
+
+/* ---------- Palette pixel-art ---------- */
+const PAL = {
+  k:'#101018', n:'#232433', q:'#3c3f4c', s:'#9aa1ad', S:'#666d78',
+  m:'#d9d4c2', M:'#b0aa97', w:'#f4f3ea', t:'#e0c07c', T:'#b89050',
+  d:'#96714a', D:'#5e462c', r:'#d4553f', R:'#93392c', o:'#e98a3c',
+  y:'#f4c84f', f:'#ffe9a0', g:'#4caa54', G:'#2f7a3c', l:'#8fd07a',
+  b:'#4b79cf', B:'#2d4f92', c:'#6fd3e0', C:'#3a9fb5', p:'#c069c9',
+  P:'#8a4694', e:'#c8cbe0', E:'#8f93b4', x:'#ff5c5c', z:'#57e0a0',
+  i:'#b8bec8', h:'#1f6f5f', u:'#3a2e40',
+};
+const ZCOL = { res:'#46c268', com:'#5d9df0', ind:'#e8a54f' };
+// lettres 5 px pour les zones non construites
+const LTR = {
+  res:['XXX.','X..X','XXX.','X.X.','X..X'],
+  com:['.XXX','X...','X...','X...','.XXX'],
+  ind:['XXX','.X.','.X.','.X.','XXX'],
+};
+
+/* ================================================================
+   SPRITES — pixel-art défini en chaînes de caractères (palette PAL)
+   ================================================================ */
+const SPR = {};   // nom -> canvas
+// points d'émission de fumée (px dans le sprite) par type de bâtiment
+const SMOKE_OFF = { ind2:[[4,1]], ind3:[[3,2],[10,2]], coal:[[7,6],[19,6]] };
+
+function spriteFrom(rows){
+  const size = rows.length > 16 ? 32 : 16;
+  const c = mkC(size,size), g = c.getContext('2d');
+  for(let y=0; y<Math.min(rows.length,size); y++){
+    const r = rows[y] || '';
+    for(let x=0; x<Math.min(r.length,size); x++){
+      const ch = r[x];
+      if(ch !== '.'){ g.fillStyle = PAL[ch] || '#ff00ff'; g.fillRect(x,y,1,1); }
+    }
+  }
+  return c;
+}
+
+const ART = {
+tree1:[
+'................',
+'................',
+'......GGg.......',
+'.....GllGG......',
+'....GlGGGGg.....',
+'....GGGGlGG.....',
+'...gGlGGGGGG....',
+'...GGGGGGlGg....',
+'...gGGlGGGGG....',
+'....GGGGGGg.....',
+'.....gGGGG......',
+'.......DD.......',
+'.......DD.......',
+'......nDDn......',
+'................',
+'................'],
+tree2:[
+'................',
+'.......g........',
+'......gGG.......',
+'.....gGGGg......',
+'......GGG.......',
+'.....gGGGG......',
+'....gGGGGGg.....',
+'.....GGGGG......',
+'....gGGGGGg.....',
+'...gGGGGGGGg....',
+'..gGGGGGGGGGg...',
+'.......D........',
+'.......D........',
+'......nDn.......',
+'................',
+'................'],
+res1:[
+'................',
+'................',
+'......kkkk......',
+'.....kRrrRk.....',
+'....kRrrrrRk....',
+'...kRrrrrrrRk...',
+'..kRrrrrrrrrRk..',
+'..krrrrrrrrrrk..',
+'..kwwwwwwwwwwk..',
+'..kwffwwwwffwk..',
+'..kwffwwwwffwk..',
+'..kwwwwkkwwwwk..',
+'..kwwwwkDwwwwk..',
+'..kwwwwkDwwwwk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+res2:[
+'................',
+'.....kkkkkk.....',
+'....kBbbbbBk....',
+'...kBbbbbbbBk...',
+'..kBbbbbbbbbBk..',
+'..kbbbbbbbbbbk..',
+'..kwwwwwwwwwwk..',
+'..kwffwffwffwk..',
+'..kwffwffwffwk..',
+'..kwwwwwwwwwwk..',
+'..kwffwwwwffwk..',
+'..kwffwkkwffwk..',
+'..kwwwwkDwwwwk..',
+'..kwwwwkDwwwwk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+res3:[
+'..k..........k..',
+'.kkkkkkkkkkkkkk.',
+'.kmmmmmmmmmmmmk.',
+'.kRrrrrrrrrrrrk.',
+'.kRffrffrffrffk.',
+'.kRrrrrrrrrrrrk.',
+'.kRffrffrffrffk.',
+'.kRrrrrrrrrrrrk.',
+'.kRffrffrffrffk.',
+'.kRrrrrrrrrrrrk.',
+'.kRffrffrffrffk.',
+'.kRrrrrrrrrrrrk.',
+'.kRrrrrkkrrrrrk.',
+'.kRrrrrkDrrrrrk.',
+'.kkkkkkkkkkkkkk.',
+'.nnnnnnnnnnnnnn.'],
+com1:[
+'................',
+'................',
+'................',
+'...kkkkkkkkkk...',
+'..kmmmmmmmmmmk..',
+'..koowwoowwook..',
+'..kowwoowwoowk..',
+'..kmmmmmmmmmmk..',
+'..kmffffffkmmk..',
+'..kmffffffkDmk..',
+'..kmffffffkDmk..',
+'..kmffffffkmmk..',
+'..kmmmmmmmmmmk..',
+'..kmmmmmmmmmmk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+com2:[
+'................',
+'..kkkkkkkkkkkk..',
+'..kyyyyyyyyyyk..',
+'..kyknkkynkkyk..',
+'..kyyyyyyyyyyk..',
+'..kmmmmmmmmmmk..',
+'..kmffmffmffmk..',
+'..kmffmffmffmk..',
+'..kmmmmmmmmmmk..',
+'..kmffffffkmmk..',
+'..kmffffffkDmk..',
+'..kmffffffkDmk..',
+'..kmffffffkmmk..',
+'..kmmmmmmmmmmk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+com3:[
+'....kkkkkkkk....',
+'...kEEEEEEEEk...',
+'...kcbcbcbcbk...',
+'...kbcbcbcbck...',
+'...kcbcbcbcbk...',
+'...kbcbcbcbck...',
+'...kcbcbcbcbk...',
+'...kbcbcbcbck...',
+'...kcbcbcbcbk...',
+'...kbcbcbcbck...',
+'...kcbcbcbcbk...',
+'...kbcbcbcbck...',
+'...kEEEEEEEEk...',
+'...kEEkkkEEEk...',
+'..nkkkkkkkkkkn..',
+'...nnnnnnnnnn...'],
+ind1:[
+'................',
+'................',
+'................',
+'..kkkkkkkkkkkk..',
+'..kSSSSSSSSSSk..',
+'..kssssssssssk..',
+'..kSSSSSSSSSSk..',
+'..kmmmmmmmmmmk..',
+'..kmmkkkkkkmmk..',
+'..kmmksssskmmk..',
+'..kmmksssskmmk..',
+'..kmmksssskmmk..',
+'..kmmmmmmmmmmk..',
+'..kmmmmmmmmmmk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+ind2:[
+'...kk...........',
+'..kSsk..........',
+'..kSsk..........',
+'..kSskkkkkkkkk..',
+'..kSskSSkkSSkk..',
+'..kSsSssSSssSk..',
+'..kssssssssssk..',
+'..kSSSSSSSSSSk..',
+'..ksmmmmmmmmsk..',
+'..ksmffmmffmsk..',
+'..ksmmmmmmmmsk..',
+'..ksmkkkkkmmsk..',
+'..ksmkssskmmsk..',
+'..ksmkssskmmsk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+ind3:[
+'..kk.....kk.....',
+'.kSsk...kSsk....',
+'.kSsk...kSsk....',
+'.kSskkkkkSskkk..',
+'.kSsSSSSSSsSSk..',
+'.kssssssssssski.',
+'.kSSSSSSSSSSSkii',
+'.kssssssssssski.',
+'.ksmmmmmmmmmsk..',
+'.ksmffmffmffsk..',
+'.ksmmmmmmmmmsk..',
+'.ksmkkkkkmmmsk..',
+'.ksmkssskmffsk..',
+'.ksmkssskmmmsk..',
+'.nkkkkkkkkkkkkn.',
+'.nnnnnnnnnnnnnn.'],
+aband:[
+'................',
+'................',
+'......kkkk......',
+'.....kSSSSk.....',
+'....kSSSSSSk....',
+'...kSSSSSSSSk...',
+'..kSSSSSSSSSSk..',
+'..kssssssssssk..',
+'..ksDDssssDDsk..',
+'..kssDDssDDssk..',
+'..ksssDDDDsssk..',
+'..kssssDDssssk..',
+'..kssskkkksssk..',
+'..ksssskkssssk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+rubble:[
+'................',
+'................',
+'................',
+'................',
+'................',
+'................',
+'.....s...S......',
+'....sSs.sSs.d...',
+'...sSSSsSSSs....',
+'..sSSdSSSSSSs...',
+'..sSSSSSdSSSs...',
+'.sSSsSSSSSsSSs..',
+'..ssSSSssSSss...',
+'...s.ss..ss.....',
+'................',
+'................'],
+police:[
+'................',
+'..kkkkkkkkkkkk..',
+'..kBBBBBBBBBBk..',
+'..kBwwwwwwwwBk..',
+'..kBwknknkkwBk..',
+'..kBwwwwwwwwBk..',
+'..kBBBBBBBBBBk..',
+'..kBffBBBBffBk..',
+'..kBffByyBffBk..',
+'..kBBBByyBBBBk..',
+'..kBffBBBBffBk..',
+'..kBffBkkBffBk..',
+'..kBBBBkkBBBBk..',
+'..kBBBBkkBBBBk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+fire:[
+'................',
+'..kkkkkkkkkkkk..',
+'..krrrrrrrrrrk..',
+'..krwwwwwwwwrk..',
+'..krwknknkkwrk..',
+'..krwwwwwwwwrk..',
+'..krrrrrrrrrrk..',
+'..krkkkkkkkkrk..',
+'..krksssssskrk..',
+'..krksssssskrk..',
+'..krksskksskrk..',
+'..krksskksskrk..',
+'..krrrrrrrrrrk..',
+'..krrrrrrrrrrk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+school:[
+'..bwr...........',
+'..k.............',
+'..k.............',
+'..kkkkkkkkkkkk..',
+'..kGGGGGGGGGGk..',
+'..kGGGGGGGGGGk..',
+'..kttttttttttk..',
+'..ktffttffttfk..',
+'..ktffttffttfk..',
+'..kttttttttttk..',
+'..ktffttffttfk..',
+'..ktffttffttfk..',
+'..kttttkkttttk..',
+'..kttttkkttttk..',
+'.nkkkkkkkkkkkkn.',
+'..nnnnnnnnnnnn..'],
+park:[
+'gggggggggggggggg',
+'glggggGGggggglgg',
+'ggggGGllGGgggggg',
+'gyggGlGGGGggyggg',
+'ggggGGGGlGgggggg',
+'glgggGGGGggggttg',
+'gggggnDDggggttgg',
+'ggxggggggggttggg',
+'ggggggggggttgggg',
+'gggggggggttggggg',
+'ggGGgggttggggxgg',
+'gGllGgttggggggggg',
+'gGGGGttgggglgggg',
+'ggnDttggygggggggg',
+'gggttggggggggggg',
+'ggttgggggggggggg'],
+fountain:[
+'................',
+'................',
+'.......w........',
+'......cwc.......',
+'......cwc.......',
+'....mmcccmm.....',
+'...mMcccccMm....',
+'..mMcccwcccMm...',
+'..mcccccccccm...',
+'..mccwccccwcm...',
+'..mMcccccccMm...',
+'...mMMcccMMm....',
+'....mmmmmmm.....',
+'...MMMMMMMMM....',
+'..nnnnnnnnnnn...',
+'................'],
+statue:[
+'................',
+'................',
+'.......yy.......',
+'......yyyy......',
+'.......yy.......',
+'......yyyy......',
+'.....yyyyyy.....',
+'.....y.yy.y.....',
+'.......yy.......',
+'......yyyy......',
+'.....mmmmmm.....',
+'....mMMMMMMm....',
+'....mMMMMMMm....',
+'...mmmmmmmmmm...',
+'..nMMMMMMMMMMn..',
+'...nnnnnnnnnn...'],
+wind:[
+'................',
+'................',
+'................',
+'.......ss.......',
+'......swws......',
+'......swws......',
+'.......ww.......',
+'.......ww.......',
+'.......ww.......',
+'.......ww.......',
+'.......ww.......',
+'.......ww.......',
+'.......ww.......',
+'......SwwS......',
+'.....nSSSSn.....',
+'................'],
+selIcon:[
+'................',
+'....kkkk........',
+'...kcccck.......',
+'..kcwcccck......',
+'..kcccccck......',
+'..kcccccck......',
+'..kcccccck......',
+'...kcccck.......',
+'....kkkkkk......',
+'.......kkkk.....',
+'........kkkk....',
+'.........kkkk...',
+'..........kkk...',
+'................',
+'................',
+'................'],
+bullIcon:[
+'................',
+'................',
+'................',
+'....kk..........',
+'...kyyk..kk.....',
+'...kyyyykkyk....',
+'..kyyyyyyyyk....',
+'..kyyyyyyyyk.kk.',
+'..kyyyyyyyykkyk.',
+'.knknknknknk.k..',
+'.kknknknknkkkk..',
+'..kkkkkkkkkk....',
+'................',
+'................',
+'................',
+'................'],
+coal:[
+'................................',
+'................................',
+'.....kkkk........kkkk...........',
+'.....kSsk........kSsk...........',
+'.....kSsk........kSsk...........',
+'.....kSsk........kSsk...........',
+'.....kSsk........kSsk...........',
+'.....kSsk........kSsk...........',
+'.....kSsk........kSsk...........',
+'.....kSsk........kSsk...........',
+'.....kSsk........kSsk...........',
+'.....kSsk........kSsk...........',
+'.....kSsk........kSsk...........',
+'..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..',
+'..kSSSSSSSSSSSSSSSSSSSSSSSSSSk..',
+'..kssssssssssssssssssssssssssk..',
+'..ksffsffsffsffsffsffsffsffssk..',
+'..kssssssssssssssssssssssssssk..',
+'..kSSSSSSSSSSSSSSSSSSSSSSSSSSk..',
+'..ksssssssssssssssssssssnnsssk..',
+'..kssskkkkkkkkssssssssssnnnssk..',
+'..kssskssssssksssssssssnnnnnsk..',
+'..kssskssssssksssssssssnnnnnsk..',
+'..ksssksssssskssssssssnnnnnnsk..',
+'..ksssksssssskssssssssnnnnnnsk..',
+'..kssskssssssksssssssnnnnnnnsk..',
+'..kssskkkkkkkkssssssnnnnnnnnsk..',
+'..kssssssssssssssssssssssssssk..',
+'..kykykykykykykykykykykykykykk..',
+'..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..',
+'.nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn.',
+'................................'],
+hospital:[
+'................................',
+'................................',
+'................................',
+'................................',
+'................................',
+'................................',
+'...kkkkkkkkkkkkkkkkkkkkkkkkkk...',
+'...kwwwwwwwwwwwwwwwwwwwwwwwwk...',
+'...kwwwwwwwwwwwxxwwwwwwwwwwwk...',
+'...kwwwwwwwwwwwxxwwwwwwwwwwwk...',
+'...kwwwwwwwwwxxxxxxwwwwwwwwwk...',
+'...kwwwwwwwwwxxxxxxwwwwwwwwwk...',
+'...kwwwwwwwwwwwxxwwwwwwwwwwwk...',
+'...kwwwwwwwwwwwxxwwwwwwwwwwwk...',
+'...kwwwwwwwwwwwwwwwwwwwwwwwwk...',
+'...keeeeeeeeeeeeeeeeeeeeeeeek...',
+'...kwbbwwbbwwbbwwbbwwbbwwbbwk...',
+'...kwbbwwbbwwbbwwbbwwbbwwbbwk...',
+'...kwwwwwwwwwwwwwwwwwwwwwwwwk...',
+'...kwbbwwbbwwbbwwbbwwbbwwbbwk...',
+'...kwbbwwbbwwbbwwbbwwbbwwbbwk...',
+'...kwwwwwwwwwwwwwwwwwwwwwwwwk...',
+'...kwbbwwbbwwwwwwwwwwbbwwbbwk...',
+'...kwbbwwbbwwxxxxxxwwbbwwbbwk...',
+'...kwwwwwwwwwexxxxewwwwwwwwwk...',
+'...kwwwwwwwwweeeeeewwwwwwwwwk...',
+'...kwwwwwwwwwekkkkewwwwwwwwwk...',
+'...kwwwwwwwwwekkkkewwwwwwwwwk...',
+'...kkkkkkkkkkkkkkkkkkkkkkkkkk...',
+'..nnnnnnnnnnnnnnnnnnnnnnnnnnnn..',
+'................................',
+'................................'],
+stadium:[
+'................................',
+'................................',
+'...w........................w..',
+'...k..kkkkkkkkkkkkkkkkkkk...k..',
+'...kkkSSSSSSSSSSSSSSSSSSSkkkk..',
+'..kSSSssssssssssssssssssSSSk...',
+'..kSssssskkkkkkkkkkkksssssSk...',
+'..kSssskkgggggggggggkkksssSk...',
+'..kSsskgggggggggggggggkssSSk...',
+'..kSskggggggwwggggggggggksSk...',
+'..kSskgggggwggwgggggggggksSk...',
+'..kSskgggggwggwgggggggggksSk...',
+'..kSskggggggwwggggggggggksSk...',
+'..kSskgggggggggggggggggggkSk...',
+'..kSskgggwwwwwwwwwwwwgggksSk...',
+'..kSskgggggggggggggggggggkSk...',
+'..kSskggggggwwggggggggggksSk...',
+'..kSskgggggwggwgggggggggksSk...',
+'..kSskgggggwggwgggggggggksSk...',
+'..kSskggggggwwggggggggggksSk...',
+'..kSsskgggggggggggggggkssSSk...',
+'..kSssskkgggggggggggkkksssSk...',
+'..kSssssskkkkkkkkkkksssssSSk...',
+'..kSSSssssssssssssssssssSSSk...',
+'...kkkSSSSSSSSSSSSSSSSSSSkkk...',
+'...k..kkkkkkkkkkkkkkkkkkk...k..',
+'...w........................w..',
+'.nnnnnnnnnnnnnnnnnnnnnnnnnnnnn.',
+'................................',
+'................................',
+'................................',
+'................................'],
+fusion:[
+'................................',
+'................................',
+'................................',
+'............eeeeee..............',
+'..........eeEEEEEEee............',
+'........eeEEEEEEEEEEee..........',
+'.......eEEEEEEEEEEEEEEe.........',
+'......eEEEEEppppppEEEEEe........',
+'.....eEEEEppEEEEEEppEEEEe.......',
+'.....eEEEpEEEEEEEEEEpEEEe.......',
+'....eEEEpEEEEccccEEEEpEEEe......',
+'....eEEEpEEEcccccccEEpEEEe......',
+'....eEEpEEEcccwwccccEEpEEe......',
+'....eEEpEEEccwwwwcccEEpEEe......',
+'....eEEpEEEccwwwwcccEEpEEe......',
+'....eEEpEEEcccwwccccEEpEEe......',
+'....eEEEpEEEcccccccEEpEEEe......',
+'....eEEEpEEEEccccEEEEpEEEe......',
+'.....eEEEpEEEEEEEEEEpEEEe.......',
+'.....eEEEEppEEEEEEppEEEEe.......',
+'......eEEEEEppppppEEEEEe........',
+'.......eEEEEEEEEEEEEEEe.........',
+'........eeEEEEEEEEEEee..........',
+'.........keeeeeeeeeek...........',
+'........kkeekkkkkkeekk..........',
+'.......kEEkkkcccckkkEEk.........',
+'.......kEEkkkcccckkkEEk.........',
+'......kkEEkkkkkkkkkkEEkk........',
+'......kkkkkkkkkkkkkkkkkk........',
+'.....nnnnnnnnnnnnnnnnnnnn.......',
+'................................',
+'................................'],
+};
+for(const k in ART) SPR[k] = spriteFrom(ART[k]);
+
+/* ---------- Tuiles de terrain (procédurales) ---------- */
+const GRASS_T = [], WATER_T = [];
+let SAND_T = null;
+function buildTerrainTiles(){
+  for(let v=0; v<2; v++){
+    const c = mkC(16,16), g = c.getContext('2d');
+    g.fillStyle = v ? '#4d9a51' : '#529f56'; g.fillRect(0,0,16,16);
+    for(let i=0;i<26;i++){
+      const x = (hash2(i,v,7)*16)|0, y = (hash2(i,v,13)*16)|0;
+      g.fillStyle = hash2(i,v,29) < .5 ? '#468c4a' : '#5cab60';
+      g.fillRect(x,y,1,1);
+    }
+    GRASS_T.push(c);
+  }
+  SAND_T = mkC(16,16);
+  { const g = SAND_T.getContext('2d');
+    g.fillStyle = '#dcc892'; g.fillRect(0,0,16,16);
+    for(let i=0;i<18;i++){
+      g.fillStyle = hash2(i,3,31) < .5 ? '#cbb67c' : '#e8d6a4';
+      g.fillRect((hash2(i,5,17)*16)|0, (hash2(i,9,23)*16)|0, 1, 1);
+    } }
+  for(let f=0; f<2; f++){
+    const c = mkC(16,16), g = c.getContext('2d');
+    g.fillStyle = '#2b5cb0'; g.fillRect(0,0,16,16);
+    g.fillStyle = '#25519e';
+    for(let i=0;i<8;i++)
+      g.fillRect((hash2(i,f,41)*14)|0, (hash2(i,f,43)*14)|0, 2, 2);
+    g.fillStyle = '#4b82d8';
+    for(let i=0;i<7;i++){
+      const x = ((hash2(i,0,53)*13)|0) + (f?2:0), y = (hash2(i,0,59)*15)|0;
+      g.fillRect(x % 14, y, 3, 1);
+    }
+    WATER_T.push(c);
+  }
+}
+
+/* ---------- Routes (16 variantes par connexions N=1 E=2 S=4 W=8) ---------- */
+const ROADS = [];
+function buildRoads(){
+  for(let m=0; m<16; m++){
+    const c = mkC(16,16), g = c.getContext('2d');
+    g.fillStyle = '#3c3f4c'; g.fillRect(0,0,16,16);
+    // bords de trottoir là où il n'y a pas de connexion
+    g.fillStyle = '#7d848f';
+    if(!(m&1)) g.fillRect(0,0,16,2);
+    if(!(m&4)) g.fillRect(0,14,16,2);
+    if(!(m&8)) g.fillRect(0,0,2,16);
+    if(!(m&2)) g.fillRect(14,0,2,16);
+    // marquage central
+    g.fillStyle = '#d8c050';
+    if(m === 5)  for(let y=1;y<15;y+=4) g.fillRect(7,y,1,2);
+    if(m === 10) for(let x=1;x<15;x+=4) g.fillRect(x,7,2,1);
+    if(m === 15){ // carrefour : passages piétons
+      g.fillStyle = '#c9cdd4';
+      for(let i=3;i<13;i+=3){ g.fillRect(i,2,2,2); g.fillRect(i,12,2,2); }
+    }
+    // usure de l'asphalte
+    g.fillStyle = '#35384a';
+    for(let i=0;i<6;i++)
+      g.fillRect((hash2(i,m,61)*14)|0+1, (hash2(i,m,67)*14)|0+1, 1, 1);
+    ROADS.push(c);
+  }
+}
+buildTerrainTiles();
+buildRoads();
+
+/* ---------- Zone non construite (dessinée à la volée) ---------- */
+function drawZone(g, px, py, kind){
+  g.fillStyle = ZCOL[kind] + '30';
+  g.fillRect(px+1, py+1, 14, 14);
+  g.fillStyle = ZCOL[kind];
+  [[1,1],[13,1],[1,13],[13,13]].forEach(c => g.fillRect(px+c[0], py+c[1], 2, 2));
+  const pat = LTR[kind], lw = pat[0].length;
+  const ox = px + ((16-lw)>>1), oy = py + 5;
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(ox-1, oy-1, lw+2, 7);
+  g.fillStyle = ZCOL[kind];
+  pat.forEach((row,ry)=>{ for(let rx=0; rx<row.length; rx++) if(row[rx]==='X') g.fillRect(ox+rx, oy+ry, 1, 1); });
+}
+
+// sprite d'un bâtiment développé selon type + niveau
+function bldSprite(b){
+  if(b.ab) return SPR.aband;
+  if(b.k === 'res' || b.k === 'com' || b.k === 'ind') return SPR[b.k + b.lv];
+  return SPR[b.k] || SPR.rubble;
+}
+
+/* ================================================================
+   MONDE & ÉTAT DE PARTIE
+   ================================================================ */
+let st = null;                                          // état sérialisable
+let opts = { sfx:true, mus:true, nuit:true, crt:true }; // préférences
+let dirtyT = true, dirtyB = true, needRecalc = true;    // caches à refaire
+
+function genTerrain(seed){
+  const terr = new Uint8Array(W*H);
+  for(let y=0; y<H; y++) for(let x=0; x<W; x++){
+    const e  = vnoise(x*0.09, y*0.09, seed) * 0.7 + vnoise(x*0.23, y*0.23, seed+99) * 0.3;
+    const mo = vnoise(x*0.13, y*0.13, seed+555);
+    let t = T_GRASS;
+    if(e < 0.34) t = T_WATER;
+    else if(e < 0.385) t = T_SAND;
+    else if(mo > 0.64 && e > 0.42) t = T_TREE;
+    terr[idx(x,y)] = t;
+  }
+  return terr;
+}
+
+function newGame(seed){
+  seed = (seed === undefined) ? (Math.random()*1e9)|0 : seed;
+  let terr = null;
+  for(let tries=0; tries<50; tries++){          // il faut assez de terrain à bâtir
+    terr = genTerrain(seed);
+    let land = 0;
+    for(let i=0; i<W*H; i++) if(terr[i] === T_GRASS) land++;
+    if(land > W*H*0.52) break;
+    seed = (seed*16807 + 7) % 2147483647;
+  }
+  st = {
+    seed, money:START_MONEY, month:0, tax:9, jalon:0, victoire:false,
+    pop:0, jobs:0, hap:60, demR:0.5, demC:0, demI:0.5,
+    lastBud:{inc:0, exp:0},
+    grid:[],
+  };
+  for(let i=0; i<W*H; i++) st.grid.push({ t:terr[i], z:0, b:null });
+  dirtyT = dirtyB = needRecalc = true;
+}
+
+const cellAt = (x,y) => st.grid[idx(x,y)];
+// résout le bâtiment "racine" d'une case (les 2×2 occupent 4 cases)
+function rootB(c){
+  if(!c || !c.b) return null;
+  return c.b.slave ? st.grid[c.b.root].b : c.b;
+}
+function isUnlocked(def){ return !def.unlock || (st && def.unlock <= JALONS[st.jalon].pop); }
+const ZKIND = ['', 'res', 'com', 'ind'];
+const ZNUM  = { res:1, com:2, ind:3 };
+
+/* ---------- Placement ---------- */
+function placeRaw(kind, x, y, lv, ab){
+  const def = TOOL_BY_ID[kind];
+  const sz = (def && def.size) || 1;
+  const b = { k:kind, lv:lv||1, ab:!!ab, fire:0, noP:0, on:true, x, y, sz };
+  cellAt(x,y).b = b;
+  if(sz === 2){
+    const ri = idx(x,y);
+    [[1,0],[0,1],[1,1]].forEach(d => { cellAt(x+d[0], y+d[1]).b = { slave:true, root:ri }; });
+  }
+  return b;
+}
+
+function canPlace(toolId, x, y){
+  const def = TOOL_BY_ID[toolId];
+  if(!def) return {ok:false, why:'?'};
+  if(toolId === 'select') return {ok:true};
+  const sz = def.size || 1;
+  if(!inb(x,y) || !inb(x+sz-1, y+sz-1)) return {ok:false, why:'Hors carte'};
+  if(!isUnlocked(def)) return {ok:false, why:'Verrouillé (' + def.unlock + ' hab)'};
+  if(toolId === 'bull'){
+    const c = cellAt(x,y);
+    if(c.b || c.z || c.t === T_TREE) return {ok:true};
+    return {ok:false, why:'Rien à démolir'};
+  }
+  for(let dy=0; dy<sz; dy++) for(let dx=0; dx<sz; dx++){
+    const c = cellAt(x+dx, y+dy);
+    if(c.t === T_WATER) return {ok:false, why:'Eau : impossible'};
+    if(c.t === T_TREE)  return {ok:false, why:'Forêt : passez le bulldozer'};
+    if(c.b) return {ok:false, why:'Déjà occupé'};
+    if(c.z && (toolId==='res'||toolId==='com'||toolId==='ind') && c.z === ZNUM[toolId])
+      return {ok:false, why:'Déjà zoné'};
+  }
+  if(st.money < def.cost) return {ok:false, why:'Fonds insuffisants'};
+  return {ok:true};
+}
+
+// applique un outil sur une case ; retourne true si quelque chose a changé
+function applyTool(toolId, x, y){
+  const chk = canPlace(toolId, x, y);
+  if(!chk.ok){
+    if(chk.why === 'Fonds insuffisants') moneyFlash();
+    return false;
+  }
+  const def = TOOL_BY_ID[toolId];
+  if(toolId === 'bull'){
+    const c = cellAt(x,y);
+    const b = rootB(c);
+    if(b){
+      const wasRubble = b.k === 'rubble';
+      for(let dy=0; dy<b.sz; dy++) for(let dx=0; dx<b.sz; dx++)
+        cellAt(b.x+dx, b.y+dy).b = null;
+      if(!wasRubble && b.k !== 'road') sfx('doze'); else sfx('click');
+    } else if(c.z){ c.z = 0; sfx('click'); }
+    else if(c.t === T_TREE){ c.t = T_GRASS; dirtyT = true; sfx('doze'); }
+    st.money -= def.cost;
+    dirtyB = true; needRecalc = true;
+    return true;
+  }
+  if(toolId === 'res' || toolId === 'com' || toolId === 'ind'){
+    const c = cellAt(x,y);
+    c.z = ZNUM[toolId];
+    st.money -= def.cost;
+    dirtyB = true; needRecalc = true;
+    sfx('zone');
+    return true;
+  }
+  // route et bâtiments : effacent un éventuel zonage vide
+  const sz = def.size || 1;
+  for(let dy=0; dy<sz; dy++) for(let dx=0; dx<sz; dx++) cellAt(x+dx, y+dy).z = 0;
+  placeRaw(toolId === 'road' ? 'road' : toolId, x, y, 1, false);
+  st.money -= def.cost;
+  dirtyB = true; needRecalc = true;
+  sfx('build');
+  return true;
+}
+
+/* ---------- Sauvegarde ---------- */
+const KINDS = ['res','com','ind','road','wind','coal','fusion','police','fire',
+               'school','hospital','park','fountain','statue','stadium','rubble'];
+function save(){
+  if(!st) return;
+  const terr = new Array(W*H), zone = new Array(W*H), blds = [];
+  st.grid.forEach((c,i)=>{
+    terr[i] = c.t; zone[i] = c.z;
+    if(c.b && !c.b.slave)
+      blds.push([i%W, (i/W)|0, KINDS.indexOf(c.b.k), c.b.lv||1, c.b.ab?1:0]);
+  });
+  const data = { v:1, seed:st.seed, money:Math.round(st.money), month:st.month,
+    tax:st.tax, jalon:st.jalon, victoire:st.victoire,
+    terr:terr.join(''), zone:zone.join(''), blds };
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(data)); }catch(e){}
+}
+function loadGame(){
+  let data;
+  try{ data = JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){ return false; }
+  if(!data || data.v !== 1 || !data.terr || data.terr.length !== W*H) return false;
+  st = { seed:data.seed, money:data.money, month:data.month, tax:data.tax,
+    jalon:data.jalon, victoire:!!data.victoire, pop:0, jobs:0, hap:60,
+    demR:0, demC:0, demI:0, lastBud:{inc:0,exp:0}, grid:[] };
+  for(let i=0; i<W*H; i++) st.grid.push({ t:+data.terr[i], z:+data.zone[i], b:null });
+  data.blds.forEach(a => placeRaw(KINDS[a[2]], a[0], a[1], a[3], a[4]&1));
+  dirtyT = dirtyB = needRecalc = true;
+  return true;
+}
+function hasSave(){ try{ return !!localStorage.getItem(SAVE_KEY); }catch(e){ return false; } }
+function loadOpts(){
+  try{
+    const o = JSON.parse(localStorage.getItem(OPTS_KEY));
+    if(o) opts = Object.assign(opts, o);
+  }catch(e){}
+}
+function saveOpts(){ try{ localStorage.setItem(OPTS_KEY, JSON.stringify(opts)); }catch(e){} }
+
+/* ================================================================
+   SIMULATION — cartes dérivées puis tick mensuel
+   ================================================================ */
+const MP = {
+  road:new Uint8Array(W*H),  pow:new Uint8Array(W*H),
+  poll:new Float32Array(W*H), val:new Float32Array(W*H),
+  crime:new Float32Array(W*H), dens:new Float32Array(W*H),
+  bonus:new Float32Array(W*H),
+  cP:new Float32Array(W*H), cF:new Float32Array(W*H),
+  cE:new Float32Array(W*H), cH:new Float32Array(W*H),
+};
+let devList = [];                                // bâtiments racine (hors routes)
+let roadList = [];                               // index des cases route
+let zoneList = { res:[], com:[], ind:[] };       // cases zonées non bâties
+const FLAMMABLE = new Set(['res','com','ind','school','police','fire','hospital','stadium']);
+
+function stamp(map, cx, cy, r, amt){
+  const x0=Math.max(0,cx-r), x1=Math.min(W-1,cx+r);
+  const y0=Math.max(0,cy-r), y1=Math.min(H-1,cy+r);
+  for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+    const d = Math.max(Math.abs(x-cx), Math.abs(y-cy));
+    map[idx(x,y)] += amt*(1 - d/(r+1));
+  }
+}
+function stampMax(map, cx, cy, r){
+  const x0=Math.max(0,cx-r), x1=Math.min(W-1,cx+r);
+  const y0=Math.max(0,cy-r), y1=Math.min(H-1,cy+r);
+  for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+    const d = Math.max(Math.abs(x-cx), Math.abs(y-cy));
+    const v = 1 - d/(r+1), i = idx(x,y);
+    if(v > map[i]) map[i] = v;
+  }
+}
+function stampSet(map, cx, cy, r){
+  const x0=Math.max(0,cx-r), x1=Math.min(W-1,cx+r);
+  const y0=Math.max(0,cy-r), y1=Math.min(H-1,cy+r);
+  for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++) map[idx(x,y)] = 1;
+}
+
+function recompute(){
+  MP.road.fill(0); MP.pow.fill(0); MP.poll.fill(0); MP.val.fill(0);
+  MP.crime.fill(0); MP.dens.fill(0); MP.bonus.fill(0);
+  MP.cP.fill(0); MP.cF.fill(0); MP.cE.fill(0); MP.cH.fill(0);
+  devList = []; roadList = []; zoneList = { res:[], com:[], ind:[] };
+  const roadTile = new Uint8Array(W*H);
+
+  for(let i=0; i<W*H; i++){
+    const c = st.grid[i];
+    if(c.z && !c.b) zoneList[ZKIND[c.z]].push(i);
+    const b = c.b;
+    if(!b || b.slave) continue;
+    if(b.k === 'road'){ roadTile[i]=1; roadList.push(i); continue; }
+    devList.push(b);
+  }
+  // accès route : une route à distance <= 2
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    let ok = 0;
+    for(let dy=-2; dy<=2 && !ok; dy++) for(let dx=-2; dx<=2 && !ok; dx++){
+      const nx=x+dx, ny=y+dy;
+      if(inb(nx,ny) && roadTile[idx(nx,ny)]) ok = 1;
+    }
+    MP.road[idx(x,y)] = ok;
+  }
+  // électricité
+  for(const b of devList){
+    const def = TOOL_BY_ID[b.k];
+    if(def && def.powerR){
+      if(def.powerR >= 99) MP.pow.fill(1);
+      else stampSet(MP.pow, b.x, b.y, def.powerR);
+    }
+  }
+  // activation + pollution + couvertures + bonus loisirs
+  for(const b of devList){
+    const i = idx(b.x, b.y);
+    const def = TOOL_BY_ID[b.k] || {};
+    const auto = def.powerR || b.k==='park' || b.k==='statue' || b.k==='fountain' || b.k==='rubble';
+    b.pow = !!MP.pow[i];
+    b.on = auto ? true : (b.pow && !!MP.road[i] && !b.ab && !(b.fire > 0));
+    if(b.k==='ind' && !b.ab) stamp(MP.poll, b.x, b.y, 4, 9*b.lv);
+    if(b.k==='coal')   stamp(MP.poll, b.x, b.y, 7, 55);
+    if(b.k==='rubble') stamp(MP.poll, b.x, b.y, 2, 8);
+    if(b.fire > 0)     stamp(MP.poll, b.x, b.y, 3, 25);
+    if(b.on){
+      if(b.k==='police')   stampMax(MP.cP, b.x, b.y, 9);
+      if(b.k==='fire')     stampMax(MP.cF, b.x, b.y, 9);
+      if(b.k==='school')   stampMax(MP.cE, b.x, b.y, 10);
+      if(b.k==='hospital') stampMax(MP.cH, b.x+1, b.y+1, 12);
+    }
+    if(b.k==='park')     stamp(MP.bonus, b.x, b.y, 4, 9);
+    if(b.k==='fountain') stamp(MP.bonus, b.x, b.y, 5, 15);
+    if(b.k==='statue')   stamp(MP.bonus, b.x, b.y, 7, 18);
+    if(b.k==='stadium')  stamp(MP.bonus, b.x+1, b.y+1, 8, 10);
+    if(b.k==='res' && !b.ab) stamp(MP.dens, b.x, b.y, 2, POPS[b.lv]);
+  }
+  for(const i of roadList) MP.poll[i] += 2;
+  // valeur foncière puis criminalité
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const i = idx(x,y);
+    let dw=9, dt=9, di=9, dc=9;
+    for(let dy=-3; dy<=3; dy++) for(let dx=-3; dx<=3; dx++){
+      const nx=x+dx, ny=y+dy;
+      if(!inb(nx,ny)) continue;
+      const d = Math.max(Math.abs(dx), Math.abs(dy));
+      const cc = st.grid[idx(nx,ny)];
+      if(cc.t===T_WATER && d<dw) dw=d;
+      if(cc.t===T_TREE  && d<dt) dt=d;
+      const bb = cc.b && !cc.b.slave ? cc.b : null;
+      if(bb){
+        if(bb.k==='ind'  && d<di) di=d;
+        if(bb.k==='coal' && d<dc) dc=d;
+      }
+    }
+    let v = 24 + MP.bonus[i] + MP.cE[i]*12 + MP.cH[i]*9 + MP.cP[i]*4 - MP.poll[i]*0.55;
+    if(dw>=1 && dw<=3) v += 11 - dw*2.5;
+    if(dt<=2) v += 6 - dt*2;
+    if(di<=2) v -= 8;
+    if(dc<=3) v -= 12;
+    MP.val[i] = clamp(v, 0, 99);
+    MP.crime[i] = clamp(MP.dens[i]*0.7 - MP.cP[i]*38 - MP.val[i]*0.15, 0, 90);
+  }
+}
+
+/* ---------- Statistiques / demandes / bonheur ---------- */
+function computeStats(){
+  let pop=0, jobs=0, shopJobs=0, sat=0, nres=0, unpowered=0, aPoll=0, aCrime=0;
+  for(const b of devList){
+    if(b.ab) continue;
+    if(b.k==='res'){
+      const i = idx(b.x, b.y), p = POPS[b.lv];
+      pop += p; nres++;
+      sat += 50 + MP.val[i]*0.45 - MP.poll[i]*0.5 - MP.crime[i]*0.45
+           + (b.pow ? 4 : -14) + MP.cH[i]*8;
+      aPoll += MP.poll[i]; aCrime += MP.crime[i];
+      if(!b.pow) unpowered++;
+    }
+    if(b.k==='com') { jobs += JOBS_C[b.lv]; shopJobs += JOBS_C[b.lv]; }
+    if(b.k==='ind')   jobs += JOBS_I[b.lv];
+  }
+  st.pop = pop; st.jobs = jobs;
+  st.avgPoll  = nres ? aPoll/nres  : 0;
+  st.avgCrime = nres ? aCrime/nres : 0;
+  st.unpowered = unpowered;
+  let hap = nres ? sat/nres : 55;
+  hap -= Math.max(0, st.tax-9)*2.2;
+  const workers = pop*0.6;
+  if(workers > jobs+5) hap -= clamp((workers-jobs)/Math.max(10,workers)*28, 0, 15);
+  if(st.money < 0) hap -= 10;
+  st.hap = clamp(hap, 2, 99);
+  // demandes R / C / I
+  const taxPen = Math.max(0, st.tax-9)*0.035;
+  st.demR = clamp(
+    1.5*((jobs*1.15+10)-workers)/Math.max(25, workers+10)
+    + clamp((st.hap-50)/90, -0.35, 0.35) - taxPen, -1, 1);
+  const exportBase = clamp(0.5 - pop/9000, 0, 0.5);
+  st.demI = clamp(0.55*(workers-jobs)/Math.max(20, jobs+10) + exportBase - taxPen*0.5, -1, 1);
+  const shopNeed = pop*0.5;
+  st.demC = clamp((shopNeed - shopJobs*2.2)/Math.max(30, shopNeed+10) - taxPen, -1, 1);
+}
+
+/* ---------- Croissance mensuelle ---------- */
+function growth(){
+  let grew = false;
+  const cats = [['res', st.demR], ['com', st.demC], ['ind', st.demI]];
+  for(const cat of cats){
+    const kind = cat[0], dem = cat[1];
+    const zl = zoneList[kind];
+    const devs = devList.filter(b => b.k === kind);
+    if(dem > 0.05){
+      let n = Math.min(12, Math.ceil(dem*(2 + (zl.length + devs.length)*0.07)));
+      while(n-- > 0){
+        if(zl.length && (Math.random() < 0.6 || !devs.length)){
+          const i = zl[irnd(zl.length)], x = i%W, y = (i/W)|0;
+          if(!st.grid[i].b && MP.pow[i] && MP.road[i] && !(kind==='res' && MP.poll[i] > 55)){
+            devs.push(placeRaw(kind, x, y, 1, false));
+            dirtyB = true; grew = true;
+          }
+        } else if(devs.length){
+          const b = devs[irnd(devs.length)];
+          if(!b.ab && b.on && b.lv < 3){
+            if(MP.val[idx(b.x,b.y)] >= GROW_REQ[kind][b.lv+1] && Math.random() < 0.65){
+              b.lv++; dirtyB = true; grew = true;
+            }
+          } else if(b.ab && dem > 0.25 && Math.random() < 0.3){
+            const i = idx(b.x, b.y);
+            if(MP.pow[i] && MP.road[i]){ b.ab = false; b.lv = 1; dirtyB = true; }
+          }
+        }
+      }
+    } else if(dem < -0.3){
+      let n = Math.ceil(-dem*2.5);
+      while(n-- > 0 && devs.length){
+        const b = devs[irnd(devs.length)];
+        if(b.ab) continue;
+        if(b.lv > 1) b.lv--; else b.ab = true;
+        dirtyB = true;
+      }
+      if(chance(.3)) pushNews(kind==='res' ? '📉 Des habitants quittent la ville…' : '📉 Des commerces ferment boutique.');
+    }
+  }
+  // pénurie d'électricité prolongée → abandon
+  let lost = 0;
+  for(const b of devList){
+    if(b.k!=='res' && b.k!=='com' && b.k!=='ind') continue;
+    if(b.ab) continue;
+    if(!b.pow){
+      b.noP = (b.noP||0) + 1;
+      if(b.noP >= 2 && chance(.35)){ b.ab = true; lost++; dirtyB = true; }
+    } else b.noP = 0;
+  }
+  if(lost) pushNews('⚡ Coupures de courant : des bâtiments sont abandonnés !');
+  if(grew) sfx('pop');
+}
+
+/* ---------- Incendies ---------- */
+function igniteFires(){
+  let burning = devList.filter(b => b.fire > 0).length;
+  if(burning >= 3) return;
+  for(const b of devList){
+    if(b.fire > 0 || b.ab || !FLAMMABLE.has(b.k)) continue;
+    if(Math.random() < 0.003*(1 - MP.cF[idx(b.x,b.y)])){
+      b.fire = 1; burning++;
+      pushNews('🔥 INCENDIE ' + (b.k==='res' ? 'dans un quartier résidentiel' : 'en ville') + ' !');
+      sfx('fire');
+      if(burning >= 3) break;
+    }
+  }
+}
+function tickFires(){
+  for(const b of devList){
+    if(!b || b.fire <= 0) continue;
+    const cov = MP.cF[idx(b.x, b.y)];
+    if(Math.random() < 0.10 + cov*0.55){
+      b.fire = 0; needRecalc = true;
+      pushNews('🚒 Incendie maîtrisé par les pompiers !');
+      continue;
+    }
+    b.fire++;
+    if(chance(0.05*(1-cov))){                       // propagation
+      const nb = [];
+      for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++){
+        const nx=b.x+dx, ny=b.y+dy;
+        if(!inb(nx,ny)) continue;
+        const ob = rootB(cellAt(nx,ny));
+        if(ob && ob.fire === 0 && !ob.ab && FLAMMABLE.has(ob.k)) nb.push(ob);
+      }
+      if(nb.length) nb[irnd(nb.length)].fire = 1;
+    }
+    if(b.fire > 9){                                  // détruit → gravats
+      for(let dy=0; dy<b.sz; dy++) for(let dx=0; dx<b.sz; dx++){
+        cellAt(b.x+dx, b.y+dy).b = null;
+        placeRaw('rubble', b.x+dx, b.y+dy, 1, false);
+      }
+      b.fire = 0;
+      pushNews('🔥 Un bâtiment est parti en fumée…');
+      dirtyB = true; needRecalc = true;
+    }
+  }
+}
+
+/* ---------- Budget mensuel ---------- */
+function calcBudget(){
+  const inc = st.pop*st.tax*INCOME_RES + st.jobs*st.tax*INCOME_JOB;
+  let exp = roadList.length * ROAD_MAINT;
+  for(const b of devList){
+    const def = TOOL_BY_ID[b.k];
+    if(def && def.maint) exp += def.maint;
+  }
+  return { inc, exp };
+}
+function budget(){
+  const bd = calcBudget();
+  st.lastBud = bd;
+  st.money += bd.inc - bd.exp;
+  if(st.money < 0 && st.month % 4 === 0)
+    pushNews('💸 Les caisses sont vides ! Montez les impôts ou démolissez.');
+}
+
+/* ---------- Jalons ---------- */
+function checkJalons(){
+  while(st.jalon < JALONS.length-1 && st.pop >= JALONS[st.jalon+1].pop){
+    st.jalon++;
+    const j = JALONS[st.jalon];
+    st.money += j.prime;
+    const unlocked = (j.deb||[]).map(id => TOOL_BY_ID[id].nom).join(', ');
+    toast('★ ' + j.nom.toUpperCase() + ' ★<br>Prime : ' + fmt$(j.prime) +
+          (unlocked ? '<br>Débloqué : ' + unlocked : ''), true);
+    pushNews('🏆 Votre ville devient : ' + j.nom + ' !');
+    sfx('jalon');
+    refreshToolbar();
+    if(j.victoire && !st.victoire){ st.victoire = true; showVictory(); }
+  }
+}
+
+/* ---------- Actualités ---------- */
+const NEWS_FLAVOR = [
+  'Un pigeon a été élu maire honoraire du square.',
+  'Le club d\'échecs municipal recrute des pions.',
+  'Météo : pixels épars avec risque de rétro.',
+  'Le kiosque à journaux vend enfin des journaux.',
+  'Un citoyen affirme avoir vu un pixel bouger tout seul.',
+  'La boulangerie du coin lance la baguette 8-bits.',
+  'Concours de la pelouse la mieux tondue : 3 inscrits.',
+  'Les canards du lac exigent plus de miettes.',
+  'Radio Pixopolis passe du synthé toute la nuit.',
+  'Un chat est resté coincé dans un arbre. Classique.',
+  'La mairie repeint ses volets. En bleu, évidemment.',
+  'Vide-grenier géant dimanche sur la grand-place.',
+  'Le facteur a battu son record : 12 lettres en un jour.',
+  'Une machine à café municipale ? Le conseil hésite.',
+];
+function monthlyNews(){
+  if(st.unpowered > 3) pushNews('⚡ Des quartiers réclament de l\'électricité !');
+  else if(st.demR > 0.5 && zoneList.res.length < 3) pushNews('🏠 Forte demande de logements : zonez du résidentiel !');
+  else if(st.demC > 0.5 && zoneList.com.length < 2) pushNews('🛒 Les habitants veulent des commerces !');
+  else if(st.demI > 0.5 && zoneList.ind.length < 2) pushNews('🏭 L\'industrie cherche des terrains !');
+  else if(st.avgCrime > 25) pushNews('🚨 La criminalité grimpe : construisez un poste de police !');
+  else if(st.avgPoll > 40) pushNews('🏭 Pollution étouffante : éloignez les usines des habitations.');
+  else if(st.tax >= 14 && chance(.5)) pushNews('😠 Les impôts font grincer des dents…');
+  else if(st.hap < 40) pushNews('😞 Le moral des citoyens est au plus bas.');
+  else if(chance(.18)) pushNews('📰 ' + NEWS_FLAVOR[irnd(NEWS_FLAVOR.length)]);
+}
+
+/* ---------- Ticks ---------- */
+let tickCount = 0;
+function simTick(){
+  tickCount++;
+  tickFires();
+  if(tickCount % TPM === 0) monthTick();
+}
+function monthTick(){
+  st.month++;
+  recompute(); computeStats();
+  budget();
+  growth();
+  igniteFires();
+  recompute(); computeStats();    // reflète la croissance du mois
+  needRecalc = false;
+  checkJalons();
+  monthlyNews();
+  if(st.month % 6 === 0) save();
+  updateHUD();
+}
+
+/* ================================================================
+   RENDU — calques en cache + dynamique par frame
+   ================================================================ */
+const vp = $('#vp'), cv = $('#cv'), ctx = cv.getContext('2d');
+const wc = mkC(WPX, WPX), wg = wc.getContext('2d');       // monde en px natifs
+const terrC = [mkC(WPX,WPX), mkC(WPX,WPX)];               // 2 frames (eau animée)
+const bldC = mkC(WPX, WPX);
+const mmG = $('#mm').getContext('2d');
+let DPR = 1;
+let cam = { x:WPX/2, y:WPX/2, z:2 };
+let hover = { x:-1, y:-1 };
+let curTool = 'select', paused = true, speed = 1;
+let NIGHT_F = null;            // forçage du cycle nuit (debug)
+let victoryFwT = 0, lastMM = 0, waterFrame = 0, lastWaterSwap = 0;
+
+function resize(){
+  DPR = window.devicePixelRatio || 1;
+  const r = vp.getBoundingClientRect();
+  cv.width = Math.max(1, Math.round(r.width*DPR));
+  cv.height = Math.max(1, Math.round(r.height*DPR));
+}
+window.addEventListener('resize', resize);
+
+function isRoad(x,y){
+  const b = st.grid[idx(x,y)].b;
+  return !!(b && !b.slave && b.k === 'road');
+}
+
+function rebuildTerrain(){
+  for(let f=0; f<2; f++){
+    const g = terrC[f].getContext('2d');
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+      const c = st.grid[idx(x,y)], px=x*TS, py=y*TS;
+      if(c.t === T_WATER) g.drawImage(WATER_T[f], px, py);
+      else if(c.t === T_SAND) g.drawImage(SAND_T, px, py);
+      else {
+        g.drawImage(GRASS_T[hash2(x,y,3) < .5 ? 0 : 1], px, py);
+        if(c.t === T_TREE) g.drawImage(hash2(x,y,17) < .5 ? SPR.tree1 : SPR.tree2, px, py);
+      }
+    }
+  }
+  dirtyT = false;
+}
+function rebuildBld(){
+  const g = bldC.getContext('2d');
+  g.clearRect(0,0,WPX,WPX);
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const c = st.grid[idx(x,y)];
+    if(c.z && !c.b) drawZone(g, x*TS, y*TS, ZKIND[c.z]);
+    const b = c.b;
+    if(!b || b.slave) continue;
+    if(b.k === 'road'){
+      let m = 0;
+      if(y>0   && isRoad(x,y-1)) m |= 1;
+      if(x<W-1 && isRoad(x+1,y)) m |= 2;
+      if(y<H-1 && isRoad(x,y+1)) m |= 4;
+      if(x>0   && isRoad(x-1,y)) m |= 8;
+      g.drawImage(ROADS[m], x*TS, y*TS);
+    } else g.drawImage(bldSprite(b), x*TS, y*TS);
+  }
+  dirtyB = false;
+}
+
+/* ---------- Voitures ---------- */
+let cars = [];
+const CAR_COLS = ['#d4553f','#4b79cf','#f4c84f','#f4f3ea','#6fd3e0','#c069c9'];
+const DX=[0,1,0,-1], DY=[-1,0,1,0];
+function updateCars(dt){
+  const target = Math.min(40, (st.pop/60)|0);
+  if(cars.length < target && roadList.length && chance(.15)){
+    const i = roadList[irnd(roadList.length)];
+    cars.push({ x:i%W, y:(i/W)|0, dir:irnd(4), t:Math.random()*0.5,
+                col:CAR_COLS[irnd(CAR_COLS.length)], spd:1.3+Math.random()*0.7 });
+  }
+  if(cars.length > target+4) cars.splice(0, cars.length-target);
+  for(let ci=cars.length-1; ci>=0; ci--){
+    const c = cars[ci];
+    c.t += c.spd*dt;
+    let guard = 4;
+    while(c.t >= 1 && guard-- > 0){
+      c.t -= 1;
+      const nx=c.x+DX[c.dir], ny=c.y+DY[c.dir];
+      if(inb(nx,ny) && isRoad(nx,ny)){ c.x=nx; c.y=ny; }
+      const dirs = [];
+      for(let d=0; d<4; d++){
+        if(d === (c.dir+2)%4) continue;
+        const tx=c.x+DX[d], ty=c.y+DY[d];
+        if(inb(tx,ty) && isRoad(tx,ty)) dirs.push(d);
+      }
+      if(!dirs.length){
+        const back=(c.dir+2)%4, bx=c.x+DX[back], by=c.y+DY[back];
+        if(inb(bx,by) && isRoad(bx,by)) c.dir = back;
+        else { cars.splice(ci,1); break; }
+      } else {
+        c.dir = (dirs.indexOf(c.dir) >= 0 && Math.random() < 0.65) ? c.dir : dirs[irnd(dirs.length)];
+      }
+    }
+  }
+}
+function drawCars(g, dark){
+  for(const c of cars){
+    const nx=c.x+DX[c.dir], ny=c.y+DY[c.dir];
+    let px=(c.x+(nx-c.x)*c.t)*TS+8, py=(c.y+(ny-c.y)*c.t)*TS+8;
+    // conduite à droite : petit décalage perpendiculaire
+    if(c.dir===0) px+=3; if(c.dir===2) px-=3;
+    if(c.dir===1) py+=3; if(c.dir===3) py-=3;
+    g.fillStyle = c.col;
+    if(c.dir===1 || c.dir===3) g.fillRect(px-2|0, py-1|0, 5, 3);
+    else g.fillRect(px-1|0, py-2|0, 3, 5);
+    if(dark > 0.15){
+      g.fillStyle = 'rgba(255,255,210,'+(dark)+')';
+      g.fillRect(px+DX[c.dir]*3-1|0, py+DY[c.dir]*3-1|0, 2, 2);
+    }
+  }
+}
+
+/* ---------- Particules (fumée) & feux d'artifice ---------- */
+let parts = [], fw = [];
+function updateParts(dt){
+  if(!paused && speed > 0){
+    for(const b of devList){
+      const key = b.k === 'ind' ? 'ind'+b.lv : b.k;
+      const offs = SMOKE_OFF[key];
+      if(offs && (b.k==='coal' || (b.k==='ind' && b.on && !b.ab))){
+        for(const o of offs) if(chance(dt*2.0))
+          parts.push({ x:b.x*TS+o[0]+Math.random()*2, y:b.y*TS+o[1],
+                       vx:(Math.random()-.3)*2.5, vy:-5-Math.random()*4,
+                       life:2.2, max:2.2, c:'172,177,188' });
+      }
+      if(b.fire > 0 && chance(dt*7))
+        parts.push({ x:b.x*TS+2+Math.random()*(12*b.sz), y:b.y*TS+3+Math.random()*8,
+                     vx:(Math.random()-.5)*3, vy:-9-Math.random()*6,
+                     life:1.3, max:1.3, c:'62,60,66' });
+    }
+  }
+  for(let i=parts.length-1; i>=0; i--){
+    const p = parts[i]; p.life -= dt;
+    if(p.life <= 0){ parts.splice(i,1); continue; }
+    p.x += p.vx*dt; p.y += p.vy*dt; p.vx += (Math.random()-.5)*dt*3;
+  }
+  if(parts.length > 260) parts.splice(0, parts.length-260);
+}
+function drawParts(g){
+  for(const p of parts){
+    const r = p.life/p.max;
+    g.fillStyle = 'rgba('+p.c+','+(r*0.55).toFixed(2)+')';
+    const s = 1 + ((1-r)*2|0);
+    g.fillRect(p.x|0, p.y|0, s, s);
+  }
+}
+function spawnFirework(x,y){
+  const col = ['#ff5c5c','#f4c84f','#6fd3e0','#57e0a0','#c069c9'][irnd(5)];
+  for(let i=0;i<26;i++){
+    const a = Math.random()*6.283, v = 12+Math.random()*24;
+    fw.push({ x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, life:0.8+Math.random()*0.6, col });
+  }
+}
+function updateFw(dt, now){
+  if(victoryFwT > 0){
+    victoryFwT -= dt;
+    if(chance(dt*2.2)) spawnFirework(irnd(WPX), 60+irnd(WPX-160));
+  }
+  // feu d'artifice du 14 Juillet, la nuit
+  if(st && st.month % 12 === 6 && darkness(now) > 0.3 && chance(dt*0.25))
+    spawnFirework(irnd(WPX), 60+irnd(WPX-160));
+  for(let i=fw.length-1; i>=0; i--){
+    const p = fw[i]; p.life -= dt;
+    if(p.life <= 0){ fw.splice(i,1); continue; }
+    p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 22*dt;
+  }
+}
+function drawFw(g){
+  if(!fw.length) return;
+  g.globalCompositeOperation = 'lighter';
+  for(const p of fw){
+    g.globalAlpha = clamp(p.life,0,1);
+    g.fillStyle = p.col;
+    g.fillRect(p.x|0, p.y|0, p.life > 0.6 ? 2 : 1, p.life > 0.6 ? 2 : 1);
+  }
+  g.globalAlpha = 1;
+  g.globalCompositeOperation = 'source-over';
+}
+
+/* ---------- Nuit ---------- */
+function darkness(now){
+  if(NIGHT_F !== null) return NIGHT_F;
+  if(!opts.nuit) return 0;
+  const t = (now/1000 % 140)/140;      // cycle de 140 s
+  if(t < 0.55) return 0;
+  if(t < 0.63) return (t-0.55)/0.08*0.6;
+  if(t < 0.92) return 0.6;
+  return (1-t)/0.08*0.6;
+}
+function drawNight(g, dark, now){
+  g.fillStyle = 'rgba(9,13,44,'+(dark*0.78).toFixed(2)+')';
+  g.fillRect(0,0,WPX,WPX);
+  g.globalCompositeOperation = 'lighter';
+  for(const b of devList){                      // fenêtres éclairées
+    if(b.ab || b.k==='rubble' || b.k==='park' || b.k==='statue') continue;
+    const n = b.sz === 2 ? 6 : 3;
+    for(let i=0;i<n;i++){
+      if(hash2(b.x+i, b.y, 5 + ((now/2800)|0)%7) > 0.72) continue;  // clignote lentement
+      const hx = hash2(b.x*31+i, b.y*17, 91), hy = hash2(b.x, b.y*13+i, 77);
+      g.fillStyle = 'rgba(255,225,140,'+(dark*0.95).toFixed(2)+')';
+      g.fillRect((b.x*TS+3+hx*(b.sz*16-7))|0, (b.y*TS+4+hy*(b.sz*16-10))|0, 1, 1);
+    }
+  }
+  g.fillStyle = 'rgba(255,235,170,'+(dark*0.55).toFixed(2)+')';   // lampadaires
+  for(const i of roadList){
+    const x=i%W, y=(i/W)|0;
+    if((x+y*3)%4 === 0) g.fillRect(x*TS+7, y*TS+7, 2, 2);
+  }
+  for(const b of devList){                      // balises rouges des centrales
+    if(b.k==='coal' && ((now/700)|0)%2){
+      g.fillStyle = 'rgba(255,80,60,'+dark+')';
+      g.fillRect(b.x*TS+6, b.y*TS+2, 2, 2); g.fillRect(b.x*TS+18, b.y*TS+2, 2, 2);
+    }
+  }
+  g.globalCompositeOperation = 'source-over';
+}
+
+/* ---------- Dynamique par frame ---------- */
+function drawDynamics(g, now, dark){
+  const blink = ((now/450)|0)%2;
+  for(const b of devList){
+    if(b.k === 'wind'){                         // pales d'éolienne
+      const cx=b.x*TS+8, cy=b.y*TS+4.5;
+      const a = now/280 + (b.x*7+b.y*13)%10;
+      g.strokeStyle = '#f4f3ea'; g.lineWidth = 1;
+      for(let i=0;i<3;i++){
+        const t = a + i*2.094;
+        g.beginPath(); g.moveTo(cx,cy);
+        g.lineTo(cx+Math.cos(t)*5.5, cy+Math.sin(t)*5.5); g.stroke();
+      }
+      g.fillStyle = '#d9d4c2'; g.fillRect(cx-1, cy-1, 2, 2);
+    }
+    if(b.k === 'fusion'){                       // cœur qui pulse
+      const pu = (Math.sin(now/380)+1)/2;
+      g.fillStyle = 'rgba(111,211,224,'+(0.22+pu*0.3).toFixed(2)+')';
+      g.fillRect(b.x*TS+11, b.y*TS+10, 10, 9);
+    }
+    if(b.k === 'fountain' && chance(0.25)){
+      g.fillStyle = '#eaffff';
+      g.fillRect(b.x*TS+5+irnd(7), b.y*TS+5+irnd(6), 1, 1);
+    }
+    if(b.k === 'statue' && chance(0.05)){
+      g.fillStyle = '#fff6c8';
+      g.fillRect(b.x*TS+5+irnd(6), b.y*TS+2+irnd(7), 1, 1);
+    }
+    if(b.fire > 0){                             // flammes
+      for(let j=0;j<6;j++){
+        g.fillStyle = ['#ff5c2c','#ffa030','#ffe060'][irnd(3)];
+        g.fillRect(b.x*TS+2+irnd(12*b.sz), b.y*TS+2+irnd(11*b.sz), 2, 2+irnd(2));
+      }
+    }
+    // icônes d'alerte ⚡ (pas de courant) / ✕ (pas de route)
+    const def = TOOL_BY_ID[b.k];
+    const needInfra = !(def && def.powerR) &&
+      b.k!=='park' && b.k!=='statue' && b.k!=='fountain' && b.k!=='rubble' && !b.ab;
+    if(needInfra){
+      const i = idx(b.x, b.y);
+      if(!MP.pow[i] && blink){
+        g.fillStyle = 'rgba(0,0,0,.65)'; g.fillRect(b.x*TS+4, b.y*TS+2, 8, 11);
+        g.fillStyle = '#f4c84f';
+        g.fillRect(b.x*TS+8, b.y*TS+3, 2, 4);
+        g.fillRect(b.x*TS+6, b.y*TS+6, 4, 2);
+        g.fillRect(b.x*TS+6, b.y*TS+8, 2, 4);
+      } else if(MP.pow[i] && !MP.road[i] && !blink){
+        g.fillStyle = 'rgba(0,0,0,.65)'; g.fillRect(b.x*TS+4, b.y*TS+2, 8, 11);
+        g.fillStyle = '#ff6b5e';
+        g.fillRect(b.x*TS+7, b.y*TS+3, 2, 6); g.fillRect(b.x*TS+7, b.y*TS+10, 2, 2);
+      }
+    }
+  }
+  drawCars(g, dark);
+  drawParts(g);
+}
+
+/* ---------- Fantôme de placement ---------- */
+function drawGhost(g){
+  if(hover.x < 0 || curTool === 'select') return;
+  const def = TOOL_BY_ID[curTool];
+  if(!def) return;
+  const sz = def.size || 1, px = hover.x*TS, py = hover.y*TS;
+  const chk = canPlace(curTool, hover.x, hover.y);
+  g.globalAlpha = 0.55;
+  if(curTool === 'bull'){ g.fillStyle = '#ff5c5c'; g.fillRect(px, py, 16, 16); }
+  else if(curTool === 'road') g.drawImage(ROADS[15], px, py);
+  else if(curTool === 'res' || curTool === 'com' || curTool === 'ind') drawZone(g, px, py, curTool);
+  else if(SPR[curTool]) g.drawImage(SPR[curTool], px, py);
+  g.globalAlpha = 1;
+  g.strokeStyle = chk.ok ? '#57e0a0' : '#ff5c5c';
+  g.lineWidth = 1;
+  g.strokeRect(px+0.5, py+0.5, sz*16-1, sz*16-1);
+}
+
+/* ---------- Composition & blit ---------- */
+function draw(now){
+  if(dirtyT) rebuildTerrain();
+  if(dirtyB) rebuildBld();
+  if(now - lastWaterSwap > 550){ waterFrame ^= 1; lastWaterSwap = now; }
+  const dark = darkness(now);
+  wg.clearRect(0,0,WPX,WPX);
+  wg.drawImage(terrC[waterFrame], 0, 0);
+  wg.drawImage(bldC, 0, 0);
+  drawDynamics(wg, now, dark);
+  if(dark > 0.02) drawNight(wg, dark, now);
+  drawFw(wg);
+  drawGhost(wg);
+  // blit écran
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#05070f';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  const z = cam.z*DPR;
+  const ox = Math.round(cv.width/2 - cam.x*z), oy = Math.round(cv.height/2 - cam.y*z);
+  ctx.drawImage(wc, 0, 0, WPX, WPX, ox, oy, WPX*z, WPX*z);
+  if(now - lastMM > 250){ lastMM = now; drawMinimap(); }
+}
+function drawMinimap(){
+  mmG.imageSmoothingEnabled = false;
+  mmG.drawImage(wc, 0, 0, WPX, WPX, 0, 0, 96, 96);
+  const r = cv.getBoundingClientRect();
+  const vwW = r.width/cam.z, vwH = r.height/cam.z;
+  mmG.strokeStyle = '#ffd75e'; mmG.lineWidth = 1;
+  mmG.strokeRect((cam.x-vwW/2)/WPX*96, (cam.y-vwH/2)/WPX*96, vwW/WPX*96, vwH/WPX*96);
+}
+
+/* ================================================================
+   AUDIO — synthèse WebAudio (SFX + musique chiptune)
+   ================================================================ */
+let AC=null, master=null, musGain=null, musNext=0, musStep=0, musTimer=null;
+const mtof = m => 440*Math.pow(2,(m-69)/12);
+function initAudio(){
+  if(AC) return;
+  try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return; }
+  master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
+  musGain = AC.createGain(); musGain.gain.value = 0.13; musGain.connect(master);
+  if(opts.mus) startMusic();
+}
+function tone(f, dur, type, vol, when, slide, dest){
+  if(!AC) return;
+  const t = when || AC.currentTime;
+  const o = AC.createOscillator(), gn = AC.createGain();
+  o.type = type || 'square';
+  o.frequency.setValueAtTime(f, t);
+  if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f+slide), t+dur);
+  gn.gain.setValueAtTime(vol || 0.15, t);
+  gn.gain.exponentialRampToValueAtTime(0.001, t+dur);
+  o.connect(gn); gn.connect(dest || master);
+  o.start(t); o.stop(t+dur+0.02);
+}
+function noiseBurst(dur, vol){
+  if(!AC) return;
+  const t = AC.currentTime, len = (AC.sampleRate*dur)|0;
+  const buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*(1-i/len);
+  const src = AC.createBufferSource(); src.buffer = buf;
+  const gn = AC.createGain(); gn.gain.value = vol;
+  const fl = AC.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value = 900;
+  src.connect(fl); fl.connect(gn); gn.connect(master); src.start(t);
+}
+function hat(when){
+  if(!AC) return;
+  const len = (AC.sampleRate*0.03)|0;
+  const buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*(1-i/len);
+  const src = AC.createBufferSource(); src.buffer = buf;
+  const gn = AC.createGain(); gn.gain.value = 0.05;
+  const fl = AC.createBiquadFilter(); fl.type='highpass'; fl.frequency.value = 5500;
+  src.connect(fl); fl.connect(gn); gn.connect(musGain); src.start(when);
+}
+function sfx(name){
+  if(!AC || !opts.sfx || !st) return;
+  const t = AC.currentTime;
+  switch(name){
+    case 'click': tone(840,.05,'square',.07); break;
+    case 'zone':  tone(520,.05,'square',.08); tone(700,.06,'square',.07,t+.05); break;
+    case 'build': tone(500,.07,'square',.11); tone(760,.09,'square',.11,t+.07); break;
+    case 'doze':  noiseBurst(.22,.2); tone(160,.18,'sawtooth',.09,t,-80); break;
+    case 'err':   tone(140,.16,'sawtooth',.13); break;
+    case 'pop':   tone(300,.05,'triangle',.06); tone(420,.05,'triangle',.05,t+.05); break;
+    case 'jalon': [523,659,784,1046].forEach((f,i)=>tone(f,.14,'square',.12,t+i*.13)); break;
+    case 'fire':  for(let i=0;i<3;i++){ tone(720,.1,'square',.11,t+i*.22); tone(540,.1,'square',.11,t+i*.22+.11); } break;
+    case 'save':  tone(600,.06,'triangle',.1); tone(900,.08,'triangle',.1,t+.07); break;
+  }
+}
+const CHORDS = [45,41,48,43];               // Am F C G (basses)
+const LEADSC = [69,72,76,79,81,84];         // gamme pentatonique de La
+function schedMusic(){
+  if(!AC) return;
+  while(musNext < AC.currentTime + 0.16){
+    const bar = ((musStep/16)|0)%4, s = musStep%16;
+    const root = CHORDS[bar];
+    if(s%2===0) tone(mtof(root), .11, 'square', s%8===0 ? .15 : .09, musNext, 0, musGain);
+    if(s%4===2) hat(musNext);
+    if(hash2(musStep,bar,7) < 0.26)
+      tone(mtof(LEADSC[(hash2(musStep,3,11)*LEADSC.length)|0]), .2, 'triangle', .06, musNext, 0, musGain);
+    musNext += 0.135; musStep++;
+  }
+}
+function startMusic(){ if(musTimer || !AC) return; musNext = AC.currentTime+0.05; musTimer = setInterval(schedMusic, 40); }
+function stopMusic(){ if(musTimer){ clearInterval(musTimer); musTimer = null; } }
+
+/* ================================================================
+   INTERFACE
+   ================================================================ */
+const ghostTip = $('#ghostTip');
+
+function toolIcon(t){
+  const c = mkC(32,32), g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  if(t.id === 'select')    g.drawImage(SPR.selIcon, 0,0,16,16, 0,0,32,32);
+  else if(t.id === 'bull') g.drawImage(SPR.bullIcon, 0,0,16,16, 0,0,32,32);
+  else if(t.id === 'road') g.drawImage(ROADS[5], 0,0,16,16, 0,0,32,32);
+  else if(t.id==='res'||t.id==='com'||t.id==='ind'){
+    const tmp = mkC(16,16), tg = tmp.getContext('2d');
+    tg.drawImage(GRASS_T[0],0,0); drawZone(tg,0,0,t.id);
+    g.drawImage(tmp, 0,0,16,16, 0,0,32,32);
+  }
+  else if(SPR[t.id]){
+    const s = SPR[t.id];
+    if(s.width === 32) g.drawImage(s,0,0);
+    else g.drawImage(s, 0,0,16,16, 0,0,32,32);
+  }
+  return c;
+}
+function buildToolbar(){
+  const toolsEl = $('#tools');
+  toolsEl.innerHTML = '';
+  let cat = '';
+  for(const t of TOOLS){
+    if(t.cat !== cat){
+      cat = t.cat;
+      const h = document.createElement('div');
+      h.className = 'tcat'; h.textContent = cat;
+      toolsEl.appendChild(h);
+    }
+    const b = document.createElement('button');
+    b.className = 'tbtn'; b.id = 'tool-'+t.id;
+    b.title = t.desc + (t.maint ? ' — entretien '+t.maint+' $/mois' : '') + (t.key ? '  ['+t.key+']' : '');
+    b.appendChild(toolIcon(t));
+    const nm = document.createElement('div'); nm.className='tname'; nm.textContent = t.nom; b.appendChild(nm);
+    const co = document.createElement('div'); co.className='tcost'; co.textContent = t.cost ? t.cost+'$' : ''; b.appendChild(co);
+    b.addEventListener('click', ()=>{
+      initAudio();
+      if(b.classList.contains('lock')){ sfx('err'); toast('🔒 Débloqué à <b>'+t.unlock+'</b> habitants'); return; }
+      selectTool(t.id);
+    });
+    toolsEl.appendChild(b);
+  }
+  refreshToolbar();
+}
+function refreshToolbar(){
+  for(const t of TOOLS){
+    const el = $('#tool-'+t.id);
+    if(!el) continue;
+    const locked = !isUnlocked(t);
+    el.classList.toggle('lock', locked);
+    let le = el.querySelector('.tlock');
+    if(locked){
+      if(!le){ le = document.createElement('div'); le.className='tlock'; el.appendChild(le); }
+      le.textContent = '🔒'+t.unlock;
+    } else if(le) le.remove();
+  }
+}
+function selectTool(id){
+  curTool = id;
+  document.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('sel', b.id === 'tool-'+id));
+  const t = TOOL_BY_ID[id];
+  $('#toolHint').textContent = t.nom + (t.cost ? ' — '+t.cost+' $' : '');
+  hideInfo();
+  sfx('click');
+}
+
+function updateHUD(){
+  if(!st) return;
+  $('#hMoney').textContent = fmtN(st.money)+' $';
+  $('#chMoney').classList.toggle('neg', st.money < 0);
+  $('#hPop').textContent = fmtN(st.pop);
+  const he = $('#hHap');
+  he.textContent = Math.round(st.hap)+'%';
+  he.className = st.hap<35 ? 'h0' : st.hap<55 ? 'h1' : st.hap<75 ? 'h2' : 'h3';
+  $('#hDate').textContent = MOIS[st.month%12]+' '+(START_YEAR+((st.month/12)|0));
+  $('#hJalon').textContent = JALONS[st.jalon].nom;
+  setBar('#rR', st.demR); setBar('#rC', st.demC); setBar('#rI', st.demI);
+  if(!$('#budget').classList.contains('hidden')) renderBudget();
+}
+function setBar(sel, v){
+  $(sel+' .rciFill').style.height = Math.round(clamp((v+1)/2,0,1)*100)+'%';
+}
+function moneyFlash(){
+  const el = $('#chMoney');
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  sfx('err');
+}
+
+/* ---------- Ticker & toasts ---------- */
+let newsQ = [];
+function pushNews(txt){
+  newsQ.push(txt);
+  if(newsQ.length > 5) newsQ.shift();
+  const tk = $('#ticker');
+  tk.textContent = newsQ.join('   •••   ');
+  tk.style.animationDuration = clamp(tk.textContent.length*0.28, 14, 70)+'s';
+}
+function toast(html, big){
+  const d = document.createElement('div');
+  d.className = 'toast'+(big?' big':'');
+  d.innerHTML = html;
+  $('#toasts').appendChild(d);
+  setTimeout(()=>{ d.classList.add('out'); setTimeout(()=>d.remove(), 450); }, big?5200:2600);
+}
+
+/* ---------- Panneau d'inspection ---------- */
+function needsInfra(b){
+  const def = TOOL_BY_ID[b.k];
+  return !(def && def.powerR) && b.k!=='park' && b.k!=='statue' && b.k!=='fountain' && b.k!=='rubble';
+}
+function row(l,v){ return '<div class="row"><span>'+l+'</span><b>'+v+'</b></div>'; }
+function showInfo(x,y){
+  const c = cellAt(x,y), b = rootB(c), i = idx(x,y);
+  let h = '<div id="infoX">✕</div>';
+  if(b){
+    const def = TOOL_BY_ID[b.k] || {};
+    let nom = def.nom || (b.k==='rubble' ? 'Gravats' : b.k);
+    if(b.k==='res') nom = 'Résidence niv. '+b.lv;
+    if(b.k==='com') nom = 'Commerce niv. '+b.lv;
+    if(b.k==='ind') nom = 'Usine niv. '+b.lv;
+    if(b.k==='road') nom = 'Route';
+    h += '<h3>'+nom+'</h3>';
+    if(b.k !== 'road'){
+      let etat, ok = true;
+      if(b.fire > 0){ etat='🔥 EN FEU !'; ok=false; }
+      else if(b.ab){ etat='Abandonné (démolir ou attendre la reprise)'; ok=false; }
+      else if(b.k==='rubble'){ etat='À déblayer au bulldozer'; ok=false; }
+      else if(needsInfra(b) && !b.pow){ etat='⚡ Pas d\'électricité'; ok=false; }
+      else if(needsInfra(b) && !MP.road[idx(b.x,b.y)]){ etat='Pas d\'accès route'; ok=false; }
+      else etat = 'En activité';
+      h += '<div class="etat '+(ok?'etOk':'etKo')+'">'+etat+'</div>';
+    }
+    if(b.k==='res' && !b.ab) h += row('Habitants', POPS[b.lv]);
+    if(b.k==='com' && !b.ab) h += row('Emplois', JOBS_C[b.lv]);
+    if(b.k==='ind' && !b.ab) h += row('Emplois', JOBS_I[b.lv]);
+    if(def.maint)  h += row('Entretien', def.maint+' $/mois');
+    if(def.powerR) h += row('Rayon électrique', def.powerR>=99 ? 'toute la carte' : def.powerR);
+    if(def.covR)   h += row('Rayon d\'action', def.covR);
+  } else if(c.z){
+    h += '<h3>Zone '+({1:'résidentielle',2:'commerciale',3:'industrielle'})[c.z]+'</h3>';
+    const ready = MP.pow[i] && MP.road[i];
+    h += '<div class="etat '+(ready?'etOk':'etKo')+'">'+
+      (MP.pow[i] ? (MP.road[i] ? 'Prête à construire' : 'Pas de route à proximité') : '⚡ Pas d\'électricité')+'</div>';
+  } else {
+    h += '<h3>'+['Herbe','Eau','Sable','Forêt'][c.t]+'</h3>';
+  }
+  h += row('Case', x+' , '+y);
+  h += row('Valeur foncière', Math.round(MP.val[i]));
+  h += row('Pollution', Math.round(MP.poll[i]));
+  h += row('Criminalité', Math.round(MP.crime[i]));
+  h += row('Électricité', MP.pow[i] ? 'Oui' : 'Non');
+  const el = $('#info');
+  el.innerHTML = h;
+  el.classList.remove('hidden');
+  $('#infoX').addEventListener('click', hideInfo);
+}
+function hideInfo(){ $('#info').classList.add('hidden'); }
+
+/* ---------- Budget ---------- */
+function renderBudget(){
+  const lb = calcBudget(), net = lb.inc - lb.exp;
+  $('#budget').innerHTML = '<h3>💰 BUDGET MENSUEL</h3>'
+    + row('Impôts perçus', '+'+fmtN(lb.inc)+' $')
+    + row('Entretien', '−'+fmtN(lb.exp)+' $')
+    + '<hr><div class="row"><span>Solde mensuel</span><b class="'+(net>=0?'pos':'neg')+'">'
+      +(net>=0?'+':'')+fmtN(net)+' $</b></div>'
+    + row('Trésorerie', fmtN(st.money)+' $')
+    + '<hr><div class="row"><span>Taux d\'imposition</span><b id="taxVal">'+st.tax+'%</b></div>'
+    + '<input type="range" id="taxRange" min="0" max="20" value="'+st.tax+'">';
+  $('#taxRange').addEventListener('input', e=>{
+    st.tax = +e.target.value;
+    $('#taxVal').textContent = st.tax+'%';
+  });
+}
+
+/* ---------- Modales ---------- */
+function showModal(html){ $('#modal').innerHTML = html; $('#modalBg').classList.remove('hidden'); }
+function hideModal(){ $('#modalBg').classList.add('hidden'); }
+function confirmBox(msg, yes){
+  showModal('<h2 style="margin-top:0;font-size:14px">'+msg+'</h2>'+
+    '<div class="btns"><button class="bigbtn" id="cYes">OUI</button>'+
+    '<button class="bigbtn sec" id="cNo">ANNULER</button></div>');
+  $('#cYes').onclick = ()=>{ hideModal(); yes(); };
+  $('#cNo').onclick = hideModal;
+}
+function helpHTML(){
+  return `<h1>PIXOPOLIS</h1><div class="sub">CITY BUILDER RÉTRO — ANNO 1985</div>
+  <h2>■ BUT DU JEU</h2>
+  <p>Faites prospérer votre ville jusqu'au rang de <b style="color:var(--gold)">Métropole — 8 000 habitants</b> — sans faire faillite. Chaque jalon offre une prime et débloque des bâtiments.</p>
+  <h2>■ DÉMARRAGE RAPIDE</h2>
+  <ul>
+    <li>1. Tracez des <b>routes</b> (tout bâtiment doit en être proche).</li>
+    <li>2. Zonez du <b>résidentiel</b> et de l'<b>industriel</b> le long des routes.</li>
+    <li>3. Posez une <b>éolienne</b> : sans ⚡ rien ne pousse !</li>
+    <li>4. Lancez le temps (▶) et surveillez les barres de demande <b>R·C·I</b>.</li>
+    <li>5. Parcs, écoles, services ⇒ valeur foncière ⇑ ⇒ immeubles niveau 2‑3.</li>
+  </ul>
+  <h2>■ CONTRÔLES</h2>
+  <ul class="keys">
+    <li><b>Clic gauche</b> : construire / inspecter — <b>glisser</b> pour peindre</li>
+    <li><b>Clic droit ou Espace+glisser</b> : déplacer la carte — <b>molette</b> : zoom</li>
+    <li><b>Flèches / ZQSD</b> : déplacement — <b>minimap</b> cliquable</li>
+    <li><b>1‑9, 0</b> : outils — <b>Échap</b> : mode inspection</li>
+    <li><b>P</b> : pause — <b>+ / −</b> : vitesse — <b>H</b> : aide — <b>M</b> : musique — <b>N</b> : jour/nuit</li>
+  </ul>
+  <h2>■ CONSEILS DE MAIRE</h2>
+  <ul>
+    <li>L'industrie et le charbon polluent : éloignez-les des habitations.</li>
+    <li>Sans caserne de pompiers, un incendie peut raser un quartier.</li>
+    <li>Impôts élevés = grogne et exode ; 9 % est le taux neutre.</li>
+    <li>La criminalité monte avec la densité : pensez à la police.</li>
+  </ul>`;
+}
+function showHelp(intro, loaded){
+  paused = true; syncSpeedBtns();
+  let btns;
+  if(intro && loaded)
+    btns = '<button class="bigbtn" id="mCont">▶ CONTINUER LA PARTIE</button>'+
+           '<button class="bigbtn sec" id="mNew">NOUVELLE VILLE</button>';
+  else if(intro)
+    btns = '<button class="bigbtn" id="mStart">▶ FONDER LA VILLE</button>';
+  else
+    btns = '<button class="bigbtn" id="mClose">FERMER</button>';
+  showModal(helpHTML() + '<div class="btns">'+btns+'</div>');
+  const resume = ()=>{ hideModal(); initAudio(); paused = false; syncSpeedBtns(); };
+  if($('#mCont'))  $('#mCont').onclick = resume;
+  if($('#mStart')) $('#mStart').onclick = ()=>{
+    resume();
+    toast('Bienvenue à <b>PIXOPOLIS</b> !<br>Routes + zones + électricité = prospérité.', true);
+    pushNews('🏗 Bienvenue, Maire ! Tracez des routes et zonez votre première rue.');
+  };
+  if($('#mNew')) $('#mNew').onclick = ()=>{
+    confirmBox('Abandonner la sauvegarde et fonder une nouvelle ville ?', ()=>{
+      localStorage.removeItem(SAVE_KEY);
+      newGame(); recompute(); computeStats();
+      refreshToolbar(); updateHUD(); centerCam();
+      resume();
+      toast('Nouvelle ville fondée. Bonne chance, Maire !', true);
+    });
+  };
+  if($('#mClose')) $('#mClose').onclick = resume;
+}
+function showVictory(){
+  victoryFwT = 9;
+  save();
+  paused = true; syncSpeedBtns();
+  showModal(`<h1>🏆 MÉTROPOLE !</h1>
+    <div class="sub">8 000 HABITANTS — VOUS ÊTES UN MAIRE DE LÉGENDE</div>
+    <p style="text-align:center">${fmtN(st.pop)} habitants · ${fmtN(st.money)} $ en caisse · ${START_YEAR+((st.month/12)|0)}</p>
+    <p style="text-align:center;margin-top:8px">La ville continue en mode libre — la <b>centrale à fusion</b> est débloquée !</p>
+    <div class="btns"><button class="bigbtn" id="mClose">CONTINUER EN MODE LIBRE</button></div>`);
+  $('#mClose').onclick = ()=>{ hideModal(); paused = false; syncSpeedBtns(); };
+}
+
+/* ---------- Vitesse & options ---------- */
+function setSpeed(v){
+  if(v === 0) paused = true;
+  else { speed = v; paused = false; }
+  syncSpeedBtns();
+}
+function syncSpeedBtns(){
+  $('#bPause').classList.toggle('on', paused);
+  $('#bSp1').classList.toggle('on', !paused && speed===1);
+  $('#bSp2').classList.toggle('on', !paused && speed===2);
+  $('#bSp4').classList.toggle('on', !paused && speed===4);
+  $('#pauseTag').classList.toggle('hidden', !paused || !$('#modalBg').classList.contains('hidden'));
+}
+function syncOptBtns(){
+  $('#bSfx').classList.toggle('off', !opts.sfx);
+  $('#bMus').classList.toggle('off', !opts.mus);
+  $('#bNuit').classList.toggle('off', !opts.nuit);
+  $('#bCrt').classList.toggle('off', !opts.crt);
+  $('#crt').style.display = opts.crt ? '' : 'none';
+}
+function toggleMus(){
+  opts.mus = !opts.mus; saveOpts(); syncOptBtns();
+  if(AC){ if(opts.mus) startMusic(); else stopMusic(); }
+}
+
+/* ================================================================
+   ENTRÉES
+   ================================================================ */
+let panning=false, panStart=null, painting=false, spaceHeld=false;
+const held = new Set();
+
+function screenToWorld(mx,my){
+  const r = cv.getBoundingClientRect();
+  return { x: cam.x + (mx - r.width/2)/cam.z, y: cam.y + (my - r.height/2)/cam.z };
+}
+function clampCam(){
+  const r = cv.getBoundingClientRect();
+  const hw = r.width/2/cam.z, hh = r.height/2/cam.z;
+  cam.x = (2*hw >= WPX) ? WPX/2 : clamp(cam.x, hw, WPX-hw);
+  cam.y = (2*hh >= WPX) ? WPX/2 : clamp(cam.y, hh, WPX-hh);
+}
+function centerCam(){
+  const r = cv.getBoundingClientRect();
+  cam.z = clamp(Math.min(r.width, r.height)/WPX*0.95, 0.75, 2);
+  cam.x = WPX/2; cam.y = WPX/2;
+  clampCam();
+}
+function updateTip(e, tx, ty){
+  if(curTool === 'select' || !inb(tx,ty)){ ghostTip.classList.add('hidden'); return; }
+  const def = TOOL_BY_ID[curTool];
+  const chk = canPlace(curTool, tx, ty);
+  ghostTip.textContent = chk.ok ? def.nom+'  −'+def.cost+' $' : (chk.why || '');
+  ghostTip.classList.toggle('bad', !chk.ok);
+  ghostTip.classList.remove('hidden');
+  ghostTip.style.left = (e.offsetX+16)+'px';
+  ghostTip.style.top  = (e.offsetY+10)+'px';
+}
+cv.style.touchAction = 'none';
+cv.addEventListener('pointerdown', e=>{
+  initAudio();
+  try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+  const w = screenToWorld(e.offsetX, e.offsetY);
+  const tx = Math.floor(w.x/TS), ty = Math.floor(w.y/TS);
+  if(e.button === 1 || e.button === 2 || spaceHeld){
+    panning = true; panStart = { mx:e.offsetX, my:e.offsetY, cx:cam.x, cy:cam.y };
+    return;
+  }
+  if(e.button === 0){
+    if(!inb(tx,ty)) return;
+    if(curTool === 'select'){ showInfo(tx,ty); return; }
+    const def = TOOL_BY_ID[curTool];
+    if(def.drag) painting = true;
+    if(applyTool(curTool, tx, ty)) updateHUD();
+  }
+});
+cv.addEventListener('pointermove', e=>{
+  const w = screenToWorld(e.offsetX, e.offsetY);
+  const tx = Math.floor(w.x/TS), ty = Math.floor(w.y/TS);
+  hover.x = inb(tx,ty) ? tx : -1;
+  hover.y = inb(tx,ty) ? ty : -1;
+  updateTip(e, tx, ty);
+  if(panning && panStart){
+    cam.x = panStart.cx - (e.offsetX - panStart.mx)/cam.z;
+    cam.y = panStart.cy - (e.offsetY - panStart.my)/cam.z;
+    clampCam();
+  } else if(painting && inb(tx,ty)){
+    if(applyTool(curTool, tx, ty)) updateHUD();
+  }
+});
+window.addEventListener('pointerup', ()=>{ panning = false; painting = false; panStart = null; });
+cv.addEventListener('pointerleave', ()=>{ hover.x = hover.y = -1; ghostTip.classList.add('hidden'); });
+cv.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const before = screenToWorld(e.offsetX, e.offsetY);
+  cam.z = clamp(cam.z * (e.deltaY < 0 ? 1.25 : 0.8), 0.75, 5);
+  const after = screenToWorld(e.offsetX, e.offsetY);
+  cam.x += before.x - after.x; cam.y += before.y - after.y;
+  clampCam();
+}, {passive:false});
+cv.addEventListener('contextmenu', e=>e.preventDefault());
+
+// minimap : cliquer/glisser pour déplacer la caméra
+const mmEl = $('#mm');
+function mmJump(e){
+  const r = mmEl.getBoundingClientRect();
+  cam.x = (e.clientX-r.left)/r.width*WPX;
+  cam.y = (e.clientY-r.top)/r.height*WPX;
+  clampCam();
+}
+let mmDrag = false;
+mmEl.addEventListener('pointerdown', e=>{ mmDrag = true; try{ mmEl.setPointerCapture(e.pointerId); }catch(err){} mmJump(e); });
+mmEl.addEventListener('pointermove', e=>{ if(mmDrag) mmJump(e); });
+window.addEventListener('pointerup', ()=>{ mmDrag = false; });
+
+// clavier
+const PAN_KEYS = {
+  ArrowLeft:'l', ArrowRight:'r', ArrowUp:'u', ArrowDown:'d',
+  q:'l', a:'l', d2:'r', z:'u', w:'u', s:'d',
+};
+window.addEventListener('keydown', e=>{
+  if(e.target.tagName === 'INPUT') return;
+  const k = e.key;
+  if(k==='ArrowLeft'||k==='q'||k==='a'){ held.add('l'); e.preventDefault(); }
+  if(k==='ArrowRight'||k==='d'){ held.add('r'); e.preventDefault(); }
+  if(k==='ArrowUp'||k==='z'||k==='w'){ held.add('u'); e.preventDefault(); }
+  if(k==='ArrowDown'||k==='s'){ held.add('d'); e.preventDefault(); }
+  if(k===' '){ spaceHeld = true; e.preventDefault(); }
+  if(e.repeat) return;
+  if(k==='Escape'){ selectTool('select'); hideInfo(); $('#budget').classList.add('hidden'); }
+  if(k==='p'||k==='P'){ setSpeed(paused ? speed : 0); }
+  if(k==='h'||k==='H'||k==='?'){ showHelp(false); }
+  if(k==='m'||k==='M'){ initAudio(); toggleMus(); }
+  if(k==='n'||k==='N'){ opts.nuit = !opts.nuit; saveOpts(); syncOptBtns(); }
+  if(k==='+'||k==='='){ setSpeed(paused ? 1 : Math.min(4, speed*2)); }
+  if(k==='-'){ setSpeed(speed >= 2 ? speed/2 : 1); }
+  const tl = TOOLS.find(t => t.key === k);
+  if(tl){ if(isUnlocked(tl)) selectTool(tl.id); else sfx('err'); }
+});
+window.addEventListener('keyup', e=>{
+  const k = e.key;
+  if(k==='ArrowLeft'||k==='q'||k==='a') held.delete('l');
+  if(k==='ArrowRight'||k==='d') held.delete('r');
+  if(k==='ArrowUp'||k==='z'||k==='w') held.delete('u');
+  if(k==='ArrowDown'||k==='s') held.delete('d');
+  if(k===' ') spaceHeld = false;
+});
+
+// boutons du HUD
+$('#bPause').addEventListener('click', ()=>{ initAudio(); setSpeed(paused ? speed : 0); });
+$('#bSp1').addEventListener('click', ()=>{ initAudio(); setSpeed(1); });
+$('#bSp2').addEventListener('click', ()=>{ initAudio(); setSpeed(2); });
+$('#bSp4').addEventListener('click', ()=>{ initAudio(); setSpeed(4); });
+$('#bAide').addEventListener('click', ()=>showHelp(false));
+$('#bSfx').addEventListener('click', ()=>{ initAudio(); opts.sfx = !opts.sfx; saveOpts(); syncOptBtns(); });
+$('#bMus').addEventListener('click', ()=>{ initAudio(); toggleMus(); });
+$('#bNuit').addEventListener('click', ()=>{ opts.nuit = !opts.nuit; saveOpts(); syncOptBtns(); });
+$('#bCrt').addEventListener('click', ()=>{ opts.crt = !opts.crt; saveOpts(); syncOptBtns(); });
+$('#bSave').addEventListener('click', ()=>{ save(); sfx('save'); toast('💾 Partie sauvegardée !'); });
+$('#bNew').addEventListener('click', ()=>{
+  confirmBox('Raser la ville et tout recommencer ?', ()=>{
+    localStorage.removeItem(SAVE_KEY);
+    newGame(); recompute(); computeStats();
+    refreshToolbar(); updateHUD(); centerCam();
+    paused = false; syncSpeedBtns();
+    toast('Nouvelle ville fondée. Bonne chance, Maire !', true);
+  });
+});
+$('#chMoney').addEventListener('click', ()=>{
+  const bd = $('#budget');
+  bd.classList.toggle('hidden');
+  if(!bd.classList.contains('hidden')) renderBudget();
+});
+let wiping = false;
+window.addEventListener('beforeunload', ()=>{ if(!wiping && st && st.month > 0) save(); });
+document.addEventListener('visibilitychange', ()=>{ if(!wiping && document.hidden && st && st.month > 0) save(); });
+
+/* ================================================================
+   BOUCLE PRINCIPALE & DÉMARRAGE
+   ================================================================ */
+let lastT = 0, acc = 0;
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.1, (now-lastT)/1000);
+  lastT = now;
+  if(held.size){
+    const v = 300*dt/Math.max(1,cam.z*0.6);
+    if(held.has('l')) cam.x -= v;
+    if(held.has('r')) cam.x += v;
+    if(held.has('u')) cam.y -= v;
+    if(held.has('d')) cam.y += v;
+    clampCam();
+  }
+  if(!paused && st){
+    acc += dt*1000*speed;
+    let guard = 24;
+    while(acc >= TICK_MS && guard-- > 0){ acc -= TICK_MS; simTick(); }
+    updateCars(dt*speed);
+  }
+  if(needRecalc && st){ recompute(); computeStats(); needRecalc = false; updateHUD(); }
+  updateParts(dt);
+  updateFw(dt, now);
+  if(st) draw(now);
+}
+
+function boot(){
+  loadOpts();
+  const loaded = loadGame();
+  if(!loaded) newGame();
+  buildToolbar();
+  resize();
+  recompute(); computeStats();
+  refreshToolbar(); updateHUD(); syncOptBtns(); syncSpeedBtns();
+  centerCam();
+  selectTool('select');
+  pushNews('📻 Radio Pixopolis — le bulletin municipal en continu.');
+  showHelp(true, loaded);
+  requestAnimationFrame(t => { lastT = t; requestAnimationFrame(frame); });
+}
+
+/* ---------- Poignée de debug (console) ---------- */
+window.PIX = {
+  get st(){ return st; }, MP,
+  place: (id,x,y) => applyTool(id,x,y),
+  ff: n => { for(let i=0;i<n;i++) monthTick(); dirtyB = true; },
+  start: () => { hideModal(); paused = false; syncSpeedBtns(); },
+  night: v => { NIGHT_F = v; },
+  save, wipe: () => { wiping = true; localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OPTS_KEY); location.reload(); },
+  reset: () => { newGame(); recompute(); computeStats(); updateHUD(); refreshToolbar(); },
+  cam,
+};
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MessageFlow — Producers, Queues & Brokers</title>
+<style>
+  :root{
+    --bg:#0b1020;
+    --bg2:#0f1630;
+    --surface:#141c38;
+    --surface2:#1b2547;
+    --border:#26315c;
+    --ink:#e8ecf7;
+    --ink2:#a8b3d4;
+    --muted:#6d7aa3;
+    --amber:#d97706;
+    --cyan:#0891b2;
+    --violet:#8b5cf6;
+    --pink:#ec4899;
+    --green:#059669;
+    --red:#e11d48;
+    --glow-violet:rgba(139,92,246,.35);
+    --radius:16px;
+    font-size:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(139,92,246,.12), transparent 60%),
+      radial-gradient(900px 500px at -10% 20%, rgba(8,145,178,.10), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",sans-serif;
+    line-height:1.6;
+    min-height:100vh;
+  }
+  ::selection{background:rgba(139,92,246,.4)}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(14px);
+    background:rgba(11,16,32,.82);
+    border-bottom:1px solid var(--border);
+  }
+  .header-inner{
+    max-width:1100px;margin:0 auto;padding:14px 20px;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  }
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;letter-spacing:.2px}
+  .logo .badge{
+    width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:1.2rem;
+    background:linear-gradient(135deg,var(--violet),var(--cyan));
+    box-shadow:0 4px 18px var(--glow-violet);
+  }
+  .logo small{display:block;font-size:.68rem;font-weight:500;color:var(--muted);letter-spacing:.4px}
+  nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+  .tab{
+    border:1px solid transparent;background:transparent;color:var(--ink2);
+    padding:8px 14px;border-radius:10px;cursor:pointer;font-size:.92rem;font-family:inherit;
+    transition:all .18s ease;font-weight:600;
+  }
+  .tab:hover{color:var(--ink);background:var(--surface)}
+  .tab.active{
+    color:#fff;background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(8,145,178,.28));
+    border-color:var(--violet);
+  }
+
+  main{max-width:1100px;margin:0 auto;padding:28px 20px 80px}
+  section.page{display:none;animation:fadeUp .35s ease}
+  section.page.active{display:block}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  h1{font-size:1.9rem;line-height:1.25;margin-bottom:6px}
+  h2{font-size:1.25rem;margin-bottom:10px}
+  .subtitle{color:var(--ink2);max-width:720px;margin-bottom:26px}
+  .grad{background:linear-gradient(90deg,#b794f6,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  .card{
+    background:linear-gradient(180deg,var(--surface),var(--bg2));
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px;margin-bottom:18px;
+  }
+
+  /* ---------- Apprendre ---------- */
+  .progress-wrap{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+  .progress-bar{flex:1;height:10px;border-radius:99px;background:var(--surface2);overflow:hidden}
+  .progress-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,var(--violet),var(--cyan));transition:width .4s ease}
+  .progress-label{font-size:.85rem;color:var(--ink2);white-space:nowrap;font-weight:600}
+
+  .chapter{position:relative}
+  .chapter h2{display:flex;align-items:center;gap:10px}
+  .ch-num{
+    flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+    font-size:.85rem;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--violet),var(--cyan));
+  }
+  .chapter p{color:var(--ink2);margin-bottom:10px}
+  .chapter strong{color:var(--ink)}
+  .chapter ul{color:var(--ink2);padding-left:22px;margin-bottom:10px}
+  .chapter li{margin-bottom:5px}
+  .chapter li::marker{color:var(--violet)}
+
+  .done-btn{
+    margin-top:10px;border:1px solid var(--border);background:var(--surface2);color:var(--ink2);
+    padding:7px 16px;border-radius:99px;cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:700;
+    transition:all .2s ease;
+  }
+  .done-btn:hover{border-color:var(--green);color:var(--ink)}
+  .done-btn.on{background:rgba(5,150,105,.18);border-color:var(--green);color:#5eead4}
+
+  .callout{
+    border-left:3px solid var(--cyan);background:rgba(8,145,178,.08);
+    padding:12px 16px;border-radius:0 12px 12px 0;margin:14px 0;font-size:.93rem;color:var(--ink2);
+  }
+  .callout b{color:#67e8f9}
+  .callout.tip{border-color:var(--amber);background:rgba(217,119,6,.08)}
+  .callout.tip b{color:#fbbf24}
+
+  .actor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:14px 0}
+  .actor{
+    background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px;
+    transition:transform .18s ease,border-color .18s ease;
+  }
+  .actor:hover{transform:translateY(-3px);border-color:var(--violet)}
+  .actor .emoji{font-size:1.6rem}
+  .actor h3{font-size:.98rem;margin:6px 0 4px}
+  .actor p{font-size:.84rem;color:var(--ink2);margin:0}
+
+  table{width:100%;border-collapse:collapse;font-size:.88rem;margin:12px 0}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--ink2);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.5px}
+  td{color:var(--ink2)}
+  td b{color:var(--ink)}
+  .table-scroll{overflow-x:auto}
+
+  .diagram{width:100%;max-width:680px;display:block;margin:12px auto}
+
+  /* ---------- Simulateur ---------- */
+  .sim-shell{background:linear-gradient(180deg,var(--surface),var(--bg2));border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+  #simCanvas{display:block;width:100%;cursor:pointer;background:radial-gradient(700px 320px at 50% 0%,rgba(139,92,246,.07),transparent 70%)}
+  .sim-hint{padding:6px 16px;font-size:.78rem;color:var(--muted);border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+  .coach{
+    display:flex;align-items:center;gap:12px;padding:13px 18px;border-radius:14px;margin-bottom:18px;
+    border:1px solid var(--border);background:var(--surface);font-size:.93rem;font-weight:600;
+    transition:border-color .3s ease;
+  }
+  .coach .ico{font-size:1.3rem}
+  .coach.ok{border-color:rgba(5,150,105,.6)}
+  .coach.warn{border-color:rgba(217,119,6,.6)}
+  .coach.err{border-color:rgba(225,29,72,.6)}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+  .stat{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;
+  }
+  .stat .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
+  .stat .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .stat .val{font-size:1.5rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:2px}
+  .stat .val small{font-size:.8rem;color:var(--muted);font-weight:600}
+
+  .controls{background:linear-gradient(180deg,var(--surface),var(--bg2));border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .controls-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px 24px;margin-bottom:16px}
+  .ctrl label{display:flex;justify-content:space-between;font-size:.83rem;color:var(--ink2);font-weight:700;margin-bottom:6px}
+  .ctrl output{color:#67e8f9;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;accent-color:var(--violet);cursor:pointer}
+
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{
+    border:1px solid var(--border);background:var(--surface2);color:var(--ink);
+    padding:9px 18px;border-radius:11px;cursor:pointer;font-family:inherit;font-size:.9rem;font-weight:700;
+    transition:all .18s ease;
+  }
+  .btn:hover{border-color:var(--violet);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(135deg,var(--violet),var(--cyan));border:none;color:#fff}
+  .btn.danger:hover{border-color:var(--red)}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:11px;overflow:hidden}
+  .seg button{border:none;background:transparent;color:var(--ink2);padding:9px 16px;cursor:pointer;font-family:inherit;font-size:.88rem;font-weight:700;transition:all .15s}
+  .seg button.on{background:rgba(139,92,246,.3);color:#fff}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chip{
+    border:1px dashed var(--border);background:transparent;color:var(--muted);
+    padding:5px 13px;border-radius:99px;cursor:pointer;font-family:inherit;font-size:.8rem;font-weight:600;
+  }
+  .chip:hover{color:var(--ink);border-color:var(--cyan)}
+
+  /* ---------- Quiz ---------- */
+  .quiz-box{max-width:720px;margin:0 auto}
+  .quiz-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:.85rem;color:var(--ink2);font-weight:600}
+  .quiz-q{font-size:1.15rem;font-weight:700;margin-bottom:18px;line-height:1.45}
+  .quiz-opts{display:grid;gap:10px}
+  .opt{
+    text-align:left;border:1px solid var(--border);background:var(--surface2);color:var(--ink2);
+    padding:13px 16px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:.95rem;
+    transition:all .15s ease;display:flex;gap:12px;align-items:baseline;
+  }
+  .opt:hover:not(:disabled){border-color:var(--violet);color:var(--ink);transform:translateX(4px)}
+  .opt:disabled{cursor:default;opacity:.55}
+  .opt .letter{flex:none;font-weight:800;color:var(--violet)}
+  .opt.correct{border-color:var(--green);background:rgba(5,150,105,.16);color:var(--ink);opacity:1}
+  .opt.wrong{border-color:var(--red);background:rgba(225,29,72,.14);color:var(--ink);opacity:1}
+  .quiz-why{
+    display:none;margin-top:16px;padding:14px 16px;border-radius:12px;font-size:.9rem;color:var(--ink2);
+    background:rgba(8,145,178,.08);border-left:3px solid var(--cyan);
+  }
+  .quiz-why.show{display:block;animation:fadeUp .3s ease}
+  .quiz-why b{color:#67e8f9}
+  .quiz-next{margin-top:16px;display:none}
+  .quiz-next.show{display:inline-block}
+  .quiz-end{text-align:center;padding:30px 10px}
+  .quiz-score{font-size:3rem;font-weight:800;margin:10px 0}
+  .quiz-msg{color:var(--ink2);margin-bottom:20px}
+
+  /* ---------- Glossaire ---------- */
+  .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .flip{perspective:900px;height:170px;cursor:pointer}
+  .flip-inner{position:relative;width:100%;height:100%;transition:transform .5s cubic-bezier(.4,.1,.2,1);transform-style:preserve-3d}
+  .flip.flipped .flip-inner{transform:rotateY(180deg)}
+  .face{
+    position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:16px;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+    border:1px solid var(--border);
+  }
+  .face.front{background:linear-gradient(160deg,var(--surface2),var(--surface));gap:8px}
+  .face.front .emoji{font-size:1.9rem}
+  .face.front .term{font-weight:800;font-size:1.02rem}
+  .face.front .flip-hint{font-size:.7rem;color:var(--muted);position:absolute;bottom:10px}
+  .face.back{background:linear-gradient(160deg,rgba(139,92,246,.22),rgba(8,145,178,.16)),var(--surface);transform:rotateY(180deg);font-size:.82rem;color:var(--ink2);line-height:1.45}
+
+  /* ---------- Entretien ---------- */
+  details{
+    background:linear-gradient(180deg,var(--surface),var(--bg2));border:1px solid var(--border);
+    border-radius:14px;margin-bottom:12px;overflow:hidden;
+  }
+  details[open]{border-color:var(--violet)}
+  summary{
+    cursor:pointer;padding:16px 20px;font-weight:700;font-size:.98rem;list-style:none;
+    display:flex;align-items:center;gap:12px;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";color:var(--violet);transition:transform .2s;font-size:1.1rem}
+  details[open] summary::before{transform:rotate(90deg)}
+  .answer{padding:0 20px 18px 44px;color:var(--ink2);font-size:.92rem}
+  .answer b{color:var(--ink)}
+  .answer ul{padding-left:20px;margin-top:8px}
+  .answer li{margin-bottom:5px}
+  .answer li::marker{color:var(--cyan)}
+
+  kbd.term{
+    background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+    padding:1px 7px;font-size:.83em;font-family:Consolas,monospace;color:#67e8f9;
+  }
+
+  footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px;border-top:1px solid var(--border)}
+
+  @media (max-width:640px){
+    .header-inner{padding:10px 12px}
+    nav{width:100%;justify-content:space-between}
+    .tab{padding:7px 9px;font-size:.8rem}
+    h1{font-size:1.5rem}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="badge">📬</div>
+      <div>MessageFlow<small>producers · queues · brokers · consumers</small></div>
+    </div>
+    <nav>
+      <button class="tab active" data-tab="learn">🎓 Apprendre</button>
+      <button class="tab" data-tab="sim">🕹️ Simulateur</button>
+      <button class="tab" data-tab="quiz">❓ Quiz</button>
+      <button class="tab" data-tab="gloss">🃏 Glossaire</button>
+      <button class="tab" data-tab="interview">💼 Entretien</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================ APPRENDRE ============================ -->
+<section class="page active" id="page-learn">
+  <h1>Les files de messages, <span class="grad">sans prise de tête</span></h1>
+  <p class="subtitle">9 chapitres courts pour comprendre les <b>producers</b>, <b>consumers</b>, <b>queues</b> et <b>brokers</b> — et surtout <b>pourquoi</b> on les utilise. Coche chaque chapitre quand il est acquis, puis va jouer avec le simulateur. 🚀</p>
+
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="learnFill"></div></div>
+    <span class="progress-label" id="learnLabel">0/9 chapitres</span>
+  </div>
+
+  <!-- CH 1 -->
+  <div class="card chapter">
+    <h2><span class="ch-num">1</span> Le problème : le tight coupling</h2>
+    <p>Imagine un site e-commerce. Quand un client valide sa commande, le service <b>Order</b> appelle directement (HTTP synchrone) les services <b>Stock</b>, <b>Billing</b> et <b>Email</b>, et attend chaque réponse.</p>
+    <svg class="diagram" viewBox="0 0 680 150" role="img" aria-label="Appels synchrones en cascade">
+      <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6d7aa3"/></marker>
+      <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#e11d48"/></marker></defs>
+      <rect x="20" y="50" width="150" height="50" rx="12" fill="rgba(139,92,246,.15)" stroke="#8b5cf6"/>
+      <text x="95" y="80" text-anchor="middle" fill="#e8ecf7" font-size="15" font-weight="700">Order</text>
+      <rect x="480" y="8" width="150" height="38" rx="10" fill="rgba(8,145,178,.12)" stroke="#26315c"/>
+      <text x="555" y="32" text-anchor="middle" fill="#a8b3d4" font-size="13">Stock ✅</text>
+      <rect x="480" y="56" width="150" height="38" rx="10" fill="rgba(225,29,72,.12)" stroke="#e11d48"/>
+      <text x="555" y="80" text-anchor="middle" fill="#fda4af" font-size="13">Billing 💥 down</text>
+      <rect x="480" y="104" width="150" height="38" rx="10" fill="rgba(8,145,178,.12)" stroke="#26315c"/>
+      <text x="555" y="128" text-anchor="middle" fill="#a8b3d4" font-size="13">Email 🐌 slow</text>
+      <line x1="170" y1="62" x2="475" y2="27" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="170" y1="75" x2="475" y2="75" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrRed)"/>
+      <line x1="170" y1="88" x2="475" y2="123" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="322" y="65" text-anchor="middle" fill="#6d7aa3" font-size="11.5">synchronous HTTP calls</text>
+    </svg>
+    <ul>
+      <li><b>Latence en cascade</b> : si Email met 8 s à répondre, le client attend 8 s pour valider son panier.</li>
+      <li><b>Disponibilité couplée</b> : si Billing est down, <em>toute</em> la commande échoue.</li>
+      <li><b>Pics de trafic</b> : un flash sale et tous les services saturent en même temps.</li>
+      <li><b>Évolutivité rigide</b> : brancher un nouveau service (Analytics ?) = modifier le code de Order.</li>
+    </ul>
+    <div class="callout">💬 <b>En entretien :</b> nomme le concept de <b>temporal coupling</b> — avec un appel synchrone, l'appelant et l'appelé doivent être disponibles <em>au même instant</em>. C'est ça que le messaging casse.</div>
+    <button class="done-btn" data-ch="1">✓ Compris</button>
+  </div>
+
+  <!-- CH 2 -->
+  <div class="card chapter">
+    <h2><span class="ch-num">2</span> La solution : le messaging asynchrone</h2>
+    <p>Au lieu d'appeler directement, le service Order <b>publie un message</b> (« Order #42 created ») dans une <b>queue</b> hébergée par un <b>broker</b>. Il n'attend personne : il répond au client immédiatement. Les autres services <b>consomment</b> les messages à leur rythme.</p>
+    <svg class="diagram" viewBox="0 0 680 120" role="img" aria-label="Producer, queue, consumer">
+      <rect x="15" y="38" width="130" height="46" rx="12" fill="rgba(217,119,6,.15)" stroke="#d97706"/>
+      <text x="80" y="60" text-anchor="middle" fill="#e8ecf7" font-size="13.5" font-weight="700">Producer</text>
+      <text x="80" y="76" text-anchor="middle" fill="#a8b3d4" font-size="10.5">publie et n'attend pas</text>
+      <rect x="215" y="28" width="250" height="66" rx="14" fill="rgba(139,92,246,.1)" stroke="#8b5cf6"/>
+      <text x="340" y="48" text-anchor="middle" fill="#b794f6" font-size="10.5" font-weight="700" letter-spacing="1">BROKER · QUEUE (FIFO)</text>
+      <circle cx="420" cy="70" r="9" fill="#d97706"/><circle cx="394" cy="70" r="9" fill="#0891b2"/><circle cx="368" cy="70" r="9" fill="#8b5cf6"/><circle cx="342" cy="70" r="9" fill="#ec4899"/>
+      <circle cx="316" cy="70" r="8" fill="none" stroke="#26315c" stroke-width="1.5"/><circle cx="290" cy="70" r="8" fill="none" stroke="#26315c" stroke-width="1.5"/><circle cx="264" cy="70" r="8" fill="none" stroke="#26315c" stroke-width="1.5"/>
+      <rect x="535" y="38" width="130" height="46" rx="12" fill="rgba(5,150,105,.15)" stroke="#059669"/>
+      <text x="600" y="60" text-anchor="middle" fill="#e8ecf7" font-size="13.5" font-weight="700">Consumer</text>
+      <text x="600" y="76" text-anchor="middle" fill="#a8b3d4" font-size="10.5">traite à son rythme</text>
+      <line x1="145" y1="61" x2="210" y2="61" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="465" y1="61" x2="530" y2="61" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+    </svg>
+    <p>🍽️ <b>L'analogie du restaurant :</b> le serveur (producer) accroche le ticket de commande (message) au rail de la cuisine (queue) et retourne en salle. Les cuisiniers (consumers) prennent les tickets quand ils sont libres. Personne n'attend planté devant la cuisine, et un coup de feu à midi ne fait qu'allonger le rail — rien n'est perdu.</p>
+    <ul>
+      <li><b>Decoupling</b> : le producer ne connaît pas les consumers (ni combien ils sont).</li>
+      <li><b>Resilience</b> : si un consumer est down, les messages patientent dans la queue.</li>
+      <li><b>Load leveling</b> : la queue absorbe les pics ; les consumers traitent à throughput constant.</li>
+      <li><b>Scalability</b> : trop de messages ? On ajoute des consumers, sans toucher au producer.</li>
+    </ul>
+    <button class="done-btn" data-ch="2">✓ Compris</button>
+  </div>
+
+  <!-- CH 3 -->
+  <div class="card chapter">
+    <h2><span class="ch-num">3</span> Les 5 acteurs à connaître par cœur</h2>
+    <div class="actor-grid">
+      <div class="actor"><div class="emoji">📤</div><h3>Producer</h3><p>Crée et publie des messages. Il ne sait ni qui les lira, ni quand. Il écrit et passe à autre chose (« fire and forget » ou avec confirmation du broker).</p></div>
+      <div class="actor"><div class="emoji">✉️</div><h3>Message</h3><p>L'enveloppe : des métadonnées (id, timestamp, type, routing key) + un payload (JSON, Avro, Protobuf…). Petit, autoporteur, versionné.</p></div>
+      <div class="actor"><div class="emoji">📥</div><h3>Queue</h3><p>Queue FIFO qui stocke les messages jusqu'à leur consommation. C'est le buffer entre deux mondes qui vont à des vitesses différentes.</p></div>
+      <div class="actor"><div class="emoji">🏤</div><h3>Broker</h3><p>Le serveur qui orchestre tout : réception, routing, stockage (persistence disque), livraison, acks. Ex : RabbitMQ, Kafka, SQS.</p></div>
+      <div class="actor"><div class="emoji">⚙️</div><h3>Consumer</h3><p>S'abonne à une queue, lit les messages, les traite puis les <b>ack</b>. On peut en lancer N en parallèle pour absorber le throughput.</p></div>
+    </div>
+    <div class="callout">💬 <b>En entretien :</b> insiste sur le fait que producer et consumer ne se connaissent pas — ils ne partagent qu'un <b>message contract</b> (le schéma). C'est ce qui permet de déployer, faire évoluer et scaler chaque côté indépendamment.</div>
+    <button class="done-btn" data-ch="3">✓ Compris</button>
+  </div>
+
+  <!-- CH 4 -->
+  <div class="card chapter">
+    <h2><span class="ch-num">4</span> Deux grands patterns : point-to-point vs pub/sub</h2>
+    <p><b>🎯 Point-to-point (work queue)</b> — chaque message est traité par <b>un seul</b> consumer. Plusieurs consumers sur la même queue se <em>partagent</em> le travail (competing consumers). Parfait pour distribuer des <b>tâches</b> : envoyer un email, générer un PDF, redimensionner une image.</p>
+    <p><b>📢 Publish/Subscribe (topic)</b> — chaque message est <b>copié vers tous les abonnés</b>. Un événement « OrderCreated » est reçu à la fois par Stock, Email et Analytics, chacun avec sa propre queue. Parfait pour diffuser des <b>événements</b>.</p>
+    <svg class="diagram" viewBox="0 0 680 190" role="img" aria-label="Point-to-point et pub/sub">
+      <text x="165" y="18" text-anchor="middle" fill="#a8b3d4" font-size="12" font-weight="700">🎯 Point-to-point</text>
+      <rect x="20" y="70" width="80" height="36" rx="10" fill="rgba(217,119,6,.15)" stroke="#d97706"/><text x="60" y="93" text-anchor="middle" fill="#e8ecf7" font-size="11.5">Producer</text>
+      <rect x="125" y="70" width="90" height="36" rx="10" fill="rgba(139,92,246,.1)" stroke="#8b5cf6"/><text x="170" y="93" text-anchor="middle" fill="#b794f6" font-size="11.5">Queue</text>
+      <rect x="245" y="34" width="75" height="30" rx="9" fill="rgba(5,150,105,.15)" stroke="#059669"/><text x="282" y="54" text-anchor="middle" fill="#a8b3d4" font-size="11">C1 ✉️</text>
+      <rect x="245" y="78" width="75" height="30" rx="9" fill="rgba(5,150,105,.15)" stroke="#059669"/><text x="282" y="98" text-anchor="middle" fill="#a8b3d4" font-size="11">C2 ✉️</text>
+      <rect x="245" y="122" width="75" height="30" rx="9" fill="rgba(5,150,105,.15)" stroke="#059669"/><text x="282" y="142" text-anchor="middle" fill="#a8b3d4" font-size="11">C3</text>
+      <line x1="100" y1="88" x2="120" y2="88" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="215" y1="82" x2="240" y2="52" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="215" y1="90" x2="240" y2="92" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="170" y="170" text-anchor="middle" fill="#6d7aa3" font-size="10.5">1 message → 1 seul consumer</text>
+      <line x1="345" y1="25" x2="345" y2="165" stroke="#26315c" stroke-width="1"/>
+      <text x="515" y="18" text-anchor="middle" fill="#a8b3d4" font-size="12" font-weight="700">📢 Pub/Sub</text>
+      <rect x="365" y="70" width="80" height="36" rx="10" fill="rgba(217,119,6,.15)" stroke="#d97706"/><text x="405" y="93" text-anchor="middle" fill="#e8ecf7" font-size="11.5">Producer</text>
+      <rect x="468" y="70" width="80" height="36" rx="10" fill="rgba(139,92,246,.1)" stroke="#8b5cf6"/><text x="508" y="93" text-anchor="middle" fill="#b794f6" font-size="11.5">Topic</text>
+      <rect x="580" y="34" width="80" height="30" rx="9" fill="rgba(5,150,105,.15)" stroke="#059669"/><text x="620" y="54" text-anchor="middle" fill="#a8b3d4" font-size="11">Stock ✉️</text>
+      <rect x="580" y="78" width="80" height="30" rx="9" fill="rgba(5,150,105,.15)" stroke="#059669"/><text x="620" y="98" text-anchor="middle" fill="#a8b3d4" font-size="11">Email ✉️</text>
+      <rect x="580" y="122" width="80" height="30" rx="9" fill="rgba(5,150,105,.15)" stroke="#059669"/><text x="620" y="142" text-anchor="middle" fill="#a8b3d4" font-size="11">Analytics ✉️</text>
+      <line x1="445" y1="88" x2="463" y2="88" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="548" y1="80" x2="575" y2="52" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="548" y1="90" x2="575" y2="92" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="548" y1="98" x2="575" y2="132" stroke="#6d7aa3" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="515" y="170" text-anchor="middle" fill="#6d7aa3" font-size="10.5">1 message → une copie pour chaque abonné</text>
+    </svg>
+    <div class="callout">💬 <b>Phrase qui fait mouche :</b> « Un <b>Command</b> (fais ceci) va dans une queue vers un seul exécutant ; un <b>Event</b> (ceci s'est produit) part dans un topic vers tous ceux que ça intéresse. »</div>
+    <button class="done-btn" data-ch="4">✓ Compris</button>
+  </div>
+
+  <!-- CH 5 -->
+  <div class="card chapter">
+    <h2><span class="ch-num">5</span> Fiabilité : ack, redelivery et dead letter queue</h2>
+    <ul>
+      <li><b>Ack</b> : le consumer confirme au broker <em>après</em> avoir traité le message avec succès. Pas d'ack (crash, timeout) → le broker programme une <b>redelivery</b> vers un autre consumer. Rien ne se perd.</li>
+      <li><b>Redelivery ⇒ doublons possibles</b> : si le consumer a traité puis crashé juste avant l'ack, le message revient. D'où la règle d'or : rendre le traitement <b>idempotent</b> (le rejouer deux fois donne le même résultat — ex. clé unique en base, vérifier « déjà traité ? » avant d'agir).</li>
+      <li><b>Dead Letter Queue (DLQ)</b> : un message qui échoue N fois de suite (bug, données corrompues — un « poison message ») est mis de côté dans une queue spéciale. La main queue continue de tourner, et on analyse la DLQ tranquillement (alerte, manual replay après correction).</li>
+      <li><b>Persistence</b> : les messages sont écrits sur disque par le broker → ils survivent à un redémarrage.</li>
+      <li><b>TTL</b> : durée de vie maximale d'un message ; au-delà, il expire (utile pour les infos périmables).</li>
+    </ul>
+    <div class="callout">💬 <b>En entretien :</b> le trio <b>ack → retry → DLQ</b> est LA réponse attendue à « comment gérez-vous les erreurs de traitement ? ». Bonus : mentionne l'<b>exponential backoff</b> avant l'envoi en DLQ.</div>
+    <button class="done-btn" data-ch="5">✓ Compris</button>
+  </div>
+
+  <!-- CH 6 -->
+  <div class="card chapter">
+    <h2><span class="ch-num">6</span> Les delivery guarantees</h2>
+    <div class="table-scroll"><table>
+      <tr><th>Garantie</th><th>Promesse</th><th>Risque</th><th>Quand l'utiliser</th></tr>
+      <tr><td><b>At-most-once</b></td><td>0 ou 1 livraison</td><td>Perte possible</td><td>Données non critiques : métriques, télémétrie, position GPS temps réel.</td></tr>
+      <tr><td><b>At-least-once</b></td><td>Au moins 1 livraison</td><td>Doublons possibles</td><td><b>Le standard en pratique</b> — à coupler avec des consumers idempotents.</td></tr>
+      <tr><td><b>Exactly-once</b></td><td>Exactement 1</td><td>Complexe et coûteux</td><td>Très difficile en système distribué. Kafka le propose sous conditions (transactions) ; le plus souvent on fait at-least-once + idempotency.</td></tr>
+    </table></div>
+    <div class="callout tip">🎤 <b>Réponse type :</b> « En pratique je pars sur <b>at-least-once</b> avec des consumers <b>idempotents</b> : c'est robuste, simple à raisonner, et le exactly-once "parfait" est illusoire dès qu'il y a des side effects externes (envoi d'email, appel d'API tierce). »</div>
+    <button class="done-btn" data-ch="6">✓ Compris</button>
+  </div>
+
+  <!-- CH 7 -->
+  <div class="card chapter">
+    <h2><span class="ch-num">7</span> Scalability, ordering et backpressure</h2>
+    <ul>
+      <li><b>Scaler la consommation</b> : on ajoute des instances de consumer sur la même queue (chez Kafka : un <b>consumer group</b>). Throughput ≈ nombre de consumers × vitesse unitaire. C'est ce que tu peux tester dans le simulateur !</li>
+      <li><b>Message ordering</b> : garanti uniquement <em>au sein d'une queue ou d'une partition</em>. Dès qu'on parallélise, l'ordre global disparaît. Solution : une <b>partition key</b> (ex. l'id client) pour que tous les événements d'une même entité restent ordonnés entre eux.</li>
+      <li><b>Load leveling</b> : la queue absorbe un pic de 10 000 requêtes/s pendant que les consumers traitent à 500/s. Le système ne tombe pas — il prend juste du lag, puis rattrape.</li>
+      <li><b>Backpressure</b> : si la production dépasse <em>durablement</em> la consommation, la queue grossit sans fin. Il faut réagir : scaler les consumers, limiter/ralentir les producers, borner la queue (capacité max), ou expirer les vieux messages (TTL).</li>
+      <li><b>Consumer lag</b> : le retard de consommation (messages en attente). C'est LA métrique à monitorer et alerter en production.</li>
+    </ul>
+    <button class="done-btn" data-ch="7">✓ Compris</button>
+  </div>
+
+  <!-- CH 8 -->
+  <div class="card chapter">
+    <h2><span class="ch-num">8</span> Les brokers du marché</h2>
+    <div class="table-scroll"><table>
+      <tr><th>Broker</th><th>Modèle</th><th>Point fort</th><th>Replay</th><th>Quand le choisir</th></tr>
+      <tr><td><b>RabbitMQ</b></td><td>Broker « intelligent » (AMQP), routing riche via exchanges</td><td>Task queues, routing flexible, maturité</td><td>Non (consommé = supprimé)</td><td>Work queues classiques, RPC async, routing complexe.</td></tr>
+      <tr><td><b>Kafka</b></td><td>Log distribué, partitionné, les consumers suivent un offset</td><td>Throughput massif (millions de msg/s), rétention longue</td><td><b>Oui</b> (on relit depuis un offset)</td><td>Event streaming, gros volumes, event sourcing, analytics temps réel.</td></tr>
+      <tr><td><b>AWS SQS / SNS</b></td><td>Queue managée (SQS) + pub/sub managé (SNS)</td><td>Zéro infrastructure à gérer, scaling auto</td><td>Non</td><td>Stack AWS, mise en place rapide, équipe réduite.</td></tr>
+      <tr><td><b>Redis Streams</b></td><td>Stream léger dans Redis</td><td>Simplicité si Redis est déjà là</td><td>Oui (limité)</td><td>Volumes modestes, besoin simple sans nouvelle brique.</td></tr>
+      <tr><td><b>NATS</b></td><td>Messaging ultralégère cloud-native</td><td>Latence minimale, très simple</td><td>Avec JetStream</td><td>Microservices internes, IoT, edge.</td></tr>
+    </table></div>
+    <div class="callout">💬 <b>Le choix Kafka vs RabbitMQ en une phrase :</b> RabbitMQ distribue des <b>tâches à exécuter</b> (le message disparaît une fois traité) ; Kafka enregistre un <b>replayable event log</b> (plusieurs équipes peuvent lire le même flux, même 7 jours plus tard).</div>
+    <button class="done-btn" data-ch="8">✓ Compris</button>
+  </div>
+
+  <!-- CH 9 -->
+  <div class="card chapter">
+    <h2><span class="ch-num">9</span> Cas d'usage concrets (à citer en entretien)</h2>
+    <div class="actor-grid">
+      <div class="actor"><div class="emoji">🛒</div><h3>E-commerce</h3><p>Le checkout publie « OrderCreated ». Billing, Stock, Email et Loyalty consomment en parallèle. Le client a sa confirmation en 200 ms au lieu de 5 s.</p></div>
+      <div class="actor"><div class="emoji">✉️</div><h3>Notifications</h3><p>Emails, SMS et push partent en tâche de fond avec retry automatique. Une panne du fournisseur SMS ne bloque jamais l'application.</p></div>
+      <div class="actor"><div class="emoji">🎬</div><h3>Traitement de médias</h3><p>Upload d'une vidéo → message dans la queue → une ferme de workers encode en 1080p/720p/480p. On scale les workers selon la queue.</p></div>
+      <div class="actor"><div class="emoji">📊</div><h3>Logs &amp; analytics</h3><p>Des millions d'événements de clic collectés via Kafka, consommés par le data warehouse, la détection de fraude et le temps réel — chacun à son rythme.</p></div>
+      <div class="actor"><div class="emoji">🧩</div><h3>Microservices</h3><p>Communication par événements : chaque service réagit aux faits des autres sans dépendance directe. Ajouter un service = s'abonner, zéro modification ailleurs.</p></div>
+    </div>
+    <div class="callout tip">🏆 <b>Dernier conseil :</b> prépare UN exemple que tu racontes bien (même fictif mais réaliste), avec des chiffres : « on encaissait des pics à 5 000 orders/min, la queue lissait, 8 workers consommaient, lag monitoré sous 30 s ». Le concret marque plus que la théorie.</div>
+    <button class="done-btn" data-ch="9">✓ Compris</button>
+  </div>
+</section>
+
+<!-- ============================ SIMULATEUR ============================ -->
+<section class="page" id="page-sim">
+  <h1>🕹️ Le simulateur de <span class="grad">message flow</span></h1>
+  <p class="subtitle">Joue avec les curseurs et observe : la queue qui gonfle quand les producers vont trop vite, le load leveling, la perte de messages quand la queue déborde, la redelivery quand un consumer crash…</p>
+
+  <div class="coach" id="coach"><span class="ico">👋</span><span id="coachText">Bienvenue ! Lance-toi : clique sur 💥 Burst pour simuler un traffic spike.</span></div>
+
+  <div class="sim-shell">
+    <canvas id="simCanvas"></canvas>
+    <div class="sim-hint">
+      <span>💡 Clique sur un <b>consumer</b> (à droite) pour le passer <b>down</b> ou le remettre <b>up</b>.</span>
+      <span id="modeHint">Mode point-to-point : les consumers se partagent la même queue.</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="lbl"><span class="dot" style="background:#d97706"></span>Produced</div><div class="val" id="stProduced">0</div></div>
+    <div class="stat"><div class="lbl"><span class="dot" style="background:#8b5cf6"></span>Queued</div><div class="val" id="stQueued">0</div></div>
+    <div class="stat"><div class="lbl"><span class="dot" style="background:#059669"></span>Consumed</div><div class="val" id="stConsumed">0</div></div>
+    <div class="stat"><div class="lbl">✖ Dropped (queue full)</div><div class="val" id="stDropped">0</div></div>
+    <div class="stat"><div class="lbl">⏱ Avg wait</div><div class="val" id="stWait">—</div></div>
+    <div class="stat"><div class="lbl">🚀 Throughput</div><div class="val" id="stRate">0 <small>msg/s</small></div></div>
+  </div>
+
+  <div class="controls">
+    <div class="controls-grid">
+      <div class="ctrl"><label>📤 Producers <output id="oProd">2</output></label><input type="range" id="rProd" min="1" max="4" value="2"></div>
+      <div class="ctrl"><label>⚡ Rate / producer <output id="oRate">1,0 msg/s</output></label><input type="range" id="rRate" min="2" max="30" value="10"></div>
+      <div class="ctrl"><label>⚙️ Consumers <output id="oCons">2</output></label><input type="range" id="rCons" min="1" max="4" value="2"></div>
+      <div class="ctrl"><label>🐢 Processing time <output id="oProc">1,0 s</output></label><input type="range" id="rProc" min="200" max="3000" step="100" value="1000"></div>
+      <div class="ctrl"><label>📦 Queue capacity <output id="oCap">12</output></label><input type="range" id="rCap" min="4" max="20" value="12"></div>
+    </div>
+    <div class="btn-row">
+      <div class="seg">
+        <button id="modeQueue" class="on">🎯 Point-to-point</button>
+        <button id="modePubsub">📢 Pub/Sub</button>
+      </div>
+      <button class="btn primary" id="btnBurst">💥 Burst (traffic spike)</button>
+      <button class="btn" id="btnPause">⏸ Pause</button>
+      <button class="btn danger" id="btnReset">↺ Réinitialiser</button>
+    </div>
+    <div class="chips">
+      <span style="color:var(--muted);font-size:.8rem;align-self:center">Scénarios :</span>
+      <button class="chip" data-preset="balanced">😌 Balanced</button>
+      <button class="chip" data-preset="overload">🔥 Overload (queue overflow)</button>
+      <button class="chip" data-preset="lazy">💤 Over-provisioned</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section class="page" id="page-quiz">
+  <h1>❓ Quiz <span class="grad">mode entretien</span></h1>
+  <p class="subtitle">12 questions du niveau de celles qu'on pose en entretien. Chaque réponse vient avec son explication — c'est là que tu apprends le plus.</p>
+  <div class="card quiz-box" id="quizCard">
+    <div class="quiz-meta"><span id="quizProgress">Question 1/12</span><span id="quizScore">Score : 0</span></div>
+    <div id="quizBody"></div>
+  </div>
+</section>
+
+<!-- ============================ GLOSSAIRE ============================ -->
+<section class="page" id="page-gloss">
+  <h1>🃏 Le glossaire en <span class="grad">flashcards</span></h1>
+  <p class="subtitle">Clique sur une carte pour la retourner. Objectif : savoir définir chaque terme en une phrase, sans hésiter.</p>
+  <div class="cards-grid" id="glossGrid"></div>
+</section>
+
+<!-- ============================ ENTRETIEN ============================ -->
+<section class="page" id="page-interview">
+  <h1>💼 Kit de survie <span class="grad">entretien</span></h1>
+  <p class="subtitle">Les questions qui reviennent tout le temps, avec des réponses modèles structurées. Entraîne-toi à les dire à voix haute.</p>
+
+  <details open>
+    <summary>« Explique-moi ce qu'est une message queue et pourquoi on en utilise. »</summary>
+    <div class="answer">
+      <b>Structure de réponse :</b> définition → problème résolu → exemple.
+      <ul>
+        <li>« C'est un intermédiaire asynchrone : des <b>producers</b> publient des messages dans une <b>queue</b> gérée par un <b>broker</b>, et des <b>consumers</b> les traitent à leur rythme. »</li>
+        <li>« Ça résout le tight coupling des appels synchrones : <b>decoupling</b> (les services ne se connaissent pas), <b>resilience</b> (un consumer down ne bloque rien, les messages attendent), <b>load leveling</b> et <b>scalability</b> indépendante de chaque côté. »</li>
+        <li>Exemple : « au checkout d'un e-commerce, on publie "OrderCreated" et on répond au client tout de suite ; Billing, Stock et Email consomment derrière. »</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>« Quelle est la différence entre une queue et un topic (pub/sub) ? »</summary>
+    <div class="answer">« Dans une <b>queue</b> (point-to-point), un message est traité par <b>un seul</b> consumer — les consumers se partagent la charge, c'est fait pour distribuer des tâches. Dans un <b>topic</b> (pub/sub), chaque abonné reçoit <b>sa copie</b> du message — c'est fait pour diffuser des événements à plusieurs services indépendants. » Bonus : « un <b>Command</b> → queue ; un <b>Event</b> → topic. »</div>
+  </details>
+
+  <details>
+    <summary>« Que se passe-t-il si un consumer crash ? »</summary>
+    <div class="answer">« Rien de grave, c'est justement l'intérêt : les messages <b>restent dans la queue</b> (persistés sur disque par le broker). Si le consumer avait un message en cours non <b>ack</b>, le broker fait une <b>redelivery</b> vers un autre consumer. Au retour du service, il rattrape le lag. C'est le <b>temporal coupling</b> qu'on a cassé : producer et consumer n'ont pas besoin d'être disponibles en même temps. »</div>
+  </details>
+
+  <details>
+    <summary>« Comment gérez-vous les doublons ? »</summary>
+    <div class="answer">« Les doublons sont inévitables en <b>at-least-once</b> : un consumer peut traiter puis crasher avant d'envoyer l'ack, le message est alors <b>redelivered</b>. La solution est de rendre les consumers <b>idempotents</b> : traiter deux fois le même message produit le même résultat. Concrètement : une <b>idempotency key</b> (l'id du message ou de la commande) avec une contrainte d'unicité en base, ou un check "déjà traité ?" avant d'exécuter le side effect. »</div>
+  </details>
+
+  <details>
+    <summary>« À quoi sert une Dead Letter Queue ? »</summary>
+    <div class="answer">« Quand un message échoue de façon répétée — un <b>poison message</b> : bug, payload corrompu — le retenter à l'infini bloquerait la queue. Après N tentatives (idéalement avec <b>exponential backoff</b>), le broker le déplace dans une <b>DLQ</b>. La main queue continue de tourner, et la DLQ est monitorée : alerte, analyse, correction du bug, puis manual replay des messages. »</div>
+  </details>
+
+  <details>
+    <summary>« Kafka ou RabbitMQ : comment choisir ? »</summary>
+    <div class="answer">
+      <ul>
+        <li>« <b>RabbitMQ</b> : task broker — rich routing, le message est supprimé une fois consommé. Idéal pour des work queues et du complex routing. »</li>
+        <li>« <b>Kafka</b> : <b>distributed event log</b> — les messages sont conservés (rétention), plusieurs groupes de consumers lisent le même flux chacun à son offset, et on peut faire un <b>replay</b> de l'historique. Idéal pour l'event streaming à très haut throughput. »</li>
+        <li>« Donc : distribution de tâches → RabbitMQ (ou SQS en managé) ; flux d'événements à forte volumétrie, plusieurs lecteurs, besoin de replay → Kafka. »</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>« Comment garantir le message ordering ? »</summary>
+    <div class="answer">« L'ordre n'est garanti qu'<b>au sein d'une queue/partition avec un seul consumer</b>. Dès qu'on parallélise, l'ordre global disparaît. La bonne réponse est la <b>partition key</b> : tous les messages d'une même entité (ex. un même client) sont routés vers la même partition via un hash de la clé, donc traités dans l'ordre <em>entre eux</em>. Et on se demande toujours si l'ordre global est vraiment nécessaire — souvent, l'ordre par entité suffit. »</div>
+  </details>
+
+  <details>
+    <summary>« Quels sont les inconvénients / limites de cette architecture ? » (question piège de senior)</summary>
+    <div class="answer">Montrer qu'on connaît le prix à payer fait très bonne impression :
+      <ul>
+        <li><b>Operational complexity</b> : une brique de plus à déployer, monitorer, mettre à jour.</li>
+        <li><b>Eventual consistency</b> : l'état n'est plus instantanément cohérent entre services — il faut l'assumer côté produit/UX.</li>
+        <li><b>Distributed debugging</b> : suivre une requête à travers les queues exige du tracing (correlation id).</li>
+        <li><b>End-to-end latency</b> : la réponse est immédiate mais le traitement final arrive plus tard.</li>
+        <li><b>Duplicates and ordering</b> : à gérer explicitement (idempotency, partitioning).</li>
+        <li>Conclusion : « pour un simple CRUD à faible trafic, un appel direct reste plus simple — le messaging se justifie par le decoupling, les pics ou les traitements longs. »</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="card" style="margin-top:22px">
+    <h2>🧠 Les 5 réflexes à avoir le jour J</h2>
+    <ul style="color:var(--ink2);padding-left:22px">
+      <li style="margin-bottom:6px">Place le vocabulaire naturellement : <kbd class="term">ack</kbd>, <kbd class="term">at-least-once</kbd>, <kbd class="term">idempotency</kbd>, <kbd class="term">DLQ</kbd>, <kbd class="term">consumer lag</kbd>, <kbd class="term">partition</kbd>, <kbd class="term">backpressure</kbd>.</li>
+      <li style="margin-bottom:6px">Ne dis jamais « exactly-once c'est simple » — dis plutôt « at-least-once + idempotency », c'est la réponse de quelqu'un qui a pratiqué.</li>
+      <li style="margin-bottom:6px">Illustre <b>toujours</b> avec un cas concret (e-commerce, notifications, encodage vidéo).</li>
+      <li style="margin-bottom:6px">Pense monitoring : la métrique clé d'une queue, c'est le <b>lag</b> (retard de consommation) — dire ça montre une vraie sensibilité prod.</li>
+      <li>Sache dire quand <b>ne pas</b> utiliser de messaging : besoin de réponse immédiate, transaction forte, petit système simple.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer>MessageFlow — fait avec ❤️ pour préparer ton entretien. Tout tourne en local, aucune donnée n'est envoyée.</footer>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+/* ================= Onglets ================= */
+$$(".tab").forEach(btn => btn.addEventListener("click", () => showTab(btn.dataset.tab)));
+function showTab(id){
+  $$(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === id));
+  $$(".page").forEach(p => p.classList.toggle("active", p.id === "page-" + id));
+  if(id === "sim") requestAnimationFrame(resizeCanvas);
+  window.scrollTo({top:0});
+}
+
+/* ================= Apprendre : progression ================= */
+const LS_DONE = "mf-done";
+let doneChapters = new Set(JSON.parse(localStorage.getItem(LS_DONE) || "[]"));
+function refreshLearn(){
+  $$(".done-btn").forEach(b => {
+    const on = doneChapters.has(b.dataset.ch);
+    b.classList.toggle("on", on);
+    b.textContent = on ? "✓ Acquis !" : "✓ Compris";
+  });
+  const n = doneChapters.size, total = $$(".done-btn").length;
+  $("#learnFill").style.width = (100 * n / total) + "%";
+  $("#learnLabel").textContent = n + "/" + total + " chapitres" + (n === total ? " 🎉" : "");
+}
+$$(".done-btn").forEach(b => b.addEventListener("click", () => {
+  const ch = b.dataset.ch;
+  doneChapters.has(ch) ? doneChapters.delete(ch) : doneChapters.add(ch);
+  localStorage.setItem(LS_DONE, JSON.stringify([...doneChapters]));
+  refreshLearn();
+}));
+refreshLearn();
+
+/* ================= Simulateur ================= */
+const PALETTE = ["#d97706", "#0891b2", "#8b5cf6", "#ec4899"]; // palette validée (dark, CVD-safe)
+const canvas = $("#simCanvas"), ctx = canvas.getContext("2d");
+let W = 0, H = 0;
+
+const params = { nProd: 2, rate: 1.0, nCons: 2, procMs: 1000, cap: 12, mode: "queue" };
+
+let sim = null;
+function resetSim(){
+  sim = {
+    time: 0, running: true,
+    producers: [], consumers: [], queues: [],
+    msgs: new Map(), nextId: 1,
+    stats: { produced: 0, consumed: 0, dropped: 0, waits: [], consumeTimes: [] },
+    coachOverride: null, burst: null, flashes: []
+  };
+  for(let i = 0; i < params.nProd; i++)
+    sim.producers.push({ id: i, color: PALETTE[i], x: 0, y: 0, nextEmit: 400 + i * 350, pulseAt: -9999 });
+  for(let j = 0; j < params.nCons; j++)
+    sim.consumers.push({ id: j, x: 0, y: 0, alive: true, msg: null, busyUntil: 0, startedAt: 0 });
+  const nQueues = params.mode === "pubsub" ? params.nCons : 1;
+  for(let q = 0; q < nQueues; q++) sim.queues.push([]);
+  layout();
+  if($("#btnPause")) $("#btnPause").textContent = "⏸ Pause";
+}
+
+function resizeCanvas(){
+  const r = canvas.parentElement.getBoundingClientRect();
+  if(r.width < 10) return;
+  W = r.width;
+  H = Math.max(340, Math.min(480, r.width * 0.44));
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  layout();
+}
+window.addEventListener("resize", resizeCanvas);
+
+let geom = null;
+function layout(){
+  if(!sim || W === 0) return;
+  const spread = (n, i) => H / 2 + (i - (n - 1) / 2) * Math.min(84, (H - 90) / Math.max(n - 1, 1) || 0);
+  sim.producers.forEach((p, i) => { p.x = 58; p.y = spread(sim.producers.length, i); });
+  sim.consumers.forEach((c, j) => { c.x = W - 58; c.y = spread(sim.consumers.length, j); });
+  const bx = 58 + 92, bex = W - 58 - 92, bw = Math.max(140, bex - bx);
+  const rowH = 42, headPad = 26;
+  const nQ = sim.queues.length;
+  const bh = headPad + nQ * rowH + 12;
+  const by = H / 2 - bh / 2;
+  const rows = [];
+  for(let q = 0; q < nQ; q++) rows.push({ y: by + headPad + rowH * q + rowH / 2 });
+  geom = { bx, bw, by, bh, rows };
+}
+function slotPos(qi, idx){
+  const sp = Math.min(20, (geom.bw - 34) / params.cap);
+  return { x: geom.bx + geom.bw - 16 - idx * sp, y: geom.rows[qi].y };
+}
+function entryPos(qi){ return { x: geom.bx + 10, y: geom.rows[qi].y }; }
+
+function spawnMsg(p, qi){
+  const to = entryPos(qi);
+  const dx = to.x - p.x, dy = to.y - p.y;
+  const m = {
+    id: sim.nextId++, color: p.color, qi,
+    state: "travel", phase: "toQueue",
+    x: p.x, y: p.y,
+    from: { x: p.x, y: p.y }, to,
+    ctrl: { x: (p.x + to.x) / 2, y: (p.y + to.y) / 2 - 26 - Math.random() * 22 },
+    t0: sim.time, dur: Math.max(380, Math.hypot(dx, dy) / 0.32),
+    enqueuedAt: 0, target: -1
+  };
+  sim.msgs.set(m.id, m);
+}
+function emit(p){
+  p.pulseAt = sim.time;
+  sim.stats.produced++;
+  if(params.mode === "pubsub") sim.queues.forEach((q, qi) => spawnMsg(p, qi));
+  else spawnMsg(p, 0);
+}
+
+function setCoachOverride(text, cls){
+  sim.coachOverride = { text, cls, until: sim.time + 2600 };
+}
+
+function update(dt){
+  if(!sim.running || !geom) return;
+  sim.time += dt;
+  const now = sim.time;
+
+  // Producers
+  for(const p of sim.producers){
+    if(now >= p.nextEmit){
+      emit(p);
+      const interval = 1000 / params.rate;
+      p.nextEmit = now + interval * (0.7 + Math.random() * 0.6);
+    }
+  }
+  // Rafale
+  if(sim.burst && sim.burst.remaining > 0 && now >= sim.burst.nextAt){
+    const p = sim.producers[Math.floor(Math.random() * sim.producers.length)];
+    emit(p);
+    sim.burst.remaining--; sim.burst.nextAt = now + 55;
+  }
+
+  // Messages en déplacement / animations
+  for(const m of [...sim.msgs.values()]){
+    if(m.state === "travel"){
+      const t = Math.min(1, (now - m.t0) / m.dur);
+      const u = 1 - t;
+      m.x = u * u * m.from.x + 2 * u * t * m.ctrl.x + t * t * m.to.x;
+      m.y = u * u * m.from.y + 2 * u * t * m.ctrl.y + t * t * m.to.y;
+      if(t >= 1){
+        if(m.phase === "toQueue"){
+          const q = sim.queues[m.qi];
+          if(q.length >= params.cap){
+            m.state = "drop"; m.t0 = now; m.y0 = m.y;
+            sim.stats.dropped++;
+            sim.flashes.push({ x: m.x, y: m.y, t0: now });
+            setCoachOverride("💥 Queue full → message dropped ! Ajoute des consumers ou augmente la capacité.", "err");
+          } else {
+            m.state = "queued"; m.enqueuedAt = m.enqueuedAt || now;
+            q.push(m.id);
+          }
+        } else { // toConsumer — le chrono de traitement a démarré au retrait de la queue
+          m.state = "processing";
+        }
+      }
+    } else if(m.state === "queued"){
+      const q = sim.queues[m.qi];
+      const idx = q.indexOf(m.id);
+      if(idx >= 0){
+        const sp = slotPos(m.qi, idx);
+        const k = Math.min(1, dt * 0.011);
+        m.x += (sp.x - m.x) * k;
+        m.y += (sp.y - m.y) * k;
+      }
+    } else if(m.state === "drop"){
+      const t = (now - m.t0) / 550;
+      m.y = m.y0 + 46 * t * t;
+      if(t >= 1) sim.msgs.delete(m.id);
+    } else if(m.state === "done"){
+      if(now - m.t0 > 420) sim.msgs.delete(m.id);
+    }
+  }
+
+  // Consumers
+  for(const c of sim.consumers){
+    if(!c.alive) continue;
+    if(c.msg !== null){
+      const m = sim.msgs.get(c.msg);
+      if(m && m.state === "processing" && now >= c.busyUntil){
+        sim.stats.consumed++;
+        sim.stats.consumeTimes.push(now);
+        m.state = "done"; m.t0 = now;
+        c.msg = null;
+      }
+    } else {
+      const qi = params.mode === "pubsub" ? c.id : 0;
+      const q = sim.queues[qi];
+      if(q && q.length > 0){
+        const id = q.shift();
+        const m = sim.msgs.get(id);
+        if(m){
+          sim.stats.waits.push(now - m.enqueuedAt);
+          if(sim.stats.waits.length > 60) sim.stats.waits.shift();
+          m.state = "travel"; m.phase = "toConsumer"; m.target = c.id;
+          m.from = { x: m.x, y: m.y }; m.to = { x: c.x, y: c.y };
+          m.ctrl = { x: (m.x + c.x) / 2, y: (m.y + c.y) / 2 - 18 };
+          m.t0 = now; m.dur = Math.max(150, Math.hypot(c.x - m.x, c.y - m.y) / 0.9);
+          c.msg = m.id;
+          c.busyUntil = now + params.procMs; c.startedAt = now;
+        }
+      }
+    }
+  }
+  // Nettoyage throughput (fenêtre 5 s)
+  const cut = now - 5000;
+  while(sim.stats.consumeTimes.length && sim.stats.consumeTimes[0] < cut) sim.stats.consumeTimes.shift();
+  // Flashes
+  sim.flashes = sim.flashes.filter(f => now - f.t0 < 500);
+}
+
+/* ---------- Dessin ---------- */
+function rr(x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function draw(){
+  if(!sim || !geom || W === 0) return;
+  ctx.clearRect(0, 0, W, H);
+  const now = sim.time;
+
+  // Lignes de flux
+  ctx.strokeStyle = "rgba(168,179,212,.10)"; ctx.lineWidth = 1;
+  for(const p of sim.producers){
+    const e = entryPos(params.mode === "pubsub" ? 0 : 0);
+    ctx.beginPath(); ctx.moveTo(p.x + 24, p.y); ctx.lineTo(geom.bx, geom.by + geom.bh / 2); ctx.stroke();
+  }
+  for(const c of sim.consumers){
+    const qi = params.mode === "pubsub" ? c.id : 0;
+    const row = geom.rows[Math.min(qi, geom.rows.length - 1)];
+    ctx.beginPath(); ctx.moveTo(geom.bx + geom.bw, row.y); ctx.lineTo(c.x - 26, c.y); ctx.stroke();
+  }
+
+  // Broker
+  rr(geom.bx, geom.by, geom.bw, geom.bh, 14);
+  ctx.fillStyle = "rgba(139,92,246,.07)"; ctx.fill();
+  ctx.strokeStyle = "rgba(139,92,246,.45)"; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = "#b794f6"; ctx.font = "700 11px 'Segoe UI',sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("BROKER", geom.bx + geom.bw / 2, geom.by + 17);
+
+  // Slots de chaque file
+  geom.rows.forEach((row, qi) => {
+    for(let i = 0; i < params.cap; i++){
+      const sp = slotPos(qi, i);
+      ctx.beginPath(); ctx.arc(sp.x, sp.y, 7, 0, 7);
+      ctx.strokeStyle = "rgba(168,179,212,.14)"; ctx.lineWidth = 1; ctx.stroke();
+    }
+    if(params.mode === "pubsub"){
+      ctx.fillStyle = "rgba(168,179,212,.55)"; ctx.font = "600 10px 'Segoe UI',sans-serif"; ctx.textAlign = "left";
+      ctx.fillText("queue C" + (qi + 1), geom.bx + 8, row.y - 13);
+    }
+    // remplissage visuel de la queue
+    const len = sim.queues[qi].length;
+    if(len >= params.cap){
+      ctx.fillStyle = "rgba(225,29,72,.85)"; ctx.font = "700 10px 'Segoe UI',sans-serif"; ctx.textAlign = "right";
+      ctx.fillText("FULL!", geom.bx + geom.bw - 8, row.y - 13);
+    }
+  });
+
+  // Producers
+  for(const p of sim.producers){
+    const pulse = Math.max(0, 1 - (now - p.pulseAt) / 320);
+    if(pulse > 0){
+      ctx.beginPath(); ctx.arc(p.x, p.y, 26 + 12 * (1 - pulse), 0, 7);
+      ctx.strokeStyle = p.color + Math.round(pulse * 120).toString(16).padStart(2, "0");
+      ctx.lineWidth = 2; ctx.stroke();
+    }
+    rr(p.x - 22, p.y - 22, 44, 44, 12);
+    ctx.fillStyle = p.color + "2e"; ctx.fill();
+    ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "#e8ecf7"; ctx.font = "800 13px 'Segoe UI',sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("P" + (p.id + 1), p.x, p.y + 5);
+    ctx.fillStyle = "rgba(168,179,212,.6)"; ctx.font = "600 9.5px 'Segoe UI',sans-serif";
+    ctx.fillText("producer", p.x, p.y + 36);
+  }
+
+  // Consumers
+  for(const c of sim.consumers){
+    ctx.beginPath(); ctx.arc(c.x, c.y, 22, 0, 7);
+    if(c.alive){
+      ctx.fillStyle = "rgba(5,150,105,.16)"; ctx.fill();
+      ctx.strokeStyle = "#059669"; ctx.lineWidth = 2; ctx.stroke();
+    } else {
+      ctx.fillStyle = "rgba(109,122,163,.12)"; ctx.fill();
+      ctx.strokeStyle = "rgba(109,122,163,.7)"; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // arc de progression
+    if(c.alive && c.msg !== null){
+      const m = sim.msgs.get(c.msg);
+      if(m && m.state === "processing"){
+        const prog = Math.min(1, (now - c.startedAt) / params.procMs);
+        ctx.beginPath(); ctx.arc(c.x, c.y, 27, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2);
+        ctx.strokeStyle = "#34d399"; ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.stroke(); ctx.lineCap = "butt";
+        ctx.beginPath(); ctx.arc(c.x, c.y, 7, 0, 7); ctx.fillStyle = m.color; ctx.fill();
+      }
+    }
+    ctx.fillStyle = c.alive ? "#e8ecf7" : "rgba(168,179,212,.55)";
+    ctx.font = "800 12px 'Segoe UI',sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(c.alive ? "C" + (c.id + 1) : "✖", c.x, c.y - (c.alive && c.msg !== null ? 10 : -4));
+    ctx.fillStyle = "rgba(168,179,212,.6)"; ctx.font = "600 9.5px 'Segoe UI',sans-serif";
+    ctx.fillText(c.alive ? "consumer" : "down", c.x, c.y + 40);
+  }
+
+  // Messages
+  for(const m of sim.msgs.values()){
+    if(m.state === "processing") continue;
+    let alpha = 1, r = 7;
+    if(m.state === "drop") alpha = Math.max(0, 1 - (now - m.t0) / 550);
+    if(m.state === "done"){ const t = (now - m.t0) / 420; alpha = Math.max(0, 1 - t); r = 7 + 8 * t; }
+    ctx.globalAlpha = alpha;
+    ctx.beginPath(); ctx.arc(m.x, m.y, r, 0, 7);
+    ctx.fillStyle = m.color;
+    ctx.shadowColor = m.color; ctx.shadowBlur = 9;
+    ctx.fill();
+    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+  }
+
+  // Flashes de perte
+  for(const f of sim.flashes){
+    const t = (now - f.t0) / 500;
+    ctx.beginPath(); ctx.arc(f.x, f.y, 8 + 22 * t, 0, 7);
+    ctx.strokeStyle = "rgba(225,29,72," + (1 - t) * 0.8 + ")";
+    ctx.lineWidth = 2.5; ctx.stroke();
+  }
+}
+
+/* ---------- Coach & stats ---------- */
+function fmtWait(ms){
+  if(ms < 1000) return Math.round(ms) + " ms";
+  return (ms / 1000).toFixed(1).replace(".", ",") + " s";
+}
+let lastDomUpdate = 0;
+function updateDom(nowReal){
+  if(nowReal - lastDomUpdate < 200) return;
+  lastDomUpdate = nowReal;
+  const s = sim.stats;
+  const queued = sim.queues.reduce((a, q) => a + q.length, 0);
+  $("#stProduced").textContent = s.produced;
+  $("#stQueued").textContent = queued;
+  $("#stConsumed").textContent = s.consumed;
+  $("#stDropped").textContent = s.dropped;
+  $("#stWait").textContent = s.waits.length ? fmtWait(s.waits.reduce((a, b) => a + b, 0) / s.waits.length) : "—";
+  $("#stRate").innerHTML = (s.consumeTimes.length / 5).toFixed(1).replace(".", ",") + " <small>msg/s</small>";
+
+  // Coach
+  const coach = $("#coach"), coachText = $("#coachText");
+  let text, cls = "";
+  if(sim.coachOverride && sim.time < sim.coachOverride.until){
+    text = sim.coachOverride.text; cls = sim.coachOverride.cls;
+  } else {
+    const alive = sim.consumers.filter(c => c.alive).length;
+    const inRate = params.nProd * params.rate * (params.mode === "pubsub" ? sim.queues.length : 1);
+    const outRate = alive * (1000 / params.procMs);
+    if(alive === 0 && queued > 0){
+      text = "🛑 Aucun consumer actif : les messages s'accumulent dans la queue… mais rien n'est perdu tant qu'elle n'est pas pleine. C'est ça, la resilience !"; cls = "err";
+    } else if(alive === 0){
+      text = "🛑 Tous les consumers sont down. Clique dessus pour les remettre up."; cls = "err";
+    } else if(queued >= params.cap * 0.8 * sim.queues.length){
+      text = "⚠️ La queue est presque full ! Production > consommation. Ajoute des consumers, ralentis les producers… ou regarde les messages se faire dropper."; cls = "warn";
+    } else if(inRate > outRate * 1.15){
+      text = "📈 Les producers (" + inRate.toFixed(1).replace(".", ",") + " msg/s) vont plus vite que les consumers (" + outRate.toFixed(1).replace(".", ",") + " msg/s) : la queue se remplit. C'est le load leveling — tant que ça reste temporaire."; cls = "warn";
+    } else if(queued === 0 && inRate < outRate * 0.55){
+      text = "😴 Les consumers sont sous-utilisés : la queue est vide. En prod, on réduirait le nombre d'instances (et la facture cloud)."; cls = "ok";
+    } else {
+      text = "✅ Système balanced : la consommation suit la production, la queue reste courte. C'est l'état nominal."; cls = "ok";
+    }
+  }
+  if(coachText.textContent !== text){
+    coachText.textContent = text;
+    coach.className = "coach " + cls;
+  }
+}
+
+/* ---------- Boucle ---------- */
+let lastFrame = performance.now();
+function frame(now){
+  const dt = Math.min(50, now - lastFrame);
+  lastFrame = now;
+  if(sim){
+    update(dt);
+    if($("#page-sim").classList.contains("active")){ draw(); updateDom(now); }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Interactions ---------- */
+canvas.addEventListener("click", e => {
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  for(const c of sim.consumers){
+    if(Math.hypot(c.x - x, c.y - y) < 30){
+      c.alive = !c.alive;
+      if(!c.alive && c.msg !== null){
+        const m = sim.msgs.get(c.msg);
+        if(m){
+          m.state = "queued";
+          const qi = params.mode === "pubsub" ? c.id : 0;
+          m.qi = qi;
+          sim.queues[qi].unshift(m.id);
+          setCoachOverride("🔁 Message pas ack → redelivered ! Le consumer a crash en plein traitement : le broker remet le message en tête de queue.", "warn");
+        }
+        c.msg = null;
+      } else if(!c.alive){
+        setCoachOverride("🔧 Consumer C" + (c.id + 1) + " down. Observe la queue : les messages patientent, rien n'est perdu.", "warn");
+      } else {
+        setCoachOverride("✅ Consumer C" + (c.id + 1) + " back up, il rattrape le lag.", "ok");
+      }
+      return;
+    }
+  }
+});
+
+function bindRange(id, out, fn, structural){
+  $(id).addEventListener("input", e => {
+    fn(+e.target.value);
+    $(out).textContent = fmtParam(id);
+    if(structural) resetSim();
+  });
+  $(out).textContent = fmtParam(id);
+}
+function fmtParam(id){
+  switch(id){
+    case "#rProd": return params.nProd;
+    case "#rRate": return params.rate.toFixed(1).replace(".", ",") + " msg/s";
+    case "#rCons": return params.nCons;
+    case "#rProc": return (params.procMs / 1000).toFixed(1).replace(".", ",") + " s";
+    case "#rCap": return params.cap;
+  }
+}
+bindRange("#rProd", "#oProd", v => params.nProd = v, true);
+bindRange("#rRate", "#oRate", v => params.rate = v / 10, false);
+bindRange("#rCons", "#oCons", v => params.nCons = v, true);
+bindRange("#rProc", "#oProc", v => params.procMs = v, false);
+bindRange("#rCap", "#oCap", v => params.cap = v, true);
+
+$("#modeQueue").addEventListener("click", () => setMode("queue"));
+$("#modePubsub").addEventListener("click", () => setMode("pubsub"));
+function setMode(m){
+  params.mode = m;
+  $("#modeQueue").classList.toggle("on", m === "queue");
+  $("#modePubsub").classList.toggle("on", m === "pubsub");
+  $("#modeHint").innerHTML = m === "queue"
+    ? "Mode point-to-point : les consumers se <b>partagent</b> la même queue."
+    : "Mode pub/sub : chaque consumer a <b>sa propre queue</b> et reçoit une copie de chaque message.";
+  resetSim();
+}
+
+$("#btnBurst").addEventListener("click", () => {
+  sim.burst = { remaining: 25, nextAt: sim.time };
+  setCoachOverride("💥 Burst de 25 messages ! Regarde la queue absorber le spike — c'est le load leveling en action.", "warn");
+});
+$("#btnPause").addEventListener("click", () => {
+  sim.running = !sim.running;
+  $("#btnPause").textContent = sim.running ? "⏸ Pause" : "▶ Reprendre";
+});
+$("#btnReset").addEventListener("click", resetSim);
+
+const PRESETS = {
+  balanced: { nProd: 2, rate: 10, nCons: 2, procMs: 1000, cap: 12 },
+  overload: { nProd: 4, rate: 20, nCons: 1, procMs: 1800, cap: 8 },
+  lazy:     { nProd: 1, rate: 4,  nCons: 4, procMs: 600,  cap: 12 }
+};
+$$(".chip").forEach(ch => ch.addEventListener("click", () => {
+  const p = PRESETS[ch.dataset.preset];
+  $("#rProd").value = p.nProd; params.nProd = p.nProd;
+  $("#rRate").value = p.rate;  params.rate = p.rate / 10;
+  $("#rCons").value = p.nCons; params.nCons = p.nCons;
+  $("#rProc").value = p.procMs; params.procMs = p.procMs;
+  $("#rCap").value = p.cap;    params.cap = p.cap;
+  ["#rProd", "#rRate", "#rCons", "#rProc", "#rCap"].forEach((id, i) =>
+    $(["#oProd", "#oRate", "#oCons", "#oProc", "#oCap"][i]).textContent = fmtParam(id));
+  resetSim();
+}));
+
+resetSim();
+requestAnimationFrame(frame);
+
+/* ================= Quiz ================= */
+const QUIZ = [
+  { q: "Quel est le rôle principal d'un message broker ?",
+    opts: ["Exécuter le code métier des consumers", "Recevoir, stocker et router les messages entre producers et consumers", "Répartir les requêtes HTTP entre serveurs web", "Remplacer la base de données"],
+    a: 1, why: "Le broker est l'intermédiaire : il reçoit les messages des producers, les persiste, les route vers les bonnes queues et gère la livraison et les acks. Il ne traite jamais le métier lui-même." },
+  { q: "Dans une work queue (point-to-point) avec 3 consumers, un message donné est traité par…",
+    opts: ["Les 3 consumers", "Un seul consumer", "Le producer lui-même", "Aucun tant que les 3 ne sont pas disponibles"],
+    a: 1, why: "En point-to-point, les consumers sont en compétition (competing consumers) sur la même queue : chaque message n'est délivré qu'à un seul d'entre eux. Pour que tous le reçoivent, il faut du pub/sub." },
+  { q: "Lequel de ces bénéfices n'est PAS apporté par une message queue ?",
+    opts: ["Le decoupling entre services", "Le load leveling des pics de charge", "La garantie d'une latence end-to-end plus faible", "La resilience aux consumer failures"],
+    a: 2, why: "L'asynchrone améliore la réactivité perçue (on répond tout de suite), mais le traitement final arrive plus tard. La latence end-to-end est souvent plus élevée qu'un appel direct — c'est le prix du decoupling." },
+  { q: "Un consumer traite un message avec succès mais crashe juste avant d'envoyer l'ack. En at-least-once, que se passe-t-il ?",
+    opts: ["Le message est perdu", "Le broker fait une redelivery → il sera traité deux fois", "Le broker attend indéfiniment", "Le producer reçoit une erreur"],
+    a: 1, why: "Sans ack, le broker considère le message comme non traité et fait une redelivery. Résultat : un doublon. C'est exactement pour ça que les consumers doivent être idempotents." },
+  { q: "À quoi sert une Dead Letter Queue (DLQ) ?",
+    opts: ["Stocker les messages prioritaires", "Archiver tous les messages traités", "Isoler les messages en échec répété sans bloquer la main queue", "Supprimer automatiquement les messages trop vieux"],
+    a: 2, why: "Un « poison message » qui échoue en boucle paralyserait la queue. Après N tentatives, il part en DLQ où on peut l'analyser, corriger le bug, puis le replayer. La main queue, elle, continue de tourner." },
+  { q: "Comment obtient-on un « exactly-once » réaliste en pratique ?",
+    opts: ["C'est le mode par défaut des brokers", "At-least-once + consumers idempotents", "At-most-once + retry côté producer", "En désactivant les acks"],
+    a: 1, why: "Le exactly-once « pur » est très difficile en distribué (surtout avec des side effects externes). La réponse pragmatique attendue en entretien : livraison at-least-once et traitement idempotent — le doublon arrive, mais il est sans effet." },
+  { q: "La queue grossit en continu car les producers vont plus vite que les consumers. Meilleure réaction ?",
+    opts: ["Ne rien faire, ça se résorbera", "Ajouter des consumers et/ou appliquer du backpressure côté producers", "Supprimer la queue et repasser en HTTP synchrone", "Augmenter la RAM du broker à l'infini"],
+    a: 1, why: "Si le déséquilibre est durable, il faut agir sur les deux bouts : scaler la consommation (plus d'instances) et/ou limiter la production (backpressure, rate limiting), voire borner la queue (capacité, TTL)." },
+  { q: "Dans Kafka, le message ordering est garanti…",
+    opts: ["Globalement sur tout le topic", "À l'intérieur d'une partition uniquement", "Nulle part", "Seulement si on n'a qu'un producer"],
+    a: 1, why: "Chaque partition est un log ordonné, mais entre partitions il n'y a aucune garantie. D'où la partition key : tous les événements d'une même entité (même clé) vont dans la même partition et restent ordonnés entre eux." },
+  { q: "Quel besoin justifie le pattern pub/sub plutôt qu'une simple queue ?",
+    opts: ["Accélérer le traitement d'une tâche unique", "Diffuser un même événement à plusieurs services indépendants", "Garantir l'ordre global", "Réduire l'usage disque du broker"],
+    a: 1, why: "Le pub/sub sert à diffuser : « OrderCreated » intéresse Stock, Email, Analytics… Chaque abonné reçoit sa copie et la traite indépendamment. Une queue simple n'en donnerait le message qu'à un seul." },
+  { q: "Pourquoi l'idempotency des consumers est-elle si importante ?",
+    opts: ["Elle accélère le traitement", "Elle permet de survivre aux redeliveries sans side effects doubles (ex : double billing)", "Elle est exigée par le protocole AMQP", "Elle réduit la taille des messages"],
+    a: 1, why: "L'at-least-once implique des doublons occasionnels. Si le traitement n'est pas idempotent, un doublon = un client facturé deux fois. Avec une idempotency key (id du message, contrainte unique), le doublon est détecté et ignoré." },
+  { q: "Quand préférer Kafka à RabbitMQ ?",
+    opts: ["Pour une petite task queue d'emails", "Pour du très haut throughput d'événements avec besoin de relire l'historique (replay)", "Quand on veut éviter d'installer un broker", "Quand il faut de l'AMQP routing complexe"],
+    a: 1, why: "Kafka est un log distribué : rétention longue, replay via les offsets, plusieurs consumer groups lisant le même flux, throughput massif. Pour de simples work queues ou du routing riche, RabbitMQ (ou SQS en managé) est plus adapté." },
+  { q: "Quelle métrique surveille-t-on en priorité sur un système à base de queues en production ?",
+    opts: ["Le nombre de lignes de code des consumers", "Le consumer lag (retard de consommation / taille de la queue)", "La couleur du dashboard", "Le nombre de topics créés"],
+    a: 1, why: "Le lag mesure le retard entre production et consommation. S'il croît en continu, le système ne suit plus : c'est le signal d'alerte n°1, avant même les erreurs. On y branche l'auto-scaling des consumers." }
+];
+let quizIdx = 0, quizScore = 0;
+function renderQuiz(){
+  const body = $("#quizBody");
+  $("#quizScore").textContent = "Score : " + quizScore;
+  if(quizIdx >= QUIZ.length){
+    const best = Math.max(quizScore, +(localStorage.getItem("mf-best") || 0));
+    localStorage.setItem("mf-best", best);
+    const pct = quizScore / QUIZ.length;
+    const msg = pct === 1 ? "Parfait ! Tu es prêt·e pour l'entretien. 🏆"
+      : pct >= 0.75 ? "Très solide ! Relis les explications des questions ratées et c'est bon. 💪"
+      : pct >= 0.5 ? "Bonne base — repasse par l'onglet Apprendre puis retente. 📚"
+      : "Pas de panique : refais les chapitres 1 à 6 puis reviens, tu vas progresser vite. 🌱";
+    $("#quizProgress").textContent = "Terminé !";
+    body.innerHTML = '<div class="quiz-end"><div style="font-size:2.5rem">' + (pct >= 0.75 ? "🎉" : "📖") + '</div>'
+      + '<div class="quiz-score grad">' + quizScore + "/" + QUIZ.length + '</div>'
+      + '<p class="quiz-msg">' + msg + '<br><small style="color:var(--muted)">Meilleur score : ' + best + "/" + QUIZ.length + '</small></p>'
+      + '<button class="btn primary" id="quizRestart">↺ Recommencer</button></div>';
+    $("#quizRestart").addEventListener("click", () => { quizIdx = 0; quizScore = 0; renderQuiz(); });
+    return;
+  }
+  const item = QUIZ[quizIdx];
+  $("#quizProgress").textContent = "Question " + (quizIdx + 1) + "/" + QUIZ.length;
+  body.innerHTML = '<div class="quiz-q">' + item.q + '</div>'
+    + '<div class="quiz-opts">' + item.opts.map((o, i) =>
+      '<button class="opt" data-i="' + i + '"><span class="letter">' + "ABCD"[i] + '</span><span>' + o + '</span></button>').join("") + '</div>'
+    + '<div class="quiz-why" id="quizWhy"></div>'
+    + '<button class="btn primary quiz-next" id="quizNext">Question suivante →</button>';
+  body.querySelectorAll(".opt").forEach(btn => btn.addEventListener("click", () => {
+    const i = +btn.dataset.i;
+    body.querySelectorAll(".opt").forEach(b => {
+      b.disabled = true;
+      if(+b.dataset.i === item.a) b.classList.add("correct");
+    });
+    if(i === item.a){ quizScore++; $("#quizScore").textContent = "Score : " + quizScore; }
+    else btn.classList.add("wrong");
+    const why = $("#quizWhy");
+    why.innerHTML = "<b>" + (i === item.a ? "✅ Exact ! " : "❌ Pas tout à fait. ") + "</b>" + item.why;
+    why.classList.add("show");
+    const next = $("#quizNext");
+    next.classList.add("show");
+    next.textContent = quizIdx === QUIZ.length - 1 ? "Voir mon score 🏁" : "Question suivante →";
+    next.addEventListener("click", () => { quizIdx++; renderQuiz(); }, { once: true });
+  }));
+}
+renderQuiz();
+
+/* ================= Glossaire ================= */
+const GLOSS = [
+  ["📤", "Producer", "Composant qui crée et publie des messages vers le broker, sans savoir qui les consommera ni quand."],
+  ["⚙️", "Consumer", "Composant qui lit les messages d'une queue, les traite, puis les ack. Réplicable à N instances pour scaler."],
+  ["📥", "Queue", "Queue FIFO qui stocke les messages en attente de traitement. Buffer entre production et consommation."],
+  ["🏤", "Broker", "Serveur qui reçoit, persiste, route et délivre les messages (RabbitMQ, Kafka, SQS…)."],
+  ["✉️", "Message", "Unité transportée : métadonnées (id, type, timestamp) + payload (JSON, Avro…). Petit et autoporteur."],
+  ["📢", "Topic", "Canal de pub/sub : chaque abonné reçoit une copie de chaque message publié dessus."],
+  ["🤝", "Ack", "Accusé de réception envoyé par le consumer après traitement réussi. Sans ack, le broker fait une redelivery."],
+  ["☠️", "Dead Letter Queue", "Queue de quarantaine pour les messages qui échouent N fois. Évite qu'un « poison message » bloque tout."],
+  ["🔁", "Idempotency", "Propriété d'un traitement qui, exécuté plusieurs fois, produit le même résultat. Indispensable avec l'at-least-once."],
+  ["1️⃣", "At-least-once", "Garantie de livraison standard : le message arrive au moins une fois — doublons possibles, perte impossible."],
+  ["🎯", "Exactly-once", "Livraison exactement une fois. Très coûteux en distribué ; en pratique : at-least-once + idempotency."],
+  ["🧩", "Partition", "Sous-division d'un topic Kafka. L'ordre n'est garanti qu'à l'intérieur d'une partition (via une partition key)."],
+  ["🔢", "Offset", "Position d'un consumer dans une partition Kafka. Permet de reprendre où on s'était arrêté… ou de faire un replay du passé."],
+  ["👥", "Consumer group", "Groupe d'instances qui se partagent les partitions d'un topic pour paralléliser la consommation."],
+  ["🛑", "Backpressure", "Mécanismes pour ralentir la production quand la consommation ne suit plus (limite, refus, ralentissement)."],
+  ["⏳", "TTL", "Time-to-live : durée de vie maximale d'un message avant expiration. Utile pour les données périmables."],
+  ["📡", "Fanout", "Diffusion d'un message vers toutes les queues liées, sans filtrage. L'exchange « broadcast » de RabbitMQ."],
+  ["🐌", "Consumer lag", "Retard de consommation : messages produits mais pas encore traités. LA métrique à monitorer en prod."]
+];
+$("#glossGrid").innerHTML = GLOSS.map(([e, t, d]) =>
+  '<div class="flip"><div class="flip-inner">'
+  + '<div class="face front"><div class="emoji">' + e + '</div><div class="term">' + t + '</div><div class="flip-hint">clique pour retourner</div></div>'
+  + '<div class="face back">' + d + '</div>'
+  + '</div></div>').join("");
+$$(".flip").forEach(f => f.addEventListener("click", () => f.classList.toggle("flipped")));
+</script>
+</body>
+</html>

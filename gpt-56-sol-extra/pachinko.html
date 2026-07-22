@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0714">
+  <title>Plinkomancie — Roguelike Pachinko</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f8f2ff;
+      --muted: #a99eb8;
+      --deep: #09060f;
+      --panel: rgba(24, 16, 34, .84);
+      --panel-solid: #181022;
+      --line: rgba(255, 255, 255, .11);
+      --violet: #a97cff;
+      --violet-2: #7450ff;
+      --cyan: #56e7df;
+      --gold: #ffc85b;
+      --coral: #ff6b78;
+      --green: #6ee7a7;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .46);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-height: 100%; background: var(--deep); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--ink);
+      font-family: "Segoe UI", "Aptos", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(116, 80, 255, .19), transparent 32rem),
+        radial-gradient(circle at 88% 40%, rgba(86, 231, 223, .09), transparent 28rem),
+        #09060f;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .28;
+      background-image: linear-gradient(rgba(255,255,255,.017) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.017) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
+    }
+
+    button { font: inherit; }
+
+    button:focus-visible, canvas:focus-visible {
+      outline: 3px solid var(--cyan);
+      outline-offset: 3px;
+    }
+
+    .app {
+      width: min(1240px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 34px;
+      position: relative;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(169, 124, 255, .55);
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(145deg, rgba(169,124,255,.22), rgba(86,231,223,.08));
+      box-shadow: inset 0 0 18px rgba(169,124,255,.12);
+    }
+
+    .brand-mark svg { width: 25px; height: 25px; }
+
+    .brand-copy { min-width: 0; }
+    .brand h1 { margin: 0; font-size: clamp(1.1rem, 2.1vw, 1.55rem); letter-spacing: .08em; text-transform: uppercase; line-height: 1; }
+    .brand p { margin: 5px 0 0; color: var(--muted); font: .68rem "DM Mono", monospace; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+
+    .actions { display: flex; gap: 8px; }
+
+    .icon-button, .action-button, .primary-button, .ghost-button {
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: rgba(255,255,255,.055);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+
+    .icon-button { width: 42px; height: 42px; display: grid; place-items: center; }
+    .icon-button svg { width: 19px; height: 19px; }
+
+    .action-button, .primary-button, .ghost-button { padding: 11px 16px; font-weight: 700; letter-spacing: .02em; }
+    .primary-button { border-color: rgba(169,124,255,.65); background: linear-gradient(135deg, var(--violet-2), #a04fda); box-shadow: 0 10px 30px rgba(116,80,255,.28); }
+    .ghost-button { color: var(--muted); }
+    .icon-button:hover, .action-button:hover, .ghost-button:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.22); }
+    .primary-button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    button:active { transform: translateY(1px); }
+    button:disabled { cursor: not-allowed; opacity: .42; transform: none !important; }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 820px) minmax(260px, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .arena-column { min-width: 0; }
+
+    .encounter-bar {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      min-height: 82px;
+      padding: 13px 15px;
+      margin-bottom: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(33,22,47,.94), rgba(20,14,30,.86));
+      box-shadow: var(--shadow);
+    }
+
+    .enemy-sigil {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 1.5rem;
+      color: var(--coral);
+      background: rgba(255,107,120,.1);
+      border: 1px solid rgba(255,107,120,.24);
+      box-shadow: inset 0 0 25px rgba(255,107,120,.07);
+    }
+
+    .enemy-copy { min-width: 0; }
+    .overline { margin: 0 0 3px; font: .64rem "DM Mono", monospace; letter-spacing: .15em; color: var(--muted); text-transform: uppercase; }
+    .enemy-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .enemy-title-row h2 { margin: 0; font-size: 1.08rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hp-text { color: var(--coral); font: .68rem "DM Mono", monospace; white-space: nowrap; }
+
+    .bar { height: 7px; margin-top: 8px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.08); }
+    .bar > span { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ff5164, #ff9b77); transition: width .4s cubic-bezier(.2,.8,.2,1); }
+    .bar.player > span { background: linear-gradient(90deg, var(--cyan), var(--green)); }
+
+    .intent { text-align: right; }
+    .intent strong { display: block; color: var(--coral); font: 1.05rem "DM Mono", monospace; }
+    .intent span { color: var(--muted); font-size: .7rem; }
+
+    .board-frame {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid rgba(169,124,255,.22);
+      border-radius: 24px;
+      background: #100a19;
+      box-shadow: var(--shadow), inset 0 0 60px rgba(116,80,255,.1);
+      isolation: isolate;
+    }
+
+    .board-frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 50% 9%, rgba(169,124,255,.16), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.025), transparent 32%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 720 / 800;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .board-status {
+      position: absolute;
+      left: 50%;
+      top: 14px;
+      transform: translateX(-50%);
+      z-index: 2;
+      padding: 7px 12px;
+      border-radius: 99px;
+      color: var(--muted);
+      background: rgba(9,6,15,.64);
+      border: 1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(8px);
+      font: .64rem "DM Mono", monospace;
+      letter-spacing: .06em;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .splash {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background: radial-gradient(circle at 50% 38%, rgba(36,22,55,.74), rgba(9,6,15,.94) 66%);
+      backdrop-filter: blur(5px);
+      transition: opacity .35s ease, visibility .35s ease;
+    }
+
+    .splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .splash-inner { width: min(500px, 100%); text-align: center; transform: translateY(-140px); }
+    .splash-rune { width: 88px; height: 88px; margin: 0 auto 18px; display: grid; place-items: center; border: 1px solid rgba(169,124,255,.5); border-radius: 28px; color: var(--violet); background: rgba(169,124,255,.08); box-shadow: 0 0 50px rgba(169,124,255,.15), inset 0 0 30px rgba(169,124,255,.1); }
+    .splash-rune svg { width: 51px; height: 51px; }
+    .splash h2 { margin: 0; font-size: clamp(2rem, 7vw, 4rem); text-transform: uppercase; letter-spacing: .04em; line-height: .92; }
+    .splash h2 em { display: block; color: var(--violet); font-style: normal; }
+    .splash > div > p, .splash-inner > p { color: var(--muted); max-width: 430px; margin: 17px auto 21px; line-height: 1.55; }
+    .splash-features { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin-bottom: 22px; }
+    .splash-features span { padding: 6px 9px; border: 1px solid var(--line); border-radius: 99px; color: #d5cbe1; background: rgba(255,255,255,.035); font: .65rem "DM Mono", monospace; }
+    .best-run { min-height: 1.2em; margin-top: 14px; color: var(--gold); font: .68rem "DM Mono", monospace; }
+
+    .controls-strip {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 11px 5px 0;
+      color: var(--muted);
+      font-size: .72rem;
+    }
+    .controls-strip span:last-child { text-align: right; }
+    kbd { padding: 2px 6px; border: 1px solid var(--line); border-bottom-color: rgba(255,255,255,.24); border-radius: 5px; color: var(--ink); background: rgba(255,255,255,.06); font: .65rem "DM Mono", monospace; }
+
+    .sidebar { display: grid; gap: 12px; }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 15px 40px rgba(0,0,0,.2);
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 13px 14px 0; }
+    .card-head h3 { margin: 0; color: var(--muted); font: .65rem "DM Mono", monospace; letter-spacing: .13em; text-transform: uppercase; }
+    .card-body { padding: 13px 14px 15px; }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .stat { min-width: 0; padding: 9px 8px; border-left: 1px solid var(--line); }
+    .stat:first-child { border-left: 0; padding-left: 0; }
+    .stat span { display: block; color: var(--muted); font-size: .67rem; }
+    .stat strong { display: block; margin-top: 2px; font: 1rem "DM Mono", monospace; white-space: nowrap; }
+    .stat strong.gold { color: var(--gold); }
+    .player-health { margin-top: 11px; }
+    .player-health-row { display: flex; justify-content: space-between; font-size: .72rem; }
+    .shield-line { min-height: 1.2em; margin-top: 8px; color: #9ddfff; font-size: .7rem; }
+
+    .orb-display { display: flex; align-items: center; gap: 12px; }
+    .orb-icon {
+      width: 52px;
+      height: 52px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--orb, var(--violet));
+      background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.5), transparent 13%), color-mix(in srgb, var(--orb, var(--violet)) 24%, transparent);
+      border: 2px solid color-mix(in srgb, var(--orb, var(--violet)) 64%, transparent);
+      box-shadow: 0 0 22px color-mix(in srgb, var(--orb, var(--violet)) 22%, transparent), inset -7px -8px 15px rgba(0,0,0,.22);
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+    .orb-copy { min-width: 0; }
+    .orb-copy strong { display: block; }
+    .orb-copy p { margin: 3px 0 0; color: var(--muted); font-size: .72rem; line-height: 1.35; }
+    .shot-meter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; }
+    .shot-meter div { padding: 7px; text-align: center; background: rgba(255,255,255,.035); border-radius: 9px; }
+    .shot-meter span { display: block; color: var(--muted); font-size: .61rem; }
+    .shot-meter strong { display: block; margin-top: 2px; font: .85rem "DM Mono", monospace; }
+
+    .bag { display: flex; flex-wrap: wrap; gap: 7px; }
+    .bag-orb { width: 33px; height: 33px; display: grid; place-items: center; border-radius: 50%; color: var(--orb); border: 1px solid color-mix(in srgb, var(--orb) 54%, transparent); background: color-mix(in srgb, var(--orb) 11%, transparent); font-size: .72rem; position: relative; }
+    .bag-orb.active { box-shadow: 0 0 0 2px var(--panel-solid), 0 0 0 4px var(--orb), 0 0 20px color-mix(in srgb, var(--orb) 32%, transparent); }
+    .bag-orb::after { content: attr(data-index); position: absolute; right: -3px; bottom: -5px; color: var(--muted); font: .48rem "DM Mono", monospace; }
+
+    .relics { display: grid; gap: 8px; }
+    .relic { display: grid; grid-template-columns: 34px 1fr; gap: 9px; align-items: center; }
+    .relic-symbol { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: var(--gold); background: rgba(255,200,91,.08); border: 1px solid rgba(255,200,91,.18); }
+    .relic strong { display: block; font-size: .76rem; }
+    .relic span { display: block; color: var(--muted); font-size: .65rem; line-height: 1.3; }
+    .empty { color: var(--muted); font-size: .72rem; }
+
+    .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: .66rem; }
+    .dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: var(--dot); box-shadow: 0 0 8px var(--dot); }
+
+    dialog {
+      width: min(690px, calc(100% - 28px));
+      max-height: min(760px, calc(100vh - 28px));
+      padding: 0;
+      color: var(--ink);
+      border: 1px solid rgba(169,124,255,.34);
+      border-radius: 24px;
+      background: #171020;
+      box-shadow: 0 35px 110px rgba(0,0,0,.72);
+      overflow: auto;
+    }
+    dialog::backdrop { background: rgba(5,3,9,.78); backdrop-filter: blur(7px); }
+    .dialog-inner { padding: 23px; }
+    .dialog-top { display: flex; align-items: start; justify-content: space-between; gap: 14px; }
+    .dialog-top h2 { margin: 0; font-size: 1.45rem; }
+    .dialog-top p { margin: 5px 0 0; color: var(--muted); font-size: .78rem; }
+    .close-button { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: transparent; cursor: pointer; }
+
+    .reward-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0 14px; }
+    .reward-card { min-height: 185px; padding: 17px 14px; border: 1px solid var(--line); border-radius: 16px; text-align: left; color: var(--ink); background: rgba(255,255,255,.035); cursor: pointer; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+    .reward-card:hover { transform: translateY(-4px); border-color: rgba(169,124,255,.54); background: rgba(169,124,255,.075); }
+    .reward-card .reward-icon { width: 43px; height: 43px; margin-bottom: 15px; display: grid; place-items: center; border-radius: 13px; color: var(--reward-color, var(--violet)); background: color-mix(in srgb, var(--reward-color, var(--violet)) 12%, transparent); border: 1px solid color-mix(in srgb, var(--reward-color, var(--violet)) 32%, transparent); font-size: 1.2rem; }
+    .reward-card small { color: var(--reward-color, var(--violet)); font: .58rem "DM Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+    .reward-card strong { display: block; margin: 6px 0; font-size: .92rem; }
+    .reward-card p { margin: 0; color: var(--muted); font-size: .71rem; line-height: 1.42; }
+    .reward-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .reward-footer span { color: var(--gold); font: .7rem "DM Mono", monospace; }
+
+    .help-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+    .help-sections h3 { margin: 0 0 8px; font-size: .85rem; }
+    .help-sections p, .help-sections li { color: var(--muted); font-size: .74rem; line-height: 1.5; }
+    .help-sections ul { margin: 0; padding-left: 17px; }
+
+    .result { text-align: center; padding: 31px 25px; }
+    .result-symbol { width: 74px; height: 74px; margin: 0 auto 15px; display: grid; place-items: center; border-radius: 23px; color: var(--gold); background: rgba(255,200,91,.09); border: 1px solid rgba(255,200,91,.26); font-size: 2rem; }
+    .result h2 { margin: 0; font-size: 1.8rem; }
+    .result p { color: var(--muted); }
+    .result-stats { display: flex; justify-content: center; gap: 28px; margin: 21px 0; }
+    .result-stats span { color: var(--muted); font-size: .7rem; }
+    .result-stats strong { display: block; margin-top: 2px; color: var(--ink); font: 1.05rem "DM Mono", monospace; }
+
+    .toast-stack { position: fixed; right: 18px; bottom: 18px; z-index: 20; display: grid; gap: 8px; pointer-events: none; }
+    .toast { max-width: 310px; padding: 11px 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; color: var(--ink); background: rgba(25,17,35,.95); box-shadow: 0 12px 35px rgba(0,0,0,.35); font-size: .76rem; animation: toast-in .24s ease both; }
+    .toast.good { border-color: rgba(110,231,167,.3); }
+    .toast.danger { border-color: rgba(255,107,120,.34); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 900px) {
+      .game-layout { grid-template-columns: minmax(0, 1fr) 250px; }
+      .brand p { display: none; }
+    }
+
+    @media (max-width: 720px) {
+      .app { width: min(100% - 18px, 620px); padding-top: 12px; }
+      .game-layout { grid-template-columns: 1fr; }
+      .sidebar { grid-template-columns: 1fr 1fr; }
+      .sidebar .card:nth-child(3), .sidebar .card:nth-child(4) { grid-column: span 1; }
+      .encounter-bar { grid-template-columns: 44px minmax(0, 1fr) auto; min-height: 70px; padding: 10px 11px; }
+      .enemy-sigil { width: 44px; height: 44px; border-radius: 13px; }
+      .controls-strip { display: none; }
+      .board-frame { border-radius: 18px; }
+      .reward-grid { grid-template-columns: 1fr; }
+      .reward-card { min-height: 0; }
+      .help-sections { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 470px) {
+      .topbar { align-items: start; }
+      .brand-mark { width: 38px; height: 38px; }
+      .actions { gap: 5px; }
+      .icon-button { width: 38px; height: 38px; }
+      #restartButton { display: none; }
+      .brand h1 { font-size: .96rem; margin-top: 4px; }
+      .sidebar { grid-template-columns: 1fr; }
+      .sidebar .card:nth-child(n) { grid-column: auto; }
+      .enemy-title-row h2 { font-size: .92rem; }
+      .intent span { display: none; }
+      .splash { padding: 17px; }
+      .splash-inner { transform: translateY(-28px); }
+      .splash-rune { width: 68px; height: 68px; border-radius: 21px; }
+      .dialog-inner { padding: 17px; }
+      .reward-footer { align-items: stretch; flex-direction: column; }
+      .reward-footer button { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; transition-duration: .001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40" fill="none"><path d="M20 4 34 12v16L20 36 6 28V12L20 4Z" stroke="currentColor"/><circle cx="20" cy="13" r="3" fill="currentColor"/><circle cx="13" cy="22" r="3" fill="currentColor"/><circle cx="27" cy="22" r="3" fill="currentColor"/><path d="m13 22 7 8 7-8M20 16v14" stroke="currentColor"/></svg>
+        </div>
+        <div class="brand-copy">
+          <h1>Plinkomancie</h1>
+          <p>Un roguelike de pachinko rituel</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="icon-button" id="soundButton" aria-label="Couper le son" title="Son">
+          <svg class="sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"/></svg>
+        </button>
+        <button class="icon-button" id="helpButton" aria-label="Afficher les règles" title="Règles">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 3.5 2.15c-.8.42-1.3.87-1.3 1.85M12 16.5h.01"/></svg>
+        </button>
+        <button class="icon-button" id="restartButton" aria-label="Recommencer la partie" title="Nouvelle partie">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11a8 8 0 1 1 2 6M4 4v7h7"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="game-layout">
+      <section class="arena-column" aria-label="Plateau de jeu">
+        <div class="encounter-bar">
+          <div class="enemy-sigil" id="enemySigil" aria-hidden="true">◈</div>
+          <div class="enemy-copy">
+            <p class="overline" id="floorLabel">Profondeur 1 · Rencontre</p>
+            <div class="enemy-title-row">
+              <h2 id="enemyName">La Gueule de vase</h2>
+              <span class="hp-text" id="enemyHpText">44 / 44</span>
+            </div>
+            <div class="bar"><span id="enemyHpBar"></span></div>
+          </div>
+          <div class="intent">
+            <strong id="intentDamage">5</strong>
+            <span>attaque</span>
+          </div>
+        </div>
+
+        <div class="board-frame" id="boardFrame">
+          <div class="board-status" id="boardStatus">Déplacez le lanceur · Cliquez pour tirer</div>
+          <canvas id="gameCanvas" width="720" height="800" tabindex="0" role="img" aria-label="Plateau de pachinko. Déplacez le lanceur avec la souris ou les flèches, puis cliquez ou appuyez sur Espace pour tirer."></canvas>
+
+          <div class="splash" id="splash">
+            <div class="splash-inner">
+              <div class="splash-rune" aria-hidden="true">
+                <svg viewBox="0 0 64 64" fill="none"><path d="M32 5 55 18v28L32 59 9 46V18L32 5Z" stroke="currentColor"/><circle cx="32" cy="19" r="5" fill="currentColor"/><circle cx="21" cy="36" r="5" fill="currentColor"/><circle cx="43" cy="36" r="5" fill="currentColor"/><path d="m21 36 11 12 11-12M32 24v24" stroke="currentColor" stroke-width="2"/></svg>
+              </div>
+              <h2>Plinko<em>mancie</em></h2>
+              <p>Lancez des orbes, réveillez les chevilles du destin et composez un grimoire capable de terrasser le Maître du Puits.</p>
+              <div class="splash-features" aria-label="Caractéristiques du jeu">
+                <span>7 profondeurs</span><span>Orbes uniques</span><span>Reliques</span><span>Boss final</span>
+              </div>
+              <button class="primary-button" id="startButton">Commencer le rituel</button>
+              <div class="best-run" id="bestRun"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls-strip" aria-hidden="true">
+          <span><kbd>←</kbd> <kbd>→</kbd> déplacer · <kbd>Espace</kbd> lancer</span>
+          <span><kbd>P</kbd> pause · viser les chevilles spéciales</span>
+        </div>
+      </section>
+
+      <aside class="sidebar" aria-label="Informations de la partie">
+        <section class="card">
+          <div class="card-head"><h3>Expédition</h3><span class="overline" id="turnLabel">Tour 1</span></div>
+          <div class="card-body">
+            <div class="stats-grid">
+              <div class="stat"><span>PV</span><strong id="playerHpText">72</strong></div>
+              <div class="stat"><span>Pièces</span><strong class="gold" id="goldText">0</strong></div>
+              <div class="stat"><span>Score</span><strong id="scoreText">0</strong></div>
+            </div>
+            <div class="player-health">
+              <div class="player-health-row"><span>Vitalité</span><span id="playerHpDetail">72 / 72</span></div>
+              <div class="bar player"><span id="playerHpBar"></span></div>
+              <div class="shield-line" id="shieldText"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h3>Orbe en main</h3><span class="overline" id="orbIndexLabel">1 / 4</span></div>
+          <div class="card-body">
+            <div class="orb-display">
+              <div class="orb-icon" id="orbIcon" style="--orb:#b68cff">◆</div>
+              <div class="orb-copy"><strong id="orbName">Galet runique</strong><p id="orbDescription">Stable. Chaque cheville frappée charge 2 dégâts.</p></div>
+            </div>
+            <div class="shot-meter" aria-label="Résultat du tir en cours">
+              <div><span>Impacts</span><strong id="hitCount">0</strong></div>
+              <div><span>Charge</span><strong id="damageCharge">0</strong></div>
+              <div><span>Critique</span><strong id="critMeter">×1</strong></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h3>Sac d'orbes</h3><span class="overline">Ordre cyclique</span></div>
+          <div class="card-body"><div class="bag" id="bagList"></div></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h3>Reliques</h3><span class="overline" id="relicCount">0</span></div>
+          <div class="card-body"><div class="relics" id="relicList"><span class="empty">Le reliquaire est vide.</span></div></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h3>Chevilles</h3></div>
+          <div class="card-body legend">
+            <div class="legend-item"><span class="dot" style="--dot:#ff9d4d"></span>Bombe</div>
+            <div class="legend-item"><span class="dot" style="--dot:#d584ff"></span>Critique</div>
+            <div class="legend-item"><span class="dot" style="--dot:#55eadf"></span>Rappel</div>
+            <div class="legend-item"><span class="dot" style="--dot:#ffd25f"></span>Pièce</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="rewardDialog" aria-labelledby="rewardTitle">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <div><p class="overline">Victoire · Récompense</p><h2 id="rewardTitle">Le puits vous répond</h2><p>Choisissez un seul fragment pour poursuivre la descente.</p></div>
+      </div>
+      <div class="reward-grid" id="rewardGrid"></div>
+      <div class="reward-footer"><span id="rerollPrice">Relance : 5 pièces</span><button class="ghost-button" id="rerollButton">Relancer les offrandes</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="helpDialog" aria-labelledby="helpTitle">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <div><p class="overline">Grimoire de poche</p><h2 id="helpTitle">Comment jouer</h2></div>
+        <button class="close-button" id="closeHelp" aria-label="Fermer">×</button>
+      </div>
+      <div class="help-sections">
+        <section><h3>Le rituel</h3><p>Placez le lanceur en haut du plateau et libérez une orbe. Chaque cheville active charge ses dégâts. Le multiplicateur de la case d'arrivée s'applique avant de frapper l'ennemi.</p></section>
+        <section><h3>Survivre</h3><p>Si l'ennemi survit, il riposte. Les chevilles touchées s'éteignent jusqu'à ce que vous frappiez une cheville de Rappel turquoise.</p></section>
+        <section><h3>Chevilles spéciales</h3><ul><li><b>Bombe :</b> explose les voisines.</li><li><b>Critique :</b> multiplie le tir.</li><li><b>Pièce :</b> finance les relances.</li><li><b>Rappel :</b> rallume le plateau.</li></ul></section>
+        <section><h3>Progression</h3><p>Après chaque victoire, recrutez une nouvelle orbe ou équipez une relique passive. Traversez sept profondeurs et battez le Maître du Puits.</p></section>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="resultDialog" aria-labelledby="resultTitle">
+    <div class="result">
+      <div class="result-symbol" id="resultSymbol">✦</div>
+      <p class="overline" id="resultOverline">Rituel achevé</p>
+      <h2 id="resultTitle">Le puits se tait</h2>
+      <p id="resultCopy">Votre grimoire a survécu à la nuit.</p>
+      <div class="result-stats"><div><span>Score</span><strong id="finalScore">0</strong></div><div><span>Profondeur</span><strong id="finalFloor">1 / 7</strong></div><div><span>Reliques</span><strong id="finalRelics">0</strong></div></div>
+      <button class="primary-button" id="playAgainButton">Recommencer</button>
+    </div>
+  </dialog>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+  <div class="sr-only" id="liveRegion" aria-live="polite"></div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const W = 720;
+    const H = 800;
+    const FLOOR_COUNT = 7;
+    const prefersReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const ORBS = {
+      stone: { name: 'Galet runique', symbol: '◆', color: '#b68cff', power: 2, restitution: .82, description: 'Stable. Chaque cheville frappée charge 2 dégâts.' },
+      ember: { name: 'Braise captive', symbol: '✦', color: '#ff8a5c', power: 1.35, restitution: .86, description: 'Tous les 7 impacts, déclenche une explosion de 7 dégâts.' },
+      leech: { name: 'Perle sangsue', symbol: '●', color: '#f06492', power: 1.5, restitution: .8, description: 'Rend 20 % des dégâts infligés, jusqu’à 7 PV.' },
+      echo: { name: 'Écho prismatique', symbol: '◇', color: '#68e9e1', power: 1.1, restitution: .9, description: 'Au 6e impact, se dédouble en deux éclats.' },
+      glass: { name: 'Œil de verre', symbol: '◉', color: '#8fb8ff', power: 1, restitution: .93, description: 'Sa charge augmente de +0,35 à chaque impact consécutif.' },
+      coin: { name: 'Soleil avare', symbol: '¤', color: '#ffd25f', power: 1.2, restitution: .84, description: 'Les chevilles dorées donnent 2 pièces de plus.' },
+      void: { name: 'Comète du vide', symbol: '✺', color: '#d584ff', power: 2.7, restitution: .76, description: 'Très puissante, mais les cases sous ×1 deviennent ×0,5.' }
+    };
+
+    const RELICS = {
+      root: { name: 'Racine de fer', symbol: '♆', color: '#7ce5a5', description: '+16 PV maximum et soigne 16 PV.', acquire() { player.maxHp += 16; player.hp = Math.min(player.maxHp, player.hp + 16); } },
+      lens: { name: 'Lentille fêlée', symbol: '◉', color: '#d584ff', description: 'Les critiques passent de ×2 à ×2,75.' },
+      anvil: { name: 'Enclume de poche', symbol: '♜', color: '#aeb7c5', description: 'Tous les 5 impacts d’un tir, gagne +4 dégâts.' },
+      powder: { name: 'Poudre des astres', symbol: '✹', color: '#ff9d4d', description: 'Les explosions infligent 60 % de dégâts en plus.' },
+      atlas: { name: 'Carte sans bord', symbol: '⌘', color: '#68e9e1', description: 'Les cases ×0,5 et ×0,75 valent au minimum ×1.' },
+      moss: { name: 'Mousse royale', symbol: '♣', color: '#7ce5a5', description: 'Récupère 4 PV après chaque victoire.' },
+      thorn: { name: 'Couronne d’épine', symbol: '♕', color: '#ff7184', description: 'Commence chaque rencontre avec 7 points de bouclier.' },
+      bell: { name: 'Cloche profonde', symbol: '♢', color: '#ffd25f', description: 'Chaque Rappel rallume aussi une bombe déjà consommée.' },
+      phoenix: { name: 'Cendre du phénix', symbol: '♨', color: '#ff8a5c', description: 'Une fois par expédition, survit avec 30 PV.', used: false }
+    };
+
+    const ENEMIES = [
+      { name: 'La Gueule de vase', sigil: '◈', hp: 48, attack: 5, armor: 0, blurb: 'Rencontre' },
+      { name: 'Le Tisseur pâle', sigil: '⌁', hp: 68, attack: 7, armor: 0, blurb: 'Rencontre' },
+      { name: 'L’Astrolabe carnivore', sigil: '✣', hp: 92, attack: 9, armor: 2, blurb: 'Élite cuirassée' },
+      { name: 'Les Jumeaux d’encre', sigil: '♊', hp: 112, attack: 10, armor: 0, blurb: 'Rencontre instable' },
+      { name: 'Le Collecteur doré', sigil: '♜', hp: 145, attack: 12, armor: 3, blurb: 'Élite cuirassée' },
+      { name: 'La Veuve des angles', sigil: '⌬', hp: 172, attack: 13, armor: 1, blurb: 'Gardienne' },
+      { name: 'Le Maître du Puits', sigil: '♛', hp: 255, attack: 15, armor: 2, blurb: 'Boss final' }
+    ];
+
+    const slots = [
+      { mult: .5, label: '×0,5', color: '#755b8e' },
+      { mult: 1, label: '×1', color: '#5f7faa' },
+      { mult: 1.5, label: '×1,5', color: '#9671ec' },
+      { mult: 2, label: '×2', color: '#d584ff' },
+      { mult: 1.5, label: '×1,5', color: '#9671ec' },
+      { mult: 1, label: '×1', color: '#5f7faa' },
+      { mult: .75, label: '×0,75', color: '#755b8e' }
+    ];
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const els = Object.fromEntries([...document.querySelectorAll('[id]')].map(el => [el.id, el]));
+
+    let player;
+    let enemy;
+    let pegs = [];
+    let balls = [];
+    let particles = [];
+    let floaters = [];
+    let state = 'title';
+    let previousState = 'ready';
+    let launcherX = W / 2;
+    let lastTime = performance.now();
+    let shot = null;
+    let rng = Math.random;
+    let seed = Date.now() >>> 0;
+    let soundEnabled = true;
+    let audioCtx = null;
+    let shake = 0;
+    let rewardOptions = [];
+    let rerollCost = 5;
+    let resolutionTimer = 0;
+
+    function mulberry32(a) {
+      return function() {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+    function hasRelic(id) { return player && player.relics.includes(id); }
+    function currentOrb() { return ORBS[player.bag[player.orbIndex]]; }
+
+    function initPlayer() {
+      player = {
+        hp: 72, maxHp: 72, shield: 0, gold: 0, score: 0,
+        floor: 1, turn: 1, orbIndex: 0,
+        bag: ['stone', 'stone', 'ember', 'stone'],
+        relics: [], phoenixUsed: false
+      };
+    }
+
+    function startRun() {
+      seed = (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;
+      rng = mulberry32(seed);
+      initPlayer();
+      els.splash.classList.add('hidden');
+      els.resultDialog.close();
+      setupEncounter();
+      state = 'ready';
+      updateUI();
+      announce('Expédition commencée. Placez le lanceur puis tirez.');
+      toast('Le puits s’ouvre. Bonne descente.', 'good');
+      canvas.focus();
+    }
+
+    function setupEncounter() {
+      const template = ENEMIES[player.floor - 1];
+      enemy = { ...template, maxHp: template.hp, turn: 0, enraged: false };
+      player.turn = 1;
+      player.shield = hasRelic('thorn') ? 7 : 0;
+      balls = [];
+      particles = [];
+      floaters = [];
+      shot = null;
+      launcherX = W / 2;
+      generateBoard();
+      updateUI();
+    }
+
+    function generateBoard() {
+      pegs = [];
+      const boardRng = mulberry32((seed + player.floor * 7919) >>> 0);
+      let id = 0;
+      for (let row = 0; row < 7; row++) {
+        const count = row % 2 === 0 ? 8 : 7;
+        const gap = 76;
+        const offset = (W - (count - 1) * gap) / 2;
+        for (let col = 0; col < count; col++) {
+          const jitter = player.floor > 3 ? (boardRng() - .5) * 11 : (boardRng() - .5) * 5;
+          pegs.push({ id: id++, x: offset + col * gap + jitter, y: 178 + row * 72, r: 10, type: 'normal', active: true, pulse: boardRng() * 6, hitAt: -10 });
+        }
+      }
+
+      const shuffled = pegs.slice().sort(() => boardRng() - .5);
+      const setTypes = (type, count, from) => {
+        for (let i = from; i < from + count && i < shuffled.length; i++) shuffled[i].type = type;
+      };
+      setTypes('bomb', 3 + Math.floor(player.floor / 3), 0);
+      setTypes('crit', 2, 5);
+      setTypes('gold', 3, 9);
+      setTypes('refresh', 1 + (player.floor >= 5 ? 1 : 0), 13);
+
+      const bumperPositions = player.floor % 2 === 0
+        ? [{x: 245, y: 392}, {x: 475, y: 392}]
+        : [{x: 360, y: 358}];
+      bumperPositions.forEach(pos => pegs.push({ id: id++, ...pos, r: 22, type: 'bumper', active: true, pulse: boardRng() * 6, hitAt: -10 }));
+    }
+
+    function launch() {
+      if (state !== 'ready') return;
+      ensureAudio();
+      const orb = currentOrb();
+      balls = [{
+        x: launcherX, y: 84, vx: (launcherX - W / 2) * .055, vy: 80,
+        r: 9, color: orb.color, restitution: orb.restitution, primary: true,
+        life: 0, lastPeg: -1, lastPegTime: -1, trail: []
+      }];
+      shot = { orbId: player.bag[player.orbIndex], damage: 3, hits: 0, crit: 1, multiplier: 1, landed: false, echoSpawned: false, emberBursts: 0, gold: 0, started: performance.now() };
+      state = 'shooting';
+      els.boardStatus.textContent = 'Le destin est en mouvement…';
+      tone(280, .07, 'sine', .05);
+      updateUI();
+    }
+
+    function updatePhysics(dt) {
+      if (state !== 'shooting') return;
+      const steps = Math.max(1, Math.ceil(dt / .008));
+      const step = dt / steps;
+      for (let s = 0; s < steps; s++) {
+        for (const ball of balls) {
+          if (ball.dead) continue;
+          ball.life += step;
+          ball.vy += 735 * step;
+          ball.vx *= Math.pow(.998, step * 60);
+          ball.x += ball.vx * step;
+          ball.y += ball.vy * step;
+
+          if (!prefersReducedMotion && s === 0 && ball.life * 60 % 2 < 1) {
+            ball.trail.push({ x: ball.x, y: ball.y, a: .24 });
+            if (ball.trail.length > 10) ball.trail.shift();
+          }
+
+          if (ball.x - ball.r < 28) { ball.x = 28 + ball.r; ball.vx = Math.abs(ball.vx) * .82; tone(140, .025, 'sine', .01); }
+          if (ball.x + ball.r > W - 28) { ball.x = W - 28 - ball.r; ball.vx = -Math.abs(ball.vx) * .82; tone(140, .025, 'sine', .01); }
+
+          for (const peg of pegs) collide(ball, peg);
+
+          if (ball.y > 704) landBall(ball);
+          if (ball.life > 19) { ball.dead = true; if (ball.primary && !shot.landed) { shot.multiplier = 1; shot.landed = true; } }
+        }
+      }
+
+      balls = balls.filter(ball => !ball.dead);
+      particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 120 * dt; p.life -= dt; });
+      particles = particles.filter(p => p.life > 0);
+      floaters.forEach(f => { f.y -= 38 * dt; f.life -= dt; });
+      floaters = floaters.filter(f => f.life > 0);
+
+      if (balls.length === 0 && state === 'shooting') resolveShot();
+    }
+
+    function collide(ball, peg) {
+      if (!peg.active && peg.type !== 'bumper') return;
+      const dx = ball.x - peg.x;
+      const dy = ball.y - peg.y;
+      const minDist = ball.r + peg.r;
+      const dist2 = dx * dx + dy * dy;
+      if (dist2 >= minDist * minDist || dist2 < .001) return;
+      const dist = Math.sqrt(dist2);
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const overlap = minDist - dist;
+      ball.x += nx * overlap;
+      ball.y += ny * overlap;
+      const dot = ball.vx * nx + ball.vy * ny;
+      if (dot < 0) {
+        const bounce = peg.type === 'bumper' ? 1.42 : (1 + ball.restitution);
+        ball.vx -= bounce * dot * nx;
+        ball.vy -= bounce * dot * ny;
+        if (peg.type === 'bumper') {
+          const speed = Math.hypot(ball.vx, ball.vy);
+          if (speed < 560) { ball.vx *= 1.18; ball.vy *= 1.18; }
+        }
+      }
+
+      const now = performance.now();
+      if (ball.lastPeg === peg.id && now - ball.lastPegTime < 150) return;
+      if (peg.type === 'bumper' && now - peg.hitAt < 180) return;
+      ball.lastPeg = peg.id;
+      ball.lastPegTime = now;
+      peg.hitAt = now;
+      hitPeg(peg, ball);
+    }
+
+    function hitPeg(peg, ball) {
+      const orb = ORBS[shot.orbId];
+      shot.hits++;
+      let gain = orb.power;
+      if (shot.orbId === 'glass') gain += Math.min(4.5, (shot.hits - 1) * .35);
+      shot.damage += gain;
+
+      if (hasRelic('anvil') && shot.hits % 5 === 0) {
+        shot.damage += 4;
+        floater(peg.x, peg.y - 14, '+4 enclume', '#d9e0eb');
+        tone(190, .08, 'square', .025);
+      }
+
+      if (shot.orbId === 'ember' && shot.hits % 7 === 0) {
+        const burst = hasRelic('powder') ? 11 : 7;
+        shot.damage += burst;
+        shot.emberBursts++;
+        burstFx(peg.x, peg.y, '#ff8a5c', 20);
+        floater(peg.x, peg.y, `Braise +${burst}`, '#ff9d6e');
+        shake = 5;
+        tone(82, .15, 'sawtooth', .06);
+      }
+
+      if (shot.orbId === 'echo' && shot.hits >= 6 && !shot.echoSpawned && balls.length < 5) {
+        shot.echoSpawned = true;
+        const baseAngle = Math.atan2(ball.vy, ball.vx);
+        [-.55, .55].forEach(angle => {
+          const speed = Math.max(260, Math.hypot(ball.vx, ball.vy) * .84);
+          balls.push({ x: ball.x, y: ball.y, vx: Math.cos(baseAngle + angle) * speed, vy: Math.sin(baseAngle + angle) * speed, r: 6.5, color: orb.color, restitution: .9, primary: false, life: ball.life, lastPeg: peg.id, lastPegTime: performance.now(), trail: [] });
+        });
+        floater(peg.x, peg.y, 'ÉCHO ×2', '#68e9e1');
+        tone(560, .12, 'sine', .045);
+      }
+
+      switch (peg.type) {
+        case 'bomb': explodePeg(peg); break;
+        case 'crit':
+          shot.crit = hasRelic('lens') ? 2.75 : 2;
+          floater(peg.x, peg.y - 12, `CRIT ×${String(shot.crit).replace('.', ',')}`, '#e4a0ff');
+          tone(760, .11, 'triangle', .045);
+          break;
+        case 'refresh':
+          refreshPegs();
+          floater(peg.x, peg.y - 12, 'RAPPEL', '#55eadf');
+          tone(420, .16, 'sine', .05);
+          break;
+        case 'gold': {
+          const coins = shot.orbId === 'coin' ? 3 : 1;
+          player.gold += coins;
+          shot.gold += coins;
+          floater(peg.x, peg.y - 12, `+${coins} ¤`, '#ffd25f');
+          tone(660, .06, 'sine', .035);
+          break;
+        }
+        case 'bumper':
+          shot.damage += 2;
+          burstFx(peg.x, peg.y, '#b68cff', 8);
+          tone(230 + Math.random() * 60, .045, 'sine', .025);
+          updateUI();
+          return;
+        default:
+          tone(170 + Math.min(420, shot.hits * 12), .025, 'sine', .018);
+      }
+
+      peg.active = false;
+      burstFx(peg.x, peg.y, pegColor(peg.type), peg.type === 'normal' ? 5 : 10);
+      updateUI();
+    }
+
+    function explodePeg(source) {
+      const boost = hasRelic('powder') ? 1.6 : 1;
+      const neighbors = pegs.filter(p => p !== source && p.active && p.type !== 'bumper' && Math.hypot(p.x - source.x, p.y - source.y) < 105);
+      neighbors.forEach(p => {
+        p.active = false;
+        shot.hits++;
+        shot.damage += 2 * boost;
+        burstFx(p.x, p.y, pegColor(p.type), 4);
+      });
+      const explosion = Math.round(6 * boost + neighbors.length * 1.5 * boost);
+      shot.damage += explosion;
+      floater(source.x, source.y - 15, `BOUM +${explosion}`, '#ffad62');
+      burstFx(source.x, source.y, '#ff8a4d', 24);
+      shake = 7;
+      tone(72, .18, 'sawtooth', .07);
+    }
+
+    function refreshPegs() {
+      pegs.forEach(peg => { if (peg.type !== 'bumper') peg.active = true; });
+      if (hasRelic('bell')) {
+        const bomb = pegs.find(peg => peg.type === 'bomb');
+        if (bomb) bomb.active = true;
+      }
+      burstFx(W / 2, H / 2, '#55eadf', 30);
+    }
+
+    function landBall(ball) {
+      const slotWidth = (W - 56) / slots.length;
+      const index = clamp(Math.floor((ball.x - 28) / slotWidth), 0, slots.length - 1);
+      let mult = slots[index].mult;
+      if (hasRelic('atlas')) mult = Math.max(1, mult);
+      if (shot.orbId === 'void' && mult < 1) mult = .5;
+      if (ball.primary) { shot.multiplier = mult; shot.landed = true; }
+      burstFx(ball.x, 732, slots[index].color, 14);
+      floater(ball.x, 696, `×${String(mult).replace('.', ',')}`, slots[index].color);
+      tone(210 + index * 55, .12, 'triangle', .045);
+      ball.dead = true;
+    }
+
+    function resolveShot() {
+      state = 'resolving';
+      const raw = shot.damage * shot.crit * shot.multiplier;
+      const armor = enemy.armor || 0;
+      const damage = Math.max(1, Math.ceil(raw) - armor);
+      enemy.hp = Math.max(0, enemy.hp - damage);
+      player.score += damage * 10 + shot.hits * 3 + shot.gold * 15;
+      if (shot.orbId === 'leech') {
+        const heal = Math.min(7, Math.ceil(damage * .2), player.maxHp - player.hp);
+        if (heal > 0) { player.hp += heal; toast(`La Perle rend ${heal} PV.`, 'good'); }
+      }
+      shake = Math.min(12, 3 + damage / 12);
+      floater(W / 2, 105, `-${damage} PV`, '#ff7184');
+      tone(95, .2, 'square', .07);
+      updateUI();
+      announce(`${damage} dégâts infligés à ${enemy.name}.`);
+
+      if (enemy.hp <= 0) {
+        resolutionTimer = setTimeout(winEncounter, 700);
+      } else {
+        resolutionTimer = setTimeout(enemyTurn, 800);
+      }
+    }
+
+    function enemyTurn() {
+      if (state !== 'resolving') return;
+      enemy.turn++;
+      if (player.floor === 7 && !enemy.enraged && enemy.hp <= enemy.maxHp * .5) {
+        enemy.enraged = true;
+        enemy.attack += 4;
+        toast('Le Maître du Puits entre en transe : +4 attaque.', 'danger');
+      }
+      const variance = enemy.turn % 3 === 0 ? 2 : 0;
+      const incoming = enemy.attack + variance;
+      const blocked = Math.min(player.shield, incoming);
+      const damage = incoming - blocked;
+      player.shield -= blocked;
+      player.hp = Math.max(0, player.hp - damage);
+      shake = damage ? 9 : 3;
+      if (blocked) toast(`Bouclier : ${blocked} dégâts absorbés.`, 'good');
+      if (damage) toast(`${enemy.name} inflige ${damage} dégâts.`, 'danger');
+      tone(62, .22, 'sawtooth', .06);
+      updateUI();
+
+      if (player.hp <= 0) {
+        if (hasRelic('phoenix') && !player.phoenixUsed) {
+          player.phoenixUsed = true;
+          player.hp = Math.min(30, player.maxHp);
+          toast('La Cendre du phénix vous ramène à la vie !', 'good');
+          burstFx(W / 2, H / 2, '#ff8a5c', 55);
+        } else {
+          endRun(false);
+          return;
+        }
+      }
+
+      player.turn++;
+      player.orbIndex = (player.orbIndex + 1) % player.bag.length;
+      if (pegs.filter(p => p.active && p.type !== 'bumper').length < 11) {
+        refreshPegs();
+        toast('Le puits rallume les dernières chevilles.');
+      }
+      shot = null;
+      state = 'ready';
+      els.boardStatus.textContent = 'Déplacez le lanceur · Cliquez pour tirer';
+      updateUI();
+      announce(`Tour ${player.turn}. ${enemy.name} prépare ${enemy.attack + (enemy.turn % 3 === 2 ? 2 : 0)} dégâts.`);
+    }
+
+    function winEncounter() {
+      if (state !== 'resolving') return;
+      state = 'reward';
+      const baseReward = 3 + Math.floor(player.floor / 2);
+      player.gold += baseReward;
+      player.score += player.floor * 250 + player.hp * 4;
+      if (hasRelic('moss')) player.hp = Math.min(player.maxHp, player.hp + 4);
+      if (player.floor >= FLOOR_COUNT) {
+        endRun(true);
+        return;
+      }
+      toast(`Victoire ! +${baseReward} pièces.`, 'good');
+      rerollCost = 5 + Math.floor(player.floor / 3) * 2;
+      generateRewards();
+      setTimeout(() => els.rewardDialog.showModal(), 450);
+      updateUI();
+    }
+
+    function generateRewards() {
+      const orbPool = Object.keys(ORBS).filter(id => id !== 'stone');
+      const relicPool = Object.keys(RELICS).filter(id => !player.relics.includes(id));
+      const pickedOrbs = sample(orbPool, 2);
+      const pickedRelic = relicPool.length ? sample(relicPool, 1)[0] : null;
+      rewardOptions = [
+        { kind: 'orb', id: pickedOrbs[0] },
+        pickedRelic ? { kind: 'relic', id: pickedRelic } : { kind: 'heal', id: 'heal' },
+        { kind: 'orb', id: pickedOrbs[1] }
+      ].sort(() => rng() - .5);
+      renderRewards();
+    }
+
+    function sample(array, count) {
+      const copy = array.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy.slice(0, count);
+    }
+
+    function renderRewards() {
+      els.rewardGrid.innerHTML = '';
+      rewardOptions.forEach((choice, index) => {
+        const data = choice.kind === 'orb' ? ORBS[choice.id] : choice.kind === 'relic' ? RELICS[choice.id] : { name: 'Fiole de rosée', symbol: '+', color: '#7ce5a5', description: 'Récupère immédiatement 24 PV.' };
+        const button = document.createElement('button');
+        button.className = 'reward-card';
+        button.style.setProperty('--reward-color', data.color);
+        button.innerHTML = `<div class="reward-icon">${data.symbol}</div><small>${choice.kind === 'orb' ? 'Nouvelle orbe' : choice.kind === 'relic' ? 'Relique passive' : 'Soin immédiat'}</small><strong>${data.name}</strong><p>${data.description}</p>`;
+        button.addEventListener('click', () => chooseReward(index));
+        els.rewardGrid.appendChild(button);
+      });
+      els.rerollPrice.textContent = `Relance : ${rerollCost} pièces`;
+      els.rerollButton.disabled = player.gold < rerollCost;
+    }
+
+    function chooseReward(index) {
+      const choice = rewardOptions[index];
+      if (!choice) return;
+      if (choice.kind === 'orb') {
+        player.bag.splice(player.orbIndex + 1, 0, choice.id);
+        toast(`${ORBS[choice.id].name} rejoint le sac.`, 'good');
+      } else if (choice.kind === 'relic') {
+        player.relics.push(choice.id);
+        if (RELICS[choice.id].acquire) RELICS[choice.id].acquire();
+        toast(`${RELICS[choice.id].name} rejoint le reliquaire.`, 'good');
+      } else {
+        player.hp = Math.min(player.maxHp, player.hp + 24);
+        toast('La fiole rend 24 PV.', 'good');
+      }
+      els.rewardDialog.close();
+      player.floor++;
+      player.orbIndex = player.orbIndex % player.bag.length;
+      setupEncounter();
+      state = 'ready';
+      els.boardStatus.textContent = 'Déplacez le lanceur · Cliquez pour tirer';
+      announce(`Profondeur ${player.floor}. ${enemy.name}.`);
+      updateUI();
+      canvas.focus();
+    }
+
+    function rerollRewards() {
+      if (player.gold < rerollCost) return;
+      player.gold -= rerollCost;
+      rerollCost += 2;
+      generateRewards();
+      updateUI();
+      tone(480, .1, 'triangle', .04);
+    }
+
+    function endRun(victory) {
+      state = 'ended';
+      const score = Math.round(player.score + (victory ? 2000 : 0));
+      player.score = score;
+      const best = Number(localStorage.getItem('plinkomancie-best') || 0);
+      if (score > best) localStorage.setItem('plinkomancie-best', String(score));
+      localStorage.setItem('plinkomancie-depth', String(Math.max(Number(localStorage.getItem('plinkomancie-depth') || 0), player.floor)));
+      els.resultSymbol.textContent = victory ? '✦' : '◇';
+      els.resultSymbol.style.color = victory ? 'var(--gold)' : 'var(--coral)';
+      els.resultOverline.textContent = victory ? 'Rituel achevé' : 'Le rituel se brise';
+      els.resultTitle.textContent = victory ? 'Le puits se tait' : 'La nuit vous reprend';
+      els.resultCopy.textContent = victory ? 'Le Maître est tombé. Votre grimoire grave un nouveau destin.' : `${enemy.name} garde encore la profondeur ${player.floor}.`;
+      els.finalScore.textContent = score.toLocaleString('fr-FR');
+      els.finalFloor.textContent = `${player.floor} / ${FLOOR_COUNT}`;
+      els.finalRelics.textContent = String(player.relics.length);
+      updateUI();
+      setTimeout(() => els.resultDialog.showModal(), 350);
+      announce(victory ? 'Victoire. Le Maître du Puits est vaincu.' : 'Expédition terminée.');
+    }
+
+    function updateUI() {
+      if (!player || !enemy) return;
+      els.floorLabel.textContent = `Profondeur ${player.floor} · ${enemy.blurb}`;
+      els.enemyName.textContent = enemy.name;
+      els.enemySigil.textContent = enemy.sigil;
+      els.enemyHpText.textContent = `${Math.ceil(enemy.hp)} / ${enemy.maxHp}`;
+      els.enemyHpBar.style.width = `${clamp(enemy.hp / enemy.maxHp * 100, 0, 100)}%`;
+      els.intentDamage.textContent = String(enemy.attack + (enemy.turn % 3 === 2 ? 2 : 0));
+      els.turnLabel.textContent = `Tour ${player.turn}`;
+      els.playerHpText.textContent = String(Math.ceil(player.hp));
+      els.playerHpDetail.textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
+      els.playerHpBar.style.width = `${clamp(player.hp / player.maxHp * 100, 0, 100)}%`;
+      els.goldText.textContent = String(player.gold);
+      els.scoreText.textContent = Math.round(player.score).toLocaleString('fr-FR');
+      els.shieldText.textContent = player.shield > 0 ? `◈ Bouclier : ${player.shield}` : '';
+
+      const orb = currentOrb();
+      els.orbIcon.textContent = orb.symbol;
+      els.orbIcon.style.setProperty('--orb', orb.color);
+      els.orbName.textContent = orb.name;
+      els.orbDescription.textContent = orb.description;
+      els.orbIndexLabel.textContent = `${player.orbIndex + 1} / ${player.bag.length}`;
+      els.hitCount.textContent = shot ? String(shot.hits) : '0';
+      els.damageCharge.textContent = shot ? String(Math.ceil(shot.damage)) : '0';
+      els.critMeter.textContent = `×${shot ? String(shot.crit).replace('.', ',') : '1'}`;
+
+      els.bagList.innerHTML = '';
+      player.bag.forEach((orbId, index) => {
+        const data = ORBS[orbId];
+        const el = document.createElement('div');
+        el.className = `bag-orb${index === player.orbIndex ? ' active' : ''}`;
+        el.style.setProperty('--orb', data.color);
+        el.textContent = data.symbol;
+        el.dataset.index = String(index + 1);
+        el.setAttribute('aria-label', `${index + 1}. ${data.name}${index === player.orbIndex ? ', en main' : ''}`);
+        els.bagList.appendChild(el);
+      });
+
+      els.relicCount.textContent = String(player.relics.length);
+      els.relicList.innerHTML = '';
+      if (!player.relics.length) {
+        els.relicList.innerHTML = '<span class="empty">Le reliquaire est vide.</span>';
+      } else {
+        player.relics.forEach(id => {
+          const data = RELICS[id];
+          const el = document.createElement('div');
+          el.className = 'relic';
+          el.innerHTML = `<div class="relic-symbol" style="color:${data.color}">${data.symbol}</div><div><strong>${data.name}</strong><span>${data.description}</span></div>`;
+          els.relicList.appendChild(el);
+        });
+      }
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      const width = Math.max(1, Math.round(rect.width * dpr));
+      const height = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      ctx.setTransform(width / W, 0, 0, height / H, 0, 0);
+    }
+
+    function render(now) {
+      resizeCanvas();
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      if (shake > .05 && !prefersReducedMotion) {
+        ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake);
+        shake *= .87;
+      } else shake = 0;
+      drawBoard(now);
+      ctx.restore();
+    }
+
+    function drawBoard(now) {
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#171024');
+      bg.addColorStop(.55, '#100a19');
+      bg.addColorStop(1, '#0a0710');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.save();
+      ctx.globalAlpha = .17;
+      ctx.strokeStyle = '#a97cff';
+      ctx.lineWidth = 1;
+      for (let r = 90; r < 690; r += 105) {
+        ctx.beginPath(); ctx.arc(W / 2, 60, r, .14, Math.PI - .14); ctx.stroke();
+      }
+      ctx.restore();
+
+      drawLauncher(now);
+      drawPegConnections();
+      pegs.forEach(peg => drawPeg(peg, now));
+      drawSlots();
+
+      balls.forEach(ball => {
+        ball.trail.forEach((point, index) => {
+          ctx.beginPath();
+          ctx.fillStyle = hexAlpha(ball.color, (index / ball.trail.length) * .12);
+          ctx.arc(point.x, point.y, ball.r * (index / ball.trail.length) * .75, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        const glow = ctx.createRadialGradient(ball.x - 3, ball.y - 4, 1, ball.x, ball.y, ball.r * 2.2);
+        glow.addColorStop(0, '#ffffff');
+        glow.addColorStop(.22, ball.color);
+        glow.addColorStop(1, hexAlpha(ball.color, 0));
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r * 2.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = ball.color;
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); ctx.fill();
+      });
+
+      particles.forEach(p => {
+        ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      floaters.forEach(f => {
+        ctx.globalAlpha = clamp(f.life / f.maxLife, 0, 1);
+        ctx.fillStyle = f.color;
+        ctx.font = '700 15px "DM Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#09060f';
+        ctx.fillText(f.text, f.x, f.y);
+      });
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    }
+
+    function drawLauncher(now) {
+      const orb = player ? currentOrb() : ORBS.stone;
+      ctx.save();
+      ctx.strokeStyle = hexAlpha(orb.color, .23);
+      ctx.setLineDash([4, 9]);
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(launcherX, 78); ctx.lineTo(launcherX, 145); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.translate(launcherX, 70);
+      ctx.fillStyle = 'rgba(9,6,15,.9)';
+      ctx.strokeStyle = hexAlpha(orb.color, .6);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-22, -13); ctx.lineTo(22, -13); ctx.lineTo(14, 15); ctx.lineTo(-14, 15); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      if (state === 'ready' || state === 'title') {
+        const pulse = 1 + Math.sin(now * .004) * .08;
+        ctx.scale(pulse, pulse);
+        ctx.shadowBlur = 15; ctx.shadowColor = orb.color; ctx.fillStyle = orb.color;
+        ctx.beginPath(); ctx.arc(0, 2, 8, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawPegConnections() {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(181,148,214,.055)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < pegs.length; i++) {
+        for (let j = i + 1; j < pegs.length; j++) {
+          const a = pegs[i], b = pegs[j];
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < 82 && a.type !== 'bumper' && b.type !== 'bumper') { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+        }
+      }
+      ctx.restore();
+    }
+
+    function pegColor(type) {
+      return ({ normal: '#a89bb8', bomb: '#ff9d4d', crit: '#d584ff', refresh: '#55eadf', gold: '#ffd25f', bumper: '#b68cff' })[type];
+    }
+
+    function drawPeg(peg, now) {
+      const color = pegColor(peg.type);
+      const active = peg.active || peg.type === 'bumper';
+      const pulse = active ? Math.sin(now * .0035 + peg.pulse) * .12 + 1 : 1;
+      ctx.save();
+      ctx.translate(peg.x, peg.y);
+      if (active) {
+        ctx.shadowBlur = peg.type === 'normal' ? 7 : 17;
+        ctx.shadowColor = color;
+        ctx.fillStyle = hexAlpha(color, peg.type === 'normal' ? .7 : .9);
+      } else {
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(120,106,138,.13)';
+      }
+      ctx.strokeStyle = active ? hexAlpha(color, .85) : 'rgba(165,147,184,.17)';
+      ctx.lineWidth = peg.type === 'bumper' ? 3 : 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, peg.r * pulse, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0;
+      if (active && peg.type !== 'normal') {
+        ctx.fillStyle = peg.type === 'bumper' ? '#e9dbff' : '#16101e';
+        ctx.font = `700 ${peg.type === 'bumper' ? 17 : 11}px "DM Mono", monospace`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(({ bomb: '✹', crit: '×', refresh: '↻', gold: '¤', bumper: '✦' })[peg.type], 0, .5);
+      }
+      ctx.restore();
+    }
+
+    function drawSlots() {
+      const left = 28;
+      const totalWidth = W - 56;
+      const slotW = totalWidth / slots.length;
+      ctx.save();
+      for (let i = 0; i < slots.length; i++) {
+        const x = left + i * slotW;
+        ctx.fillStyle = hexAlpha(slots[i].color, .08);
+        ctx.fillRect(x + 2, 712, slotW - 4, 65);
+        ctx.strokeStyle = hexAlpha(slots[i].color, .24);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 2, 712, slotW - 4, 65);
+        ctx.fillStyle = '#d9d1e3';
+        ctx.font = '500 13px "DM Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(slots[i].label, x + slotW / 2, 750);
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,.13)';
+      ctx.lineWidth = 3;
+      for (let i = 0; i <= slots.length; i++) {
+        const x = left + i * slotW;
+        ctx.beginPath(); ctx.moveTo(x, 684); ctx.lineTo(x, 778); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function burstFx(x, y, color, count) {
+      if (prefersReducedMotion) count = Math.ceil(count / 3);
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 35 + Math.random() * 125;
+        const life = .35 + Math.random() * .55;
+        particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, r: 1.2 + Math.random() * 2.4, color, life, maxLife: life });
+      }
+    }
+
+    function floater(x, y, text, color) {
+      floaters.push({ x, y, text, color, life: 1, maxLife: 1 });
+    }
+
+    function hexAlpha(hex, alpha) {
+      const clean = hex.replace('#', '');
+      const value = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
+      return `rgba(${value >> 16}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+    }
+
+    function ensureAudio() {
+      if (!soundEnabled) return;
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function tone(freq, duration, type = 'sine', volume = .03) {
+      if (!soundEnabled) return;
+      ensureAudio();
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime + duration);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function toast(message, kind = '') {
+      const el = document.createElement('div');
+      el.className = `toast ${kind}`;
+      el.textContent = message;
+      els.toastStack.appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(6px)'; }, 2500);
+      setTimeout(() => el.remove(), 2800);
+    }
+
+    function announce(message) { els.liveRegion.textContent = message; }
+
+    function canvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: (event.clientX - rect.left) / rect.width * W, y: (event.clientY - rect.top) / rect.height * H };
+    }
+
+    function setLauncherFromPointer(event) {
+      if (state !== 'ready' && state !== 'title') return;
+      const point = canvasPoint(event);
+      launcherX = clamp(point.x, 52, W - 52);
+    }
+
+    canvas.addEventListener('pointermove', setLauncherFromPointer);
+    canvas.addEventListener('pointerdown', event => {
+      if (state !== 'ready') return;
+      event.preventDefault();
+      setLauncherFromPointer(event);
+      launch();
+    });
+
+    window.addEventListener('keydown', event => {
+      if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a' || event.key.toLowerCase() === 'q') {
+        if (state === 'ready') { launcherX = clamp(launcherX - 22, 52, W - 52); event.preventDefault(); }
+      } else if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') {
+        if (state === 'ready') { launcherX = clamp(launcherX + 22, 52, W - 52); event.preventDefault(); }
+      } else if (event.code === 'Space' || event.key === 'Enter') {
+        if (document.activeElement === canvas && state === 'ready') { event.preventDefault(); launch(); }
+      } else if (event.key.toLowerCase() === 'p' || event.key === 'Escape') {
+        if (state === 'shooting' || state === 'ready') {
+          previousState = state;
+          state = 'paused';
+          els.boardStatus.textContent = 'Pause · P pour reprendre';
+          toast('Rituel en pause.');
+        } else if (state === 'paused') {
+          state = previousState;
+          lastTime = performance.now();
+          els.boardStatus.textContent = state === 'ready' ? 'Déplacez le lanceur · Cliquez pour tirer' : 'Le destin est en mouvement…';
+        }
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && (state === 'shooting' || state === 'ready')) {
+        previousState = state;
+        state = 'paused';
+        els.boardStatus.textContent = 'Pause · P pour reprendre';
+      }
+      lastTime = performance.now();
+    });
+
+    els.startButton.addEventListener('click', startRun);
+    els.playAgainButton.addEventListener('click', startRun);
+    els.restartButton.addEventListener('click', () => {
+      if (state === 'title') return;
+      if (confirm('Abandonner cette expédition et recommencer ?')) startRun();
+    });
+    els.helpButton.addEventListener('click', () => els.helpDialog.showModal());
+    els.closeHelp.addEventListener('click', () => els.helpDialog.close());
+    els.helpDialog.addEventListener('click', event => { if (event.target === els.helpDialog) els.helpDialog.close(); });
+    els.rerollButton.addEventListener('click', rerollRewards);
+    els.soundButton.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      els.soundButton.setAttribute('aria-label', soundEnabled ? 'Couper le son' : 'Activer le son');
+      els.soundButton.style.opacity = soundEnabled ? '1' : '.45';
+      if (soundEnabled) tone(440, .08, 'sine', .04);
+    });
+
+    function loop(now) {
+      const dt = Math.min(.032, Math.max(0, (now - lastTime) / 1000));
+      lastTime = now;
+      if (state !== 'paused') updatePhysics(dt);
+      render(now);
+      requestAnimationFrame(loop);
+    }
+
+    initPlayer();
+    enemy = { ...ENEMIES[0], maxHp: ENEMIES[0].hp, turn: 0 };
+    generateBoard();
+    updateUI();
+    const best = Number(localStorage.getItem('plinkomancie-best') || 0);
+    const depth = Number(localStorage.getItem('plinkomancie-depth') || 0);
+    els.bestRun.textContent = best ? `Record : ${best.toLocaleString('fr-FR')} · profondeur ${depth}` : '';
+    requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>
