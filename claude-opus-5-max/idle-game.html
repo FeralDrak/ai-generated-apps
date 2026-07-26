@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENTROPIE — Programme d'exploration profonde</title>
+<style>
+/* ============================================================
+   RESET & THEME
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin:0; padding:0; height:100%; }
+
+:root{
+  --bg:        #05070d;
+  --bg2:       #080c16;
+  --panel:     rgba(18,26,44,.72);
+  --panel-hi:  rgba(28,40,66,.78);
+  --line:      rgba(96,132,190,.22);
+  --line-hi:   rgba(120,190,255,.45);
+  --txt:       #c9d6ee;
+  --txt-dim:   #6e819f;
+  --txt-hi:    #eaf3ff;
+  --cyan:      #4fd6e8;
+  --amber:     #ffb547;
+  --violet:    #c77dff;
+  --green:     #56dc9a;
+  --red:       #ff6b6b;
+  --blue:      #6ea8ff;
+  --mono: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Mono", Consolas, monospace;
+  --sans: "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+body{
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+#stars{ position:fixed; inset:0; z-index:0; }
+#veil{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(80,140,255,.10), transparent 60%),
+    radial-gradient(900px 600px at 5% 100%, rgba(200,120,255,.07), transparent 60%);
+}
+#app{ position:relative; z-index:2; height:100%; display:flex; flex-direction:column; }
+
+::-webkit-scrollbar{ width:9px; height:9px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:rgba(110,150,210,.22); border-radius:5px; }
+::-webkit-scrollbar-thumb:hover{ background:rgba(110,150,210,.4); }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header{
+  flex:0 0 auto;
+  border-bottom:1px solid var(--line);
+  background: linear-gradient(180deg, rgba(10,16,30,.94), rgba(8,12,24,.80));
+  backdrop-filter: blur(8px);
+  padding:8px 16px 0;
+}
+.brandrow{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.brand{ display:flex; align-items:baseline; gap:9px; }
+.brand h1{
+  margin:0; font-size:15px; letter-spacing:.26em; font-weight:600;
+  color:var(--txt-hi); text-transform:uppercase;
+}
+.brand .sub{ font-family:var(--mono); font-size:10px; color:var(--txt-dim); letter-spacing:.1em; }
+
+.res-row{ display:flex; gap:7px; flex-wrap:wrap; flex:1; }
+.res{
+  display:flex; flex-direction:column; gap:0;
+  padding:4px 11px; min-width:104px;
+  border:1px solid var(--line); border-radius:7px;
+  background: rgba(14,22,40,.6);
+}
+.res .k{ font-size:9px; letter-spacing:.13em; text-transform:uppercase; color:var(--txt-dim); }
+.res .v{ font-family:var(--mono); font-size:15px; font-weight:600; color:var(--txt-hi); line-height:1.2; }
+.res .r{ font-family:var(--mono); font-size:10px; color:var(--green); }
+.res .r.neg{ color:var(--red); }
+.res.hidden{ display:none; }
+.res.e .v{ color:var(--amber); }
+.res.s .v{ color:var(--cyan); }
+.res.d .v{ color:var(--blue); }
+.res.x .v{ color:var(--violet); }
+
+/* thermal gauge */
+.thermo{ padding:8px 0 9px; display:flex; align-items:center; gap:12px; }
+.thermo .lbl{ font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--txt-dim); white-space:nowrap; }
+.bar{
+  position:relative; flex:1; height:15px; border-radius:8px; overflow:hidden;
+  background: rgba(255,255,255,.05); border:1px solid var(--line);
+}
+.bar .fill{ position:absolute; inset:0 auto 0 0; width:0%; transition:width .18s linear, background .3s; border-radius:8px; }
+.bar .mark{ position:absolute; top:0; bottom:0; width:2px; background:rgba(255,255,255,.4); }
+.bar .txt{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:10px; font-weight:600; color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.9); letter-spacing:.05em;
+}
+.thermo .eff{ font-family:var(--mono); font-size:11px; min-width:118px; text-align:right; }
+
+/* tabs */
+nav{ display:flex; gap:2px; }
+nav button{
+  appearance:none; border:none; background:transparent; cursor:pointer;
+  color:var(--txt-dim); font-family:var(--sans); font-size:11.5px; font-weight:600;
+  letter-spacing:.13em; text-transform:uppercase;
+  padding:9px 15px; border-bottom:2px solid transparent; position:relative;
+  transition:color .16s, border-color .16s;
+}
+nav button:hover{ color:var(--txt); }
+nav button.on{ color:var(--cyan); border-bottom-color:var(--cyan); }
+nav button .dot{
+  position:absolute; top:5px; right:5px; width:6px; height:6px; border-radius:50%;
+  background:var(--amber); box-shadow:0 0 8px var(--amber);
+}
+nav button.locked{ opacity:.32; cursor:not-allowed; }
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+main{ flex:1; min-height:0; display:grid; grid-template-columns: 1fr 316px; }
+#view{ overflow-y:auto; padding:16px; }
+aside{
+  border-left:1px solid var(--line); overflow:hidden;
+  display:flex; flex-direction:column; background:rgba(6,10,20,.5);
+}
+aside h3{
+  margin:0; padding:10px 14px; font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--txt-dim); border-bottom:1px solid var(--line); flex:0 0 auto;
+}
+#log{ flex:1; overflow-y:auto; padding:8px 12px; display:flex; flex-direction:column-reverse; gap:1px; }
+.le{ font-family:var(--mono); font-size:11px; line-height:1.45; padding:3px 0; border-bottom:1px solid rgba(96,132,190,.08); color:var(--txt-dim); }
+.le b{ color:var(--txt); font-weight:500; }
+.le .t{ color:rgba(110,129,159,.6); margin-right:6px; font-size:10px; }
+.le.ok b, .le.ok{ color:var(--green); }
+.le.warn b, .le.warn{ color:var(--amber); }
+.le.bad b, .le.bad{ color:var(--red); }
+.le.sci b{ color:var(--cyan); }
+.le.fringe b{ color:var(--violet); }
+
+/* ============================================================
+   PANELS & GENERIC UI
+   ============================================================ */
+.grid{ display:grid; gap:14px; }
+.g2{ grid-template-columns: repeat(auto-fit, minmax(330px,1fr)); }
+.g3{ grid-template-columns: repeat(auto-fit, minmax(250px,1fr)); }
+
+.card{
+  border:1px solid var(--line); border-radius:10px; padding:13px 14px;
+  background:var(--panel); backdrop-filter:blur(4px);
+}
+.card > h2{
+  margin:0 0 11px; font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--cyan); display:flex; align-items:center; gap:8px;
+}
+.card > h2 .n{ color:var(--txt-dim); font-family:var(--mono); }
+.card > h2 .sp{ margin-left:auto; color:var(--txt-dim); font-size:10px; letter-spacing:.05em; text-transform:none; font-family:var(--mono); }
+.hint{ font-size:11.5px; color:var(--txt-dim); margin:-4px 0 11px; line-height:1.5; }
+
+button.b{
+  appearance:none; cursor:pointer; font-family:var(--sans); font-weight:600;
+  border:1px solid var(--line-hi); border-radius:6px;
+  background:rgba(60,110,190,.16); color:var(--txt-hi);
+  padding:6px 12px; font-size:12px; transition:background .14s, border-color .14s, transform .06s;
+}
+button.b:hover:not(:disabled){ background:rgba(80,150,255,.26); border-color:var(--cyan); }
+button.b:active:not(:disabled){ transform:translateY(1px); }
+button.b:disabled{ opacity:.34; cursor:not-allowed; }
+button.b.sm{ padding:3px 9px; font-size:11px; }
+button.b.gh{ background:transparent; border-color:var(--line); }
+button.b.warn{ background:rgba(255,181,71,.14); border-color:rgba(255,181,71,.5); color:var(--amber); }
+button.b.vio{ background:rgba(199,125,255,.14); border-color:rgba(199,125,255,.5); color:var(--violet); }
+button.b.on{ background:rgba(86,220,154,.2); border-color:var(--green); color:var(--green); }
+
+.row{ display:flex; align-items:center; gap:9px; }
+.sep{ height:1px; background:var(--line); margin:11px -14px; }
+.mono{ font-family:var(--mono); }
+.dim{ color:var(--txt-dim); }
+.tiny{ font-size:11px; }
+.pill{
+  display:inline-block; font-family:var(--mono); font-size:9.5px; letter-spacing:.06em;
+  padding:1px 6px; border-radius:4px; border:1px solid var(--line);
+  color:var(--txt-dim); background:rgba(255,255,255,.03);
+}
+.pill.c{ color:var(--cyan); border-color:rgba(79,214,232,.4); }
+.pill.a{ color:var(--amber); border-color:rgba(255,181,71,.4); }
+.pill.v{ color:var(--violet); border-color:rgba(199,125,255,.4); }
+.pill.g{ color:var(--green); border-color:rgba(86,220,154,.4); }
+.pill.r{ color:var(--red); border-color:rgba(255,107,107,.4); }
+
+/* building rows */
+.bl{ display:flex; flex-direction:column; gap:5px; }
+.bx{
+  display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center;
+  padding:7px 9px; border:1px solid var(--line); border-radius:7px;
+  background:rgba(255,255,255,.018); transition:border-color .14s, background .14s;
+}
+.bx:hover{ border-color:var(--line-hi); background:rgba(255,255,255,.04); }
+.bx .nm{ font-size:12.5px; font-weight:600; color:var(--txt-hi); display:flex; gap:7px; align-items:center; }
+.bx .nm .ct{ font-family:var(--mono); color:var(--cyan); font-weight:700; }
+.bx .ds{ font-family:var(--mono); font-size:10.5px; color:var(--txt-dim); margin-top:1px; }
+
+/* sliders */
+.alloc{ display:flex; flex-direction:column; gap:9px; }
+.ag{ border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:rgba(255,255,255,.018); }
+.ag .top{ display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.ag .top .nm{ font-size:12px; font-weight:600; color:var(--txt-hi); }
+.ag .top .pc{ margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--cyan); font-weight:600; }
+.ag .info{ font-family:var(--mono); font-size:10px; color:var(--txt-dim); margin-top:4px; display:flex; gap:10px; flex-wrap:wrap; }
+input[type=range]{
+  appearance:none; width:100%; height:5px; border-radius:3px; outline:none; cursor:pointer;
+  background:rgba(255,255,255,.1);
+}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none; width:14px; height:14px; border-radius:50%;
+  background:var(--cyan); border:2px solid #08101e; cursor:pointer;
+  box-shadow:0 0 8px rgba(79,214,232,.6);
+}
+input[type=range]::-moz-range-thumb{
+  width:12px; height:12px; border-radius:50%; background:var(--cyan);
+  border:2px solid #08101e; cursor:pointer;
+}
+input[type=range]:disabled{ opacity:.35; cursor:not-allowed; }
+
+/* tech */
+.tech{
+  border:1px solid var(--line); border-radius:8px; padding:9px 11px;
+  background:rgba(255,255,255,.018); display:flex; flex-direction:column; gap:5px;
+  transition:border-color .14s, background .14s;
+}
+.tech:hover{ border-color:var(--line-hi); }
+.tech.done{ opacity:.5; border-color:rgba(86,220,154,.3); background:rgba(86,220,154,.05); }
+.tech.fringe{ border-color:rgba(199,125,255,.32); background:rgba(199,125,255,.045); }
+.tech.doc{ border-color:rgba(255,181,71,.32); background:rgba(255,181,71,.045); }
+.tech.blocked{ opacity:.34; }
+.tech .th{ display:flex; align-items:center; gap:8px; }
+.tech .th .nm{ font-size:12.5px; font-weight:600; color:var(--txt-hi); }
+.tech .dsc{ font-size:11.5px; color:var(--txt-dim); line-height:1.45; }
+.tech .ft{ display:flex; align-items:center; gap:8px; margin-top:2px; }
+.tech .cost{ font-family:var(--mono); font-size:10.5px; display:flex; gap:9px; }
+.tech .cost .no{ color:var(--red); }
+.q{ border:1px solid rgba(79,214,232,.35); border-radius:7px; padding:8px 10px; background:rgba(79,214,232,.06); margin-bottom:6px; }
+.q .qh{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:var(--txt-hi); }
+.q .qh .tm{ margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--cyan); }
+.pbar{ height:4px; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:6px; }
+.pbar > i{ display:block; height:100%; background:linear-gradient(90deg,var(--cyan),var(--blue)); transition:width .2s linear; }
+
+/* systems / missions */
+.sys{
+  border:1px solid var(--line); border-radius:8px; padding:9px 11px;
+  background:rgba(255,255,255,.018); cursor:pointer; transition:border-color .14s, background .14s;
+}
+.sys:hover{ border-color:var(--line-hi); background:rgba(255,255,255,.045); }
+.sys.sel{ border-color:var(--cyan); background:rgba(79,214,232,.09); }
+.sys .sh{ display:flex; align-items:baseline; gap:8px; }
+.sys .sh .nm{ font-family:var(--mono); font-size:12.5px; font-weight:600; color:var(--txt-hi); }
+.sys .sh .di{ margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--amber); }
+.sys .tags{ display:flex; gap:4px; flex-wrap:wrap; margin-top:5px; }
+.mission{ border:1px solid var(--line); border-radius:8px; padding:9px 11px; background:rgba(255,255,255,.018); margin-bottom:6px; }
+.mission.late{ border-color:rgba(199,125,255,.4); background:rgba(199,125,255,.06); }
+.mh{ display:flex; align-items:center; gap:8px; font-size:12px; }
+.mh .nm{ font-family:var(--mono); font-weight:600; color:var(--txt-hi); }
+.mh .st{ margin-left:auto; font-family:var(--mono); font-size:10.5px; }
+
+/* cards */
+.dcard{
+  border:1px solid var(--line); border-radius:8px; padding:9px 11px;
+  background:linear-gradient(160deg, rgba(79,214,232,.07), rgba(255,255,255,.015));
+  display:flex; flex-direction:column; gap:4px;
+}
+.dcard.eq{ border-color:var(--green); background:linear-gradient(160deg, rgba(86,220,154,.13), rgba(255,255,255,.02)); }
+.dcard .nm{ font-size:12px; font-weight:600; color:var(--txt-hi); }
+.dcard .ef{ font-family:var(--mono); font-size:11px; color:var(--green); }
+
+/* rules */
+.rule{ border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:rgba(255,255,255,.018); margin-bottom:6px; }
+.rule.off{ opacity:.45; }
+.rule .rh{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.rule .fx{ font-family:var(--mono); font-size:11.5px; color:var(--txt); }
+.rule .fx .kw{ color:var(--violet); font-weight:700; }
+.rule .fx .vl{ color:var(--amber); }
+.rule .fx .tg{ color:var(--cyan); }
+select, input[type=number]{
+  font-family:var(--mono); font-size:11.5px; color:var(--txt-hi);
+  background:rgba(10,18,34,.9); border:1px solid var(--line); border-radius:5px;
+  padding:4px 6px; outline:none;
+}
+select:focus, input[type=number]:focus{ border-color:var(--cyan); }
+.builder{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding:9px; border:1px dashed var(--line); border-radius:8px; }
+.builder .kw{ font-family:var(--mono); font-size:11px; color:var(--violet); font-weight:700; }
+
+/* talents */
+.tal{
+  border:1px solid var(--line); border-radius:8px; padding:9px 11px;
+  background:rgba(255,255,255,.018); display:flex; flex-direction:column; gap:4px;
+}
+.tal .nm{ font-size:12px; font-weight:600; color:var(--txt-hi); display:flex; gap:8px; }
+.tal .nm .lv{ margin-left:auto; font-family:var(--mono); color:var(--violet); }
+.const{
+  border:1px solid rgba(199,125,255,.35); border-radius:8px; padding:10px 12px;
+  background:rgba(199,125,255,.06); cursor:pointer; transition:border-color .14s, background .14s;
+}
+.const:hover{ border-color:var(--violet); background:rgba(199,125,255,.13); }
+.const .nm{ font-family:var(--mono); font-size:12.5px; font-weight:700; color:var(--violet); }
+.const .up{ font-size:11.5px; color:var(--green); }
+.const .dn{ font-size:11.5px; color:var(--red); }
+
+table.arc{ width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px; }
+table.arc th{ text-align:left; color:var(--txt-dim); font-weight:500; padding:5px 8px; border-bottom:1px solid var(--line); font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+table.arc td{ padding:5px 8px; border-bottom:1px solid rgba(96,132,190,.09); }
+
+/* modal */
+.mask{
+  position:fixed; inset:0; z-index:50; background:rgba(2,4,10,.82); backdrop-filter:blur(5px);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.modal{
+  width:min(560px,100%); max-height:88vh; overflow-y:auto;
+  border:1px solid var(--line-hi); border-radius:12px; padding:20px 22px;
+  background:linear-gradient(180deg, rgba(20,30,52,.98), rgba(10,16,30,.98));
+  box-shadow:0 30px 80px rgba(0,0,0,.7);
+}
+.modal h2{ margin:0 0 4px; font-size:14px; letter-spacing:.14em; text-transform:uppercase; color:var(--cyan); }
+.modal .msub{ font-size:12px; color:var(--txt-dim); margin-bottom:16px; }
+.mass{ display:flex; flex-direction:column; gap:11px; }
+.mrow .mtop{ display:flex; align-items:center; gap:8px; margin-bottom:3px; }
+.mrow .mtop .nm{ font-size:12px; font-weight:600; }
+.mrow .mtop .vv{ margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--amber); }
+.mrow .ex{ font-size:11px; color:var(--txt-dim); margin-top:3px; }
+.readout{ display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin:15px 0; }
+.ro{ border:1px solid var(--line); border-radius:7px; padding:6px 9px; background:rgba(255,255,255,.02); }
+.ro .k{ font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--txt-dim); }
+.ro .v{ font-family:var(--mono); font-size:14px; font-weight:600; color:var(--txt-hi); }
+
+.foot{ display:flex; gap:8px; justify-content:flex-end; margin-top:14px; }
+
+.empty{ text-align:center; color:var(--txt-dim); font-size:12px; padding:22px 10px; font-style:italic; }
+
+@media (max-width:960px){
+  main{ grid-template-columns:1fr; grid-template-rows: 1fr 180px; }
+  aside{ border-left:none; border-top:1px solid var(--line); }
+  .res{ min-width:88px; }
+}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div id="veil"></div>
+
+<div id="app">
+  <header>
+    <div class="brandrow">
+      <div class="brand">
+        <h1>Entropie</h1>
+        <span class="sub">v1.0 · programme d'exploration profonde</span>
+      </div>
+      <div class="res-row" id="resRow"></div>
+    </div>
+    <div class="thermo">
+      <span class="lbl">Charge thermique</span>
+      <div class="bar"><div class="fill" id="thFill"></div><div class="mark" id="thMark"></div><div class="txt" id="thTxt">—</div></div>
+      <span class="eff" id="thEff"></span>
+    </div>
+    <nav id="nav"></nav>
+  </header>
+
+  <main>
+    <div id="view"></div>
+    <aside>
+      <h3>Journal de bord</h3>
+      <div id="log"></div>
+    </aside>
+  </main>
+</div>
+
+<div id="modalHost"></div>
+
+<script>
+"use strict";
+/* ============================================================================
+   ENTROPIE — idle game d'exploration spatiale
+   5 modules : Réacteur/thermique · Recherche · Exploration · Automatisation · Ascension
+   ============================================================================ */
+
+const SAVE_KEY = "entropie_opus5_v1";
+const TICK_MS  = 100;
+const OFFLINE_CAP = 8 * 3600;      // 8 h max de progression hors-ligne
+
+/* ---------------------------------------------------------------- utilitaires */
+const $  = (s, r) => (r||document).querySelector(s);
+const clamp = (v,a,b) => v<a?a:(v>b?b:v);
+const rnd = (a,b) => a + Math.random()*(b-a);
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+const SUF = ["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];
+function fmt(n, dec){
+  if(n === undefined || n === null || !isFinite(n)) return "0";
+  if(n < 0) return "-" + fmt(-n, dec);
+  if(n < 1000){
+    if(dec !== undefined) return n.toFixed(dec);
+    if(n < 10) return n.toFixed(n < 1 && n > 0 ? 2 : 1).replace(/\.0+$/,"");
+    return Math.floor(n).toString();
+  }
+  let t = 0;
+  while(n >= 1000 && t < SUF.length-1){ n /= 1000; t++; }
+  return n.toFixed(n < 10 ? 2 : (n < 100 ? 1 : 0)) + SUF[t];
+}
+function fmtT(s){
+  s = Math.max(0, Math.ceil(s));
+  if(s < 60) return s + "s";
+  if(s < 3600) return Math.floor(s/60) + "m " + String(s%60).padStart(2,"0") + "s";
+  const h = Math.floor(s/3600);
+  return h + "h " + String(Math.floor((s%3600)/60)).padStart(2,"0") + "m";
+}
+function el(tag, cls, html){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(html !== undefined) e.innerHTML = html;
+  return e;
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ============================================================================
+   DONNÉES — BÂTIMENTS
+   ============================================================================ */
+// cat: prod (produit de l'énergie) | therm (infrastructure) | cons (consomme de l'énergie)
+const BUILDINGS = {
+  solar:    { name:"Panneau solaire",     cat:"prod",  cost:10,   growth:1.15, energy:1.2,
+              desc:"Photovoltaïque. Aucune chaleur." },
+  fission:  { name:"Réacteur à fission",  cat:"prod",  cost:150,  growth:1.18, energy:14, heat:9, req:"fission",
+              desc:"Dense, mais il chauffe." },
+  fusion:   { name:"Réacteur à fusion",   cat:"prod",  cost:4200, growth:1.22, energy:130, heat:60, req:"fusion",
+              desc:"Confinement magnétique. Rendement extrême." },
+
+  radiator: { name:"Radiateur",           cat:"therm", cost:30,   growth:1.15, dissip:12,
+              desc:"+12 W de dissipation. Le vrai plafond du jeu." },
+  battery:  { name:"Banc de batteries",   cat:"therm", cost:50,   growth:1.16, cap:250,
+              desc:"+250 de stockage. Amortit les pics de demande." },
+
+  foundry:  { name:"Fonderie",            cat:"cons",  cost:45,   growth:1.18, demand:3,  out:"materials", rate:0.55, heat:2,
+              desc:"Transforme l'énergie en matériaux." },
+  lab:      { name:"Laboratoire",         cat:"cons",  cost:90,   growth:1.19, demand:4,  out:"science",   rate:0.35, heat:2.5,
+              desc:"Produit de la science." },
+  antenna:  { name:"Antenne DSN",         cat:"cons",  cost:220,  growth:1.20, demand:6,  out:"data",      rate:0.3,  heat:2, req:"dsn",
+              desc:"Collecte des données télémétriques." },
+  server:   { name:"Grappe de calcul",    cat:"cons",  cost:400,  growth:1.24, demand:8,  out:"cpu",       rate:5,    heat:4, req:"auto",
+              desc:"+5 cycles CPU (capacité, pas un stock)." },
+  pad:      { name:"Rampe de lancement",  cat:"cons",  cost:300,  growth:1.35, demand:10, heat:3, req:"probes",
+              desc:"+1 mission simultanée. Doit être alimentée." },
+};
+const CONSUMERS = ["foundry","lab","antenna","server","pad"];
+const GROUP_NAME = { foundry:"Fonderies", lab:"Laboratoires", antenna:"Antennes DSN", server:"Calcul", pad:"Rampes" };
+const OC_OUT = 1.5, OC_HEAT = 2.5, OC_DEMAND = 1.6;
+const BASE_DISSIP = 6, BASE_CAP = 120, BASE_CPU = 4;
+
+/* ============================================================================
+   DONNÉES — RECHERCHE
+   ============================================================================ */
+// mods : fractions additives appliquées à MULT (base 1, sauf probeSurv/cardLuck base 0)
+const TECHS = [
+  // — fondations —
+  { id:"photovolt", n:"Photovoltaïque avancé", c:{s:12},   t:10, r:[],
+    d:"Rendement des panneaux solaires +60 %.", mods:{ solarMult:0.6 } },
+  { id:"metallurgy", n:"Métallurgie réductrice", c:{s:35}, t:16, r:["photovolt"],
+    d:"Production des fonderies +40 %.", mods:{ materials:0.4 } },
+  { id:"thermo1", n:"Ailettes à haute émissivité", c:{s:60}, t:22, r:["photovolt"],
+    d:"Dissipation +30 %.", mods:{ dissip:0.3 } },
+  { id:"capacitors", n:"Supracondensateurs", c:{s:90}, t:25, r:["metallurgy"],
+    d:"Capacité de stockage énergétique +120 %.", mods:{ cap:1.2 } },
+  { id:"fission", n:"Fission contrôlée", c:{s:140}, t:35, r:["thermo1"],
+    d:"Débloque le réacteur à fission.", unlock:"fission" },
+  { id:"labs2", n:"Instrumentation de précision", c:{s:200}, t:30, r:["metallurgy"],
+    d:"Production scientifique +50 %.", mods:{ science:0.5 } },
+  { id:"oc", n:"Régulateurs d'overclock", c:{s:280}, t:40, r:["fission"],
+    d:"Débloque l'overclock des groupes (+50 % sortie, +150 % chaleur).", unlock:"oc" },
+  { id:"dsn", n:"Réseau d'antennes profond", c:{s:420}, t:50, r:["labs2"],
+    d:"Débloque les antennes DSN et la ressource Données.", unlock:"dsn" },
+  { id:"probes", n:"Programme de sondes", c:{s:700, d:60}, t:70, r:["dsn","fission"],
+    d:"Débloque les rampes de lancement et l'exploration.", unlock:"probes" },
+  { id:"auto", n:"Architecture de contrôle", c:{s:1200, d:180}, t:90, r:["probes"],
+    d:"Débloque les grappes de calcul et l'automatisation.", unlock:"auto" },
+
+  // — approfondissement —
+  { id:"thermo2", n:"Caloducs à métal liquide", c:{s:900},  t:60, r:["thermo1"],  d:"Dissipation +45 %.", mods:{ dissip:0.45 } },
+  { id:"thermo3", n:"Radiateurs à gouttelettes", c:{s:14000, d:900}, t:150, r:["thermo2"], d:"Dissipation +90 %.", mods:{ dissip:0.9 } },
+  { id:"nano", n:"Nano-assemblage",           c:{s:3200, d:220}, t:110, r:["metallurgy","auto"], d:"Fonderies ×2.", mods:{ materials:1.0 } },
+  { id:"slots2", n:"Recherche parallèle",     c:{s:1800, d:250}, t:100, r:["auto"],  d:"+1 emplacement de recherche.", slots:1 },
+  { id:"slots3", n:"Instituts distribués",    c:{s:26000, d:2600}, t:220, r:["slots2","quantum"], d:"+1 emplacement de recherche.", slots:1 },
+  { id:"fusion", n:"Fusion magnétique",       c:{s:9000, d:800},  t:170, r:["fission","thermo2"], d:"Débloque le réacteur à fusion.", unlock:"fusion" },
+  { id:"ai", n:"IA superviseure",             c:{s:7000, d:900},  t:140, r:["auto"],  d:"Capacité CPU +120 %.", mods:{ cpu:1.2 } },
+  { id:"publish", n:"Comité éditorial",       c:{s:2400, d:150},  t:80,  r:["labs2"], d:"Débloque les publications scientifiques.", unlock:"publish" },
+  { id:"quantum", n:"Antennes quantiques",    c:{s:11000, d:1600}, t:180, r:["dsn","ai"], d:"Délai de télémétrie −65 %. Données +60 %.", mods:{ delay:-0.65, data:0.6 } },
+  { id:"cryo", n:"Boucle cryogénique",        c:{s:38000, d:3200}, t:240, r:["thermo3"], d:"Dissipation +120 %, stockage +100 %.", mods:{ dissip:1.2, cap:1.0 } },
+
+  // — exploration —
+  { id:"ion", n:"Propulsion ionique",       c:{s:1600, d:200}, t:90, r:["probes"], d:"Vitesse des sondes +80 %.", mods:{ speed:0.8 } },
+  { id:"shieldT", n:"Blindage composite",   c:{s:2600, d:300}, t:100, r:["probes"], d:"Survie des sondes +12 pts.", mods:{ probeSurv:0.12 } },
+  { id:"telescope", n:"Observatoire profond", c:{s:2000, d:260}, t:95, r:["probes"], d:"Révèle 8 systèmes supplémentaires.", systems:8 },
+  { id:"telescope2", n:"Interféromètre orbital", c:{s:19000, d:2200}, t:190, r:["telescope","quantum"], d:"Révèle 10 systèmes. Rendement des sondes +50 %.", systems:10, mods:{ probeYield:0.5 } },
+  { id:"deepspace", n:"Sondes interstellaires", c:{s:16000, d:1800}, t:200, r:["ion"], d:"Portée +120 %, rendement +40 %.", mods:{ range:1.2, probeYield:0.4 } },
+  { id:"slots_card", n:"Baie d'analyse",    c:{s:5200, d:600}, t:120, r:["telescope"], d:"+2 emplacements de découvertes.", cardSlots:2 },
+
+  // — doctrines (exclusives) —
+  { id:"doc_swarm", n:"Doctrine : Essaim", excl:"propulsion", c:{s:5000, d:400}, t:120, r:["ion"],
+    d:"Sondes 65 % moins chères, rendement −25 %. Le nombre plutôt que la qualité.",
+    mods:{ probeCost:-0.65, probeYield:-0.25 } },
+  { id:"doc_flag", n:"Doctrine : Vaisseau amiral", excl:"propulsion", c:{s:5000, d:400}, t:120, r:["ion"],
+    d:"Sondes ×2,5 en coût, rendement ×2,3 et survie +15 pts. Peu, mais bien.",
+    mods:{ probeCost:1.5, probeYield:1.3, probeSurv:0.15 } },
+
+  { id:"doc_cold", n:"Doctrine : Cryogénie", excl:"energie", c:{s:6000, d:500}, t:130, r:["thermo2"],
+    d:"Dissipation +90 %, production d'énergie −22 %. Marge thermique confortable.",
+    mods:{ dissip:0.9, energy:-0.22 } },
+  { id:"doc_hot", n:"Doctrine : Cycle brûlant", excl:"energie", c:{s:6000, d:500}, t:130, r:["thermo2"],
+    d:"Production d'énergie +60 %, chaleur +45 %. Vivre au bord de la fusion.",
+    mods:{ energy:0.6, heat:0.45 } },
+
+  { id:"doc_open", n:"Doctrine : Science ouverte", excl:"science", c:{s:9000, d:700}, t:150, r:["publish"],
+    d:"Science +55 %, données −25 %. Tout publier, tout de suite.",
+    mods:{ science:0.55, data:-0.25 } },
+  { id:"doc_secret", n:"Doctrine : Programme classifié", excl:"science", c:{s:9000, d:700}, t:150, r:["publish"],
+    d:"Données +80 %, vitesse de recherche +25 %, science −15 %.",
+    mods:{ data:0.8, research:0.25, science:-0.15 } },
+
+  // — science marginale —
+  { id:"fr_vacuum", n:"Énergie du vide", fringe:0.5, c:{s:4000, d:300}, t:100, r:["fission","labs2"],
+    d:"Extraire de l'énergie des fluctuations du vide.",
+    ok:"Production d'énergie +110 %.", ko:"Emballement : chaleur +150 % pendant 3 minutes.",
+    mods:{ energy:1.1 }, fail:{ kind:"heat", mult:1.5, dur:180 } },
+  { id:"fr_exotic", n:"Matière exotique", fringe:0.45, c:{s:12000, d:1100}, t:150, r:["deepspace"],
+    d:"Stabiliser une masse à énergie négative.",
+    ok:"Temps de trajet des sondes −55 %.", ko:"Décohérence : 35 % des matériaux perdus.",
+    mods:{ speed:1.2 }, fail:{ kind:"mat", frac:0.35 } },
+  { id:"fr_mind", n:"Substrat cognitif", fringe:0.4, c:{s:22000, d:2400}, t:180, r:["ai"],
+    d:"Faire tourner l'ordonnanceur sur un réseau neuromorphique instable.",
+    ok:"Capacité CPU ×2, vitesse de recherche +40 %.", ko:"Cascade : automatisation hors service 2 minutes.",
+    mods:{ cpu:1.0, research:0.4 }, fail:{ kind:"cpu", dur:120 } },
+  { id:"fr_zero", n:"Point zéro", fringe:0.6, c:{s:70000, d:7000}, t:260, r:["fr_vacuum","cryo"],
+    d:"L'expérience que le comité d'éthique a refusé trois fois.",
+    ok:"Toute la production ×1,6.", ko:"Effondrement : stockage vidé, chaleur +200 % pendant 5 minutes.",
+    mods:{ materials:0.6, science:0.6, data:0.6, energy:0.6 }, fail:{ kind:"zero", mult:2, dur:300 } },
+];
+const TECH = {}; TECHS.forEach(t => TECH[t.id] = t);
+
+/* ============================================================================
+   DONNÉES — EXPLORATION
+   ============================================================================ */
+const SYS_PREFIX = ["Kepler","Gliese","HD","Wolf","Ross","Tau","Luyten","Teegarden","Trappist","Proxima","Barnard","Lalande","Kruger","Epsilon","Vega"];
+const SYS_SUFFIX = ["a","b","c","d","e","f","g"];
+
+const TAGS = {
+  metals:  { n:"riche en métaux",   cls:"a", mat:2.2, diff:0 },
+  radiat:  { n:"haute radiation",   cls:"r", sci:1.7, diff:0.22 },
+  bio:     { n:"biosignature",      cls:"g", sci:2.6, luck:0.3, diff:0.05 },
+  gas:     { n:"géante gazeuse",    cls:"c", mat:1.4, data:1.6, diff:0 },
+  anomaly: { n:"anomalie",          cls:"v", sci:1.9, luck:0.4, diff:0.18 },
+  debris:  { n:"champ de débris",   cls:"r", mat:1.9, diff:0.28 },
+  dwarf:   { n:"naine rouge",       cls:"",  diff:-0.12 },
+  binary:  { n:"binaire",           cls:"c", data:2.1, diff:0.08 },
+  ice:     { n:"monde de glace",    cls:"c", data:1.4, mat:1.2, diff:-0.05 },
+};
+const TAG_KEYS = Object.keys(TAGS);
+
+const CARD_TYPES = [
+  { n:"Échantillon cristallin",   k:"materials", v:0.18 },
+  { n:"Signal structuré",         k:"data",      v:0.22 },
+  { n:"Fossile microbien",        k:"science",   v:0.28 },
+  { n:"Alliage inconnu",          k:"dissip",    v:0.25 },
+  { n:"Cartographie stellaire",   k:"probeYield",v:0.30 },
+  { n:"Noyau dégénéré",           k:"energy",    v:0.24 },
+  { n:"Horloge atomique dérivante",k:"research", v:0.20 },
+  { n:"Voile réfléchissante",     k:"speed",     v:0.35 },
+];
+const MOD_LABEL = {
+  materials:"Matériaux", data:"Données", science:"Science", dissip:"Dissipation",
+  probeYield:"Rendement sondes", energy:"Énergie", research:"Vitesse de recherche",
+  speed:"Vitesse sondes", cpu:"CPU", cap:"Stockage", solarMult:"Solaire",
+};
+
+/* ============================================================================
+   DONNÉES — AUTOMATISATION
+   ============================================================================ */
+const METRICS = {
+  heat:     { n:"charge thermique (%)", get:D => D.load*100 },
+  energyPct:{ n:"énergie stockée (%)",  get:D => (S.energy/D.cap)*100 },
+  materials:{ n:"matériaux",            get:() => S.materials },
+  science:  { n:"science",              get:() => S.science },
+  data:     { n:"données",              get:() => S.data },
+  probes:   { n:"sondes disponibles",   get:() => S.probes },
+  missions: { n:"missions en cours",    get:() => S.missions.length },
+  queue:    { n:"recherches en cours",  get:() => S.queue.length },
+};
+const ACTIONS = {
+  buy:      { n:"acheter",            cpu:2, needsTarget:"building" },
+  ocOn:     { n:"activer overclock",  cpu:2, needsTarget:"group" },
+  ocOff:    { n:"couper overclock",   cpu:2, needsTarget:"group" },
+  alloc:    { n:"régler allocation",  cpu:3, needsTarget:"group", needsValue:true },
+  research: { n:"lancer la recherche la moins chère", cpu:4 },
+  launch:   { n:"lancer une mission optimale",        cpu:5 },
+  probe:    { n:"construire une sonde",               cpu:3 },
+  publish:  { n:"publier un article",                 cpu:4 },
+};
+const OPS = { gt:">", lt:"<", gte:"≥", lte:"≤" };
+
+/* ============================================================================
+   DONNÉES — ASCENSION
+   ============================================================================ */
+const TALENTS = {
+  bootstrap: { n:"Amorçage",           d:"+250 matériaux de départ par niveau.",             base:1,  growth:1.7, max:10 },
+  power:     { n:"Ingénierie héritée", d:"+12 % de production d'énergie par niveau.",        base:2,  growth:1.8, max:12 },
+  thermal:   { n:"Mémoire thermique",  d:"+15 % de dissipation par niveau.",                 base:2,  growth:1.8, max:12 },
+  research:  { n:"Archives ouvertes",  d:"+10 % de vitesse de recherche par niveau.",        base:3,  growth:1.9, max:10 },
+  slot:      { n:"Institut permanent", d:"+1 emplacement de recherche.",                     base:12, growth:4.0, max:2 },
+  fleet:     { n:"Flotte résiduelle",  d:"+1 sonde au départ et +4 pts de survie par niveau.",base:4,  growth:2.0, max:8 },
+  cpu:       { n:"Noyau persistant",   d:"+4 cycles CPU de base par niveau.",                base:5,  growth:2.1, max:8 },
+  yield:     { n:"Protocoles affinés", d:"+15 % de rendement des sondes par niveau.",        base:4,  growth:2.0, max:10 },
+};
+const CONSTANTS = [
+  { id:"grav",  n:"G × 0,90",  up:"Sondes 35 % moins chères, portée +25 %.", dn:"Fusion et fission −18 % d'énergie.",
+    mods:{ probeCost:-0.35, range:0.25, energy:-0.18 } },
+  { id:"alpha", n:"α altérée", up:"Électronique : science +35 %, CPU +50 %.", dn:"Dissipation −15 %.",
+    mods:{ science:0.35, cpu:0.5, dissip:-0.15 } },
+  { id:"c2",    n:"c × 2",     up:"Délai de télémétrie −70 %, vitesse des sondes +60 %.", dn:"Survie des sondes −10 pts.",
+    mods:{ delay:-0.7, speed:0.6, probeSurv:-0.10 } },
+  { id:"boltz", n:"k_B × 0,8", up:"Dissipation +55 %.", dn:"Fonderies −20 %.",
+    mods:{ dissip:0.55, materials:-0.2 } },
+  { id:"planck",n:"ħ instable",up:"Science marginale : échec −20 pts. Données +45 %.", dn:"Science −20 %.",
+    mods:{ data:0.45, science:-0.2, fringeLuck:0.2 } },
+  { id:"dense", n:"ρ élevée",  up:"Fonderies +70 %, stockage +80 %.", dn:"Vitesse des sondes −30 %.",
+    mods:{ materials:0.7, cap:0.8, speed:-0.3 } },
+];
+const CONST_BY_ID = {}; CONSTANTS.forEach(c => CONST_BY_ID[c.id] = c);
+
+/* ============================================================================
+   ÉTAT
+   ============================================================================ */
+let S, MULT, D = {}, dirty = {}, tab = "reactor", uiBuilt = {}, sel = { sys:null };
+
+function freshRun(keep){
+  const t = keep || {};
+  const s = {
+    energy:0, materials:50, science:0, data:0,
+    totalScience:0, totalMat:0,
+    b:{ solar:1, fission:0, fusion:0, radiator:1, battery:0, foundry:0, lab:0, antenna:0, server:0, pad:0 },
+    alloc:{ foundry:100, lab:100, antenna:100, server:100, pad:100 },
+    oc:{ foundry:false, lab:false, antenna:false, server:false, pad:false },
+    researched:{}, queue:[], unlocked:{},
+    reputation:0, publications:0,
+    systems:[], missions:[], probes:0, cards:[], equipped:[], missionSeq:1,
+    rules:[], ruleSeq:1, autoOffUntil:0,
+    events:[],
+    log:[], runStart:Date.now(), lastSave:Date.now(),
+    // persistants
+    entropy: t.entropy||0, talents: t.talents||{}, ascensions: t.ascensions||0,
+    archives: t.archives||[], constant: t.constant||null, constOffer: t.constOffer||null,
+    cardSlotsBonus:0,
+  };
+  s.materials += 250 * (s.talents.bootstrap||0);
+  s.probes = (s.talents.fleet||0);
+  return s;
+}
+
+/* ============================================================================
+   MULTIPLICATEURS
+   ============================================================================ */
+function recalc(){
+  const m = {
+    energy:1, solarMult:1, materials:1, science:1, data:1, cpu:1, cap:1, dissip:1, heat:1,
+    research:1, probeYield:1, probeCost:1, speed:1, delay:1, range:1, probeSurv:0, cardLuck:0, fringeLuck:0,
+  };
+  const add = (k,v) => { m[k] = (m[k]||0) + v; };
+
+  // recherches
+  for(const id in S.researched){
+    const t = TECH[id];
+    if(t && t.mods) for(const k in t.mods) add(k, t.mods[k]);
+  }
+  // talents persistants
+  const T = S.talents;
+  add("energy", 0.12*(T.power||0));
+  add("dissip", 0.15*(T.thermal||0));
+  add("research", 0.10*(T.research||0));
+  add("probeSurv", 0.04*(T.fleet||0));
+  add("probeYield", 0.15*(T.yield||0));
+  // constante physique de la run
+  if(S.constant && CONST_BY_ID[S.constant]){
+    const c = CONST_BY_ID[S.constant].mods;
+    for(const k in c) add(k, c[k]);
+  }
+  // cartes équipées
+  for(const cid of S.equipped){
+    const c = S.cards.find(x => x.id === cid);
+    if(c) add(c.k, c.v);
+  }
+  // réputation : +2,5 % sur toute la production par point
+  const rep = 1 + 0.025 * S.reputation;
+  m.materials *= rep; m.science *= rep; m.data *= rep; m.energy *= rep;
+
+  // événements actifs
+  const now = Date.now();
+  S.events = S.events.filter(e => e.until > now);
+  for(const e of S.events){
+    if(e.kind === "heat" || e.kind === "zero") m.heat *= (1 + (e.mult||1));
+  }
+
+  // planchers de sécurité
+  for(const k in m) if(k !== "delay" && k !== "probeSurv" && k !== "cardLuck" && k !== "fringeLuck") m[k] = Math.max(0.05, m[k]);
+  m.delay = clamp(m.delay, 0.05, 5);
+  MULT = m;
+}
+
+/* ============================================================================
+   COÛTS
+   ============================================================================ */
+function bCost(id){
+  const def = BUILDINGS[id];
+  return Math.ceil(def.cost * Math.pow(def.growth, S.b[id]));
+}
+function canBuy(id){ return S.materials >= bCost(id); }
+function buy(id, silent){
+  const c = bCost(id);
+  if(S.materials < c) return false;
+  S.materials -= c; S.b[id]++;
+  dirty.reactor = true;
+  if(!silent) log(`Construit : ${BUILDINGS[id].name} #${S.b[id]}`, "");
+  return true;
+}
+function probeCost(){ return Math.ceil(120 * Math.max(0.15, MULT.probeCost)); }
+function pubCost(){ return Math.ceil(4000 * Math.pow(1.9, S.publications)); }
+function talentCost(id){
+  const t = TALENTS[id];
+  return Math.ceil(t.base * Math.pow(t.growth, S.talents[id]||0));
+}
+
+function unlocked(k){ return !!S.unlocked[k]; }
+
+/* ============================================================================
+   MOTEUR — dérivés & tick
+   ============================================================================ */
+function derive(){
+  const m = MULT;
+  const b = S.b;
+
+  const prodE = (b.solar*BUILDINGS.solar.energy*m.solarMult
+               + b.fission*BUILDINGS.fission.energy
+               + b.fusion*BUILDINGS.fusion.energy) * m.energy;
+
+  const producerHeat = (b.fission*BUILDINGS.fission.heat + b.fusion*BUILDINGS.fusion.heat) * m.heat;
+  const dissip = (BASE_DISSIP + b.radiator*BUILDINGS.radiator.dissip) * m.dissip;
+  const cap = (BASE_CAP + b.battery*BUILDINGS.battery.cap) * m.cap;
+
+  const g = {};
+  let need = 0;
+  for(const k of CONSUMERS){
+    const def = BUILDINGS[k];
+    const ocm = S.oc[k] ? OC_DEMAND : 1;
+    const full = b[k] * def.demand * ocm;
+    const want = full * (S.alloc[k]/100);
+    g[k] = { full, want };
+    need += want;
+  }
+  return { prodE, producerHeat, dissip, cap, g, need, m };
+}
+
+function tick(dt){
+  recalc();
+  const d = derive();
+  const m = MULT;
+
+  // --- distribution de puissance ---------------------------------------
+  const pool  = S.energy + d.prodE*dt;
+  const want  = d.need*dt;
+  const served= Math.min(pool, want);
+  const brown = want > 1e-9 ? served/want : 1;
+  S.energy = clamp(pool - served, 0, d.cap);
+
+  const eff = {};
+  for(const k of CONSUMERS) eff[k] = (S.alloc[k]/100) * brown;
+
+  // --- bilan thermique --------------------------------------------------
+  let heat = d.producerHeat;
+  for(const k of CONSUMERS){
+    const def = BUILDINGS[k];
+    if(!def.heat) continue;
+    heat += S.b[k] * def.heat * (S.oc[k] ? OC_HEAT : 1) * eff[k] * m.heat;
+  }
+  const load = d.dissip > 0 ? heat/d.dissip : 0;
+  const thermal = load <= 1 ? 1 : Math.exp(-3*(load-1));
+
+  // --- production -------------------------------------------------------
+  const ocO = k => S.oc[k] ? OC_OUT : 1;
+  const rMat  = S.b.foundry * BUILDINGS.foundry.rate * eff.foundry * ocO("foundry") * thermal * m.materials;
+  const rSci  = S.b.lab     * BUILDINGS.lab.rate     * eff.lab     * ocO("lab")     * thermal * m.science;
+  const rData = S.b.antenna * BUILDINGS.antenna.rate * eff.antenna * ocO("antenna") * thermal * m.data;
+
+  S.materials += rMat*dt;  S.totalMat += rMat*dt;
+  S.science   += rSci*dt;  S.totalScience += rSci*dt;
+  S.data      += rData*dt;
+
+  const cpuCap = (BASE_CPU + 4*(S.talents.cpu||0)
+                + S.b.server*BUILDINGS.server.rate * eff.server * ocO("server") * thermal) * m.cpu;
+
+  // --- recherche --------------------------------------------------------
+  for(let i = S.queue.length-1; i >= 0; i--){
+    const q = S.queue[i];
+    q.left -= dt * m.research;
+    if(q.left <= 0){ S.queue.splice(i,1); finishTech(q.id); }
+  }
+
+  // --- missions ---------------------------------------------------------
+  const now = Date.now();
+  for(let i = S.missions.length-1; i >= 0; i--){
+    if(now >= S.missions[i].reportAt) resolveMission(S.missions.splice(i,1)[0]);
+  }
+
+  D = { load, thermal, dissip:d.dissip, heat, cap:d.cap, cpuCap, prodE:d.prodE, brown, eff,
+        need:d.need, rMat, rSci, rData, cpuUsed: cpuUsed() };
+
+  // --- automatisation ---------------------------------------------------
+  runRules();
+}
+
+function cpuUsed(){
+  let u = 0;
+  for(const r of S.rules) if(r.on) u += ACTIONS[r.act].cpu;
+  return u;
+}
+
+/* ============================================================================
+   MODULE 2 — RECHERCHE
+   ============================================================================ */
+function techAvailable(t){
+  if(S.researched[t.id]) return false;
+  if(S.queue.some(q => q.id === t.id)) return false;
+  for(const r of t.r) if(!S.researched[r]) return false;
+  if(t.excl){
+    for(const o of TECHS) if(o.excl === t.excl && o.id !== t.id && S.researched[o.id]) return false;
+  }
+  return true;
+}
+function techBlocked(t){
+  if(!t.excl) return false;
+  return TECHS.some(o => o.excl === t.excl && o.id !== t.id && S.researched[o.id]);
+}
+function researchSlots(){
+  let n = 1 + (S.talents.slot||0);
+  for(const id in S.researched) if(TECH[id] && TECH[id].slots) n += TECH[id].slots;
+  return n;
+}
+function startResearch(id){
+  const t = TECH[id];
+  if(!t || !techAvailable(t)) return false;
+  if(S.queue.length >= researchSlots()) return false;
+  if(S.science < (t.c.s||0) || S.data < (t.c.d||0)) return false;
+  S.science -= (t.c.s||0); S.data -= (t.c.d||0);
+  S.queue.push({ id, left:t.t, total:t.t });
+  log(`Recherche lancée : ${t.n}`, "sci");
+  dirty.research = true;
+  return true;
+}
+function finishTech(id){
+  const t = TECH[id];
+  if(!t) return;
+  if(t.fringe !== undefined){
+    const failChance = clamp(t.fringe - MULT.fringeLuck, 0.02, 0.95);
+    if(Math.random() < failChance){
+      log(`ÉCHEC — ${t.n} : ${t.ko}`, "bad");
+      applyFailure(t);
+      dirty.research = true;
+      return;                       // pas de techno acquise, pas de remboursement
+    }
+    log(`PERCÉE — ${t.n} : ${t.ok}`, "fringe");
+  } else {
+    log(`Recherche acquise : ${t.n}`, "sci");
+  }
+  S.researched[id] = true;
+  if(t.unlock){ S.unlocked[t.unlock] = true; buildNav(); log(`Débloqué : ${unlockLabel(t.unlock)}`, "ok"); }
+  if(t.systems) genSystems(t.systems);
+  if(t.cardSlots) S.cardSlotsBonus += t.cardSlots;
+  if(t.excl){
+    for(const o of TECHS) if(o.excl === t.excl && o.id !== id) log(`Doctrine abandonnée : ${o.n}`, "warn");
+  }
+  dirty.research = true; dirty.reactor = true; dirty.explore = true;
+}
+function applyFailure(t){
+  const f = t.fail; if(!f) return;
+  const now = Date.now();
+  if(f.kind === "heat"){ S.events.push({ kind:"heat", mult:f.mult, until:now + f.dur*1000, name:t.n }); }
+  else if(f.kind === "mat"){ S.materials *= (1 - f.frac); }
+  else if(f.kind === "cpu"){ S.autoOffUntil = now + f.dur*1000; }
+  else if(f.kind === "zero"){ S.energy = 0; S.events.push({ kind:"zero", mult:f.mult, until:now + f.dur*1000, name:t.n }); }
+}
+function unlockLabel(u){
+  return { fission:"Réacteur à fission", oc:"Overclock", dsn:"Antennes DSN & Données",
+           probes:"Module Exploration", auto:"Module Automatisation", fusion:"Réacteur à fusion",
+           publish:"Publications" }[u] || u;
+}
+function publish(){
+  const c = pubCost();
+  if(S.science < c) return false;
+  S.science -= c; S.publications++; S.reputation++;
+  log(`Article publié. Réputation ${S.reputation} (+${(S.reputation*2.5).toFixed(1)} % production).`, "sci");
+  dirty.research = true;
+  return true;
+}
+
+/* ============================================================================
+   MODULE 3 — EXPLORATION
+   ============================================================================ */
+function genSystems(n){
+  for(let i=0;i<n;i++){
+    const tags = [];
+    const nt = Math.random() < 0.15 ? 3 : (Math.random() < 0.5 ? 1 : 2);
+    while(tags.length < nt){
+      const k = pick(TAG_KEYS);
+      if(!tags.includes(k)) tags.push(k);
+    }
+    let diff = rnd(0.08, 0.45);
+    for(const t of tags) diff += TAGS[t].diff;
+    const dist = rnd(1.4, 42);
+    S.systems.push({
+      id: "sys"+(S.systems.length+1)+"_"+Math.floor(Math.random()*9999),
+      name: pick(SYS_PREFIX) + "-" + Math.floor(rnd(100,999)) + " " + pick(SYS_SUFFIX),
+      dist: +dist.toFixed(1),
+      diff: clamp(diff, 0.05, 0.92),
+      tags, visits:0,
+    });
+  }
+  S.systems.sort((a,b) => a.dist - b.dist);
+  dirty.explore = true;
+}
+function maxRange(fuel){ return fuel * 0.36 * MULT.range; }
+function travelTime(dist){ return dist * 25 / MULT.speed; }
+function teleDelay(dist){ return dist * 6 * MULT.delay; }
+function successChance(sys, shield){
+  const pad = S.b.pad > 0 ? (D.eff ? D.eff.pad : 1) * 0.1 : 0;
+  return clamp(0.46 + shield*0.005 + MULT.probeSurv + pad - sys.diff*0.62, 0.03, 0.97);
+}
+function launch(sysId, fuel, instr, shield){
+  const sys = S.systems.find(s => s.id === sysId);
+  if(!sys) return false;
+  if(S.probes < 1) return false;
+  if(S.missions.length >= S.b.pad) return false;
+  if(maxRange(fuel) < sys.dist) return false;
+  if(!D.eff || D.eff.pad < 0.5) return false;
+
+  S.probes--;
+  const now = Date.now();
+  const tt = travelTime(sys.dist), td = teleDelay(sys.dist);
+  S.missions.push({
+    id: S.missionSeq++, sysId, sysName: sys.name, dist: sys.dist, tags: sys.tags.slice(),
+    fuel, instr, shield, launchAt: now,
+    arriveAt: now + tt*1000, reportAt: now + (tt+td)*1000,
+    chance: successChance(sys, shield),
+  });
+  sys.visits++;
+  log(`Lancement vers ${sys.name} — ${sys.dist} al · trajet ${fmtT(tt)} · télémétrie +${fmtT(td)}`, "");
+  dirty.explore = true;
+  return true;
+}
+function resolveMission(ms){
+  const ok = Math.random() < ms.chance;
+  if(!ok){
+    log(`Sonde perdue en route vers ${ms.sysName}. Aucun signal.`, "bad");
+    dirty.explore = true;
+    return;
+  }
+  let mSci = 1, mMat = 1, mData = 1, luck = MULT.cardLuck;
+  for(const t of ms.tags){
+    const T = TAGS[t];
+    if(T.sci) mSci *= T.sci; if(T.mat) mMat *= T.mat;
+    if(T.data) mData *= T.data; if(T.luck) luck += T.luck;
+  }
+  const base = (25 + ms.dist*16) * (ms.instr/40) * MULT.probeYield * (1 + ms.dist*0.05);
+  const gS = base * 9   * mSci;
+  const gD = base * 1.6 * mData;
+  const gM = base * 14  * mMat;
+
+  S.science += gS; S.totalScience += gS; S.data += gD; S.materials += gM;
+  log(`${ms.sysName} — retour : +${fmt(gS)} sci · +${fmt(gD)} don · +${fmt(gM)} mat`, "ok");
+
+  if(Math.random() < 0.12 + luck) awardCard(ms);
+  dirty.explore = true;
+}
+function awardCard(ms){
+  const t = pick(CARD_TYPES);
+  const rarity = Math.random() < 0.08 ? 3 : (Math.random() < 0.3 ? 2 : 1);
+  const c = {
+    id: "c"+Date.now()+Math.floor(Math.random()*999),
+    n: t.n, k: t.k, v: +(t.v * rarity * rnd(0.85,1.2)).toFixed(3),
+    rarity, from: ms.sysName,
+  };
+  S.cards.push(c);
+  log(`Découverte : ${c.n} (${ms.sysName}) — +${(c.v*100).toFixed(0)} % ${MOD_LABEL[c.k]||c.k}`, "fringe");
+}
+function cardSlots(){ return 2 + S.cardSlotsBonus; }
+function toggleCard(id){
+  const i = S.equipped.indexOf(id);
+  if(i >= 0) S.equipped.splice(i,1);
+  else if(S.equipped.length < cardSlots()) S.equipped.push(id);
+  dirty.explore = true;
+}
+
+/* ============================================================================
+   MODULE 4 — AUTOMATISATION
+   ============================================================================ */
+function runRules(){
+  const now = Date.now();
+  if(now < S.autoOffUntil) return;
+  let budget = D.cpuCap || 0;
+  for(const r of S.rules){
+    if(!r.on) continue;
+    const cost = ACTIONS[r.act].cpu;
+    if(budget < cost) continue;
+    budget -= cost;
+    if(now - (r.last||0) < 1500) continue;
+    const met = METRICS[r.metric];
+    if(!met) continue;
+    const v = met.get(D);
+    let pass = false;
+    switch(r.op){
+      case "gt":  pass = v >  r.value; break;
+      case "lt":  pass = v <  r.value; break;
+      case "gte": pass = v >= r.value; break;
+      case "lte": pass = v <= r.value; break;
+    }
+    if(!pass) continue;
+    r.last = now;
+    if(doAction(r)) { r.fires = (r.fires||0)+1; dirty.auto = true; }
+  }
+}
+function doAction(r){
+  switch(r.act){
+    case "buy":     return canBuy(r.target) ? buy(r.target, true) && (log(`[auto] ${BUILDINGS[r.target].name} construit`, "") || true) : false;
+    case "ocOn":    if(!unlocked("oc") || S.oc[r.target]) return false; S.oc[r.target] = true;  dirty.reactor = true; log(`[auto] Overclock ${GROUP_NAME[r.target]} ON`, "warn"); return true;
+    case "ocOff":   if(!S.oc[r.target]) return false; S.oc[r.target] = false; dirty.reactor = true; log(`[auto] Overclock ${GROUP_NAME[r.target]} OFF`, ""); return true;
+    case "alloc":   if(S.alloc[r.target] === r.value2) return false; S.alloc[r.target] = r.value2; dirty.reactor = true; log(`[auto] ${GROUP_NAME[r.target]} → ${r.value2} %`, ""); return true;
+    case "research":{
+      if(S.queue.length >= researchSlots()) return false;
+      const opts = TECHS.filter(t => techAvailable(t) && t.fringe === undefined
+                    && S.science >= (t.c.s||0) && S.data >= (t.c.d||0));
+      if(!opts.length) return false;
+      opts.sort((a,b) => (a.c.s||0) - (b.c.s||0));
+      return startResearch(opts[0].id);
+    }
+    case "probe":{
+      const c = probeCost();
+      if(S.materials < c || !unlocked("probes")) return false;
+      S.materials -= c; S.probes++; dirty.explore = true; return true;
+    }
+    case "launch":{
+      if(S.probes < 1 || S.missions.length >= S.b.pad) return false;
+      const cands = S.systems.filter(s => maxRange(70) >= s.dist);
+      if(!cands.length) return false;
+      // meilleur ratio valeur/risque avec un profil équilibré
+      let best = null, bestV = -1;
+      for(const s of cands){
+        const fuel = clamp(Math.ceil(s.dist/(0.36*MULT.range)) + 4, 5, 80);
+        const rest = 100 - fuel;
+        const instr = Math.round(rest*0.62), shield = rest - instr;
+        const ch = successChance(s, shield);
+        let mul = 1; for(const t of s.tags){ const T = TAGS[t]; mul *= (T.sci||1)*0.6 + (T.mat||1)*0.4; }
+        const v = ch * (25 + s.dist*16) * (instr/40) * mul;
+        if(v > bestV){ bestV = v; best = { s, fuel, instr, shield }; }
+      }
+      if(!best) return false;
+      return launch(best.s.id, best.fuel, best.instr, best.shield);
+    }
+    case "publish": return unlocked("publish") ? publish() : false;
+  }
+  return false;
+}
+function addRule(rule){
+  rule.id = S.ruleSeq++; rule.on = true; rule.fires = 0;
+  S.rules.push(rule); dirty.auto = true;
+}
+
+/* ============================================================================
+   MODULE 5 — ASCENSION
+   ============================================================================ */
+function entropyGain(){
+  return Math.floor(Math.pow(Math.max(0, S.totalScience) / 900, 0.5));
+}
+function rollConstants(){
+  const pool = CONSTANTS.slice();
+  const out = [];
+  while(out.length < 3 && pool.length) out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0].id);
+  return out;
+}
+function ascend(chosenConst){
+  const gain = entropyGain();
+  const keep = {
+    entropy: S.entropy + gain,
+    talents: S.talents,
+    ascensions: S.ascensions + 1,
+    archives: S.archives.concat([{
+      n: S.ascensions+1,
+      dur: Math.floor((Date.now()-S.runStart)/1000),
+      sci: S.totalScience,
+      ent: gain,
+      cst: S.constant,
+      doc: TECHS.filter(t => t.excl && S.researched[t.id]).map(t => t.n.replace(/^Doctrine : /,"")).join(", ") || "—",
+    }]).slice(-12),
+    constant: chosenConst,
+    constOffer: null,
+  };
+  const oldLog = S.log.slice(0, 6);
+  S = freshRun(keep);
+  S.log = oldLog;
+  sel.sys = null; uiBuilt = {}; dirty = { reactor:true, research:true, explore:true, auto:true, ascend:true };
+  log(`— ASCENSION ${keep.ascensions} — +${gain} entropie. Constante : ${CONST_BY_ID[chosenConst].n}`, "fringe");
+  recalc(); buildNav(); go("reactor"); save();
+}
+
+/* ============================================================================
+   JOURNAL
+   ============================================================================ */
+function log(text, kind){
+  const d = new Date();
+  const t = String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0");
+  S.log.unshift({ t, text, kind: kind||"" });
+  if(S.log.length > 160) S.log.length = 160;
+  renderLog();
+}
+let logDirty = true;
+function renderLog(){ logDirty = true; }
+function paintLog(){
+  if(!logDirty) return; logDirty = false;
+  const box = $("#log");
+  box.innerHTML = "";
+  for(const e of S.log.slice(0, 70)){
+    box.appendChild(el("div", "le "+e.kind, `<span class="t">${e.t}</span><b>${esc(e.text)}</b>`));
+  }
+}
+
+/* ============================================================================
+   UI — barre supérieure
+   ============================================================================ */
+const RES_DEFS = [
+  { k:"materials", cls:"", n:"Matériaux", rate:() => D.rMat },
+  { k:"energy",    cls:"e", n:"Énergie",  extra:() => `${fmt(D.prodE,1)}/${fmt(D.need,1)}` },
+  { k:"science",   cls:"s", n:"Science",  rate:() => D.rSci },
+  { k:"data",      cls:"d", n:"Données",  rate:() => D.rData, show:() => unlocked("dsn") },
+  { k:"cpu",       cls:"",  n:"Cycles CPU", show:() => unlocked("auto") },
+  { k:"probes",    cls:"",  n:"Sondes",   show:() => unlocked("probes") },
+  { k:"entropy",   cls:"x", n:"Entropie", show:() => S.entropy > 0 || S.ascensions > 0 },
+];
+function buildRes(){
+  const row = $("#resRow"); row.innerHTML = "";
+  for(const r of RES_DEFS){
+    const e = el("div", "res "+r.cls);
+    e.id = "res_"+r.k;
+    e.innerHTML = `<span class="k">${r.n}</span><span class="v">0</span><span class="r"></span>`;
+    row.appendChild(e);
+  }
+}
+function paintRes(){
+  for(const r of RES_DEFS){
+    const e = document.getElementById("res_"+r.k);
+    if(!e) continue;
+    const vis = r.show ? r.show() : true;
+    e.classList.toggle("hidden", !vis);
+    if(!vis) continue;
+    const v = e.querySelector(".v"), sub = e.querySelector(".r");
+    if(r.k === "cpu"){
+      v.textContent = `${fmt(D.cpuUsed||0)}/${fmt(D.cpuCap||0)}`;
+      sub.textContent = Date.now() < S.autoOffUntil ? "hors service" : "";
+      sub.className = "r neg";
+    } else if(r.k === "energy"){
+      v.textContent = fmt(S.energy) + " / " + fmt(D.cap||0);
+      const net = (D.prodE||0) - (D.need||0)*(D.brown||1);
+      sub.textContent = (net>=0?"+":"") + fmt(net,1) + "/s";
+      sub.className = "r" + (net < -0.001 ? " neg" : "");
+    } else if(r.k === "probes"){
+      v.textContent = fmt(S.probes) + (S.b.pad ? ` / ${S.missions.length}▲${S.b.pad}` : "");
+      sub.textContent = "";
+    } else {
+      v.textContent = fmt(S[r.k]||0);
+      sub.textContent = r.rate ? "+" + fmt(r.rate()||0, 2) + "/s" : "";
+      sub.className = "r";
+    }
+  }
+  // thermique
+  const load = D.load||0;
+  const pct = clamp(load*100, 0, 145);
+  const f = $("#thFill");
+  f.style.width = (pct/1.45) + "%";
+  f.style.background = load < 0.75 ? "linear-gradient(90deg,#2f9e6f,#56dc9a)"
+                     : load < 1    ? "linear-gradient(90deg,#c98a1e,#ffb547)"
+                                   : "linear-gradient(90deg,#c23a3a,#ff6b6b)";
+  $("#thMark").style.left = (100/1.45) + "%";
+  $("#thTxt").textContent = `${fmt(D.heat||0,1)} W / ${fmt(D.dissip||0,1)} W  ·  ${(load*100).toFixed(0)} %`;
+  const te = $("#thEff");
+  const th = (D.thermal||1)*100;
+  te.textContent = `rendement ${th.toFixed(th<99.5?1:0)} %`;
+  te.style.color = th > 99 ? "var(--green)" : (th > 60 ? "var(--amber)" : "var(--red)");
+}
+
+/* ============================================================================
+   UI — navigation
+   ============================================================================ */
+const TABS = [
+  { id:"reactor",  n:"Réacteur",       show:() => true },
+  { id:"research", n:"Recherche",      show:() => true },
+  { id:"explore",  n:"Exploration",    show:() => unlocked("probes") },
+  { id:"auto",     n:"Automatisation", show:() => unlocked("auto") },
+  { id:"ascend",   n:"Ascension",      show:() => S.totalScience > 40000 || S.ascensions > 0 },
+];
+function buildNav(){
+  const n = $("#nav"); n.innerHTML = "";
+  for(const t of TABS){
+    if(!t.show()) continue;
+    const b = el("button", tab===t.id ? "on" : "", t.n);
+    b.onclick = () => go(t.id);
+    b.dataset.tab = t.id;
+    n.appendChild(b);
+  }
+}
+function go(id){
+  tab = id;
+  for(const b of $("#nav").children) b.classList.toggle("on", b.dataset.tab === id);
+  uiBuilt[id] = false;
+  render(true);
+}
+
+/* ============================================================================
+   UI — rendu
+   ============================================================================ */
+function render(force){
+  const v = $("#view");
+  if(force || !uiBuilt[tab]){
+    v.innerHTML = "";
+    ({ reactor:viewReactor, research:viewResearch, explore:viewExplore, auto:viewAuto, ascend:viewAscend }[tab])(v);
+    uiBuilt[tab] = true;
+    dirty[tab] = false;
+  } else if(dirty[tab]){
+    v.innerHTML = "";
+    ({ reactor:viewReactor, research:viewResearch, explore:viewExplore, auto:viewAuto, ascend:viewAscend }[tab])(v);
+    dirty[tab] = false;
+  }
+  patch();
+}
+// hooks de mise à jour légère (sans reconstruire le DOM)
+let patchers = [];
+function patch(){ for(const p of patchers) p(); }
+
+/* ---------------------------------------------------- MODULE 1 : RÉACTEUR */
+function viewReactor(root){
+  patchers = [];
+  const g = el("div","grid g2"); root.appendChild(g);
+
+  // — production & infrastructure —
+  const c1 = el("div","card");
+  c1.appendChild(el("h2","",`<span class="n">01</span> Noyau énergétique`));
+  c1.appendChild(el("p","hint","La production d'énergie n'est jamais bridée par la chaleur — mais tout le reste l'est. Au-delà de 100 % de charge, le rendement s'effondre en exponentielle."));
+  const list1 = el("div","bl");
+  for(const id of ["solar","fission","fusion","radiator","battery"]) addBuildRow(list1, id);
+  c1.appendChild(list1);
+
+  const man = el("div","row"); man.style.marginTop = "11px";
+  const mb = el("button","b","Extraction manuelle  +2");
+  mb.onclick = () => { S.materials += 2 * (1+0.5*(S.talents.bootstrap||0)); };
+  man.appendChild(mb);
+  man.appendChild(el("span","tiny dim","Utile les premières minutes, dérisoire ensuite."));
+  c1.appendChild(man);
+  g.appendChild(c1);
+
+  // — consommateurs & allocation —
+  const c2 = el("div","card");
+  c2.appendChild(el("h2","",`<span class="n">02</span> Répartiteur de puissance`));
+  c2.appendChild(el("p","hint","Chaque curseur fixe la fraction de la demande nominale que vous alimentez. Si la somme dépasse la production, tout le monde subit une baisse de tension."));
+  const alloc = el("div","alloc");
+  for(const k of CONSUMERS){
+    if(BUILDINGS[k].req && !unlocked(BUILDINGS[k].req)) continue;
+    alloc.appendChild(allocRow(k));
+  }
+  c2.appendChild(alloc);
+  g.appendChild(c2);
+
+  // — construction consommateurs —
+  const c3 = el("div","card");
+  c3.appendChild(el("h2","",`<span class="n">03</span> Installations`));
+  const list3 = el("div","bl");
+  for(const id of CONSUMERS) addBuildRow(list3, id);
+  c3.appendChild(list3);
+  g.appendChild(c3);
+
+  // — diagnostic —
+  const c4 = el("div","card");
+  c4.appendChild(el("h2","",`<span class="n">04</span> Diagnostic`));
+  const diag = el("div"); c4.appendChild(diag);
+  patchers.push(() => {
+    const ev = S.events.map(e => `<div class="tiny" style="color:var(--red)">⚠ ${esc(e.name||"anomalie")} — chaleur ×${(1+e.mult).toFixed(1)} · ${fmtT((e.until-Date.now())/1000)}</div>`).join("");
+    diag.innerHTML = `
+      <div class="grid g3" style="gap:8px">
+        ${ro("Production", fmt(D.prodE||0,1)+" E/s")}
+        ${ro("Demande", fmt(D.need||0,1)+" E/s")}
+        ${ro("Tension réseau", ((D.brown||1)*100).toFixed(0)+" %")}
+        ${ro("Chaleur", fmt(D.heat||0,1)+" W")}
+        ${ro("Dissipation", fmt(D.dissip||0,1)+" W")}
+        ${ro("Rendement", ((D.thermal||1)*100).toFixed(1)+" %")}
+      </div>${ev ? '<div class="sep"></div>'+ev : ""}`;
+  });
+  g.appendChild(c4);
+
+  patch();
+}
+function ro(k,v){ return `<div class="ro"><div class="k">${k}</div><div class="v">${v}</div></div>`; }
+
+function addBuildRow(host, id){
+  const def = BUILDINGS[id];
+  if(def.req && !unlocked(def.req)) return;
+  const row = el("div","bx");
+  const left = el("div");
+  left.innerHTML = `<div class="nm">${def.name} <span class="ct">×<span data-ct></span></span></div>
+                    <div class="ds">${statLine(id)}</div>
+                    <div class="tiny dim">${def.desc}</div>`;
+  const btn = el("button","b sm");
+  btn.onclick = () => buy(id);
+  row.appendChild(left); row.appendChild(btn);
+  host.appendChild(row);
+  const ct = left.querySelector("[data-ct]");
+  patchers.push(() => {
+    ct.textContent = S.b[id];
+    const c = bCost(id);
+    btn.textContent = fmt(c) + " mat";
+    btn.disabled = S.materials < c;
+  });
+}
+function statLine(id){
+  const d = BUILDINGS[id], p = [];
+  if(d.energy) p.push(`+${d.energy} E/s`);
+  if(d.dissip) p.push(`+${d.dissip} W dissip.`);
+  if(d.cap)    p.push(`+${d.cap} stockage`);
+  if(d.demand) p.push(`−${d.demand} E/s`);
+  if(d.out)    p.push(`+${d.rate} ${ {materials:"mat",science:"sci",data:"don",cpu:"CPU"}[d.out] }/s`);
+  if(d.heat)   p.push(`+${d.heat} W`);
+  if(id === "pad") p.push("+1 mission");
+  return p.join("  ·  ");
+}
+function allocRow(k){
+  const def = BUILDINGS[k];
+  const box = el("div","ag");
+  const top = el("div","top");
+  top.innerHTML = `<span class="nm">${GROUP_NAME[k]}</span><span class="pill" data-cnt></span><span class="pc" data-pc></span>`;
+  const ocBtn = el("button","b sm gh","OC");
+  ocBtn.title = "Overclock : +50 % de sortie, +150 % de chaleur, +60 % de demande";
+  ocBtn.onclick = () => { S.oc[k] = !S.oc[k]; dirty.reactor = true; };
+  top.insertBefore(ocBtn, top.querySelector("[data-pc]"));
+  box.appendChild(top);
+
+  const sl = el("input"); sl.type = "range"; sl.min = 0; sl.max = 100; sl.step = 5; sl.value = S.alloc[k];
+  sl.oninput = () => { S.alloc[k] = +sl.value; };
+  box.appendChild(sl);
+  const info = el("div","info"); box.appendChild(info);
+
+  patchers.push(() => {
+    if(document.activeElement !== sl) sl.value = S.alloc[k];
+    box.querySelector("[data-pc]").textContent = S.alloc[k] + " %";
+    box.querySelector("[data-cnt]").textContent = "×" + S.b[k];
+    sl.disabled = S.b[k] === 0;
+    ocBtn.className = "b sm " + (S.oc[k] ? "on" : "gh");
+    ocBtn.style.display = unlocked("oc") ? "" : "none";
+    const ocm = S.oc[k] ? OC_DEMAND : 1;
+    const want = S.b[k]*def.demand*ocm*(S.alloc[k]/100);
+    const e = (D.eff && D.eff[k]) || 0;
+    info.innerHTML = `<span>demande ${fmt(want,1)} E/s</span><span>alimenté ${(e*100).toFixed(0)} %</span>`
+      + (def.heat ? `<span>chaleur ${fmt(S.b[k]*def.heat*(S.oc[k]?OC_HEAT:1)*e,1)} W</span>` : "");
+  });
+  return box;
+}
+
+/* ---------------------------------------------------- MODULE 2 : RECHERCHE */
+function viewResearch(root){
+  patchers = [];
+  const g = el("div","grid g2"); root.appendChild(g);
+
+  // file d'attente
+  const cq = el("div","card");
+  cq.appendChild(el("h2","",`<span class="n">01</span> File de recherche <span class="sp" data-slots></span>`));
+  const qbox = el("div"); cq.appendChild(qbox);
+  patchers.push(() => {
+    cq.querySelector("[data-slots]").textContent = `${S.queue.length} / ${researchSlots()} emplacements`;
+    if(!S.queue.length){ if(qbox.dataset.n !== "0"){ qbox.innerHTML = '<div class="empty">Aucune recherche en cours.</div>'; qbox.dataset.n = "0"; } return; }
+    qbox.dataset.n = String(S.queue.length);
+    qbox.innerHTML = S.queue.map(q => {
+      const t = TECH[q.id];
+      const p = (1 - q.left/q.total)*100;
+      return `<div class="q"><div class="qh">${esc(t.n)}<span class="tm">${fmtT(q.left/MULT.research)}</span></div>
+              <div class="pbar"><i style="width:${p.toFixed(1)}%"></i></div></div>`;
+    }).join("");
+  });
+  g.appendChild(cq);
+
+  // publications
+  if(unlocked("publish")){
+    const cp = el("div","card");
+    cp.appendChild(el("h2","",`<span class="n">02</span> Publications`));
+    cp.appendChild(el("p","hint","Convertir de la science en réputation. Chaque point ajoute 2,5 % à toute la production — un investissement lent mais définitif pour la run."));
+    const b = el("button","b");
+    b.onclick = () => publish();
+    cp.appendChild(b);
+    const s = el("div","tiny dim"); s.style.marginTop = "8px"; cp.appendChild(s);
+    patchers.push(() => {
+      const c = pubCost();
+      b.textContent = `Publier — ${fmt(c)} science`;
+      b.disabled = S.science < c;
+      s.textContent = `Réputation ${S.reputation} · bonus actuel +${(S.reputation*2.5).toFixed(1)} %`;
+    });
+    g.appendChild(cp);
+  }
+
+  // arbre
+  const groups = [
+    { t:"Technologies", f:x => !x.excl && x.fringe === undefined },
+    { t:"Doctrines — un seul choix par famille", f:x => !!x.excl, cls:"doc" },
+    { t:"Science marginale — risque d'échec", f:x => x.fringe !== undefined, cls:"fringe" },
+  ];
+  for(const grp of groups){
+    const avail = TECHS.filter(t => grp.f(t) && (S.researched[t.id] || techAvailable(t) || techBlocked(t)));
+    if(!avail.length) continue;
+    const c = el("div","card"); c.style.gridColumn = "1 / -1";
+    c.appendChild(el("h2","",`<span class="n">${grp.cls==="doc"?"03":grp.cls==="fringe"?"04":"—"}</span> ${grp.t}`));
+    if(grp.cls === "fringe") c.appendChild(el("p","hint","Un échec ne rembourse rien et déclenche un incident. La probabilité affichée tient compte de vos modificateurs."));
+    const gg = el("div","grid g3");
+    for(const t of avail) gg.appendChild(techCard(t, grp.cls));
+    c.appendChild(gg);
+    g.appendChild(c);
+  }
+  patch();
+}
+function techCard(t, cls){
+  const done = !!S.researched[t.id];
+  const blocked = techBlocked(t) && !done;
+  const box = el("div","tech "+(cls||"")+(done?" done":"")+(blocked?" blocked":""));
+  const fringePct = t.fringe !== undefined ? clamp(t.fringe - MULT.fringeLuck, 0.02, 0.95) : 0;
+  box.innerHTML = `
+    <div class="th"><span class="nm">${esc(t.n)}</span>
+      ${t.fringe!==undefined ? `<span class="pill v" data-fr></span>` : ""}
+      ${t.excl ? `<span class="pill a">exclusif</span>` : ""}</div>
+    <div class="dsc">${esc(t.d)}</div>
+    ${t.fringe!==undefined ? `<div class="tiny" style="color:var(--green)">✔ ${esc(t.ok)}</div>
+                              <div class="tiny" style="color:var(--red)">✘ ${esc(t.ko)}</div>` : ""}`;
+  const ft = el("div","ft");
+  const cost = el("div","cost");
+  ft.appendChild(cost);
+  const btn = el("button","b sm"+(cls==="fringe"?" vio":""));
+  btn.style.marginLeft = "auto";
+  btn.onclick = () => startResearch(t.id);
+  ft.appendChild(btn);
+  box.appendChild(ft);
+
+  patchers.push(() => {
+    if(t.fringe !== undefined){
+      const f = box.querySelector("[data-fr]");
+      if(f) f.textContent = `échec ${(clamp(t.fringe - MULT.fringeLuck,0.02,0.95)*100).toFixed(0)} %`;
+    }
+    const okS = S.science >= (t.c.s||0), okD = S.data >= (t.c.d||0);
+    cost.innerHTML = `<span class="${okS?"":"no"}">${fmt(t.c.s||0)} sci</span>`
+      + (t.c.d ? `<span class="${okD?"":"no"}">${fmt(t.c.d)} don</span>` : "")
+      + `<span class="dim">${fmtT(t.t/MULT.research)}</span>`;
+    if(done){ btn.style.display = "none"; cost.innerHTML = `<span style="color:var(--green)">acquis</span>`; return; }
+    if(blocked){ btn.style.display = "none"; cost.innerHTML = `<span class="dim">verrouillé par une autre doctrine</span>`; return; }
+    btn.style.display = "";
+    const queued = S.queue.some(q => q.id === t.id);
+    btn.textContent = queued ? "en cours" : "Lancer";
+    btn.disabled = queued || !okS || !okD || S.queue.length >= researchSlots();
+  });
+  return box;
+}
+
+/* -------------------------------------------------- MODULE 3 : EXPLORATION */
+function viewExplore(root){
+  patchers = [];
+  if(!S.systems.length) genSystems(10);
+  const g = el("div","grid g2"); root.appendChild(g);
+
+  // flotte
+  const cf = el("div","card");
+  cf.appendChild(el("h2","",`<span class="n">01</span> Flotte`));
+  const fr = el("div","row"); fr.style.flexWrap = "wrap";
+  const bp = el("button","b"); bp.onclick = () => {
+    const c = probeCost();
+    if(S.materials >= c){ S.materials -= c; S.probes++; dirty.explore = true; }
+  };
+  fr.appendChild(bp);
+  const fs = el("span","tiny dim"); fr.appendChild(fs);
+  cf.appendChild(fr);
+  patchers.push(() => {
+    const c = probeCost();
+    bp.textContent = `Construire une sonde — ${fmt(c)} mat`;
+    bp.disabled = S.materials < c;
+    const padE = D.eff ? (D.eff.pad*100).toFixed(0) : "0";
+    fs.textContent = `${S.probes} en réserve · ${S.missions.length}/${S.b.pad} rampes occupées · alimentation rampes ${padE} %`;
+  });
+  g.appendChild(cf);
+
+  // missions
+  const cm = el("div","card");
+  cm.appendChild(el("h2","",`<span class="n">02</span> Missions en cours`));
+  cm.appendChild(el("p","hint","La télémétrie voyage à c. Une sonde peut être arrivée depuis longtemps sans que vous le sachiez encore."));
+  const mbox = el("div"); cm.appendChild(mbox);
+  patchers.push(() => {
+    if(!S.missions.length){ if(mbox.dataset.n !== "0"){ mbox.innerHTML = '<div class="empty">Aucune mission en vol.</div>'; mbox.dataset.n="0"; } return; }
+    mbox.dataset.n = String(S.missions.length);
+    const now = Date.now();
+    mbox.innerHTML = S.missions.map(ms => {
+      const arrived = now >= ms.arriveAt;
+      const tot = ms.reportAt - ms.launchAt;
+      const p = clamp((now - ms.launchAt)/tot*100, 0, 100);
+      const st = arrived
+        ? `<span style="color:var(--violet)">signal en transit · ${fmtT((ms.reportAt-now)/1000)}</span>`
+        : `<span>en vol · arrivée dans ${fmtT((ms.arriveAt-now)/1000)}</span>`;
+      return `<div class="mission${arrived?" late":""}">
+        <div class="mh"><span class="nm">${esc(ms.sysName)}</span>
+          <span class="pill">${ms.dist} al</span>
+          <span class="pill ${ms.chance>0.7?"g":ms.chance>0.45?"a":"r"}">${(ms.chance*100).toFixed(0)} % survie</span>
+          <span class="st">${st}</span></div>
+        <div class="pbar"><i style="width:${p.toFixed(1)}%"></i></div></div>`;
+    }).join("");
+  });
+  g.appendChild(cm);
+
+  // systèmes
+  const cs = el("div","card"); cs.style.gridColumn = "1 / -1";
+  cs.appendChild(el("h2","",`<span class="n">03</span> Catalogue stellaire <span class="sp">${S.systems.length} systèmes</span>`));
+  const sg = el("div","grid g3");
+  for(const sys of S.systems){
+    const box = el("div","sys");
+    box.innerHTML = `<div class="sh"><span class="nm">${esc(sys.name)}</span><span class="di">${sys.dist} al</span></div>
+      <div class="tiny dim">difficulté ${(sys.diff*100).toFixed(0)} %${sys.visits?` · ${sys.visits} visite${sys.visits>1?"s":""}`:""}</div>
+      <div class="tags">${sys.tags.map(t => `<span class="pill ${TAGS[t].cls}">${TAGS[t].n}</span>`).join("")}</div>`;
+    box.onclick = () => openPlanner(sys);
+    sg.appendChild(box);
+  }
+  cs.appendChild(sg);
+  g.appendChild(cs);
+
+  // découvertes
+  if(S.cards.length){
+    const cd = el("div","card"); cd.style.gridColumn = "1 / -1";
+    cd.appendChild(el("h2","",`<span class="n">04</span> Découvertes <span class="sp" data-cs></span>`));
+    cd.appendChild(el("p","hint","Cliquez pour équiper. Les emplacements sont limités : c'est un choix de build, pas une collection."));
+    const dg = el("div","grid g3");
+    for(const c of S.cards){
+      const box = el("div","dcard"+(S.equipped.includes(c.id)?" eq":""));
+      box.innerHTML = `<div class="nm">${esc(c.n)} ${"★".repeat(c.rarity)}</div>
+        <div class="ef">+${(c.v*100).toFixed(0)} % ${MOD_LABEL[c.k]||c.k}</div>
+        <div class="tiny dim">${esc(c.from)}</div>`;
+      box.onclick = () => toggleCard(c.id);
+      dg.appendChild(box);
+    }
+    cd.appendChild(dg);
+    g.appendChild(cd);
+    patchers.push(() => { cd.querySelector("[data-cs]").textContent = `${S.equipped.length} / ${cardSlots()} équipées`; });
+  }
+  patch();
+}
+
+function openPlanner(sys){
+  let fuel = clamp(Math.ceil(sys.dist/(0.36*MULT.range)) + 5, 5, 90);
+  let instr = Math.round((100-fuel)*0.6);
+  let shield = 100 - fuel - instr;
+
+  const mask = el("div","mask");
+  const mo = el("div","modal");
+  mo.innerHTML = `<h2>Plan de vol — ${esc(sys.name)}</h2>
+    <div class="msub">${sys.dist} al · difficulté ${(sys.diff*100).toFixed(0)} % · ${sys.tags.map(t=>TAGS[t].n).join(", ")}</div>
+    <p class="hint">Masse utile fixe : 100 unités à répartir. Le carburant définit la portée, les instruments le rendement, le blindage la survie.</p>`;
+  const mass = el("div","mass"); mo.appendChild(mass);
+
+  const mk = (key, name, ex) => {
+    const r = el("div","mrow");
+    r.innerHTML = `<div class="mtop"><span class="nm">${name}</span><span class="vv" data-v></span></div>`;
+    const sl = el("input"); sl.type="range"; sl.min=0; sl.max=100; sl.step=1;
+    r.appendChild(sl);
+    r.appendChild(el("div","ex",ex));
+    mass.appendChild(r);
+    return { r, sl, v:r.querySelector("[data-v]"), key };
+  };
+  const rows = [
+    mk("fuel",   "Carburant",   "Portée maximale atteignable."),
+    mk("instr",  "Instruments", "Multiplie tout le rendement scientifique et matériel."),
+    mk("shield", "Blindage",    "+0,5 pt de survie par unité."),
+  ];
+  const readout = el("div","readout"); mo.appendChild(readout);
+  const foot = el("div","foot");
+  const cancel = el("button","b gh","Annuler");
+  const gobtn = el("button","b","Lancer");
+  foot.appendChild(cancel); foot.appendChild(gobtn); mo.appendChild(foot);
+
+  function normalize(changed){
+    let vals = { fuel, instr, shield };
+    const total = vals.fuel + vals.instr + vals.shield;
+    if(total !== 100){
+      const others = ["fuel","instr","shield"].filter(k => k !== changed);
+      let excess = total - 100;
+      for(const k of others){
+        if(excess === 0) break;
+        const take = clamp(excess, -(100 - vals[k]), vals[k]);
+        vals[k] -= take; excess -= take;
+      }
+      if(excess !== 0) vals[changed] -= excess;
+    }
+    fuel = vals.fuel; instr = vals.instr; shield = vals.shield;
+  }
+  function refresh(){
+    for(const r of rows){
+      const v = { fuel, instr, shield }[r.key];
+      if(document.activeElement !== r.sl) r.sl.value = v;
+      r.v.textContent = v;
+    }
+    const range = maxRange(fuel);
+    const reach = range >= sys.dist;
+    const ch = successChance(sys, shield);
+    const tt = travelTime(sys.dist), td = teleDelay(sys.dist);
+    let mul = 1; for(const t of sys.tags){ const T = TAGS[t]; mul *= ((T.sci||1)+(T.mat||1))/2; }
+    const est = (25 + sys.dist*16) * (instr/40) * MULT.probeYield * (1 + sys.dist*0.05) * 9 * mul;
+    readout.innerHTML =
+      `<div class="ro"><div class="k">Portée</div><div class="v" style="color:${reach?"var(--green)":"var(--red)"}">${range.toFixed(1)} / ${sys.dist} al</div></div>`
+    + `<div class="ro"><div class="k">Survie</div><div class="v" style="color:${ch>0.7?"var(--green)":ch>0.45?"var(--amber)":"var(--red)"}">${(ch*100).toFixed(0)} %</div></div>`
+    + `<div class="ro"><div class="k">Trajet</div><div class="v">${fmtT(tt)}</div></div>`
+    + `<div class="ro"><div class="k">Délai télémétrie</div><div class="v" style="color:var(--violet)">+${fmtT(td)}</div></div>`
+    + `<div class="ro"><div class="k">Science estimée</div><div class="v">~${fmt(est)}</div></div>`
+    + `<div class="ro"><div class="k">Espérance</div><div class="v">~${fmt(est*ch)}</div></div>`;
+
+    const padOk = D.eff && D.eff.pad >= 0.5;
+    gobtn.disabled = !reach || S.probes < 1 || S.missions.length >= S.b.pad || !padOk;
+    gobtn.textContent = S.probes < 1 ? "Aucune sonde"
+      : S.missions.length >= S.b.pad ? "Rampes occupées"
+      : !padOk ? "Rampes sous-alimentées"
+      : !reach ? "Hors de portée" : "Lancer";
+  }
+  rows.forEach(r => {
+    r.sl.oninput = () => {
+      const v = +r.sl.value;
+      if(r.key==="fuel") fuel=v; else if(r.key==="instr") instr=v; else shield=v;
+      normalize(r.key); refresh();
+    };
+  });
+  cancel.onclick = () => mask.remove();
+  gobtn.onclick = () => { if(launch(sys.id, fuel, instr, shield)) mask.remove(); };
+  mask.onclick = e => { if(e.target === mask) mask.remove(); };
+  mask.appendChild(mo); $("#modalHost").appendChild(mask);
+  normalize("fuel"); refresh();
+}
+
+/* ----------------------------------------------- MODULE 4 : AUTOMATISATION */
+function viewAuto(root){
+  patchers = [];
+  const g = el("div","grid"); root.appendChild(g);
+
+  const c1 = el("div","card");
+  c1.appendChild(el("h2","",`<span class="n">01</span> Ordonnanceur <span class="sp" data-cpu></span>`));
+  c1.appendChild(el("p","hint","Chaque règle active consomme des cycles CPU en permanence. Les règles sont évaluées de haut en bas, dans l'ordre, une fois par seconde — la première qui passe agit. Vous n'automatiserez jamais tout : c'est le point."));
+  const warn = el("div","tiny"); warn.style.color = "var(--red)"; c1.appendChild(warn);
+  const rbox = el("div"); rbox.style.marginTop = "9px"; c1.appendChild(rbox);
+  patchers.push(() => {
+    c1.querySelector("[data-cpu]").textContent = `${fmt(D.cpuUsed||0)} / ${fmt(D.cpuCap||0)} cycles`;
+    warn.textContent = Date.now() < S.autoOffUntil
+      ? `⚠ Ordonnanceur hors service — ${fmtT((S.autoOffUntil-Date.now())/1000)}` : "";
+    if(D.cpuUsed > D.cpuCap && !warn.textContent)
+      warn.textContent = "⚠ Capacité CPU dépassée : les règles du bas ne s'exécutent pas.";
+  });
+  g.appendChild(c1);
+
+  // liste des règles
+  const rules = el("div"); c1.appendChild(rules);
+  function paintRules(){
+    rules.innerHTML = "";
+    if(!S.rules.length){ rules.appendChild(el("div","empty","Aucune règle. Construisez-en une ci-dessous.")); return; }
+    let budget = D.cpuCap || 0;
+    S.rules.forEach((r,i) => {
+      const cost = ACTIONS[r.act].cpu;
+      let starved = false;
+      if(r.on){ if(budget < cost) starved = true; else budget -= cost; }
+      const box = el("div","rule"+(r.on?"":" off"));
+      const h = el("div","rh");
+      h.innerHTML = `<span class="fx"><span class="kw">SI</span> <span class="tg">${METRICS[r.metric].n}</span> <span class="vl">${OPS[r.op]} ${r.value}</span> <span class="kw">ALORS</span> <span class="tg">${ACTIONS[r.act].n}${r.target?" "+(BUILDINGS[r.target]?BUILDINGS[r.target].name:GROUP_NAME[r.target]):""}${r.act==="alloc"?" → "+r.value2+" %":""}</span></span>
+        <span class="pill${starved?" r":""}">${cost} CPU</span>
+        <span class="pill">${r.fires||0}×</span>`;
+      const sp = el("span"); sp.style.marginLeft = "auto"; h.appendChild(sp);
+      const up = el("button","b sm gh","↑"); up.disabled = i===0;
+      up.onclick = () => { S.rules.splice(i-1,0,S.rules.splice(i,1)[0]); paintRules(); };
+      const dn = el("button","b sm gh","↓"); dn.disabled = i===S.rules.length-1;
+      dn.onclick = () => { S.rules.splice(i+1,0,S.rules.splice(i,1)[0]); paintRules(); };
+      const tg = el("button","b sm "+(r.on?"on":"gh"), r.on?"actif":"pause");
+      tg.onclick = () => { r.on = !r.on; paintRules(); };
+      const rm = el("button","b sm gh","✕");
+      rm.onclick = () => { S.rules.splice(i,1); paintRules(); };
+      h.appendChild(up); h.appendChild(dn); h.appendChild(tg); h.appendChild(rm);
+      box.appendChild(h);
+      rules.appendChild(box);
+    });
+  }
+  paintRules();
+
+  // constructeur
+  const c2 = el("div","card");
+  c2.appendChild(el("h2","",`<span class="n">02</span> Nouvelle règle`));
+  const b = el("div","builder");
+  const selMetric = el("select"), selOp = el("select"), inVal = el("input"),
+        selAct = el("select"), selTarget = el("select"), inVal2 = el("input");
+  inVal.type = "number"; inVal.value = 90; inVal.style.width = "80px";
+  inVal2.type = "number"; inVal2.value = 50; inVal2.min = 0; inVal2.max = 100; inVal2.style.width = "70px";
+  for(const k in METRICS) selMetric.appendChild(new Option(METRICS[k].n, k));
+  for(const k in OPS) selOp.appendChild(new Option(OPS[k], k));
+  for(const k in ACTIONS) selAct.appendChild(new Option(ACTIONS[k].n + `  (${ACTIONS[k].cpu} CPU)`, k));
+  function syncTarget(){
+    const a = ACTIONS[selAct.value];
+    selTarget.innerHTML = "";
+    if(a.needsTarget === "building"){
+      for(const id in BUILDINGS){
+        if(BUILDINGS[id].req && !unlocked(BUILDINGS[id].req)) continue;
+        selTarget.appendChild(new Option(BUILDINGS[id].name, id));
+      }
+    } else if(a.needsTarget === "group"){
+      for(const k of CONSUMERS){
+        if(BUILDINGS[k].req && !unlocked(BUILDINGS[k].req)) continue;
+        selTarget.appendChild(new Option(GROUP_NAME[k], k));
+      }
+    }
+    selTarget.style.display = a.needsTarget ? "" : "none";
+    inVal2.style.display = a.needsValue ? "" : "none";
+  }
+  selAct.onchange = syncTarget; syncTarget();
+
+  b.appendChild(el("span","kw","SI"));      b.appendChild(selMetric); b.appendChild(selOp); b.appendChild(inVal);
+  b.appendChild(el("span","kw","ALORS"));   b.appendChild(selAct);    b.appendChild(selTarget); b.appendChild(inVal2);
+  const add = el("button","b","Ajouter");
+  add.onclick = () => {
+    addRule({ metric:selMetric.value, op:selOp.value, value:+inVal.value,
+              act:selAct.value, target:selTarget.value || null, value2:+inVal2.value });
+    paintRules();
+  };
+  b.appendChild(add);
+  c2.appendChild(b);
+
+  const presets = el("div","row"); presets.style.marginTop = "11px"; presets.style.flexWrap = "wrap";
+  presets.appendChild(el("span","tiny dim","Modèles :"));
+  const P = [
+    ["Garde-fou thermique", { metric:"heat", op:"gt", value:95, act:"ocOff", target:"foundry" }],
+    ["Radiateur automatique", { metric:"heat", op:"gt", value:80, act:"buy", target:"radiator" }],
+    ["Réinvestir l'énergie", { metric:"energyPct", op:"gt", value:90, act:"buy", target:"solar" }],
+    ["Recherche continue", { metric:"queue", op:"lt", value:1, act:"research" }],
+    ["Flotte permanente", { metric:"probes", op:"lt", value:2, act:"probe" }],
+    ["Exploration continue", { metric:"probes", op:"gte", value:1, act:"launch" }],
+  ];
+  for(const [n,r] of P){
+    const bb = el("button","b sm gh",n);
+    bb.onclick = () => { addRule(Object.assign({ value2:50, target:null }, r)); paintRules(); };
+    presets.appendChild(bb);
+  }
+  c2.appendChild(presets);
+  g.appendChild(c2);
+  patch();
+}
+
+/* ---------------------------------------------------- MODULE 5 : ASCENSION */
+function viewAscend(root){
+  patchers = [];
+  const g = el("div","grid g2"); root.appendChild(g);
+
+  const c1 = el("div","card"); c1.style.gridColumn = "1 / -1";
+  c1.appendChild(el("h2","",`<span class="n">01</span> Ascension`));
+  c1.appendChild(el("p","hint","Réinitialise la run : bâtiments, recherches, sondes, découvertes, doctrines. Conserve l'entropie, les talents et les archives. À chaque ascension, vous choisissez une constante physique qui s'appliquera à toute la partie suivante."));
+  const stat = el("div","grid g3"); stat.style.marginBottom = "12px"; c1.appendChild(stat);
+  const ab = el("button","b vio"); c1.appendChild(ab);
+  ab.onclick = () => openAscendModal();
+  patchers.push(() => {
+    const gain = entropyGain();
+    stat.innerHTML = ro("Science totale (run)", fmt(S.totalScience))
+      + ro("Entropie à récolter", fmt(gain))
+      + ro("Durée de la run", fmtT((Date.now()-S.runStart)/1000))
+      + ro("Ascensions", String(S.ascensions))
+      + ro("Entropie disponible", fmt(S.entropy))
+      + ro("Constante active", S.constant ? CONST_BY_ID[S.constant].n : "aucune");
+    ab.textContent = gain > 0 ? `Ascension — récolter ${fmt(gain)} entropie` : "Pas assez de science accumulée";
+    ab.disabled = gain < 1;
+  });
+  g.appendChild(c1);
+
+  // talents
+  const c2 = el("div","card"); c2.style.gridColumn = "1 / -1";
+  c2.appendChild(el("h2","",`<span class="n">02</span> Grille de talents`));
+  const tg = el("div","grid g3");
+  for(const id in TALENTS){
+    const t = TALENTS[id];
+    const box = el("div","tal");
+    box.innerHTML = `<div class="nm">${t.n}<span class="lv" data-lv></span></div><div class="tiny dim">${t.d}</div>`;
+    const b = el("button","b sm vio");
+    b.onclick = () => {
+      const c = talentCost(id);
+      if(S.entropy >= c && (S.talents[id]||0) < t.max){
+        S.entropy -= c; S.talents[id] = (S.talents[id]||0)+1;
+        log(`Talent amélioré : ${t.n} → niveau ${S.talents[id]}`, "fringe");
+        dirty.ascend = true; recalc();
+      }
+    };
+    box.appendChild(b); tg.appendChild(box);
+    patchers.push(() => {
+      const lv = S.talents[id]||0;
+      box.querySelector("[data-lv]").textContent = `${lv}/${t.max}`;
+      if(lv >= t.max){ b.textContent = "max"; b.disabled = true; return; }
+      const c = talentCost(id);
+      b.textContent = `${fmt(c)} entropie`;
+      b.disabled = S.entropy < c;
+    });
+  }
+  c2.appendChild(tg);
+  g.appendChild(c2);
+
+  // archives
+  if(S.archives.length){
+    const c3 = el("div","card"); c3.style.gridColumn = "1 / -1";
+    c3.appendChild(el("h2","",`<span class="n">03</span> Archives`));
+    const t = el("table","arc");
+    t.innerHTML = `<thead><tr><th>#</th><th>Durée</th><th>Science</th><th>Entropie</th><th>Constante</th><th>Doctrines</th></tr></thead><tbody>`
+      + S.archives.slice().reverse().map(a =>
+        `<tr><td>${a.n}</td><td>${fmtT(a.dur)}</td><td>${fmt(a.sci)}</td><td style="color:var(--violet)">${fmt(a.ent)}</td><td>${a.cst?esc(CONST_BY_ID[a.cst].n):"—"}</td><td class="dim">${esc(a.doc)}</td></tr>`
+      ).join("") + `</tbody>`;
+    c3.appendChild(t);
+    g.appendChild(c3);
+  }
+  patch();
+}
+function openAscendModal(){
+  const offer = rollConstants();
+  const mask = el("div","mask");
+  const mo = el("div","modal");
+  mo.innerHTML = `<h2>Ascension ${S.ascensions+1}</h2>
+    <div class="msub">+${fmt(entropyGain())} entropie · la run recommence à zéro</div>
+    <p class="hint">Choisissez la constante physique qui régira le prochain univers. Chaque option est un compromis, pas un bonus.</p>`;
+  const list = el("div","grid"); list.style.gap = "9px";
+  for(const id of offer){
+    const c = CONST_BY_ID[id];
+    const box = el("div","const");
+    box.innerHTML = `<div class="nm">${c.n}</div><div class="up">▲ ${c.up}</div><div class="dn">▼ ${c.dn}</div>`;
+    box.onclick = () => { mask.remove(); ascend(id); };
+    list.appendChild(box);
+  }
+  mo.appendChild(list);
+  const foot = el("div","foot");
+  const cancel = el("button","b gh","Annuler");
+  cancel.onclick = () => mask.remove();
+  foot.appendChild(cancel); mo.appendChild(foot);
+  mask.onclick = e => { if(e.target === mask) mask.remove(); };
+  mask.appendChild(mo); $("#modalHost").appendChild(mask);
+}
+
+/* ============================================================================
+   SAUVEGARDE
+   ============================================================================ */
+function save(){
+  S.lastSave = Date.now();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){}
+}
+function load(){
+  let raw = null;
+  try{ raw = localStorage.getItem(SAVE_KEY); }catch(e){}
+  if(!raw){ S = freshRun(); return false; }
+  try{
+    const o = JSON.parse(raw);
+    S = Object.assign(freshRun({ entropy:o.entropy, talents:o.talents, ascensions:o.ascensions,
+                                 archives:o.archives, constant:o.constant }), o);
+    // compléter les clés manquantes après mise à jour du jeu
+    const base = freshRun();
+    for(const k in base.b)     if(S.b[k]     === undefined) S.b[k] = base.b[k];
+    for(const k in base.alloc) if(S.alloc[k] === undefined) S.alloc[k] = base.alloc[k];
+    for(const k in base.oc)    if(S.oc[k]    === undefined) S.oc[k] = base.oc[k];
+    S.events = (S.events||[]).filter(e => e.until > Date.now());
+    return true;
+  }catch(e){ S = freshRun(); return false; }
+}
+function offline(){
+  const dt = clamp((Date.now() - (S.lastSave||Date.now()))/1000, 0, OFFLINE_CAP);
+  if(dt < 30) return;
+  const before = { m:S.materials, s:S.science, d:S.data };
+  let left = dt;
+  recalc();
+  while(left > 0){ const step = Math.min(5, left); tick(step); left -= step; }
+  const gm = S.materials-before.m, gs = S.science-before.s, gd = S.data-before.d;
+  log(`Reprise après ${fmtT(dt)} — +${fmt(gm)} mat · +${fmt(gs)} sci · +${fmt(gd)} don`, "ok");
+}
+
+/* ============================================================================
+   FOND ÉTOILÉ
+   ============================================================================ */
+(function starfield(){
+  const cv = $("#stars"), cx = cv.getContext("2d");
+  let W, H, layers;
+  function init(){
+    W = cv.width = innerWidth; H = cv.height = innerHeight;
+    layers = [
+      { n:110, s:0.5, sp:0.006, a:0.35 },
+      { n:60,  s:0.9, sp:0.014, a:0.55 },
+      { n:24,  s:1.5, sp:0.028, a:0.8  },
+    ].map(L => ({ ...L, pts: Array.from({length:L.n}, () => ({ x:Math.random()*W, y:Math.random()*H, p:Math.random()*Math.PI*2 })) }));
+  }
+  init(); addEventListener("resize", init);
+  let t = 0;
+  (function draw(){
+    t += 0.016;
+    cx.clearRect(0,0,W,H);
+    for(const L of layers){
+      for(const p of L.pts){
+        p.y += L.sp; if(p.y > H) { p.y = 0; p.x = Math.random()*W; }
+        const tw = 0.65 + 0.35*Math.sin(t*1.6 + p.p);
+        cx.globalAlpha = L.a * tw;
+        cx.fillStyle = "#cfe4ff";
+        cx.fillRect(p.x, p.y, L.s, L.s);
+      }
+    }
+    cx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  })();
+})();
+
+/* ============================================================================
+   BOUCLE PRINCIPALE
+   ============================================================================ */
+function boot(){
+  const had = load();
+  recalc();
+  buildRes(); buildNav();
+  if(had) offline(); else log("Système initialisé. Ressources minimales allouées. Bonne chance.", "ok");
+  go("reactor");
+
+  let last = performance.now(), acc = 0, saveAcc = 0;
+  setInterval(() => {
+    const now = performance.now();
+    const dt = Math.min(0.5, (now-last)/1000); last = now;
+    tick(dt);
+    paintRes();
+    acc += dt;
+    if(acc > 0.2){ acc = 0; render(false); paintLog(); }
+    saveAcc += dt;
+    if(saveAcc > 15){ saveAcc = 0; save(); }
+    // apparition différée des onglets
+    const want = TABS.filter(t => t.show()).length;
+    if(want !== $("#nav").children.length) buildNav();
+  }, TICK_MS);
+
+  addEventListener("beforeunload", save);
+  addEventListener("keydown", e => { if(e.key === "Escape"){ const m = $(".mask"); if(m) m.remove(); } });
+}
+boot();
+</script>
+</body>
+</html>
