@@ -1,0 +1,4364 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jardin Génétique — simulation de nature</title>
+<style>
+  :root{
+    --ink:#101713;
+    --ink2:#1b2620;
+    --paper:#f3eede;
+    --sage:#9dbb86;
+    --sage-d:#6d8a5a;
+    --gold:#dcb861;
+    --rose:#d98fa0;
+    --sky:#8fb6cf;
+    --violet:#a99ad6;
+    --panel:rgba(12,19,15,.78);
+    --panel-b:rgba(243,238,222,.16);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0a0f0c;color:var(--paper);
+    font-family:"Segoe UI",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .serif{font-family:Georgia,"Iowan Old Style","Times New Roman",serif}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;user-select:none;
+       opacity:1;transition:opacity .45s ease}
+  #hud.hidden{opacity:0}
+  .pane{background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;
+        backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+        box-shadow:0 6px 26px rgba(0,0,0,.35)}
+
+  /* crosshair */
+  #cross{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;
+    opacity:.85;transition:transform .12s ease,opacity .2s}
+  #cross.act{transform:scale(1.35);opacity:1}
+  #cross i{position:absolute;background:rgba(243,238,222,.9);border-radius:2px;
+    box-shadow:0 0 4px rgba(0,0,0,.7)}
+  #cross i:nth-child(1){left:12px;top:0;width:2px;height:8px}
+  #cross i:nth-child(2){left:12px;bottom:0;width:2px;height:8px}
+  #cross i:nth-child(3){top:12px;left:0;height:2px;width:8px}
+  #cross i:nth-child(4){top:12px;right:0;height:2px;width:8px}
+  #cross u{position:absolute;left:11px;top:11px;width:4px;height:4px;border-radius:50%;
+    background:var(--gold);opacity:0;transition:opacity .15s}
+  #cross.tgt u{opacity:1}
+
+  /* top bar */
+  #top{position:absolute;top:14px;left:50%;transform:translateX(-50%);
+    display:flex;align-items:stretch;gap:1px;overflow:hidden;padding:0}
+  #top .cell{padding:7px 14px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:78px}
+  #top .k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.5}
+  #top .v{font-size:13px;font-weight:600;letter-spacing:.02em}
+  #speeds{display:flex;align-items:center;gap:4px;padding:0 10px 0 6px;pointer-events:auto}
+  .sp{min-width:26px;padding:0 5px;height:22px;border-radius:5px;border:1px solid transparent;cursor:pointer;
+     background:rgba(243,238,222,.07);color:var(--paper);font-size:10px;font-weight:700;
+     display:flex;align-items:center;justify-content:center;transition:.15s;font-family:inherit}
+  .sp:hover{background:rgba(243,238,222,.18)}
+  .sp.on{background:var(--sage);color:#0f1712;border-color:rgba(255,255,255,.35)}
+
+  /* seasons ring */
+  #seasonbar{position:absolute;top:0;left:0;height:2px;background:var(--sage);transition:background .8s}
+
+  /* stats */
+  #stats{position:absolute;top:14px;right:14px;padding:10px 13px;min-width:158px}
+  #stats .row{display:flex;justify-content:space-between;gap:14px;font-size:11.5px;padding:2px 0}
+  #stats .row span:first-child{opacity:.55}
+  #stats .row span:last-child{font-variant-numeric:tabular-nums;font-weight:600}
+  #stats h4{font-size:9px;letter-spacing:.16em;text-transform:uppercase;opacity:.45;
+    margin-bottom:5px;font-weight:600}
+
+  /* hotbar */
+  #bar{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+    display:flex;gap:8px;pointer-events:auto}
+  .tool{width:58px;height:58px;border-radius:11px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:2px;cursor:pointer;position:relative;
+    background:var(--panel);border:1px solid var(--panel-b);backdrop-filter:blur(9px);
+    transition:transform .16s cubic-bezier(.2,1.6,.4,1),border-color .16s,background .16s}
+  .tool:hover{transform:translateY(-3px)}
+  .tool.on{border-color:var(--gold);background:rgba(220,184,97,.2);transform:translateY(-7px)}
+  .tool svg{width:26px;height:26px;stroke:var(--paper);fill:none;stroke-width:1.6;
+    stroke-linecap:round;stroke-linejoin:round;opacity:.92}
+  .tool.on svg{stroke:#fff9e8}
+  .tool b{position:absolute;top:3px;left:6px;font-size:9px;opacity:.4;font-weight:700}
+  /* dix outils : sur un écran étroit la barre se resserre au lieu de déborder */
+  @media (max-width:780px){
+    #bar{gap:5px}
+    .tool{width:46px;height:46px;border-radius:9px}
+    .tool svg{width:21px;height:21px}
+  }
+  #toolname{position:absolute;bottom:86px;left:50%;transform:translateX(-50%);
+    font-size:12.5px;letter-spacing:.06em;text-align:center;white-space:nowrap;
+    padding:5px 12px;border-radius:20px;background:rgba(12,19,15,.7);border:1px solid var(--panel-b)}
+  #toolname small{display:block;font-size:10px;opacity:.55;letter-spacing:.02em;margin-top:1px}
+
+  /* journal */
+  #journal{position:absolute;left:14px;bottom:20px;width:284px;display:flex;
+    flex-direction:column-reverse;gap:5px}
+  .jline{font-size:11.5px;line-height:1.35;padding:6px 9px;border-radius:7px;
+    background:rgba(12,19,15,.62);border-left:2px solid var(--sage);
+    animation:jin .4s ease both}
+  .jline.evt{border-left-color:var(--gold)}
+  .jline.bad{border-left-color:#c9756b}
+  .jline.birth{border-left-color:var(--rose)}
+  .jline i{opacity:.5;font-style:normal;font-size:10px}
+  @keyframes jin{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+
+  /* inspector */
+  #insp{position:absolute;right:14px;top:152px;width:326px;max-height:calc(100vh - 322px);
+    overflow:hidden auto;padding:0;display:none;pointer-events:auto;scrollbar-width:thin;
+    scrollbar-color:rgba(243,238,222,.25) transparent}
+  #insp.show{display:block;animation:pin .3s ease both}
+  @keyframes pin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+  #insp::-webkit-scrollbar{width:6px}
+  #insp::-webkit-scrollbar-thumb{background:rgba(243,238,222,.22);border-radius:3px}
+  #insp .head{padding:12px 14px 10px;border-bottom:1px solid var(--panel-b);position:sticky;top:0;
+    background:rgba(10,16,13,.94);backdrop-filter:blur(9px);z-index:2}
+  #insp .head .nm{font-size:16px;letter-spacing:.01em}
+  #insp .head .sub{font-size:10.5px;opacity:.55;margin-top:2px;letter-spacing:.04em}
+  #insp .head .pin{position:absolute;right:12px;top:12px;font-size:9px;letter-spacing:.1em;
+    text-transform:uppercase;opacity:.55}
+  #insp .body{padding:10px 14px 16px}
+  .sect{margin-top:12px}
+  .sect>h5{font-size:9px;letter-spacing:.17em;text-transform:uppercase;opacity:.42;
+    margin-bottom:6px;font-weight:700;display:flex;justify-content:space-between}
+  .kv{display:flex;justify-content:space-between;font-size:11.5px;padding:2.5px 0;gap:10px}
+  .kv span:first-child{opacity:.6}
+  .kv span:last-child{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+  .meter{height:5px;border-radius:3px;background:rgba(243,238,222,.12);overflow:hidden;margin-top:3px}
+  .meter i{display:block;height:100%;border-radius:3px;transition:width .3s}
+  .gene{margin:5px 0 7px}
+  .gene .gl{display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:2px}
+  .gene .gl b{font-weight:600;opacity:.85}
+  .gene .gl em{font-style:normal;opacity:.55;font-variant-numeric:tabular-nums}
+  .gbar{height:4px;border-radius:2px;background:rgba(243,238,222,.1);position:relative}
+  .gbar i{position:absolute;left:0;top:0;height:100%;border-radius:2px}
+  .gbar u{position:absolute;top:-2px;width:2px;height:8px;background:var(--paper);opacity:.5;border-radius:1px}
+  .swatches{display:flex;gap:5px;margin:6px 0 2px}
+  .sw{width:26px;height:26px;border-radius:6px;border:1px solid rgba(255,255,255,.22)}
+  .seq{font-family:ui-monospace,Consolas,monospace;font-size:9.5px;line-height:1.5;
+    opacity:.55;word-break:break-all;letter-spacing:.04em;margin-top:5px}
+  .tag{display:inline-block;font-size:9.5px;padding:2px 7px;border-radius:20px;
+    background:rgba(243,238,222,.12);margin:0 4px 4px 0;letter-spacing:.03em}
+  .tag.g{background:rgba(157,187,134,.28)}
+  .tag.o{background:rgba(220,184,97,.26)}
+  .tag.r{background:rgba(217,143,160,.26)}
+  .tag.b{background:rgba(143,182,207,.26)}
+  .hint{font-size:10.5px;opacity:.5;line-height:1.4;margin-top:8px;font-style:italic}
+  .branchbox{border:1px dashed rgba(220,184,97,.45);border-radius:8px;padding:8px 10px;
+    background:rgba(220,184,97,.07);margin-top:6px}
+  .divergence{font-size:10.5px;opacity:.7;margin-top:4px}
+
+  /* carried pollen / sample */
+  #hold{position:absolute;bottom:20px;right:14px;width:212px;padding:10px 12px;display:none}
+  #hold.show{display:block}
+  #hold h5{font-size:9px;letter-spacing:.16em;text-transform:uppercase;opacity:.45;margin-bottom:6px}
+  #hold .nm{font-size:12.5px;font-weight:600;margin-bottom:4px}
+
+  /* toast */
+  #toast{position:absolute;left:50%;top:calc(50% + 62px);transform:translateX(-50%);
+    font-size:13px;padding:8px 18px;border-radius:22px;background:rgba(12,19,15,.82);
+    border:1px solid var(--panel-b);opacity:0;transition:opacity .3s,transform .3s;letter-spacing:.02em}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+
+  /* vignette + weather tint */
+  #vig{position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 52%,rgba(0,0,0,.42) 100%)}
+
+  /* ---------- start screen ---------- */
+  #start{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:24px;text-align:center;z-index:20;
+    background:radial-gradient(ellipse at 50% 40%,#1d2b21,#080d0a 75%);transition:opacity .7s}
+  #start.gone{opacity:0;pointer-events:none}
+  #start h1{font-size:clamp(38px,7vw,72px);font-weight:400;letter-spacing:.02em;
+    background:linear-gradient(160deg,#f6f0dd,#cfe0b6 45%,#dcb861);-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  #start .tag2{font-size:14px;opacity:.6;letter-spacing:.18em;text-transform:uppercase;margin-top:-14px}
+  #start p{max-width:560px;font-size:14px;line-height:1.65;opacity:.72}
+  #go{pointer-events:auto;font-family:inherit;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+    padding:14px 40px;border-radius:40px;border:1px solid rgba(220,184,97,.5);cursor:pointer;
+    background:rgba(220,184,97,.13);color:#f7f1de;transition:.25s;font-weight:600}
+  #go:hover{background:rgba(220,184,97,.3);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  #go:disabled{opacity:.4;cursor:default;transform:none}
+  .keys{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;max-width:640px;margin-top:6px}
+  .keys div{font-size:11.5px;opacity:.62;display:flex;align-items:center;gap:7px}
+  kbd{font-family:inherit;font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(243,238,222,.12);
+    border:1px solid rgba(243,238,222,.2);font-weight:700;letter-spacing:.04em}
+  #loadmsg{font-size:11px;opacity:.45;letter-spacing:.1em;height:14px}
+
+  /* help overlay */
+  #help{position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;
+    background:rgba(6,10,8,.82);backdrop-filter:blur(6px);pointer-events:auto}
+  #help.show{display:flex;animation:jin .25s ease both}
+  #help .box{max-width:720px;padding:26px 32px;line-height:1.6}
+  #help h3{font-size:22px;font-weight:400;margin-bottom:4px}
+  #help .cols{display:grid;grid-template-columns:1fr 1fr;gap:8px 34px;margin-top:16px}
+  #help .r{display:flex;justify-content:space-between;font-size:12.5px;gap:14px;
+    padding:4px 0;border-bottom:1px solid rgba(243,238,222,.07)}
+  #help .r span:last-child{opacity:.6;text-align:right}
+  #help .close{margin-top:20px;font-size:11px;opacity:.5;text-align:center;letter-spacing:.1em}
+  #paused{position:absolute;left:50%;top:16%;transform:translateX(-50%);font-size:12px;
+    letter-spacing:.35em;text-transform:uppercase;opacity:0;transition:opacity .3s}
+  #paused.show{opacity:.75}
+
+  /* souris libérée (Alt) */
+  #freem{position:absolute;left:50%;top:calc(16% + 24px);transform:translateX(-50%);font-size:10.5px;
+    letter-spacing:.24em;text-transform:uppercase;opacity:0;transition:opacity .2s;color:var(--gold)}
+  #freem.show{opacity:.8}
+
+  /* table d'édition génétique */
+  #gedit{position:absolute;left:14px;top:152px;width:344px;max-height:calc(100vh - 300px);
+    overflow:hidden auto;padding:0;display:none;pointer-events:auto;scrollbar-width:thin;
+    scrollbar-color:rgba(243,238,222,.25) transparent;z-index:6}
+  #gedit.show{display:block;animation:pinL .3s ease both}
+  @keyframes pinL{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+  #gedit::-webkit-scrollbar{width:6px}
+  #gedit::-webkit-scrollbar-thumb{background:rgba(243,238,222,.22);border-radius:3px}
+  #gedit .head{padding:11px 14px 10px;border-bottom:1px solid var(--panel-b);position:sticky;top:0;
+    background:rgba(10,16,13,.96);backdrop-filter:blur(9px);z-index:2}
+  #gedit .head .nm{font-size:15px;letter-spacing:.01em}
+  #gedit .head .sub{font-size:10.5px;opacity:.55;margin-top:2px;letter-spacing:.04em}
+  #gedit .body{padding:8px 14px 16px}
+  #gedit .acts{display:flex;gap:6px;margin-top:9px}
+  #gedit button{font-family:inherit;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+    padding:6px 11px;border-radius:6px;cursor:pointer;color:var(--paper);font-weight:700;
+    background:rgba(243,238,222,.08);border:1px solid var(--panel-b);transition:.15s}
+  #gedit button:hover{background:rgba(243,238,222,.2)}
+  #gedit button.gold{background:rgba(220,184,97,.2);border-color:rgba(220,184,97,.5)}
+  .gecat{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;opacity:.45;margin:12px 0 2px}
+  .gescope{font-size:10.5px;line-height:1.45;padding:6px 9px;border-radius:7px;margin-top:2px;
+    background:rgba(220,184,97,.1);border-left:2px solid rgba(220,184,97,.55)}
+  .gescope b{font-weight:700}
+  .gesep{font-size:9px;letter-spacing:.16em;text-transform:uppercase;opacity:.5;font-weight:700;
+    margin:18px 0 0;padding-top:10px;border-top:1px solid var(--panel-b)}
+  .ge{margin:5px 0 8px}
+  .ge .gl{display:flex;justify-content:space-between;font-size:10.5px;gap:8px}
+  .ge .gl b{font-weight:600;opacity:.85}
+  .ge .gl em{font-style:normal;opacity:.72;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ge input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:13px;
+    background:transparent;cursor:pointer;display:block;margin-top:1px}
+  .ge input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;
+    background:rgba(243,238,222,.14)}
+  .ge input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:12px;height:12px;border-radius:50%;margin-top:-4px;background:var(--gold);
+    border:1px solid rgba(0,0,0,.45)}
+  .ge input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:rgba(243,238,222,.14)}
+  .ge input[type=range]::-moz-range-thumb{width:12px;height:12px;border:1px solid rgba(0,0,0,.45);
+    border-radius:50%;background:var(--gold);border-width:1px}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="vig"></div>
+
+<div id="hud">
+  <div id="seasonbar"></div>
+  <div id="cross"><i></i><i></i><i></i><i></i><u></u></div>
+  <div id="paused">temps suspendu</div>
+  <div id="freem">souris libre — relâchez Alt</div>
+
+  <div id="top" class="pane">
+    <div class="cell"><div class="k">Saison</div><div class="v" id="tSeason">Printemps</div></div>
+    <div class="cell"><div class="k">Jour</div><div class="v" id="tDay">1</div></div>
+    <div class="cell"><div class="k">Heure</div><div class="v" id="tHour">06:00</div></div>
+    <div class="cell"><div class="k">Ciel</div><div class="v" id="tWeather">Clair</div></div>
+    <div id="speeds">
+      <button class="sp" data-s="0" title="Pause">II</button>
+      <button class="sp on" data-s="1">×1</button>
+      <button class="sp" data-s="4">×4</button>
+      <button class="sp" data-s="16">×16</button>
+      <button class="sp" data-s="64">×64</button>
+      <button class="sp" data-s="256">×256</button>
+    </div>
+  </div>
+
+  <div id="stats" class="pane">
+    <h4>Le pré — 1 hectare</h4>
+    <div class="row"><span>Plantes</span><span id="sPlants">0</span></div>
+    <div class="row"><span>En fleur</span><span id="sBloom">0</span></div>
+    <div class="row"><span>Graines</span><span id="sSeeds">0</span></div>
+    <div class="row"><span>Lignées</span><span id="sSpecies">0</span></div>
+    <div class="row"><span>Génération</span><span id="sGen">1</span></div>
+    <div class="row"><span>Humidité sol</span><span id="sWater">—</span></div>
+  </div>
+
+  <div id="insp" class="pane"></div>
+  <div id="gedit" class="pane"></div>
+  <div id="hold" class="pane"></div>
+  <div id="journal"></div>
+  <div id="toast"></div>
+  <div id="toolname" class="pane"></div>
+  <div id="bar"></div>
+</div>
+
+<div id="help">
+  <div class="box pane">
+    <h3 class="serif">Jardin Génétique</h3>
+    <div style="font-size:12.5px;opacity:.65">Un pré d'un hectare où tout pousse, se croise, et meurt.</div>
+    <div class="cols">
+      <div class="r"><span><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>se déplacer</span></div>
+      <div class="r"><span><kbd>Souris</kbd></span><span>regarder</span></div>
+      <div class="r"><span><kbd>Maj</kbd></span><span>courir</span></div>
+      <div class="r"><span><kbd>Ctrl</kbd></span><span>s'accroupir</span></div>
+      <div class="r"><span><kbd>Espace</kbd></span><span>sauter</span></div>
+      <div class="r"><span><kbd>0</kbd>…<kbd>9</kbd> / <kbd>Molette</kbd></span><span>changer d'outil (<kbd>0</kbd> = main vide)</span></div>
+      <div class="r"><span><kbd>Clic gauche</kbd></span><span>utiliser l'outil</span></div>
+      <div class="r"><span><kbd>Clic droit</kbd></span><span>épingler / lâcher</span></div>
+      <div class="r"><span><kbd>Alt</kbd> maintenu</span><span>libérer la souris (faire défiler les fiches)</span></div>
+      <div class="r"><span><kbd>P</kbd></span><span>suspendre le temps</span></div>
+      <div class="r"><span><kbd>T</kbd></span><span>accélérer le temps</span></div>
+      <div class="r"><span><kbd>H</kbd></span><span>masquer l'interface</span></div>
+      <div class="r"><span><kbd>N</kbd></span><span>ambiance sonore</span></div>
+      <div class="r"><span><kbd>Échap</kbd></span><span>libérer la souris</span></div>
+      <div class="r"><span><kbd>?</kbd></span><span>cette aide</span></div>
+    </div>
+    <div class="close">— appuyez sur une touche pour revenir au pré —</div>
+  </div>
+</div>
+
+<div id="start">
+  <h1 class="serif">Jardin Génétique</h1>
+  <div class="tag2">simulation de nature</div>
+  <p>Un hectare de pré. Chaque plante porte un ADN qui décrit sa tige, ses branches, ses pétales.
+     Chaque tronçon d'arbre, entre deux embranchements, porte sa propre copie de cet ADN — recopiée
+     de la partie précédente, parfois mutée. Les plantes fleurissent, se croisent, sèment, puis meurent.
+     Vous n'avez rien à gagner : regardez, mesurez, arrosez, croisez.</p>
+  <div class="keys">
+    <div><kbd>ZQSD</kbd> marcher</div><div><kbd>Souris</kbd> regarder</div>
+    <div><kbd>0–9</kbd> outils</div><div><kbd>Clic</kbd> utiliser</div>
+    <div><kbd>Alt</kbd> libérer la souris</div><div><kbd>?</kbd> aide</div>
+  </div>
+  <button id="go" disabled>Entrer dans le pré</button>
+  <div id="loadmsg">germination…</div>
+</div>
+
+<script>
+/* =====================================================================
+   0. NOYAU — aléatoire déterministe, bruit, vecteurs, matrices, couleurs
+   ===================================================================== */
+'use strict';
+
+/* --- RNG déterministe (mulberry32) --- */
+function makeRng(seed){
+  let a = seed >>> 0;
+  const f = function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+  f.range = (lo,hi)=> lo + f()*(hi-lo);
+  f.int   = (n)=> Math.floor(f()*n);
+  f.pick  = (arr)=> arr[Math.floor(f()*arr.length)];
+  f.chance= (p)=> f() < p;
+  // gaussienne centrée réduite (Box-Muller, moitié gaspillée : peu importe)
+  f.gauss = ()=>{
+    let u = 1-f(), v = f();
+    return Math.sqrt(-2*Math.log(u)) * Math.cos(6.283185307*v);
+  };
+  return f;
+}
+const RNG = makeRng((Math.random()*4294967296)>>>0);
+
+const clamp=(v,a,b)=> v<a?a:(v>b?b:v);
+const lerp =(a,b,t)=> a+(b-a)*t;
+const smooth=(t)=> t*t*(3-2*t);
+const fract=(x)=> x-Math.floor(x);
+const TAU = Math.PI*2, DEG = Math.PI/180;
+function smoothstep(e0,e1,x){ const t=clamp((x-e0)/(e1-e0),0,1); return t*t*(3-2*t); }
+
+/* --- bruit de valeur 2D lissé + fBm (déterministe par table) --- */
+const NOISE_P = new Uint8Array(512);
+(function(){
+  const r = makeRng(1337), p = new Uint8Array(256);
+  for(let i=0;i<256;i++) p[i]=i;
+  for(let i=255;i>0;i--){ const j=r.int(i+1); const t=p[i]; p[i]=p[j]; p[j]=t; }
+  for(let i=0;i<512;i++) NOISE_P[i]=p[i&255];
+})();
+function grad2(hash,x,y){
+  const h=hash&7, u=h<4?x:y, v=h<4?y:x;
+  return ((h&1)?-u:u) + ((h&2)?-2*v:2*v);
+}
+function noise2(x,y){
+  const X=Math.floor(x)&255, Y=Math.floor(y)&255;
+  const xf=x-Math.floor(x), yf=y-Math.floor(y);
+  const u=smooth(xf), v=smooth(yf);
+  const A=NOISE_P[X]+Y, B=NOISE_P[X+1]+Y;
+  return lerp(
+    lerp(grad2(NOISE_P[A],xf,yf),   grad2(NOISE_P[B],xf-1,yf),   u),
+    lerp(grad2(NOISE_P[A+1],xf,yf-1),grad2(NOISE_P[B+1],xf-1,yf-1),u), v) * 0.35;
+}
+function fbm2(x,y,oct=4,lac=2.03,gain=0.5){
+  let s=0,a=1,f=1,n=0;
+  for(let i=0;i<oct;i++){ s+=a*noise2(x*f,y*f); n+=a; a*=gain; f*=lac; }
+  return s/n;
+}
+/* hash rapide pour variations ponctuelles */
+function hash21(x,y){ return fract(Math.sin(x*127.1+y*311.7)*43758.5453); }
+
+/* --- vec3 (tableaux simples) --- */
+const V3 = {
+  set:(o,x,y,z)=>{o[0]=x;o[1]=y;o[2]=z;return o},
+  add:(o,a,b)=>{o[0]=a[0]+b[0];o[1]=a[1]+b[1];o[2]=a[2]+b[2];return o},
+  sub:(o,a,b)=>{o[0]=a[0]-b[0];o[1]=a[1]-b[1];o[2]=a[2]-b[2];return o},
+  scale:(o,a,s)=>{o[0]=a[0]*s;o[1]=a[1]*s;o[2]=a[2]*s;return o},
+  addScaled:(o,a,b,s)=>{o[0]=a[0]+b[0]*s;o[1]=a[1]+b[1]*s;o[2]=a[2]+b[2]*s;return o},
+  dot:(a,b)=> a[0]*b[0]+a[1]*b[1]+a[2]*b[2],
+  len:(a)=> Math.hypot(a[0],a[1],a[2]),
+  dist:(a,b)=> Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]),
+  norm:(o,a)=>{const l=Math.hypot(a[0],a[1],a[2])||1;o[0]=a[0]/l;o[1]=a[1]/l;o[2]=a[2]/l;return o},
+  cross:(o,a,b)=>{const x=a[1]*b[2]-a[2]*b[1],y=a[2]*b[0]-a[0]*b[2],z=a[0]*b[1]-a[1]*b[0];
+    o[0]=x;o[1]=y;o[2]=z;return o},
+  lerp:(o,a,b,t)=>{o[0]=a[0]+(b[0]-a[0])*t;o[1]=a[1]+(b[1]-a[1])*t;o[2]=a[2]+(b[2]-a[2])*t;return o},
+  copy:(o,a)=>{o[0]=a[0];o[1]=a[1];o[2]=a[2];return o},
+  clone:(a)=> [a[0],a[1],a[2]]
+};
+
+/* --- mat4 colonne-majeure --- */
+const M4 = {
+  create:()=> new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
+  ident:(o)=>{o.set([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);return o},
+  mul:(o,a,b)=>{
+    const a00=a[0],a01=a[1],a02=a[2],a03=a[3],a10=a[4],a11=a[5],a12=a[6],a13=a[7],
+          a20=a[8],a21=a[9],a22=a[10],a23=a[11],a30=a[12],a31=a[13],a32=a[14],a33=a[15];
+    for(let i=0;i<4;i++){
+      const b0=b[i*4],b1=b[i*4+1],b2=b[i*4+2],b3=b[i*4+3];
+      o[i*4]  =b0*a00+b1*a10+b2*a20+b3*a30;
+      o[i*4+1]=b0*a01+b1*a11+b2*a21+b3*a31;
+      o[i*4+2]=b0*a02+b1*a12+b2*a22+b3*a32;
+      o[i*4+3]=b0*a03+b1*a13+b2*a23+b3*a33;
+    }
+    return o;
+  },
+  perspective:(o,fovy,aspect,near,far)=>{
+    const f=1/Math.tan(fovy/2), nf=1/(near-far);
+    o.set([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0]);
+    return o;
+  },
+  ortho:(o,l,r,b,t,n,f)=>{
+    const lr=1/(l-r), bt=1/(b-t), nf=1/(n-f);
+    o.set([-2*lr,0,0,0, 0,-2*bt,0,0, 0,0,2*nf,0, (l+r)*lr,(t+b)*bt,(f+n)*nf,1]);
+    return o;
+  },
+  lookAt:(o,eye,center,up)=>{
+    const z=[eye[0]-center[0],eye[1]-center[1],eye[2]-center[2]];
+    V3.norm(z,z);
+    const x=[0,0,0]; V3.cross(x,up,z);
+    if(V3.len(x)<1e-6){ x[0]=1;x[1]=0;x[2]=0; } else V3.norm(x,x);
+    const y=[0,0,0]; V3.cross(y,z,x);
+    o.set([x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0,
+      -V3.dot(x,eye),-V3.dot(y,eye),-V3.dot(z,eye),1]);
+    return o;
+  },
+  trs:(o,px,py,pz,ry,s)=>{ // translation + rotation Y + échelle uniforme
+    const c=Math.cos(ry)*s, n=Math.sin(ry)*s;
+    o.set([c,0,-n,0, 0,s,0,0, n,0,c,0, px,py,pz,1]);
+    return o;
+  },
+  invert:(o,m)=>{
+    const a00=m[0],a01=m[1],a02=m[2],a03=m[3],a10=m[4],a11=m[5],a12=m[6],a13=m[7],
+          a20=m[8],a21=m[9],a22=m[10],a23=m[11],a30=m[12],a31=m[13],a32=m[14],a33=m[15];
+    const b00=a00*a11-a01*a10,b01=a00*a12-a02*a10,b02=a00*a13-a03*a10,
+          b03=a01*a12-a02*a11,b04=a01*a13-a03*a11,b05=a02*a13-a03*a12,
+          b06=a20*a31-a21*a30,b07=a20*a32-a22*a30,b08=a20*a33-a23*a30,
+          b09=a21*a32-a22*a31,b10=a21*a33-a23*a31,b11=a22*a33-a23*a32;
+    let det=b00*b11-b01*b10+b02*b09+b03*b08-b04*b07+b05*b06;
+    if(!det) return null; det=1/det;
+    o[0]=(a11*b11-a12*b10+a13*b09)*det; o[1]=(a02*b10-a01*b11-a03*b09)*det;
+    o[2]=(a31*b05-a32*b04+a33*b03)*det; o[3]=(a22*b04-a21*b05-a23*b03)*det;
+    o[4]=(a12*b08-a10*b11-a13*b07)*det; o[5]=(a00*b11-a02*b08+a03*b07)*det;
+    o[6]=(a32*b02-a30*b05-a33*b01)*det; o[7]=(a20*b05-a22*b02+a23*b01)*det;
+    o[8]=(a10*b10-a11*b08+a13*b06)*det; o[9]=(a01*b08-a00*b10-a03*b06)*det;
+    o[10]=(a30*b04-a31*b02+a33*b00)*det; o[11]=(a21*b02-a20*b04-a23*b00)*det;
+    o[12]=(a11*b07-a10*b09-a12*b06)*det; o[13]=(a00*b09-a01*b07+a02*b06)*det;
+    o[14]=(a31*b01-a30*b03-a32*b00)*det; o[15]=(a20*b03-a21*b01+a22*b00)*det;
+    return o;
+  }
+};
+
+/* --- repère orthonormé : rotation d'un vecteur autour d'un axe (Rodrigues) --- */
+function rotAxis(o,v,axis,ang){
+  const c=Math.cos(ang), s=Math.sin(ang);
+  const d=V3.dot(axis,v);
+  const cr=[0,0,0]; V3.cross(cr,axis,v);
+  o[0]=v[0]*c+cr[0]*s+axis[0]*d*(1-c);
+  o[1]=v[1]*c+cr[1]*s+axis[1]*d*(1-c);
+  o[2]=v[2]*c+cr[2]*s+axis[2]*d*(1-c);
+  return o;
+}
+/* un vecteur perpendiculaire quelconque */
+function perpOf(o,v){
+  if(Math.abs(v[1])<0.9){ V3.cross(o,v,[0,1,0]); } else { V3.cross(o,v,[1,0,0]); }
+  return V3.norm(o,o);
+}
+
+/* --- couleurs : HSL -> RGB linéaire-ish (on reste en sRGB, le shader corrige) --- */
+function hsl2rgb(h,s,l,out){
+  h=fract(h);
+  const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h*6)%2-1)), m=l-c/2;
+  let r,g,b;
+  const k=Math.floor(h*6);
+  if(k===0){r=c;g=x;b=0} else if(k===1){r=x;g=c;b=0} else if(k===2){r=0;g=c;b=x}
+  else if(k===3){r=0;g=x;b=c} else if(k===4){r=x;g=0;b=c} else {r=c;g=0;b=x}
+  out=out||[0,0,0];
+  out[0]=r+m; out[1]=g+m; out[2]=b+m;
+  return out;
+}
+function rgbCss(c){ return `rgb(${(c[0]*255)|0},${(c[1]*255)|0},${(c[2]*255)|0})`; }
+function hslCss(h,s,l){ return `hsl(${(fract(h)*360).toFixed(0)} ${(s*100).toFixed(0)}% ${(l*100).toFixed(0)}%)`; }
+</script>
+<script>
+/* =====================================================================
+   1. COUCHE WEBGL2 — compilation, buffers, cibles de rendu
+   ===================================================================== */
+const GLU = {
+  gl:null,
+  init(canvas){
+    const gl = canvas.getContext('webgl2', {
+      antialias:true, alpha:false, depth:true, stencil:false,
+      powerPreference:'high-performance', desynchronized:false
+    });
+    if(!gl) return null;
+    this.gl = gl;
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    gl.clearColor(0.05,0.07,0.06,1);
+    return gl;
+  },
+  shader(type, src, name){
+    const gl=this.gl, s=gl.createShader(type);
+    gl.shaderSource(s,src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){
+      const log=gl.getShaderInfoLog(s);
+      const lines=src.split('\n').map((l,i)=>(i+1)+': '+l).join('\n');
+      console.error('Shader ['+name+'] :\n'+log+'\n'+lines);
+      throw new Error('Shader '+name+' : '+log);
+    }
+    return s;
+  },
+  program(vs, fs, name, defines){
+    const gl=this.gl;
+    const pre = '#version 300 es\n' + (defines||[]).map(d=>'#define '+d+'\n').join('');
+    const p = gl.createProgram();
+    gl.attachShader(p, this.shader(gl.VERTEX_SHADER,   pre+vs, name+'.vs'));
+    gl.attachShader(p, this.shader(gl.FRAGMENT_SHADER, pre+fs, name+'.fs'));
+    gl.linkProgram(p);
+    if(!gl.getProgramParameter(p,gl.LINK_STATUS))
+      throw new Error('Link '+name+' : '+gl.getProgramInfoLog(p));
+    // cache des uniformes
+    const u = {};
+    const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+    for(let i=0;i<n;i++){
+      const info = gl.getActiveUniform(p,i);
+      const nm = info.name.replace(/\[0\]$/,'');
+      u[nm] = gl.getUniformLocation(p, info.name);
+    }
+    p.u = u;
+    return p;
+  },
+  buffer(data, target, usage){
+    const gl=this.gl, b=gl.createBuffer();
+    target = target||gl.ARRAY_BUFFER;
+    gl.bindBuffer(target,b);
+    gl.bufferData(target, data, usage||gl.STATIC_DRAW);
+    return b;
+  },
+  /* cible de profondeur pour les ombres */
+  shadowTarget(size){
+    const gl=this.gl;
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texStorage2D(gl.TEXTURE_2D,1,gl.DEPTH_COMPONENT24,size,size);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_COMPARE_MODE,gl.COMPARE_REF_TO_TEXTURE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_COMPARE_FUNC,gl.LEQUAL);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, tex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return {fb, tex, size};
+  },
+  /* petite cible couleur pour la sélection au pixel près */
+  pickTarget(size){
+    const gl=this.gl;
+    const tex=gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D,tex);
+    gl.texStorage2D(gl.TEXTURE_2D,1,gl.RGBA8,size,size);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+    const rb=gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER,rb);
+    gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,size,size);
+    const fb=gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER,fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,rb);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+    return {fb,tex,size};
+  },
+  dataTexture(w,h,fmt){
+    const gl=this.gl, t=gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D,t);
+    gl.texStorage2D(gl.TEXTURE_2D,1,fmt||gl.RGBA8,w,h);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    return t;
+  }
+};
+
+/* =====================================================================
+   2. SHADERS
+   ===================================================================== */
+
+/* --- fragments GLSL communs --- */
+const GLSL_COMMON = `
+precision highp float;
+precision highp int;
+precision highp sampler2D;
+precision highp sampler2DShadow;
+const float PI = 3.14159265;
+
+float hash12(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+float vnoise(vec2 p){
+  vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+  float a=hash12(i), b=hash12(i+vec2(1,0)), c=hash12(i+vec2(0,1)), d=hash12(i+vec2(1,1));
+  return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
+}
+float fbm(vec2 p){
+  float s=0.0, a=0.5;
+  for(int i=0;i<5;i++){ s+=a*vnoise(p); p*=2.03; a*=0.5; }
+  return s;
+}
+vec3 tonemap(vec3 x){          // ACES approx, filmique et doux
+  const float a=2.51,b=0.03,c=2.43,d=0.59,e=0.14;
+  return clamp((x*(a*x+b))/(x*(c*x+d)+e),0.0,1.0);
+}
+vec3 finish(vec3 c){
+  c = pow(tonemap(c*1.06), vec3(1.0/2.2));
+  float l = dot(c, vec3(0.2126,0.7152,0.0722));
+  c = mix(vec3(l), c, 1.18);                       // on redonne du pigment
+  return clamp(c*1.02-0.012, 0.0, 1.0);
+}
+`;
+
+const GLSL_SCENE = `
+uniform mat4 uVP, uLightVP;
+uniform vec3 uSunDir, uSunCol, uSkyCol, uGndCol, uFogCol, uCamPos;
+uniform float uTime, uFogDen, uWind, uSnow, uShadowStr, uWet, uAutomne;
+uniform sampler2DShadow uShadow;
+
+float shadowAt(vec3 wpos, float ndl){
+  vec4 lp = uLightVP * vec4(wpos,1.0);
+  vec3 p = lp.xyz/lp.w*0.5+0.5;
+  if(p.x<0.003||p.x>0.997||p.y<0.003||p.y>0.997||p.z>1.0) return 1.0;
+  float bias = max(0.0016*(1.0-ndl),0.0006) + 0.0006;
+  p.z -= bias;
+  float t = 1.0/2048.0;
+  float s = 0.0;
+  s += texture(uShadow, vec3(p.xy+vec2(-0.7,-0.3)*t*1.7, p.z));
+  s += texture(uShadow, vec3(p.xy+vec2( 0.9, 0.5)*t*1.7, p.z));
+  s += texture(uShadow, vec3(p.xy+vec2(-0.4, 0.8)*t*1.7, p.z));
+  s += texture(uShadow, vec3(p.xy+vec2( 0.5,-0.9)*t*1.7, p.z));
+  // atténuation douce sur le bord de la carte d'ombre
+  vec2 e = smoothstep(vec2(0.0),vec2(0.06),p.xy)*smoothstep(vec2(0.0),vec2(0.06),1.0-p.xy);
+  return mix(1.0, s*0.25, min(e.x,e.y));
+}
+// éclairage hémisphérique + soleil + ombrage
+vec3 lightSurface(vec3 albedo, vec3 N, vec3 wpos, float ao, float translucency){
+  float ndl = dot(N, uSunDir);
+  float wrapped = clamp((ndl+0.35)/1.35, 0.0, 1.0);          // diffus enveloppant
+  float sh = shadowAt(wpos, max(ndl,0.0));
+  sh = mix(1.0, sh, uShadowStr);
+  vec3 V = normalize(uCamPos - wpos);
+  float back = max(0.0, dot(-N, uSunDir)) * translucency;     // feuilles traversées par la lumière
+  float rim  = pow(clamp(1.0-max(dot(N,V),0.0),0.0,1.0),3.0)*0.25;
+  float hemi = N.y*0.5+0.5;
+  vec3 amb = mix(uGndCol, uSkyCol, hemi) * ao;
+  vec3 col = albedo * (amb + uSunCol*(wrapped*sh*0.95 + back*sh*0.75 + rim*0.4));
+  float spec = pow(max(dot(reflect(-uSunDir,N),V),0.0), 24.0)*0.10*sh*(0.4+uWet);
+  return col + uSunCol*spec*albedo;
+}
+vec3 applyFog(vec3 col, vec3 wpos){
+  float d = length(wpos - uCamPos);
+  float h = clamp(1.0 - (wpos.y-0.2)*0.045, 0.35, 1.0);
+  float f = 1.0 - exp(-pow(d*uFogDen*h, 1.6));
+  float sunAmt = pow(max(dot(normalize(wpos-uCamPos), uSunDir),0.0), 6.0);
+  vec3 fc = mix(uFogCol, uFogCol*1.15+uSunCol*0.28, sunAmt);
+  return mix(col, fc, clamp(f,0.0,1.0));
+}
+// balancement du vent : amplitude portée par le sommet
+vec3 windSway(vec3 wpos, float flex, float phase){
+  float t = uTime;
+  float g = fbm(wpos.xz*0.05 + vec2(t*0.09,0.0));            // rafales lentes
+  float amp = uWind*(0.085+g*0.135)*flex;
+  float s1 = sin(t*1.9 + wpos.x*0.35 + wpos.z*0.22 + phase);
+  float s2 = sin(t*3.7 + wpos.z*0.6 + phase*1.7)*0.35;
+  return vec3((s1+s2)*amp, -abs(s1)*amp*0.16, (s1*0.6+s2*0.8)*amp*0.75);
+}
+`;
+
+/* --- CIEL : un triangle plein écran --- */
+const SH_SKY_VS = `
+out vec2 vNdc;
+void main(){
+  vec2 p = vec2((gl_VertexID<<1)&2, gl_VertexID&2);
+  vNdc = p*2.0-1.0;
+  gl_Position = vec4(vNdc,1.0,1.0);
+}`;
+const SH_SKY_FS = GLSL_COMMON + `
+in vec2 vNdc;
+out vec4 frag;
+uniform mat4 uSkyMat;
+uniform vec3 uSunDir, uSunCol, uZenith, uHorizon, uGroundHaze;
+uniform float uTime, uNight, uCloud, uStorm;
+
+void main(){
+  vec4 h = uSkyMat*vec4(vNdc,1.0,1.0);
+  vec3 d = normalize(h.xyz/h.w);
+  float up = d.y;
+
+  // dégradé zénith/horizon
+  float t = pow(clamp(up*0.5+0.5,0.0,1.0), 0.55);
+  vec3 col = mix(uHorizon, uZenith, smoothstep(0.36,0.95,t));
+  col = mix(uGroundHaze, col, smoothstep(-0.06,0.14,up));
+
+  // halo solaire
+  float sd = max(dot(d,uSunDir),0.0);
+  col += uSunCol*pow(sd,7.0)*0.55;
+  col += uSunCol*pow(sd,220.0)*7.0;                 // disque
+  col += uSunCol*pow(sd,2.2)*0.12;
+
+  // étoiles
+  if(uNight>0.01 && up>0.0){
+    vec2 sp = d.xz/(abs(d.y)+0.35)*22.0;
+    float st = hash12(floor(sp*3.0));
+    float tw = 0.5+0.5*sin(uTime*2.1+st*50.0);
+    float star = smoothstep(0.9955,1.0,hash12(floor(sp*9.0)+3.7))*(0.6+0.4*tw);
+    col += vec3(0.85,0.9,1.0)*star*uNight*2.2*smoothstep(0.02,0.3,up);
+  }
+
+  // nuages : deux couches sur un plan
+  if(up>0.005){
+    vec2 cp = d.xz/max(up,0.02);
+    float w = uTime*0.006;
+    float n1 = fbm(cp*0.055 + vec2(w,w*0.5));
+    float n2 = fbm(cp*0.13  + vec2(-w*1.7,w*0.9));
+    float dens = clamp((n1*0.72+n2*0.4-0.44+uCloud*0.62)*2.3,0.0,1.0);
+    dens *= smoothstep(0.005,0.16,up);
+    float lightEdge = clamp(n2*1.4,0.0,1.0);
+    vec3 cbase = mix(vec3(0.30,0.31,0.35), vec3(1.02,0.99,0.95), lightEdge);
+    cbase = mix(cbase, cbase*vec3(0.42,0.44,0.50), uStorm);
+    cbase = mix(cbase*0.16, cbase, 1.0-uNight*0.86);
+    cbase += uSunCol*pow(sd,10.0)*0.5*(1.0-uStorm);
+    col = mix(col, cbase, dens*0.92);
+  }
+  frag = vec4(finish(col),1.0);
+}`;
+
+/* --- TERRAIN --- */
+const SH_TER_VS = GLSL_COMMON + GLSL_SCENE + `
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aNrm;
+out vec3 vPos; out vec3 vNrm;
+void main(){
+  vPos=aPos; vNrm=aNrm;
+  gl_Position = uVP*vec4(aPos,1.0);
+}`;
+const SH_TER_FS = GLSL_COMMON + GLSL_SCENE + `
+in vec3 vPos; in vec3 vNrm;
+out vec4 frag;
+uniform sampler2D uSoil;   // R = humidité, G = nutriments
+uniform float uField;
+void main(){
+  vec2 uv = vPos.xz/uField+0.5;
+  vec3 N = normalize(vNrm);
+  float n1 = fbm(vPos.xz*0.9);
+  float n2 = vnoise(vPos.xz*7.0);
+  float n3 = fbm(vPos.xz*0.17);
+
+  vec3 grassA = vec3(0.196,0.286,0.118);
+  vec3 grassB = vec3(0.318,0.396,0.157);
+  vec3 dry    = vec3(0.463,0.435,0.235);
+  vec3 soil   = vec3(0.243,0.192,0.137);
+
+  vec3 c = mix(grassA, grassB, n1*0.75+n2*0.25);
+  c = mix(c, dry, smoothstep(0.60,0.95,n3)*0.34);
+  // sentiers / plaques de terre dans les creux
+  float bare = smoothstep(0.66,0.88,fbm(vPos.xz*0.34+31.0));
+  c = mix(c, soil, bare*0.42);
+
+  /* grain fin : c'est lui qui fait lire le sol comme du gazon quand on
+     le regarde de haut, entre les brins modélisés */
+  float d1 = vnoise(vPos.xz*27.0);
+  float d2 = vnoise(vPos.xz*63.0+7.3);
+  float d3 = fbm(vPos.xz*3.1);
+  float d4 = vnoise(vec2(vPos.x*46.0, vPos.z*9.0));   // stries dans le sens des brins
+  c *= 0.80 + 0.42*(d1*0.44+d2*0.26+d3*0.20+d4*0.10);
+  c = mix(c, c*vec3(0.92,1.10,0.80), smoothstep(0.56,0.92,d3)*0.5);
+
+  c = mix(c, vec3(0.372,0.318,0.150)*(0.75+0.55*d1), uAutomne*0.50);
+
+  vec2 sd = texture(uSoil, uv).rg;
+  c *= mix(1.0, 0.76, clamp(sd.r,0.0,1.0)*0.9);       // sol humide = plus sombre
+  c = mix(c, c*vec3(0.86,1.06,0.80), clamp(sd.g,0.0,1.0)*0.25);
+  c = mix(c*vec3(1.10,1.02,0.78), c, clamp(sd.r*1.8,0.0,1.0)); // sec = jauni
+
+  if(uSnow>0.001){
+    float sn = clamp(uSnow*(0.35+N.y*0.9)*(0.7+0.6*n1),0.0,1.0);
+    c = mix(c, vec3(0.90,0.93,0.99), sn);
+  }
+  vec3 col = lightSurface(c, N, vPos, 1.0, 0.0);
+  frag = vec4(finish(applyFog(col,vPos)),1.0);
+}`;
+
+/* --- PLANTES et objets (variantes : couleur / profondeur / sélection) --- */
+const SH_PLANT_VS = GLSL_COMMON + GLSL_SCENE + `
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aNrm;
+layout(location=2) in vec3 aCol;
+layout(location=3) in float aWind;
+layout(location=4) in float aPart;
+uniform mat4 uModel;
+uniform float uPhase, uDroop;
+out vec3 vPos; out vec3 vNrm; out vec3 vCol; flat out float vPart;
+void main(){
+  vec4 w = uModel*vec4(aPos,1.0);
+  vec3 wp = w.xyz;
+  wp += windSway(wp, aWind, uPhase);
+  vPos = wp;
+  vNrm = normalize(mat3(uModel)*aNrm);
+  vCol = aCol;
+  vPart = aPart;
+#ifdef SHADOW
+  gl_Position = uLightVP*vec4(wp,1.0);
+#else
+  gl_Position = uVP*vec4(wp,1.0);
+#endif
+}`;
+const SH_PLANT_FS = GLSL_COMMON + GLSL_SCENE + `
+in vec3 vPos; in vec3 vNrm; in vec3 vCol; flat in float vPart;
+uniform vec3 uTint;
+uniform float uHighlight, uAlpha;
+uniform vec2 uPickId;      // x = identifiant plante, y = tronçon surligné
+out vec4 frag;
+void main(){
+#ifdef PICK
+  float id = uPickId.x;
+  frag = vec4(mod(id,256.0)/255.0, floor(id/256.0)/255.0,
+              mod(vPart,256.0)/255.0, floor(vPart/256.0)/255.0);
+#else
+ #ifdef SHADOW
+  frag = vec4(1.0);
+ #else
+  vec3 N = normalize(vNrm);
+  if(!gl_FrontFacing) N = -N;
+  vec3 alb = vCol*uTint;
+  float trans = clamp(vCol.g*0.9+0.1,0.0,1.0)*0.55;
+  vec3 col = lightSurface(alb, N, vPos, 0.86+0.14*clamp(vPos.y,0.0,1.0), trans);
+  if(uHighlight>0.5 && abs(vPart-uPickId.y)<0.5){
+    col += vec3(0.85,0.72,0.30)*0.5*(0.6+0.4*sin(uTime*6.0));
+  }
+  frag = vec4(finish(applyFog(col,vPos)), uAlpha);
+ #endif
+#endif
+}`;
+
+/* --- HERBE : brins générés dans le vertex shader, instanciés --- */
+const SH_GRASS_VS = GLSL_COMMON + GLSL_SCENE + `
+layout(location=0) in vec3 iPos;
+layout(location=1) in vec4 iParam;   // rot, hauteur, largeur, penchant
+layout(location=2) in vec3 iCol;
+out vec3 vPos; out vec3 vNrm; out vec3 vCol; out float vUp;
+const int SEG = 4;
+void main(){
+  int vid = gl_VertexID;
+  int row = vid>>1;
+  float side = float(vid&1)*2.0-1.0;
+  float t = float(row)/float(SEG);
+  float rot=iParam.x, H=iParam.y, W=iParam.z, bend=iParam.w;
+
+  float dist = length(iPos.xz-uCamPos.xz);
+  float fade = 1.0-smoothstep(19.0,34.0,dist);
+  H *= fade; W *= (0.6+0.4*fade);
+
+  vec2 dir = vec2(cos(rot), sin(rot));
+  float y = H*t;
+  float lean = bend*t*t*H;
+  float w = W*(1.0-t*t*0.92)*(1.0-t*0.12);
+
+  vec3 p = iPos + vec3(dir.x*lean, y - t*t*bend*bend*H*0.16, dir.y*lean);
+  vec3 tangent = normalize(vec3(dir.x*2.0*bend/max(H,0.001), 1.0/max(H,0.001), dir.y*2.0*bend/max(H,0.001)));
+  vec3 sideDir = normalize(vec3(-dir.y, 0.0, dir.x));
+  p += sideDir*side*w;
+
+  p += windSway(p, t*t*(1.2+bend), iPos.x*3.1+iPos.z*1.7);
+  vNrm = normalize(cross(sideDir, tangent) + vec3(0.0,0.25,0.0) + sideDir*side*0.55);
+  vPos = p; vCol = iCol; vUp = t;
+#ifdef SHADOW
+  gl_Position = uLightVP*vec4(p,1.0);
+#else
+  gl_Position = uVP*vec4(p,1.0);
+#endif
+}`;
+const SH_GRASS_FS = GLSL_COMMON + GLSL_SCENE + `
+in vec3 vPos; in vec3 vNrm; in vec3 vCol; in float vUp;
+out vec4 frag;
+void main(){
+  vec3 N = normalize(vNrm);
+  if(!gl_FrontFacing) N=-N;
+  vec3 alb = vCol*(0.80+0.42*vUp);
+  alb = mix(alb, vec3(0.395,0.330,0.150)*(0.62+0.75*vUp), uAutomne*clamp(0.42+0.45*vUp,0.0,1.0));
+  if(uSnow>0.001) alb = mix(alb, vec3(0.88,0.92,0.98), uSnow*0.8*smoothstep(0.1,0.75,vUp));
+  vec3 col = lightSurface(alb, N, vPos, 0.68+0.32*vUp, 0.6);
+  frag = vec4(finish(applyFog(col,vPos)),1.0);
+}`;
+
+/* --- PARTICULES : quads orientés caméra --- */
+const SH_PART_VS = GLSL_COMMON + GLSL_SCENE + `
+layout(location=0) in vec3 iPos;
+layout(location=1) in vec4 iCol;
+layout(location=2) in vec4 iMisc;   // taille, type, rotation, phase
+out vec2 vUv; out vec4 vCol; out float vType; out vec3 vPos;
+uniform vec3 uRight, uUpv;
+void main(){
+  vec2 q = vec2(float((gl_VertexID<<1)&2)-1.0, float(gl_VertexID&2)-1.0);
+  vUv = q*0.5+0.5; vCol = iCol; vType = iMisc.y;
+  float s = iMisc.x;
+  vec3 R = uRight, U = uUpv;
+  if(iMisc.y>1.5){ R = uRight; U = vec3(0.0,1.0,0.0); }   // pluie : étirée verticalement
+  float c=cos(iMisc.z), sn=sin(iMisc.z);
+  vec2 r = vec2(q.x*c-q.y*sn, q.x*sn+q.y*c);
+  vec3 p = iPos + R*r.x*s + U*r.y*s*(iMisc.y>1.5?5.0:1.0);
+  vPos = p;
+  gl_Position = uVP*vec4(p,1.0);
+}`;
+const SH_PART_FS = GLSL_COMMON + GLSL_SCENE + `
+in vec2 vUv; in vec4 vCol; in float vType; in vec3 vPos;
+out vec4 frag;
+void main(){
+  vec2 d = vUv*2.0-1.0;
+  float r = dot(d,d);
+  float a = vCol.a;
+  if(vType<0.5){                       // pollen : point doux
+    a *= smoothstep(1.0,0.05,r);
+  } else if(vType<1.5){                // pétale / feuille : losange
+    a *= step(abs(d.x)+abs(d.y), 1.0);
+  } else if(vType<2.5){                // pluie
+    a *= smoothstep(1.0,0.2,abs(d.x))*smoothstep(1.0,0.5,abs(d.y));
+  } else {                             // neige
+    a *= smoothstep(1.0,0.1,r);
+  }
+  if(a<0.01) discard;
+  vec3 c = vCol.rgb*(uSkyCol*0.9+uSunCol*0.6);
+  frag = vec4(finish(applyFog(c,vPos)), a);
+}`;
+</script>
+<script>
+/* =====================================================================
+   3. ADN — gènes, chromosome, méiose, mutations, ADN somatique
+   =====================================================================
+   Un génome est un Float32Array de valeurs réelles (unités physiques).
+   L'ordre du tableau EST le chromosome : la recombinaison se fait par
+   points de coupure, donc les gènes voisins sont liés entre eux.
+   ===================================================================== */
+
+const GENES = [
+  /* ---- architecture ---- */
+  {k:'hauteur',      l:'Hauteur adulte',   c:'arch', min:0.08, max:9.0,  u:'m',  d:2},
+  {k:'vigueur',      l:'Vigueur',          c:'arch', min:0.30, max:2.20, u:'',   d:2},
+  {k:'epaisseur',    l:'Épaisseur de tige',c:'arch', min:0.003,max:0.22, u:'m',  d:3},
+  {k:'conicite',     l:'Conicité',         c:'arch', min:0.45, max:0.97, u:'',   d:2},
+  {k:'nbSegments',   l:'Tronçons par axe', c:'arch', min:2,    max:9,    u:'',   d:0},
+  {k:'courbure',     l:'Courbure',         c:'arch', min:-0.55,max:0.95, u:'',   d:2},
+  {k:'torsion',      l:'Torsion',          c:'arch', min:-70,  max:70,   u:'°',  d:0},
+  {k:'ramification', l:'Ramification',     c:'arch', min:0,    max:1,    u:'',   d:2},
+  {k:'angleBranche', l:'Angle de branche', c:'arch', min:6,    max:80,   u:'°',  d:0},
+  {k:'nbBranches',   l:'Branches / nœud',  c:'arch', min:1,    max:4,    u:'',   d:1},
+  {k:'profondeur',   l:'Ordres de ramure', c:'arch', min:0,    max:6,    u:'',   d:1},
+  {k:'phyllotaxie',  l:'Phyllotaxie',      c:'arch', min:70,   max:180,  u:'°',  d:0},
+  /* ---- feuillage ---- */
+  {k:'tailleFeuille',l:'Taille de feuille',c:'feuille', min:0.008,max:0.55,u:'m',d:3},
+  {k:'largFeuille',  l:'Largeur relative', c:'feuille', min:0.10, max:1.15,u:'', d:2},
+  {k:'denture',      l:'Denture du bord',  c:'feuille', min:0,   max:1,   u:'',  d:2},
+  {k:'lobes',        l:'Découpe en lobes', c:'feuille', min:0,   max:1,   u:'',  d:2},
+  {k:'nbFeuilles',   l:'Feuilles / nœud',  c:'feuille', min:0,   max:4,   u:'',  d:1},
+  {k:'teinteFeuille',l:'Teinte du limbe',  c:'feuille', min:0.14,max:0.44,u:'',  d:3},
+  {k:'satFeuille',   l:'Saturation limbe', c:'feuille', min:0.12,max:0.90,u:'',  d:2},
+  {k:'lumFeuille',   l:'Clarté du limbe',  c:'feuille', min:0.12,max:0.58,u:'',  d:2},
+  {k:'portFeuille',  l:'Port de la feuille',c:'feuille',min:0,   max:1,   u:'',  d:2},
+  /* ---- fleur ---- */
+  {k:'nbPetales',    l:'Nombre de pétales',c:'fleur', min:3,   max:34,  u:'',  d:0},
+  {k:'longPetale',   l:'Longueur de pétale',c:'fleur',min:0.006,max:0.17,u:'m',d:3},
+  {k:'largPetale',   l:'Largeur de pétale',c:'fleur', min:0.08,max:1.25,u:'',  d:2},
+  {k:'courbePetale', l:'Enroulement',      c:'fleur', min:-1.0,max:1.5, u:'',  d:2},
+  {k:'torsadePetale',l:'Torsade',          c:'fleur', min:-1.0,max:1.0, u:'',  d:2},
+  {k:'pointePetale', l:'Forme de pointe',  c:'fleur', min:0,   max:1,   u:'',  d:2},
+  {k:'rangees',      l:'Rangées de pétales',c:'fleur',min:1,   max:4,   u:'',  d:1},
+  {k:'teintePetale', l:'Teinte des pétales',c:'fleur',min:0,   max:1,   u:'',  d:3},
+  {k:'satPetale',    l:'Saturation pétale',c:'fleur', min:0.04,max:1,   u:'',  d:2},
+  {k:'lumPetale',    l:'Clarté du pétale', c:'fleur', min:0.26,max:0.95,u:'',  d:2},
+  {k:'degradePetale',l:'Dégradé vers la pointe',c:'fleur',min:-0.25,max:0.25,u:'',d:3},
+  {k:'teinteCoeur',  l:'Teinte du cœur',   c:'fleur', min:0,   max:1,   u:'',  d:3},
+  {k:'tailleCoeur',  l:'Taille du cœur',   c:'fleur', min:0.12,max:1.5, u:'',  d:2},
+  {k:'nbFleurs',     l:'Fleurs par hampe', c:'fleur', min:1,   max:14,  u:'',  d:0},
+  {k:'debutFloraison',l:'Début de floraison',c:'fleur',min:0,  max:1,   u:'',  d:2},
+  {k:'dureeFloraison',l:'Durée de floraison',c:'fleur',min:0.05,max:0.55,u:'',d:2},
+  /* ---- cycle de vie ---- */
+  {k:'longevite',    l:'Longévité',        c:'vie', min:8,    max:900, u:'j', d:0},
+  {k:'maturite',     l:'Âge de maturité',  c:'vie', min:0.04, max:0.50,u:'',  d:2},
+  {k:'nbGraines',    l:'Graines par fruit',c:'vie', min:1,    max:9,   u:'',  d:1},
+  {k:'dispersion',   l:'Dispersion',       c:'vie', min:0.4,  max:24,  u:'m', d:1},
+  {k:'tauxMutation', l:'Taux de mutation', c:'vie', min:0.002,max:0.25,u:'',  d:3},
+  /* ---- écologie ---- */
+  {k:'besoinEau',    l:"Besoin d'eau",     c:'eco', min:0.08, max:1,   u:'',  d:2},
+  {k:'besoinLumiere',l:'Besoin de lumière',c:'eco', min:0.08, max:1,   u:'',  d:2},
+  {k:'rusticite',    l:'Rusticité au froid',c:'eco',min:0,    max:1,   u:'',  d:2},
+  /* ---- écorce ---- */
+  {k:'teinteTige',   l:'Teinte de la tige',c:'tige', min:0,   max:1,   u:'',  d:3},
+  {k:'satTige',      l:'Saturation tige',  c:'tige', min:0,   max:0.7, u:'',  d:2},
+  {k:'lumTige',      l:'Clarté de la tige',c:'tige', min:0.06,max:0.88,u:'',  d:2},
+];
+const NG = GENES.length;
+const GI = {};                          // GI.hauteur -> index
+GENES.forEach((g,i)=>{ GI[g.k]=i; g.i=i; });
+/* Chaque tronçon lit sa propre copie du génome : réécrire un gène sur une
+   branche ne touche qu'elle et sa descendance. Ces dix-là font exception —
+   ils décrivent l'individu entier (son horloge, ses besoins, ses graines)
+   et n'ont aucun sens à l'échelle d'un rameau. */
+const GENES_INDIVISIBLES = new Set(['longevite','maturite','nbGraines','dispersion','tauxMutation',
+  'besoinEau','besoinLumiere','rusticite','debutFloraison','dureeFloraison']);
+GENES.forEach(g=>{ g.loc = !GENES_INDIVISIBLES.has(g.k); });
+const CATS = {
+  arch:{l:'Architecture', col:'#9dbb86'},
+  feuille:{l:'Feuillage', col:'#7fb08a'},
+  fleur:{l:'Fleur',       col:'#d98fa0'},
+  vie:{l:'Cycle de vie',  col:'#dcb861'},
+  eco:{l:'Écologie',      col:'#8fb6cf'},
+  tige:{l:'Tige / écorce',col:'#c0a184'}
+};
+
+/* --- gènes somatiques : ce qui peut dériver d'un tronçon à l'autre --- */
+const SOMA = [
+  {k:'longueur',   l:'Longueur du tronçon', mode:'x', lo:0.45,hi:1.75, amp:0.16},
+  {k:'rayon',      l:'Rayon du tronçon',    mode:'x', lo:0.45,hi:1.70, amp:0.14},
+  {k:'angleBranche',l:'Angle de départ',    mode:'x', lo:0.35,hi:2.10, amp:0.20},
+  {k:'ramification',l:'Envie de brancher',  mode:'x', lo:0.10,hi:2.30, amp:0.24},
+  {k:'courbure',   l:'Courbure locale',     mode:'+', lo:-0.75,hi:0.95,amp:0.16},
+  {k:'torsion',    l:'Torsion locale',      mode:'+', lo:-45, hi:45,   amp:9.0},
+  {k:'vigueur',    l:'Vigueur du rameau',   mode:'x', lo:0.35,hi:1.95, amp:0.15},
+  {k:'teinteFeuille',l:'Teinte du feuillage',mode:'+',lo:-0.09,hi:0.09,amp:0.017},
+  {k:'tailleFeuille',l:'Taille des feuilles',mode:'x',lo:0.35,hi:2.10, amp:0.18},
+  {k:'teintePetale',l:'Teinte des fleurs',  mode:'+', lo:-0.30,hi:0.30,amp:0.045},
+  {k:'nbPetales',  l:'Nombre de pétales',   mode:'x', lo:0.50,hi:1.80, amp:0.13},
+  {k:'phyllotaxie',l:'Phyllotaxie locale',  mode:'x', lo:0.72,hi:1.32, amp:0.07},
+  {k:'nbBranches', l:'Branches au nœud',    mode:'x', lo:0.45,hi:1.85, amp:0.16},
+  {k:'lumPetale',  l:'Clarté des fleurs',   mode:'x', lo:0.55,hi:1.55, amp:0.11},
+];
+const NS = SOMA.length;
+const SI = {};
+SOMA.forEach((s,i)=>{ SI[s.k]=i; s.i=i; });
+
+/* =====================================================================
+   Lignées de départ — chaque espèce est un jeu de valeurs de base
+   ===================================================================== */
+const PORT = {HERBE:0, ARBUSTE:1, ARBRE:2};
+const SPECIES = [
+  { nom:'Coquelicot des sillons', court:'Coquelicot', port:PORT.HERBE, poids:1.2,
+    base:{hauteur:0.70,vigueur:1.35,epaisseur:0.006,conicite:0.85,nbSegments:4,courbure:0.30,
+      torsion:14,ramification:0.18,angleBranche:36,nbBranches:1,profondeur:1,phyllotaxie:137,
+      tailleFeuille:0.07,largFeuille:0.30,denture:0.75,lobes:0.6,nbFeuilles:2,teinteFeuille:0.26,
+      satFeuille:0.45,lumFeuille:0.30,portFeuille:0.55,
+      nbPetales:4,longPetale:0.100,largPetale:0.95,courbePetale:0.55,torsadePetale:0.15,
+      pointePetale:0.25,rangees:1,teintePetale:0.008,satPetale:0.95,lumPetale:0.47,
+      degradePetale:-0.012,teinteCoeur:0.75,tailleCoeur:0.35,nbFleurs:1,
+      debutFloraison:0.24,dureeFloraison:0.24,
+      longevite:34,maturite:0.28,nbGraines:5,dispersion:5.5,tauxMutation:0.055,
+      besoinEau:0.45,besoinLumiere:0.85,rusticite:0.30,
+      teinteTige:0.25,satTige:0.42,lumTige:0.30} },
+
+  { nom:'Marguerite solaire', court:'Marguerite', port:PORT.HERBE, poids:1.3,
+    base:{hauteur:0.54,vigueur:1.10,epaisseur:0.005,conicite:0.88,nbSegments:3,courbure:0.12,
+      torsion:8,ramification:0.30,angleBranche:30,nbBranches:2,profondeur:1,phyllotaxie:137.5,
+      tailleFeuille:0.055,largFeuille:0.34,denture:0.55,lobes:0.25,nbFeuilles:2,teinteFeuille:0.28,
+      satFeuille:0.50,lumFeuille:0.27,portFeuille:0.45,
+      nbPetales:19,longPetale:0.048,largPetale:0.22,courbePetale:0.14,torsadePetale:0.05,
+      pointePetale:0.45,rangees:1,teintePetale:0.14,satPetale:0.10,lumPetale:0.90,
+      degradePetale:0.008,teinteCoeur:0.14,tailleCoeur:0.55,nbFleurs:1,
+      debutFloraison:0.26,dureeFloraison:0.32,
+      longevite:48,maturite:0.26,nbGraines:6,dispersion:4.0,tauxMutation:0.045,
+      besoinEau:0.40,besoinLumiere:0.80,rusticite:0.45,
+      teinteTige:0.27,satTige:0.40,lumTige:0.28} },
+
+  { nom:'Campanule des brumes', court:'Campanule', port:PORT.HERBE, poids:1.0,
+    base:{hauteur:0.74,vigueur:1.05,epaisseur:0.0055,conicite:0.86,nbSegments:5,courbure:0.42,
+      torsion:26,ramification:0.42,angleBranche:44,nbBranches:2,profondeur:2,phyllotaxie:137.5,
+      tailleFeuille:0.045,largFeuille:0.28,denture:0.30,lobes:0.10,nbFeuilles:2,teinteFeuille:0.30,
+      satFeuille:0.42,lumFeuille:0.26,portFeuille:0.60,
+      nbPetales:6,longPetale:0.040,largPetale:0.55,courbePetale:1.10,torsadePetale:0.30,
+      pointePetale:0.60,rangees:1,teintePetale:0.69,satPetale:0.55,lumPetale:0.62,
+      degradePetale:0.030,teinteCoeur:0.72,tailleCoeur:0.28,nbFleurs:6,
+      debutFloraison:0.30,dureeFloraison:0.26,
+      longevite:40,maturite:0.30,nbGraines:5,dispersion:6.5,tauxMutation:0.060,
+      besoinEau:0.60,besoinLumiere:0.55,rusticite:0.40,
+      teinteTige:0.28,satTige:0.35,lumTige:0.26} },
+
+  { nom:"Épi d'or", court:'Épi', port:PORT.HERBE, poids:0.9,
+    base:{hauteur:0.95,vigueur:1.25,epaisseur:0.008,conicite:0.80,nbSegments:6,courbure:0.10,
+      torsion:34,ramification:0.12,angleBranche:22,nbBranches:1,profondeur:1,phyllotaxie:99,
+      tailleFeuille:0.10,largFeuille:0.13,denture:0.10,lobes:0.05,nbFeuilles:2,teinteFeuille:0.24,
+      satFeuille:0.48,lumFeuille:0.32,portFeuille:0.70,
+      nbPetales:5,longPetale:0.038,largPetale:0.48,courbePetale:0.70,torsadePetale:0.20,
+      pointePetale:0.55,rangees:1,teintePetale:0.135,satPetale:0.92,lumPetale:0.55,
+      degradePetale:-0.02,teinteCoeur:0.12,tailleCoeur:0.22,nbFleurs:13,
+      debutFloraison:0.36,dureeFloraison:0.28,
+      longevite:60,maturite:0.30,nbGraines:7,dispersion:3.5,tauxMutation:0.050,
+      besoinEau:0.50,besoinLumiere:0.75,rusticite:0.55,
+      teinteTige:0.22,satTige:0.45,lumTige:0.34} },
+
+  { nom:'Trèfle des rosées', court:'Trèfle', port:PORT.HERBE, poids:1.4,
+    base:{hauteur:0.26,vigueur:1.45,epaisseur:0.004,conicite:0.90,nbSegments:2,courbure:0.55,
+      torsion:10,ramification:0.55,angleBranche:58,nbBranches:2,profondeur:2,phyllotaxie:120,
+      tailleFeuille:0.035,largFeuille:0.85,denture:0.20,lobes:0.85,nbFeuilles:3,teinteFeuille:0.31,
+      satFeuille:0.55,lumFeuille:0.30,portFeuille:0.25,
+      nbPetales:14,longPetale:0.028,largPetale:0.38,courbePetale:0.35,torsadePetale:0.10,
+      pointePetale:0.40,rangees:2,teintePetale:0.92,satPetale:0.45,lumPetale:0.72,
+      degradePetale:0.02,teinteCoeur:0.30,tailleCoeur:0.30,nbFleurs:3,
+      debutFloraison:0.18,dureeFloraison:0.46,
+      longevite:26,maturite:0.22,nbGraines:4,dispersion:2.2,tauxMutation:0.070,
+      besoinEau:0.55,besoinLumiere:0.50,rusticite:0.60,
+      teinteTige:0.30,satTige:0.40,lumTige:0.28} },
+
+  { nom:'Buisson argenté', court:'Buisson', port:PORT.ARBUSTE, poids:0.55,
+    base:{hauteur:1.75,vigueur:0.75,epaisseur:0.030,conicite:0.78,nbSegments:4,courbure:0.22,
+      torsion:30,ramification:0.82,angleBranche:48,nbBranches:3,profondeur:4,phyllotaxie:137.5,
+      tailleFeuille:0.050,largFeuille:0.46,denture:0.35,lobes:0.15,nbFeuilles:2,teinteFeuille:0.25,
+      satFeuille:0.28,lumFeuille:0.38,portFeuille:0.40,
+      nbPetales:5,longPetale:0.022,largPetale:0.60,courbePetale:0.30,torsadePetale:0.05,
+      pointePetale:0.30,rangees:1,teintePetale:0.10,satPetale:0.12,lumPetale:0.88,
+      degradePetale:0.01,teinteCoeur:0.13,tailleCoeur:0.25,nbFleurs:5,
+      debutFloraison:0.16,dureeFloraison:0.20,
+      longevite:210,maturite:0.16,nbGraines:4,dispersion:8.0,tauxMutation:0.045,
+      besoinEau:0.35,besoinLumiere:0.60,rusticite:0.80,
+      teinteTige:0.10,satTige:0.12,lumTige:0.52} },
+
+  { nom:'Chêne murmurant', court:'Chêne', port:PORT.ARBRE, poids:0.30,
+    base:{hauteur:6.2,vigueur:0.55,epaisseur:0.135,conicite:0.74,nbSegments:5,courbure:0.16,
+      torsion:22,ramification:0.90,angleBranche:42,nbBranches:3,profondeur:5,phyllotaxie:137.5,
+      tailleFeuille:0.130,largFeuille:0.56,denture:0.15,lobes:0.90,nbFeuilles:3,teinteFeuille:0.27,
+      satFeuille:0.44,lumFeuille:0.24,portFeuille:0.50,
+      nbPetales:4,longPetale:0.007,largPetale:0.30,courbePetale:0.20,torsadePetale:0.4,
+      pointePetale:0.70,rangees:1,teintePetale:0.20,satPetale:0.35,lumPetale:0.55,
+      degradePetale:0.0,teinteCoeur:0.18,tailleCoeur:0.20,nbFleurs:8,
+      debutFloraison:0.12,dureeFloraison:0.12,
+      longevite:760,maturite:0.14,nbGraines:3,dispersion:11.0,tauxMutation:0.035,
+      besoinEau:0.45,besoinLumiere:0.70,rusticite:0.85,
+      teinteTige:0.075,satTige:0.30,lumTige:0.20} },
+
+  { nom:'Bouleau frissonnant', court:'Bouleau', port:PORT.ARBRE, poids:0.34,
+    base:{hauteur:5.0,vigueur:0.80,epaisseur:0.070,conicite:0.80,nbSegments:6,courbure:0.10,
+      torsion:16,ramification:0.72,angleBranche:32,nbBranches:2,profondeur:5,phyllotaxie:137.5,
+      tailleFeuille:0.078,largFeuille:0.72,denture:0.85,lobes:0.10,nbFeuilles:2,teinteFeuille:0.235,
+      satFeuille:0.52,lumFeuille:0.33,portFeuille:0.65,
+      nbPetales:3,longPetale:0.006,largPetale:0.25,courbePetale:0.10,torsadePetale:0.5,
+      pointePetale:0.80,rangees:1,teintePetale:0.16,satPetale:0.30,lumPetale:0.60,
+      degradePetale:0.0,teinteCoeur:0.16,tailleCoeur:0.18,nbFleurs:6,
+      debutFloraison:0.10,dureeFloraison:0.10,
+      longevite:420,maturite:0.13,nbGraines:4,dispersion:16.0,tauxMutation:0.045,
+      besoinEau:0.55,besoinLumiere:0.85,rusticite:0.90,
+      teinteTige:0.11,satTige:0.05,lumTige:0.82} },
+
+  { nom:'Saule penché', court:'Saule', port:PORT.ARBRE, poids:0.26,
+    base:{hauteur:4.4,vigueur:0.85,epaisseur:0.085,conicite:0.82,nbSegments:7,courbure:-0.34,
+      torsion:12,ramification:0.80,angleBranche:56,nbBranches:2,profondeur:5,phyllotaxie:137.5,
+      tailleFeuille:0.135,largFeuille:0.17,denture:0.40,lobes:0.05,nbFeuilles:3,teinteFeuille:0.245,
+      satFeuille:0.34,lumFeuille:0.36,portFeuille:0.90,
+      nbPetales:4,longPetale:0.008,largPetale:0.20,courbePetale:0.15,torsadePetale:0.3,
+      pointePetale:0.75,rangees:1,teintePetale:0.18,satPetale:0.25,lumPetale:0.70,
+      degradePetale:0.0,teinteCoeur:0.15,tailleCoeur:0.16,nbFleurs:7,
+      debutFloraison:0.08,dureeFloraison:0.14,
+      longevite:380,maturite:0.12,nbGraines:4,dispersion:13.0,tauxMutation:0.050,
+      besoinEau:0.90,besoinLumiere:0.65,rusticite:0.70,
+      teinteTige:0.09,satTige:0.26,lumTige:0.26} },
+];
+
+/* =====================================================================
+   Opérations génétiques
+   ===================================================================== */
+const ADN = {
+  /* génome de base d'une espèce, légèrement bruité */
+  wild(sp, rng, spread){
+    spread = spread===undefined?1:spread;
+    const g = new Float32Array(NG), b = SPECIES[sp].base;
+    for(let i=0;i<NG;i++){
+      const d = GENES[i];
+      let v = (b[d.k]!==undefined) ? b[d.k] : (d.min+d.max)*0.5;
+      /* le bruit est relatif à la valeur du gène, pas à son amplitude :
+         sinon une épaisseur de tige de 5 mm hérite d'un écart de 9 mm */
+      const amp = (Math.abs(v)*0.11 + (d.max-d.min)*0.002)*spread;
+      g[i] = clamp(v + rng.gauss()*amp, d.min, d.max);
+    }
+    return g;
+  },
+  clone(g){ return new Float32Array(g); },
+
+  /* méiose : coupures le long du chromosome + codominance sur quelques gènes */
+  meiose(a, b, rng){
+    const child = new Float32Array(NG);
+    const origin = new Uint8Array(NG);        // 0 = A, 1 = B, 2 = mélange
+    const nCuts = 1 + rng.int(3);
+    const cuts = [];
+    for(let i=0;i<nCuts;i++) cuts.push(1+rng.int(NG-2));
+    cuts.sort((x,y)=>x-y);
+    let from = rng.chance(0.5)?0:1, ci=0;
+    for(let i=0;i<NG;i++){
+      while(ci<cuts.length && i>=cuts[ci]){ from^=1; ci++; }
+      const src = from===0?a:b;
+      child[i] = src[i];
+      origin[i] = from;
+      // codominance : un quart des gènes se mélangent au lieu de trancher
+      if(rng.chance(0.26)){
+        const t = rng.range(0.2,0.8);
+        child[i] = a[i]*t + b[i]*(1-t);
+        origin[i] = 2;
+      }
+    }
+    return {g:child, origin, cuts};
+  },
+
+  /* mutations ponctuelles + rares sauts */
+  muter(g, taux, rng){
+    const list=[];
+    for(let i=0;i<NG;i++){
+      if(!rng.chance(taux)) continue;
+      const d = GENES[i], span = d.max-d.min;
+      const before = g[i];
+      /* amplitude relative : une mutation déplace le caractère d'environ
+         10 à 25 %, un saut rare de 40 à 80 % */
+      let amp = Math.abs(g[i])*0.10 + span*0.004;
+      let grande = false;
+      if(rng.chance(0.09)){ amp *= 3.4; grande = true; }        // saut
+      g[i] = clamp(g[i] + rng.gauss()*amp, d.min, d.max);
+      if(Math.abs(g[i]-before) > Math.abs(before)*0.012 + span*0.0008)
+        list.push({i, before, after:g[i], grande});
+    }
+    return list;
+  },
+
+  /* ADN somatique : neutre à la base (1 en multiplicatif, 0 en additif) */
+  somaNeuf(){
+    const s = new Float32Array(NS);
+    for(let i=0;i<NS;i++) s[i] = SOMA[i].mode==='x' ? 1 : 0;
+    return s;
+  },
+  /* copie du tronçon parent, avec risque de mutation à chaque recopie */
+  somaCopie(parent, taux, rng, out){
+    const s = out || new Float32Array(NS);
+    let muts = 0;
+    for(let i=0;i<NS;i++){
+      let v = parent[i];
+      if(rng.chance(taux)){
+        const d = SOMA[i];
+        let amp = d.amp;
+        if(rng.chance(0.10)) amp *= 3.4;               // grande dérive somatique
+        v = clamp(v + rng.gauss()*amp, d.lo, d.hi);
+        muts++;
+      }
+      s[i]=v;
+    }
+    s.muts = muts;
+    return s;
+  },
+  /* application d'un gène somatique sur une valeur germinale */
+  app(val, soma, si){
+    const d = SOMA[si];
+    return d.mode==='x' ? val*soma[si] : val+soma[si];
+  },
+  /* dérive d'un ADN somatique par rapport au neutre, en % */
+  derive(s){
+    let acc=0;
+    for(let i=0;i<NS;i++){
+      const d=SOMA[i];
+      const span = d.hi-d.lo;
+      acc += Math.abs(s[i]-(d.mode==='x'?1:0))/span;
+    }
+    return acc/NS;
+  },
+
+  /* distance génétique 0..1 */
+  distance(a,b){
+    let acc=0;
+    for(let i=0;i<NG;i++){
+      const d=GENES[i];
+      acc += Math.abs(a[i]-b[i])/(d.max-d.min);
+    }
+    return acc/NG;
+  },
+
+  /* séquence lisible : un octet par gène */
+  sequence(g){
+    let s='';
+    for(let i=0;i<NG;i++){
+      const d=GENES[i];
+      const v = Math.round(clamp((g[i]-d.min)/(d.max-d.min),0,1)*255);
+      s += v.toString(16).padStart(2,'0');
+    }
+    return s.toUpperCase();
+  },
+  /* petite empreinte de 4 caractères */
+  empreinte(g){
+    let h=2166136261;
+    for(let i=0;i<NG;i++){
+      const d=GENES[i];
+      const v=Math.round(clamp((g[i]-d.min)/(d.max-d.min),0,1)*255);
+      h ^= v; h = Math.imul(h,16777619);
+    }
+    return (h>>>0).toString(16).slice(0,4).padStart(4,'0');
+  },
+  norm(g,i){ const d=GENES[i]; return clamp((g[i]-d.min)/(d.max-d.min),0,1); },
+
+  /* qualificatifs affichés dans la loupe */
+  traits(g, sp){
+    const t=[], n=(k)=>ADN.norm(g,GI[k]);
+    if(n('hauteur')>0.55) t.push({t:'élancée',c:'g'});
+    if(n('hauteur')<0.12) t.push({t:'rase',c:'g'});
+    if(g[GI.nbPetales]>22) t.push({t:'fleur double',c:'r'});
+    if(g[GI.nbPetales]<=4) t.push({t:'corolle simple',c:'r'});
+    if(g[GI.nbFleurs]>6) t.push({t:'inflorescence',c:'r'});
+    if(n('satPetale')>0.8) t.push({t:'couleur vive',c:'r'});
+    if(n('satPetale')<0.16) t.push({t:'fleur pâle',c:'r'});
+    if(n('ramification')>0.75) t.push({t:'très ramifiée',c:'g'});
+    if(n('ramification')<0.2) t.push({t:'tige unique',c:'g'});
+    if(g[GI.courbure]<-0.1) t.push({t:'retombante',c:'g'});
+    if(n('tauxMutation')>0.55) t.push({t:'génome instable',c:'o'});
+    if(n('tauxMutation')<0.12) t.push({t:'génome stable',c:'o'});
+    if(n('besoinEau')>0.75) t.push({t:'assoiffée',c:'b'});
+    if(n('besoinEau')<0.25) t.push({t:'frugale en eau',c:'b'});
+    if(n('rusticite')>0.75) t.push({t:'rustique',c:'b'});
+    if(n('besoinLumiere')<0.3) t.push({t:"tolère l'ombre",c:'b'});
+    if(g[GI.debutFloraison]<0.2) t.push({t:'floraison précoce',c:'o'});
+    if(g[GI.debutFloraison]>0.6) t.push({t:'floraison tardive',c:'o'});
+    if(g[GI.longevite]>300) t.push({t:'longue vie',c:'o'});
+    if(g[GI.tailleFeuille]>0.2) t.push({t:'larges feuilles',c:'g'});
+    return t.slice(0,7);
+  }
+};
+
+/* --- noms d'individus --- */
+const PRENOMS = ['Aube','Brume','Cendre','Douce','Écume','Filante','Givre','Halo','Ivoire','Jade',
+  'Lueur','Mousse','Nacre','Onde','Perle','Quiète','Rosée','Sève','Tisane','Ultime','Vesper','Zéphyr',
+  'Ambre','Bruyère','Colline','Étoile','Fougère','Grive','Houle','Iris','Lisière','Mirage','Noisette',
+  'Ombre','Pluie','Ravine','Silène','Trille','Vallon'];
+function nomPlante(sp, gen, rng){
+  return `${PRENOMS[rng.int(PRENOMS.length)]}`;
+}
+</script>
+<script>
+/* =====================================================================
+   4. LE MONDE — relief, sol, saisons, météo, lumière
+   ===================================================================== */
+const FIELD = 100;            // 100 m × 100 m = 1 hectare
+const HALF  = FIELD/2;
+const TER_EXT = 210;          // le relief déborde pour cacher l'horizon
+const SOIL_N = 64;
+const SOIL_CELL = FIELD/SOIL_N;
+
+const SAISONS = [
+  {n:'Printemps', col:'#9dbb86', tMin:6,  tMax:19, pluie:0.42},
+  {n:'Été',       col:'#dcb861', tMin:13, tMax:29, pluie:0.22},
+  {n:'Automne',   col:'#c98a54', tMin:5,  tMax:17, pluie:0.48},
+  {n:'Hiver',     col:'#8fb6cf', tMin:-5, tMax:6,  pluie:0.40},
+];
+const JOURS_SAISON = 10;
+const JOURS_AN = JOURS_SAISON*4;
+
+const Terrain = {
+  hauteur(x,z){
+    let h = fbm2(x*0.0125, z*0.0125, 4)*3.4
+          + fbm2(x*0.052+13.7, z*0.052-4.2, 3)*0.72
+          + noise2(x*0.19, z*0.19)*0.09;
+    // creux humide au nord-ouest
+    const dx=x+19, dz=z-23, d2=(dx*dx+dz*dz)/230;
+    h -= 1.15*Math.exp(-d2);
+    // petit tertre au sud-est
+    const ex=x-27, ez=z+21, e2=(ex*ex+ez*ez)/300;
+    h += 0.95*Math.exp(-e2);
+    // remontée douce hors de l'hectare : le pré est un vallon
+    const r = Math.max(Math.abs(x),Math.abs(z));
+    if(r>HALF-4){
+      const t=(r-(HALF-4))/38;
+      h += t*t*11 + fbm2(x*0.03+90,z*0.03,3)*t*7;
+    }
+    return h;
+  },
+  normale(x,z,out){
+    const e=0.55;
+    const hL=this.hauteur(x-e,z), hR=this.hauteur(x+e,z);
+    const hD=this.hauteur(x,z-e), hU=this.hauteur(x,z+e);
+    return V3.norm(out||[0,0,0],[hL-hR, 2*e, hD-hU]);
+  },
+  dedans(x,z){ return Math.abs(x)<HALF-1 && Math.abs(z)<HALF-1; },
+  /* capacité de rétention d'eau : les creux gardent l'humidité */
+  retention(x,z){
+    let acc=0;
+    for(let i=0;i<4;i++){
+      const a=i*1.5708, r=4.5;
+      acc += this.hauteur(x+Math.cos(a)*r, z+Math.sin(a)*r);
+    }
+    const rel = acc/4 - this.hauteur(x,z);
+    return clamp(0.45 + rel*0.42, 0.18, 1.0);
+  }
+};
+
+/* ---------------------------------------------------------------- SOL */
+const Sol = {
+  eau:   new Float32Array(SOIL_N*SOIL_N),
+  nutri: new Float32Array(SOIL_N*SOIL_N),
+  ombre: new Float32Array(SOIL_N*SOIL_N),
+  reten: new Float32Array(SOIL_N*SOIL_N),
+  pixels:new Uint8Array(SOIL_N*SOIL_N*4),
+  tex:null, sale:true,
+  init(){
+    for(let j=0;j<SOIL_N;j++)for(let i=0;i<SOIL_N;i++){
+      const k=j*SOIL_N+i;
+      const x=(i+0.5)*SOIL_CELL-HALF, z=(j+0.5)*SOIL_CELL-HALF;
+      this.reten[k]=Terrain.retention(x,z);
+      this.eau[k]=clamp(0.42*this.reten[k]*2, 0.15, 0.9);
+      this.nutri[k]=clamp(0.55+fbm2(x*0.06,z*0.06,3)*0.55,0.15,1);
+      this.ombre[k]=0;
+    }
+  },
+  idx(x,z){
+    const i=clamp(Math.floor((x+HALF)/SOIL_CELL),0,SOIL_N-1);
+    const j=clamp(Math.floor((z+HALF)/SOIL_CELL),0,SOIL_N-1);
+    return j*SOIL_N+i;
+  },
+  eauEn(x,z){ return this.eau[this.idx(x,z)]; },
+  nutriEn(x,z){ return this.nutri[this.idx(x,z)]; },
+  ombreEn(x,z){ return this.ombre[this.idx(x,z)]; },
+  arroser(x,z,rayon,q){
+    const r2=rayon*rayon;
+    const i0=clamp(Math.floor((x-rayon+HALF)/SOIL_CELL),0,SOIL_N-1);
+    const i1=clamp(Math.ceil ((x+rayon+HALF)/SOIL_CELL),0,SOIL_N-1);
+    const j0=clamp(Math.floor((z-rayon+HALF)/SOIL_CELL),0,SOIL_N-1);
+    const j1=clamp(Math.ceil ((z+rayon+HALF)/SOIL_CELL),0,SOIL_N-1);
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+      const cx=(i+0.5)*SOIL_CELL-HALF, cz=(j+0.5)*SOIL_CELL-HALF;
+      const d2=(cx-x)*(cx-x)+(cz-z)*(cz-z);
+      if(d2>r2) continue;
+      const k=j*SOIL_N+i;
+      this.eau[k]=clamp(this.eau[k]+q*(1-d2/r2),0,1.3);
+    }
+    this.sale=true;
+  },
+  enrichir(x,z,rayon,q){
+    const k=this.idx(x,z);
+    this.nutri[k]=clamp(this.nutri[k]+q,0,1.4);
+    const n=[k-1,k+1,k-SOIL_N,k+SOIL_N];
+    for(const m of n) if(m>=0&&m<this.nutri.length) this.nutri[m]=clamp(this.nutri[m]+q*0.4,0,1.4);
+    this.sale=true;
+  },
+  /* pas de simulation ; dt en jours */
+  tick(dt, env){
+    /* Bilan : évaporation (proportionnelle à l'eau présente, freinée par
+       l'ombre), pluie, et surtout une nappe qui ramène lentement chaque
+       cellule vers l'humidité que son creux sait retenir — sans elle le
+       pré se dessèche en trois jours. */
+    const evap = (0.020 + env.chaleur*0.035 + env.soleil*0.025) * dt;
+    const pluie = env.pluie*0.45*dt;
+    const nappe = 0.075*dt;
+    for(let k=0;k<this.eau.length;k++){
+      let e=this.eau[k];
+      const ret=this.reten[k];
+      e += pluie*(0.55+ret*0.85);
+      e -= evap*(0.30+e)*(1.25-ret*0.55)*(0.40+0.60*(1-this.ombre[k]));
+      e += (ret*0.42-e)*nappe;                    // nappe + drainage
+      this.eau[k]=clamp(e,0,1.10);
+      // les nutriments reviennent lentement (litière, vers, minéralisation)
+      this.nutri[k]=clamp(this.nutri[k]+ (0.55-this.nutri[k])*0.012*dt, 0, 1.4);
+    }
+    this.sale=true;
+  },
+  /* petite diffusion latérale de l'eau */
+  diffuser(){
+    const tmp=new Float32Array(this.eau);
+    for(let j=1;j<SOIL_N-1;j++)for(let i=1;i<SOIL_N-1;i++){
+      const k=j*SOIL_N+i;
+      const s=(tmp[k-1]+tmp[k+1]+tmp[k-SOIL_N]+tmp[k+SOIL_N])*0.25;
+      this.eau[k]=lerp(tmp[k], s, 0.16*(1-this.reten[k]*0.5));
+    }
+    this.sale=true;
+  },
+  moyenneEau(){
+    let s=0; for(let k=0;k<this.eau.length;k++) s+=this.eau[k];
+    return s/this.eau.length;
+  },
+  majTexture(gl){
+    if(!this.sale) return;
+    const p=this.pixels;
+    for(let k=0;k<this.eau.length;k++){
+      p[k*4]  = clamp(this.eau[k],0,1)*255;
+      p[k*4+1]= clamp(this.nutri[k],0,1)*255;
+      p[k*4+2]= clamp(this.ombre[k],0,1)*255;
+      p[k*4+3]= 255;
+    }
+    gl.bindTexture(gl.TEXTURE_2D,this.tex);
+    gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,SOIL_N,SOIL_N,gl.RGBA,gl.UNSIGNED_BYTE,p);
+    this.sale=false;
+  }
+};
+
+/* ------------------------------------------------------- TEMPS & CIEL */
+const Env = {
+  /* on ouvre le jeu au début de l'été, à la belle lumière du matin :
+     plusieurs lignées sont alors en fleur */
+  jour:13, heure:8.2, vitesse:1, enPause:false,
+  saison:0, phaseAn:0, phaseSaison:0,
+  meteo:'clair', meteoT:0, cible:{cloud:0.15,pluie:0,vent:0.35},
+  cloud:0.15, pluie:0, vent:0.35, storm:0, neige:0,
+  temp:12, chaleur:0.4, soleil:0.8, nuit:0,
+  sunDir:new Float32Array([0.4,0.7,0.3]),
+  sunCol:new Float32Array([1,0.96,0.86]),
+  skyCol:new Float32Array([0.45,0.58,0.72]),
+  gndCol:new Float32Array([0.16,0.17,0.12]),
+  fogCol:new Float32Array([0.6,0.7,0.8]),
+  zenith:new Float32Array([0.20,0.38,0.72]),
+  horizon:new Float32Array([0.65,0.75,0.85]),
+  haze:new Float32Array([0.55,0.6,0.6]),
+  fogDen:0.0075, shadowStr:1, wet:0,
+  totalJours(){ return this.jour + this.heure/24; },
+
+  avancer(djours, rng){
+    this.heure += djours*24;
+    while(this.heure>=24){ this.heure-=24; this.jour++; }
+    this.phaseAn = ((this.jour-1)%JOURS_AN + this.heure/24)/JOURS_AN;
+    const s = ((this.jour-1)%JOURS_AN)/JOURS_SAISON;
+    this.saison = Math.floor(s)%4;
+    this.phaseSaison = s-Math.floor(s);
+
+    /* --- météo : chaîne de Markov paresseuse --- */
+    this.meteoT -= djours;
+    if(this.meteoT<=0){
+      const S=SAISONS[this.saison];
+      const r=rng();
+      if(r < S.pluie*0.62){ this.meteo = rng.chance(0.25)?'orage':'pluie'; }
+      else if(r < S.pluie*0.62+0.26){ this.meteo='couvert'; }
+      else if(r < S.pluie*0.62+0.58){ this.meteo='nuageux'; }
+      else this.meteo='clair';
+      this.meteoT = rng.range(0.25, 1.1);
+      const M={clair:{c:0.08,p:0,v:0.30},nuageux:{c:0.36,p:0,v:0.45},
+               couvert:{c:0.68,p:0.05,v:0.55},pluie:{c:0.88,p:0.75,v:0.65},
+               orage:{c:1.0,p:1.15,v:1.15}};
+      const m=M[this.meteo];
+      this.cible={cloud:m.c, pluie:m.p, vent:m.v*rng.range(0.7,1.35)};
+    }
+    const k = clamp(djours*7,0,1);
+    this.cloud = lerp(this.cloud, this.cible.cloud, k);
+    this.pluie = lerp(this.pluie, this.cible.pluie, k);
+    this.vent  = lerp(this.vent,  this.cible.vent,  k*0.5);
+    this.storm = lerp(this.storm, this.meteo==='orage'?1:(this.meteo==='pluie'?0.5:0), k);
+
+    /* --- température --- */
+    const S=SAISONS[this.saison], Sn=SAISONS[(this.saison+1)%4];
+    const tMin=lerp(S.tMin,Sn.tMin,this.phaseSaison), tMax=lerp(S.tMax,Sn.tMax,this.phaseSaison);
+    const jour01 = clamp((this.heure-5)/14,0,1);
+    const cycle = Math.sin(jour01*Math.PI);
+    this.temp = lerp(tMin,tMax,cycle*0.85+0.05) - this.cloud*2.5 - this.pluie*1.5;
+    this.chaleur = clamp((this.temp-2)/26,0,1);
+    // neige : couche persistante par temps froid
+    const cibleNeige = (this.temp<0.5 && this.saison===3) ? clamp((1.5-this.temp)*0.35,0,0.85) : 0;
+    this.neige = lerp(this.neige, cibleNeige, clamp(djours*(cibleNeige>this.neige?0.8:2.2),0,1));
+
+    this.majLumiere();
+  },
+
+  majLumiere(){
+    /* Course du soleil. La déclinaison saisonnière allonge le jour :
+       ~5h40–20h10 en été, ~8h–17h40 en hiver, midi solaire vers 12h55. */
+    const h = this.heure;
+    const decl = Math.sin(this.phaseAn*TAU - 1.2)*0.30;
+    const jourLong = 12 + decl*8;
+    const lever = 12.9 - jourLong*0.5;
+    const t = (h-lever)/jourLong;                 // 0 au lever, 1 au coucher
+    const tc = clamp(t, -0.35, 1.35);             // la nuit reste au plus bas
+    const alt = Math.sin(tc*Math.PI)*(0.80+decl*0.55) - 0.025;
+    const az  = (tc*0.85 - 0.42)*Math.PI + 0.6;
+    const sd = this.sunDir;
+    sd[0]=Math.cos(az)*Math.cos(alt*1.35);
+    sd[1]=Math.sin(alt*1.35);
+    sd[2]=Math.sin(az)*Math.cos(alt*1.35);
+    let nightAmt = clamp(-sd[1]*4.2, 0, 1);
+    if(sd[1]<0){                                  // la lune prend le relais
+      sd[0]*=-1; sd[1]*=-0.55; sd[2]*=-1;
+      sd[1]=Math.max(sd[1],0.18);
+    }
+    V3.norm(sd,sd);
+    this.nuit = nightAmt;
+    const day = 1-nightAmt;
+    const dusk = clamp(1 - Math.abs(sd[1]-0.13)*5.5, 0, 1) * day;
+    this.soleil = clamp(sd[1]*1.5,0,1)*(1-this.cloud*0.75);
+
+    const mixc=(o,a,b,t)=>{o[0]=lerp(a[0],b[0],t);o[1]=lerp(a[1],b[1],t);o[2]=lerp(a[2],b[2],t);return o};
+    // soleil : blanc chaud le jour, orange au crépuscule, bleu la nuit
+    const jourC=[1.30,1.20,1.02], duskC=[1.55,0.62,0.24], nuitC=[0.16,0.21,0.38];
+    mixc(this.sunCol, jourC, duskC, dusk*0.92);
+    mixc(this.sunCol, this.sunCol, nuitC, nightAmt);
+    const c=1-this.cloud*0.62;
+    this.sunCol[0]*=c; this.sunCol[1]*=c; this.sunCol[2]*=c;
+
+    const zJour=[0.16,0.36,0.74], zDusk=[0.22,0.20,0.42], zNuit=[0.020,0.035,0.085];
+    mixc(this.zenith, zJour, zDusk, dusk);
+    mixc(this.zenith, this.zenith, zNuit, nightAmt);
+    const hJour=[0.62,0.74,0.86], hDusk=[0.92,0.48,0.30], hNuit=[0.045,0.06,0.13];
+    mixc(this.horizon, hJour, hDusk, dusk);
+    mixc(this.horizon, this.horizon, hNuit, nightAmt);
+    mixc(this.haze, this.horizon, [0.42,0.46,0.44], 0.45);
+    // couverture nuageuse : on aplatit et grise le ciel
+    for(let i=0;i<3;i++){
+      const g=(this.zenith[0]+this.zenith[1]+this.zenith[2])/3;
+      this.zenith[i]=lerp(this.zenith[i], g*0.86+0.06, this.cloud*0.7);
+      this.horizon[i]=lerp(this.horizon[i], g*1.1+0.10, this.cloud*0.6);
+    }
+    // ambiance
+    for(let i=0;i<3;i++){
+      this.skyCol[i]=this.zenith[i]*0.55+this.horizon[i]*0.30;
+      this.gndCol[i]=[0.085,0.105,0.062][i]*(0.28+day*0.9);
+      this.fogCol[i]=lerp(this.horizon[i], this.zenith[i], 0.18)*1.02;
+    }
+    this.fogDen = 0.0029 + this.cloud*0.0016 + this.pluie*0.0038 + nightAmt*0.0013
+                + (this.saison===2?0.0014:0) + (this.temp<3?0.0016:0);
+    this.shadowStr = clamp(1-this.cloud*0.72,0.15,1)*(1-nightAmt*0.55);
+    this.wet = clamp(this.pluie*0.8, 0, 0.8);
+  },
+  nomMeteo(){
+    return {clair:'Clair',nuageux:'Nuageux',couvert:'Couvert',pluie:'Pluie',orage:'Orage'}[this.meteo];
+  },
+  /* facteur de croissance saisonnier commun à toutes les plantes */
+  facteurSaison(g){
+    const froid = clamp((6-this.temp)/16,0,1);
+    const rust = g?ADN.norm(g,GI.rusticite):0.5;
+    let f = clamp(1 - froid*(1.35-rust*0.75), 0.02, 1);
+    if(this.temp>30) f*=0.75;
+    return f;
+  }
+};
+</script>
+<script>
+/* =====================================================================
+   5. GÉOMÉTRIE PROCÉDURALE — tiges, feuilles, pétales, corolles
+   ===================================================================== */
+const MAXV = 96000, MAXI = 280000;
+const MB = {
+  buf: new Float32Array(MAXV*11),
+  idx: new Uint32Array(MAXI),
+  nv:0, ni:0, over:false,
+  reset(){ this.nv=0; this.ni=0; this.over=false; },
+  v(x,y,z, nx,ny,nz, r,g,b, w, part){
+    if(this.nv>=MAXV){ this.over=true; return this.nv-1; }
+    const o=this.nv*11, B=this.buf;
+    B[o]=x;B[o+1]=y;B[o+2]=z;B[o+3]=nx;B[o+4]=ny;B[o+5]=nz;
+    B[o+6]=r;B[o+7]=g;B[o+8]=b;B[o+9]=w;B[o+10]=part;
+    return this.nv++;
+  },
+  tri(a,b,c){
+    if(this.ni+3>MAXI){ this.over=true; return; }
+    this.idx[this.ni++]=a; this.idx[this.ni++]=b; this.idx[this.ni++]=c;
+  },
+  quad(a,b,c,d){ this.tri(a,b,c); this.tri(a,c,d); }
+};
+
+/* --- vecteurs de travail (évite les allocations dans la boucle chaude) --- */
+const _p=[0,0,0],_d=[0,0,0],_s=[0,0,0],_n=[0,0,0],_t1=[0,0,0],_t2=[0,0,0],_t3=[0,0,0];
+
+/* Tronçon de tige : cylindre généralisé courbe et vrillé.
+   Renvoie l'extrémité (position + repère) pour y accrocher la suite. */
+function tigeMesh(P, D, S, len, r0, r1, bend, twist, sides, rings, colA, colB, wA, wB, part, out){
+  V3.copy(_p,P); V3.copy(_d,D); V3.copy(_s,S);
+  let base=-1;
+  const dAng = bend/rings, dTw = twist/rings, step = len/rings;
+  for(let i=0;i<=rings;i++){
+    const t=i/rings;
+    const r = lerp(r0,r1,t);
+    const w = lerp(wA,wB,t);
+    const cr=lerp(colA[0],colB[0],t), cg=lerp(colA[1],colB[1],t), cb=lerp(colA[2],colB[2],t);
+    V3.cross(_n,_d,_s); V3.norm(_n,_n);
+    const ring=MB.nv;
+    for(let k=0;k<sides;k++){
+      const a=k/sides*TAU, ca=Math.cos(a), sa=Math.sin(a);
+      const nx=_s[0]*ca+_n[0]*sa, ny=_s[1]*ca+_n[1]*sa, nz=_s[2]*ca+_n[2]*sa;
+      // léger relief d'écorce
+      const bump = 1 + (hash21(k*7.3+i*2.1, part*3.7)-0.5)*0.16;
+      MB.v(_p[0]+nx*r*bump, _p[1]+ny*r*bump, _p[2]+nz*r*bump, nx,ny,nz, cr,cg,cb, w, part);
+    }
+    if(i>0){
+      for(let k=0;k<sides;k++){
+        const k2=(k+1)%sides;
+        MB.quad(base+k, base+k2, ring+k2, ring+k);
+      }
+    }
+    base=ring;
+    if(i<rings){
+      V3.addScaled(_p,_p,_d,step);
+      // courbure : on fait pivoter la direction vers (ou contre) la verticale
+      if(Math.abs(dAng)>1e-5){
+        V3.cross(_t1,_d,[0,1,0]);
+        if(V3.len(_t1)>1e-4){
+          V3.norm(_t1,_t1);
+          rotAxis(_t2,_d,_t1,dAng); V3.copy(_d,_t2);
+          rotAxis(_t2,_s,_t1,dAng); V3.copy(_s,_t2);
+        }
+      }
+      if(Math.abs(dTw)>1e-5){ rotAxis(_t2,_s,_d,dTw); V3.copy(_s,_t2); }
+      // ré-orthogonalisation
+      V3.addScaled(_s,_s,_d,-V3.dot(_s,_d)); V3.norm(_s,_s);
+    }
+  }
+  if(out){ V3.copy(out.p,_p); V3.copy(out.d,_d); V3.copy(out.s,_s); }
+  return out;
+}
+
+/* Feuille : limbe nervuré, dentelé, lobé, arqué vers le bas */
+function feuilleMesh(P, D, UP, len, wid, denture, lobes, droop, colA, colB, wind, part, lod){
+  if(len<0.004) return;
+  /* lod 0 : limbe complet · 1 : allégé · 2 : silhouette (8 triangles) */
+  const steps = lod>=2?2:(lod?3:5), cols = lod>=2?1:2;
+  V3.norm(_d,D);
+  V3.cross(_s,UP,_d);
+  if(V3.len(_s)<1e-4) perpOf(_s,_d); else V3.norm(_s,_s);
+  V3.cross(_n,_d,_s); V3.norm(_n,_n);
+  const fold = 0.22+lobes*0.20;
+  let prev=-1;
+  for(let i=0;i<=steps;i++){
+    const t=i/steps;
+    // profil du limbe
+    let prof = Math.pow(Math.sin(Math.PI*Math.pow(t,0.62)), 0.72);
+    prof *= 1 + lobes*0.45*Math.cos(t*Math.PI*4.2);
+    prof *= 1 + denture*0.10*Math.sin(t*Math.PI*11.0);
+    prof = Math.max(prof,0.0);
+    const w = prof*wid*len;
+    const v = t*len;
+    const sag = -droop*len*t*t;
+    const cr=lerp(colA[0],colB[0],t), cg=lerp(colA[1],colB[1],t), cb=lerp(colA[2],colB[2],t);
+    const bx=P[0]+_d[0]*v+_n[0]*sag, by=P[1]+_d[1]*v+_n[1]*sag, bz=P[2]+_d[2]*v+_n[2]*sag;
+    // normale approchée : plan du limbe redressé par le pli
+    const nSag = -droop*2*t;
+    const row=MB.nv;
+    for(let c=-cols;c<=cols;c++){
+      const u=c/cols, uw=u*w;
+      const zf=-fold*Math.abs(u)*w;
+      const nx=_n[0]*(1-Math.abs(u)*0.55)+_s[0]*u*fold*1.6-_d[0]*nSag*0.5;
+      const ny=_n[1]*(1-Math.abs(u)*0.55)+_s[1]*u*fold*1.6-_d[1]*nSag*0.5;
+      const nz=_n[2]*(1-Math.abs(u)*0.55)+_s[2]*u*fold*1.6-_d[2]*nSag*0.5;
+      const l=Math.hypot(nx,ny,nz)||1;
+      const shade = 1-Math.abs(u)*0.10;
+      MB.v(bx+_s[0]*uw+_n[0]*zf, by+_s[1]*uw+_n[1]*zf, bz+_s[2]*uw+_n[2]*zf,
+           nx/l,ny/l,nz/l, cr*shade,cg*shade,cb*shade, wind*(0.55+t*0.45), part);
+    }
+    if(i>0) for(let c=0;c<cols*2;c++) MB.quad(prev+c, prev+c+1, row+c+1, row+c);
+    prev=row;
+  }
+}
+
+/* Pétale : nervure enroulée et vrillée, section légèrement creusée */
+function petaleMesh(P, D, S, len, wid, curl, twist, pointe, colA, colB, wind, part, lod){
+  if(len<0.0015) return;
+  const steps = lod>=2?2:(lod?3:5);
+  V3.copy(_p,P); V3.copy(_d,D); V3.copy(_s,S);
+  V3.addScaled(_s,_s,_d,-V3.dot(_s,_d)); V3.norm(_s,_s);
+  const dCurl = curl*1.55/steps, dTw = twist*1.15/steps, step=len/steps;
+  const aExp = lerp(0.42, 1.35, pointe);       // pointe : arrondie -> effilée
+  let prev=-1;
+  for(let i=0;i<=steps;i++){
+    const t=i/steps;
+    let prof = Math.pow(Math.sin(Math.PI*Math.pow(t,0.58)), aExp);
+    if(pointe>0.62) prof *= (1-Math.pow(t,3.2)*0.55);
+    if(pointe<0.30) prof *= (1-Math.pow(t,7.0)*0.25);
+    const w = Math.max(prof,0.0)*wid*len;
+    const cup = w*0.30;
+    const cr=lerp(colA[0],colB[0],t), cg=lerp(colA[1],colB[1],t), cb=lerp(colA[2],colB[2],t);
+    V3.cross(_n,_d,_s); V3.norm(_n,_n);
+    const row=MB.nv;
+    for(let c=-1;c<=1;c++){
+      const u=c, uw=u*w, z=(1-u*u)*cup*0-Math.abs(u)*cup;
+      const nx=_n[0]+_s[0]*u*0.85, ny=_n[1]+_s[1]*u*0.85, nz=_n[2]+_s[2]*u*0.85;
+      const l=Math.hypot(nx,ny,nz)||1;
+      MB.v(_p[0]+_s[0]*uw+_n[0]*z, _p[1]+_s[1]*uw+_n[1]*z, _p[2]+_s[2]*uw+_n[2]*z,
+           nx/l,ny/l,nz/l, cr,cg,cb, wind*(0.5+t*0.6), part);
+    }
+    if(i>0){ MB.quad(prev,prev+1,row+1,row); MB.quad(prev+1,prev+2,row+2,row+1); }
+    prev=row;
+    if(i<steps){
+      V3.addScaled(_p,_p,_d,step);
+      // enroulement dans le plan nervure/normale
+      rotAxis(_t2,_d,_s,dCurl); V3.copy(_d,_t2);
+      rotAxis(_t2,_s,_d,dTw); V3.copy(_s,_t2);
+      V3.addScaled(_s,_s,_d,-V3.dot(_s,_d)); V3.norm(_s,_s);
+    }
+  }
+}
+
+/* Petit dôme (cœur de fleur, bourgeon, fruit) */
+function domeMesh(P, D, rad, haut, colA, colB, wind, part, lod){
+  const sides = lod>=2?4:(lod?5:8), rings = lod>=2?1:(lod?2:3);
+  V3.norm(_d,D); perpOf(_s,_d); V3.cross(_n,_d,_s);
+  let prev=-1;
+  for(let i=0;i<=rings;i++){
+    const t=i/rings, a=t*Math.PI*0.5;
+    const r=Math.cos(a)*rad, y=Math.sin(a)*haut;
+    const cr=lerp(colA[0],colB[0],t), cg=lerp(colA[1],colB[1],t), cb=lerp(colA[2],colB[2],t);
+    const row=MB.nv;
+    const cnt = (i===rings)?1:sides;
+    for(let k=0;k<cnt;k++){
+      const ang=k/sides*TAU, ca=Math.cos(ang), sa=Math.sin(ang);
+      const ox=_s[0]*ca+_n[0]*sa, oy=_s[1]*ca+_n[1]*sa, oz=_s[2]*ca+_n[2]*sa;
+      const nx=ox*Math.cos(a)+_d[0]*Math.sin(a), ny=oy*Math.cos(a)+_d[1]*Math.sin(a), nz=oz*Math.cos(a)+_d[2]*Math.sin(a);
+      const l=Math.hypot(nx,ny,nz)||1;
+      MB.v(P[0]+ox*r+_d[0]*y, P[1]+oy*r+_d[1]*y, P[2]+oz*r+_d[2]*y, nx/l,ny/l,nz/l, cr,cg,cb, wind, part);
+    }
+    if(i>0){
+      if(cnt===1){ for(let k=0;k<sides;k++) MB.tri(prev+k, prev+(k+1)%sides, row); }
+      else for(let k=0;k<sides;k++) MB.quad(prev+k, prev+(k+1)%sides, row+(k+1)%sides, row+k);
+    }
+    prev=row;
+  }
+}
+
+/* Étamine : minuscule filet terminé par une anthère */
+function etamineMesh(P, D, S, len, rad, col, wind, part){
+  V3.copy(_p,P);
+  const tip=[P[0]+D[0]*len, P[1]+D[1]*len, P[2]+D[2]*len];
+  const a=MB.v(P[0]-S[0]*rad,P[1]-S[1]*rad,P[2]-S[2]*rad, S[0],S[1],S[2], col[0]*0.7,col[1]*0.7,col[2]*0.7, wind, part);
+  const b=MB.v(P[0]+S[0]*rad,P[1]+S[1]*rad,P[2]+S[2]*rad, S[0],S[1],S[2], col[0]*0.7,col[1]*0.7,col[2]*0.7, wind, part);
+  const c=MB.v(tip[0]+S[0]*rad*1.8,tip[1]+S[1]*rad*1.8,tip[2]+S[2]*rad*1.8, S[0],S[1],S[2], col[0],col[1],col[2], wind, part);
+  const d=MB.v(tip[0]-S[0]*rad*1.8,tip[1]-S[1]*rad*1.8,tip[2]-S[2]*rad*1.8, S[0],S[1],S[2], col[0],col[1],col[2], wind, part);
+  MB.quad(a,b,c,d);
+}
+</script>
+<script>
+/* =====================================================================
+   6. LA PLANTE — tronçons, ADN somatique, croissance, maillage
+   ===================================================================== */
+const MAXSEG = [70, 130, 265];          // par port : herbe, arbuste, arbre
+/* Combien de fois un tronçon peut s'allonger de bout en bout pendant que la
+   plante atteint sa maturité. Plus c'est haut, plus la pousse est visible à
+   l'œil nu : la silhouette se met en place bien avant la floraison. */
+const CROISSANCE = 24;
+const SURSAUT = 50;                     // coup de fouet de l'eau de sève
+let SEQ_PLANTE = 0;
+
+/* --- un tronçon : la portion de tige entre deux embranchements --- */
+class Troncon {
+  constructor(pl, parent, depth, rang, azimut, incl){
+    this.pl=pl; this.parent=parent; this.depth=depth; this.rang=rang;
+    this.azimut=azimut; this.incl=incl;
+    this.id = pl.troncons.length;
+    pl.troncons.push(this);
+    /* ADN germinal effectif de ce tronçon : par défaut une simple référence
+       à celui du parent — aucune copie tant que personne ne le réécrit. */
+    this.gLoc = null;
+    this.gAct = parent ? parent.gAct : pl.genome;
+    if(parent){
+      /* ADN somatique : recopié du tronçon précédent, avec risque de mutation */
+      this.soma = ADN.somaCopie(parent.soma, pl.tauxSoma, pl.rng);
+      this.nouvMuts = this.soma.muts|0;
+      this.muts = parent.muts + this.nouvMuts;
+      parent.enfants.push(this);
+      parent.terminal = false;
+    } else {
+      this.soma = ADN.somaNeuf(); this.muts=0; this.nouvMuts=0;
+    }
+    this.g = 0;                 // extension 0..1
+    this.enfants = [];
+    this.terminal = true;
+    this.poids = 1; this.r0=0.001; this.r1=0.001;
+    this.lenMax = 0;
+    this.naissance = pl.age;
+    this.coupe = false;
+    this.fleurs = null;
+    this.calcLen();
+  }
+  som(k){ return this.soma[SI[k]]; }
+  gene(k){ const i=GI[k]; const v=this.gAct[i];
+    return SI[k]!==undefined ? ADN.app(v, this.soma, SI[k]) : v; }
+  calcLen(){
+    const g=this.gAct;
+    const nAxe = Math.max(1, Math.round(g[GI.nbSegments]*Math.pow(0.80,this.depth)));
+    const base = g[GI.hauteur]/Math.max(g[GI.nbSegments],1);
+    let L = base * Math.pow(0.70, this.depth) * this.soma[SI.longueur];
+    L *= 1 - this.rang/(nAxe+2)*0.30;                  // les tronçons raccourcissent vers la cime
+    this.lenMax = Math.max(L, 0.006);
+    this.nAxe = nAxe;
+  }
+  /* toute la descendance, y compris soi-même */
+  sousArbre(out){
+    out=out||[]; out.push(this);
+    for(const c of this.enfants) c.sousArbre(out);
+    return out;
+  }
+  chemin(){ const c=[]; let s=this; while(s){ c.unshift(s); s=s.parent; } return c; }
+}
+
+class Plante {
+  constructor(sp, genome, x, z, opts){
+    opts = opts||{};
+    this.id = ++SEQ_PLANTE;
+    this.sp = sp;
+    this.genome = genome;
+    this.rng = makeRng((this.id*2654435761 ^ (Math.random()*1e9))>>>0);
+    this.x=x; this.z=z; this.y=Terrain.hauteur(x,z);
+    this.rotY = this.rng()*TAU;
+    this.phase = this.rng()*TAU;
+    this.gen = opts.gen||1;
+    this.parents = opts.parents||null;
+    this.nom = opts.nom || nomPlante(sp, this.gen, this.rng);
+    this.marque = null;
+    this.age = 0;
+    this.sante = 0.85;
+    this.etat = 'graine';
+    this.dormance = 0;
+    this.troncons = [];
+    this.somaBonus = 0;                  // surcroît versé par l'eau mutagène
+    this.sursaut = 0;                    // échéance du coup de fouet de l'eau de sève
+    this.tauxSoma = clamp(genome[GI.tauxMutation]*0.95, 0.002, 0.4);
+    this.matureJours = Math.max(2.5, genome[GI.longevite]*genome[GI.maturite]);
+    this.longevite = genome[GI.longevite];
+    this.hauteur = 0.01; this.canopee = 0.05;
+    this.flor = 0; this.ouverture = 0; this.aFleuri = false;
+    this.pollen = null; this.pollenDe = null; this.pollenSoma = null;
+    this.fruits = 0; this.grainesLachees = 0;
+    this.decompose = 0;
+    this.mesh = null; this.nIdx = 0; this.sig = -1; this.lod = false;
+    this.stress = {eau:0, lum:0, nut:0, froid:0};
+    this.cause = null;
+    this.mutTotal = 0;
+    this.echantillonne = false;
+    this.dist2 = 1e9;
+    this.racine = null;
+    this.autoFeconde = false;
+  }
+
+  /* ---------------------------------------------------------- germer */
+  germer(){
+    this.etat='pousse';
+    this.racine = new Troncon(this, null, 0, 0, 0, 0);
+    this.majPoids();
+    this.sig = -1;
+  }
+
+  /* ------------------------------------------------- pas de simulation */
+  tick(dt, env, monde){
+    if(this.etat==='morte'){
+      this.decompose += dt;
+      if(this.decompose>4){
+        Sol.enrichir(this.x,this.z, 2, clamp(this.hauteur*0.10,0.02,0.35));
+        return false;
+      }
+      this.sig=-1;
+      return true;
+    }
+    this.age += dt;
+    const eau = Sol.eauEn(this.x,this.z);
+    const nut = Sol.nutriEn(this.x,this.z);
+    const g = this.genome;
+
+    if(this.etat==='graine'){
+      this.dormance += dt;
+      const chaud = env.temp > 4 + g[GI.rusticite]*(-3);
+      if(eau > 0.18 + g[GI.besoinEau]*0.25 && chaud && this.dormance>0.6){
+        this.germer();
+        monde.journal(`Une graine de ${SPECIES[this.sp].court.toLowerCase()} a germé`, 'birth');
+      } else if(this.dormance > 22 + g[GI.longevite]*0.05){
+        this.mourir('graine non germée'); }
+      return true;
+    }
+
+    /* --- stress --- */
+    const ombre = this.ombreSubie(monde);
+    const lum = clamp(1-ombre,0,1) * (0.30+0.70*clamp(env.soleil+0.25,0,1));
+    const S=this.stress;
+    S.eau = clamp((g[GI.besoinEau]*0.72 - eau)/Math.max(g[GI.besoinEau],0.1), 0, 1);
+    if(eau>1.02 && g[GI.besoinEau]<0.7) S.eau = Math.max(S.eau, (eau-1.02)*2.2*(1-g[GI.besoinEau]));
+    S.lum = clamp((g[GI.besoinLumiere] - lum)/Math.max(g[GI.besoinLumiere],0.1), 0, 1);
+    S.nut = clamp((0.30-nut)/0.30, 0, 1);
+    S.froid = clamp((2-env.temp)/20, 0, 1) * (1-g[GI.rusticite]*0.9);
+    const pire = Math.max(S.eau*1.05, S.lum*0.85, S.nut*0.7, S.froid*0.95);
+    const moy = (S.eau+S.lum*0.8+S.nut*0.6+S.froid*0.9)/3.3;
+
+    /* --- santé --- */
+    const vieil = clamp((this.age - this.longevite*0.80)/(this.longevite*0.30), 0, 1);
+    this.sante = clamp(this.sante + (0.95 - pire*1.55 - vieil*1.30 - this.sante)*dt*0.55, 0, 1);
+    if(this.sante<=0.005 || this.age>this.longevite*1.12){
+      let c='vieillesse';
+      if(this.age < this.longevite*0.9){
+        if(S.eau>0.55) c = eau>0.9?'noyade':'sécheresse';
+        else if(S.lum>0.5) c='manque de lumière';
+        else if(S.froid>0.5) c='gel';
+        else if(S.nut>0.5) c='sol épuisé';
+        else c='épuisement';
+      }
+      this.mourir(c); return true;
+    }
+
+    /* --- consommation --- */
+    const k = Sol.idx(this.x,this.z);
+    const taille = clamp(this.hauteur*0.6+this.canopee*0.4, 0.05, 6);
+    Sol.eau[k] = Math.max(0, Sol.eau[k] - dt*0.012*Math.min(taille,2.2)*g[GI.besoinEau]);
+    Sol.nutri[k] = Math.max(0, Sol.nutri[k] - dt*0.005*Math.min(taille,2.4));
+
+    /* --- croissance des tronçons --- */
+    const sais = env.facteurSaison(g);
+    /* l'eau de sève accélère la pousse tant qu'on verse, pas une image de plus */
+    const seve = (this.sursaut && performance.now() < this.sursaut) ? SURSAUT : 1;
+    const vit = (1-moy*0.75) * sais * (0.35+0.65*this.sante) * seve;
+    const parJour = CROISSANCE/this.matureJours;
+    let structureChangee=false;
+    const cap = MAXSEG[SPECIES[this.sp].port];
+    for(let i=0;i<this.troncons.length;i++){
+      const t=this.troncons[i];
+      if(t.coupe) continue;
+      if(t.g>=1) continue;
+      if(t.parent && t.parent.g<0.72) continue;
+      t.g = Math.min(1, t.g + dt*parJour*vit*t.gAct[GI.vigueur]*t.som('vigueur')/(1+t.depth*0.34));
+      if(t.g>0.80 && t.enfants.length===0 && !t.bourgeonMort && this.troncons.length<cap){
+        if(this.ramifier(t)) structureChangee=true;
+      }
+    }
+    if(structureChangee) this.majPoids();
+
+    /* --- floraison --- */
+    this.majFloraison(dt, env);
+    return true;
+  }
+
+  /* ----------------------------------------------- création des enfants */
+  ramifier(t){
+    const g=t.gAct, rng=this.rng;
+    const prof = Math.round(g[GI.profondeur]);
+    let cree=false;
+    /* prolongement de l'axe */
+    if(t.rang+1 < t.nAxe){
+      new Troncon(this, t, t.depth, t.rang+1, rng()*TAU, rng.range(0.02,0.14));
+      cree=true;
+    }
+    /* branches latérales */
+    if(t.depth < prof){
+      /* la ramification s'essouffle avec l'ordre et quand la plante
+         approche de son budget de tronçons : sinon l'arbre explose */
+      const remplissage = this.troncons.length/MAXSEG[SPECIES[this.sp].port];
+      const proba = clamp(g[GI.ramification]*t.som('ramification'),0,1)
+                  * (t.rang===0 && t.depth===0 ? 0.45 : 1)
+                  * Math.pow(0.78, t.depth) * clamp(1-remplissage*0.85, 0.05, 1);
+      const nb = Math.round(clamp(g[GI.nbBranches]*t.som('nbBranches'),0,4));
+      const phyl = clamp(g[GI.phyllotaxie]*t.som('phyllotaxie'),40,220)*DEG;
+      for(let i=0;i<nb;i++){
+        if(!rng.chance(proba)) continue;
+        const az = t.azimut + phyl*(t.rang+1) + i*(TAU/Math.max(nb,1)) + rng.range(-0.25,0.25);
+        const ang = clamp(g[GI.angleBranche]*t.som('angleBranche'),4,88)*DEG*rng.range(0.82,1.18);
+        new Troncon(this, t, t.depth+1, 0, az, ang);
+        cree=true;
+      }
+    }
+    if(!cree){ t.bourgeonMort=true; t.terminal=true; }
+    return cree;
+  }
+
+  majPoids(){
+    const post=(s)=>{
+      let w = 0;
+      for(const c of s.enfants){ if(!c.coupe) w += post(c); }
+      s.poids = s.enfants.length? Math.max(1, w*0.985) : 1;
+      return s.poids+0.06;
+    };
+    if(!this.racine) return;
+    post(this.racine);
+    const total = this.racine.poids;
+    /* l'âge fait épaissir tout l'individu ; le gène d'épaisseur, lui, se lit
+       tronçon par tronçon — une branche réécrite peut grossir seule */
+    const age = (0.16+0.84*Math.pow(clamp(this.age/(this.longevite*0.55),0,1),0.55))
+              / Math.pow(Math.max(total,1),0.44);
+    const setR=(s)=>{
+      s.r0 = Math.max(s.gAct[GI.epaisseur]*age*Math.pow(s.poids,0.44)*s.som('rayon'), 0.0009);
+      for(const c of s.enfants) setR(c);
+    };
+    setR(this.racine);
+    const setR1=(s)=>{
+      let m=0;
+      for(const c of s.enfants){ if(c.coupe) continue; setR1(c); m=Math.max(m,c.r0); }
+      s.r1 = s.enfants.length? Math.max(m*1.02, s.r0*0.45) : s.r0*Math.max(s.gAct[GI.conicite]*0.55,0.18);
+      if(s.r1>s.r0) s.r1=s.r0*0.98;
+    };
+    setR1(this.racine);
+  }
+
+  /* ------------------------------------------- réécriture de l'ADN
+     Le génome est normalement figé à la conception : tout ce qui en
+     découle est calculé une seule fois. Quand la table d'édition le
+     réécrit sur une plante vivante, il faut refaire ces dérivations.
+
+     Un tronçon partage l'ADN de son parent tant qu'on ne l'a pas réécrit.
+     Le détacher lui donne sa propre copie, que toute sa descendance suit :
+     la branche diverge, le reste du pied ne bouge pas. */
+  detacherGenome(seg){
+    if(!seg.gLoc){
+      seg.gLoc = new Float32Array(seg.gAct);
+      seg.gAct = seg.gLoc;
+      this.propagerGenome(seg);
+    }
+    return seg.gLoc;
+  }
+  propagerGenome(seg){
+    for(const c of seg.enfants){
+      c.gAct = c.gLoc || seg.gAct;
+      this.propagerGenome(c);
+    }
+  }
+  /* si la branche est redevenue en tout point identique à son parent, elle
+     cesse de porter une copie : la fiche ne la signale plus comme réécrite */
+  rattacherGenome(seg){
+    if(!seg.gLoc) return;
+    const p = seg.parent ? seg.parent.gAct : this.genome;
+    if(p===seg.gLoc) return;
+    /* seuls les gènes lisibles par tronçon comptent : les indivisibles se
+       lisent toujours sur le pied, la copie locale en garde une valeur morte */
+    for(let i=0;i<NG;i++) if(GENES[i].loc && seg.gLoc[i]!==p[i]) return;
+    seg.gLoc=null; seg.gAct=p;
+    this.propagerGenome(seg);
+  }
+  /* dérivations à refaire après toute écriture, locale ou germinale */
+  majGenome(seg){
+    const g=this.genome;
+    this.majTauxSoma();
+    this.matureJours = Math.max(2.5, g[GI.longevite]*g[GI.maturite]);
+    this.longevite   = g[GI.longevite];
+    const t = seg ? seg.sousArbre([]) : this.troncons;
+    for(let i=0;i<t.length;i++) t[i].calcLen();
+    this.majPoids();
+    this.sig = -1;                       // force la reconstruction du maillage
+  }
+  /* risque de mutation par gène quand un rameau recopie l'ADN somatique du
+     précédent : le gène de la plante, plus ce qu'a versé l'eau mutagène */
+  majTauxSoma(){
+    this.tauxSoma = clamp(this.genome[GI.tauxMutation]*0.95 + this.somaBonus, 0.002, 0.9);
+  }
+
+  /* ------------------------------------------------------- floraison */
+  majFloraison(dt, env){
+    const g=this.genome;
+    const mur = this.age > this.matureJours*0.92;
+    let f=0;
+    if(mur && this.sante>0.25 && this.etat!=='morte'){
+      const deb=g[GI.debutFloraison], dur=g[GI.dureeFloraison];
+      let d = env.phaseAn - deb; if(d<-0.5) d+=1; if(d>0.5) d-=1;
+      if(d>=-0.02 && d<=dur){
+        f = clamp(Math.min(d+0.02,dur-d)/Math.min(0.09,dur*0.42),0,1);
+      }
+      f *= clamp((env.temp-1)/8,0,1);
+    }
+    this.flor = lerp(this.flor, f, clamp(dt*2.6,0,1));
+    // les corolles se referment la nuit et sous la pluie
+    const jour = clamp(env.soleil*1.6+0.15,0,1)*(1-env.pluie*0.45);
+    this.ouverture = lerp(this.ouverture, this.flor>0.05?jour:0, clamp(dt*4.0,0,1));
+    if(this.flor>0.35){ this.aFleuri=true; this.etat = this.etat==='morte'?'morte':'floraison'; }
+    else if(this.etat==='floraison') this.etat = this.aFleuri?'fructification':'adulte';
+    else if(this.etat!=='morte' && this.etat!=='graine'){
+      this.etat = this.age<this.matureJours*0.35?'pousse':(mur?'adulte':'jeune');
+      if(this.age>this.longevite*0.85) this.etat='sénescence';
+    }
+  }
+
+  mourir(cause){
+    if(this.etat==='morte') return;
+    this.etat='morte'; this.cause=cause; this.decompose=0; this.flor=0; this.ouverture=0;
+    this.sig=-1;
+  }
+
+  /* --------------------------------------------------- ombre reçue */
+  ombreSubie(monde){
+    let s=0;
+    const near = monde.voisins(this.x, this.z, 9);
+    for(const o of near){
+      if(o===this || o.etat==='graine' || o.etat==='morte') continue;
+      if(o.hauteur < this.hauteur*0.75) continue;
+      const dx=o.x-this.x, dz=o.z-this.z;
+      const d=Math.hypot(dx,dz);
+      const c=o.canopee;
+      if(d>c) continue;
+      const rel = clamp((o.hauteur-this.hauteur*0.55)/Math.max(o.hauteur,0.1),0,1);
+      s += (1-d/c)*rel*clamp(o.densite||0.5,0,1)*0.85;
+    }
+    return clamp(s,0,1);
+  }
+
+  /* =================================================================
+     MAILLAGE — reconstruction procédurale à partir de l'ADN
+     ================================================================= */
+  signature(env, dist){
+    if(!this.racine) return 0;
+    const lod = dist>10?1:0;
+    let ext=0;
+    for(let i=0;i<this.troncons.length;i++) ext+=this.troncons[i].g;
+    return Math.round(ext*24) + this.troncons.length*7919
+         + Math.round(this.ouverture*11)*31 + Math.round(this.flor*8)*97
+         + Math.round(env.feuillage*10)*613 + lod*104729
+         + Math.round(this.decompose*3)*1741 + (this.etat==='morte'?7:0)
+         + Math.round(clamp(this.age/(this.longevite*0.55),0,1)*20)*233;
+  }
+
+  couleurs(env, gg){
+    const g=gg||this.genome;
+    const mort = this.etat==='morte' ? clamp(this.decompose/3.2,0,1) : 0;
+    const sen = this.etat==='sénescence' ? clamp((this.age-this.longevite*0.85)/(this.longevite*0.3),0,1)*0.55 : 0;
+    const aut = env.automne;
+    const stress = clamp(this.stress.eau*0.8+this.stress.nut*0.5,0,1)*0.5;
+    const jaunis = clamp(aut*0.95 + sen + mort + stress, 0, 1);
+
+    let hf = g[GI.teinteFeuille], sf=g[GI.satFeuille], lf=g[GI.lumFeuille];
+    const cible = 0.075 + this.rng2(3)*0.045;     // ocre / rouille propre à l'individu
+    hf = lerp(hf, cible, jaunis);
+    sf = lerp(sf, 0.62+this.rng2(7)*0.25, jaunis*0.85);
+    lf = lerp(lf, 0.40, jaunis*0.8);
+    if(mort>0){ sf=lerp(sf,0.16,mort); lf=lerp(lf,0.20,mort); hf=lerp(hf,0.09,mort); }
+
+    const ct = hsl2rgb(g[GI.teinteTige], lerp(g[GI.satTige],0.10,mort*0.8), lerp(g[GI.lumTige],0.16,mort*0.7));
+    const cj = hsl2rgb(lerp(hf,g[GI.teinteFeuille],0.35), sf*0.85, lf*1.15); // jeune pousse
+    return {
+      tige:ct, tigeJeune:cj,
+      feuille:hsl2rgb(hf,sf,lf),
+      feuilleB:hsl2rgb(hf+0.012,sf*0.92,lf*1.16),
+      jaunis, mort
+    };
+  }
+  rng2(k){ return hash21(this.id*0.137+k, this.id*0.911-k); }
+
+  construire(gl, env, dist){
+    if(!this.racine) { this.nIdx=0; return; }
+    this.lod = dist>10;
+    const lod=this.lod, loin = dist>22;
+    const flod = loin?2:(lod?1:0);
+    const ligneux = SPECIES[this.sp].port;
+    MB.reset();
+    /* les branches partagent presque toutes le même tableau de gènes : une
+       palette par tableau distinct suffit, et le cache tombe juste à tous
+       les coups tant que personne n'a réécrit de rameau */
+    const palettes = new Map();
+    const coul=(gg)=>{ let c=palettes.get(gg);
+      if(!c){ c=this.couleurs(env, gg); palettes.set(gg,c); } return c; };
+    const feuillage = clamp(env.feuillage * (this.etat==='morte'?1-clamp(this.decompose/2.2,0,1):1), 0, 1);
+    let hmax=0, cmax=0.05, nFeuilles=0, nFleurs=0;
+
+    const emet=(s, P, D, S)=>{
+      if(s.coupe) return;
+      const len = s.lenMax*s.g;
+      if(len<0.0015) return;
+      const g = s.gAct, C = coul(g);
+      const r0=s.r0, r1=lerp(s.r0,s.r1,0.9);
+      const jeune = clamp(1 - r0/0.014, 0, 1)*0.85;
+      const cA=[lerp(C.tige[0],C.tigeJeune[0],jeune),lerp(C.tige[1],C.tigeJeune[1],jeune),lerp(C.tige[2],C.tigeJeune[2],jeune)];
+      const jb = clamp(1 - r1/0.014, 0, 1)*0.85;
+      const cB=[lerp(C.tige[0],C.tigeJeune[0],jb),lerp(C.tige[1],C.tigeJeune[1],jb),lerp(C.tige[2],C.tigeJeune[2],jb)];
+      let sides = r0>0.055?8:(r0>0.020?6:(r0>0.006?5:4));
+      if(lod) sides=Math.max(3,sides-2);
+      if(loin) sides=3;
+      const bend = (g[GI.courbure]+s.som('courbure'))*0.85
+                 + (s.depth>0? -0.30*clamp(s.r0/0.03,0,1)*0 : 0);
+      const twist = (g[GI.torsion]+s.som('torsion'))*DEG*0.5;
+      let rings = lod?1:(Math.abs(bend)>0.55?3:2);
+      if(loin) rings=1;
+      const wA = this.flexion(P[1], r0), wB = this.flexion(P[1]+len, r1);
+      const fin = {p:[0,0,0],d:[0,0,0],s:[0,0,0]};
+      tigeMesh(P,D,S, len, r0, r1, bend, twist, sides, rings, cA, cB, wA, wB, s.id+1, fin);
+
+      const hy = fin.p[1]; if(hy>hmax) hmax=hy;
+      const cr = Math.hypot(fin.p[0],fin.p[2]); if(cr>cmax) cmax=cr;
+
+      /* --- feuilles au nœud --- */
+      const porteFeuilles = (r0<0.020 || s.depth>=Math.round(g[GI.profondeur])-1) && s.g>0.35;
+      /* test fondé sur l'espèce, pas sur la hauteur mesurée : celle-ci
+         n'est connue qu'à la fin de la construction du maillage */
+      if(porteFeuilles && feuillage>0.02 && !(loin && ligneux===0 && g[GI.hauteur]<0.8)){
+        /* de loin : moitié moins de feuilles, mais plus larges — la masse
+           du feuillage compte davantage que le détail */
+        const nb = Math.round(clamp(g[GI.nbFeuilles],0,4));
+        const gros = loin?1.32:1;
+        const tf = clamp(g[GI.tailleFeuille]*s.som('tailleFeuille'),0.004,0.7)*gros
+                 * clamp(s.g*1.4,0.25,1) * (0.55+0.45*feuillage);
+        const hshift = s.som('teinteFeuille');
+        const cf=[C.feuille[0],C.feuille[1],C.feuille[2]];
+        const cf2=[C.feuilleB[0],C.feuilleB[1],C.feuilleB[2]];
+        if(Math.abs(hshift)>0.001){
+          const base=this.couleursFeuille(hshift, C, g);
+          cf[0]=base.a[0];cf[1]=base.a[1];cf[2]=base.a[2];
+          cf2[0]=base.b[0];cf2[1]=base.b[1];cf2[2]=base.b[2];
+        }
+        const phyl = clamp(g[GI.phyllotaxie]*s.som('phyllotaxie'),40,220)*DEG;
+        const port = g[GI.portFeuille];
+        for(let i=0;i<nb;i++){
+          const az = s.azimut + phyl*(s.rang+1) + i*(TAU/nb);
+          rotAxis(_t1, fin.s, fin.d, az);
+          const incl = lerp(0.35, 1.95, port) + this.rng2(s.id*3+i)*0.35;
+          rotAxis(_t2, fin.d, _t1, incl);
+          feuilleMesh(fin.p, _t2, _t1,
+            tf, g[GI.largFeuille], g[GI.denture], g[GI.lobes],
+            0.30+port*0.85, cf, cf2, this.flexion(fin.p[1], 0.002)*1.25, s.id+1, flod);
+          nFeuilles++;
+        }
+      }
+
+      /* --- fleurs / fruits au bourgeon terminal --- */
+      if(s.terminal && s.g>0.6 && (this.flor>0.02 || this.fruits>0.02)){
+        this.fleurSur(s, fin, C, flod);
+        nFleurs++;
+      }
+
+      for(const c of s.enfants){
+        if(c.coupe) continue;
+        rotAxis(_t1, fin.s, fin.d, c.azimut);
+        rotAxis(_t2, fin.d, _t1, c.incl);
+        rotAxis(_t3, fin.s, _t1, c.incl);
+        emet(c, fin.p, _t2, _t3);
+      }
+    };
+
+    const base=[0,0,0], up=[0,1,0], side=[1,0,0];
+    emet(this.racine, base, up, side);
+
+    this.hauteur = Math.max(hmax, 0.02);
+    this.canopee = Math.max(cmax*1.15, 0.06);
+    this.densite = clamp(nFeuilles/(30+this.canopee*40), 0.05, 1) * feuillage;
+    this.nbFeuilles = nFeuilles; this.nbFleursVis = nFleurs;
+
+    /* --- envoi au GPU --- */
+    if(!this.mesh){
+      this.mesh = { vao: gl.createVertexArray(), vbo: gl.createBuffer(), ebo: gl.createBuffer() };
+      gl.bindVertexArray(this.mesh.vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.mesh.vbo);
+      const st=44;
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,st,0);
+      gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,3,gl.FLOAT,false,st,12);
+      gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,3,gl.FLOAT,false,st,24);
+      gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,1,gl.FLOAT,false,st,36);
+      gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4,1,gl.FLOAT,false,st,40);
+    } else {
+      gl.bindVertexArray(this.mesh.vao);
+    }
+    /* le VAO de la plante doit être lié pendant l'envoi : la liaison du
+       tampon d'indices est un état du VAO, pas un état global */
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.mesh.vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, MB.buf.subarray(0, MB.nv*11), gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.mesh.ebo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, MB.idx.subarray(0, MB.ni), gl.DYNAMIC_DRAW);
+    gl.bindVertexArray(null);
+    this.nIdx = MB.ni;
+  }
+
+  couleursFeuille(shift, C, gg){
+    const g=gg||this.genome;
+    const mort=C.mort, jaunis=C.jaunis;
+    let hf = clamp(g[GI.teinteFeuille]+shift, 0.02, 0.6);
+    hf = lerp(hf, 0.075+this.rng2(3)*0.045, jaunis);
+    const sf = lerp(g[GI.satFeuille], 0.62, jaunis*0.85)*(1-mort*0.7);
+    const lf = lerp(g[GI.lumFeuille], 0.40, jaunis*0.8)*(1-mort*0.5);
+    return {a:hsl2rgb(hf,sf,lf), b:hsl2rgb(hf+0.012,sf*0.92,lf*1.16)};
+  }
+
+  flexion(y, r){
+    const h=Math.max(this.hauteur,0.15);
+    return clamp(Math.pow(clamp(y/h,0,1),1.25) * clamp(0.011/(r+0.0012),0.18,1.7), 0, 1.6);
+  }
+
+  /* corolle complète sur un tronçon terminal */
+  fleurSur(s, fin, C, lod){   // lod : 0 complet, 1 allégé, 2 silhouette
+    const g=s.gAct, rng=this.rng;
+    const ouv = this.ouverture*this.flor;
+    const fruit = this.fruits;
+    const nFl = Math.max(1, Math.round(g[GI.nbFleurs]));
+    const lp = clamp(g[GI.longPetale],0.004,0.25);
+    const hshift = s.som('teintePetale');
+    const lmul = s.som('lumPetale');
+    const hue = fract(g[GI.teintePetale]+hshift);
+    const sat = clamp(g[GI.satPetale]*(1-C.jaunis*0.3),0,1);
+    const lum = clamp(g[GI.lumPetale]*lmul,0.06,0.97);
+    const cA = hsl2rgb(hue, sat, lum);
+    const cB = hsl2rgb(fract(hue+g[GI.degradePetale]), clamp(sat*0.92,0,1), clamp(lum*1.10,0,1));
+    const cCoeur = hsl2rgb(g[GI.teinteCoeur], clamp(sat*0.8+0.15,0,1), 0.42);
+    const nPet = Math.max(3, Math.round(clamp(g[GI.nbPetales]*s.som('nbPetales'),3,40)));
+    const rangs = Math.max(1, Math.round(g[GI.rangees]));
+    const wind = this.flexion(fin.p[1], 0.0025)*1.3;
+
+    for(let f=0; f<nFl; f++){
+      const t = nFl>1 ? f/(nFl-1) : 0;
+      const P=[fin.p[0],fin.p[1],fin.p[2]];
+      let D=[fin.d[0],fin.d[1],fin.d[2]], S=[fin.s[0],fin.s[1],fin.s[2]];
+      if(nFl>1){
+        /* petite hampe : les fleurs s'étagent le long de l'axe */
+        const az = t*4.2 + this.rng2(s.id+f)*1.4;
+        const dl = -t*s.lenMax*0.70;
+        V3.addScaled(P,P,fin.d,dl);
+        rotAxis(_t1, S, fin.d, az);
+        const off = lp*(0.9+t*1.3)*(0.5+ouv*0.5);
+        V3.addScaled(P,P,_t1,off*0.55);
+        rotAxis(_t2, fin.d, _t1, lerp(0.25,1.35,t)*0.8);
+        D=[_t2[0],_t2[1],_t2[2]];
+        V3.cross(S,D,_t1); V3.norm(S,S);
+        if(!lod && off>0.004){
+          const cA2=[C.tige[0]*0.9,C.tige[1]*1.05,C.tige[2]*0.9];
+          tigeMesh([fin.p[0]+fin.d[0]*dl,fin.p[1]+fin.d[1]*dl,fin.p[2]+fin.d[2]*dl],
+                   _t1, fin.d, off*0.6, s.r1*0.55, s.r1*0.4, 0.2, 0, 3, 1, cA2, cA2, wind, wind, s.id+1, null);
+        }
+      }
+      if(fruit>0.03 && this.flor<0.35){
+        const rf = lp*(0.35+g[GI.tailleCoeur]*0.5)*clamp(fruit,0,1);
+        const cf1=hsl2rgb(0.09+this.rng2(9)*0.05, 0.55, 0.30+0.12*this.rng2(2));
+        const cf2=hsl2rgb(0.07, 0.45, 0.22);
+        domeMesh(P, D, rf, rf*1.5, cf1, cf2, wind, s.id+1, lod);
+        continue;
+      }
+      if(ouv<0.005 && this.flor<0.02) continue;
+
+      /* --- pétales --- */
+      const perRang = Math.max(1, Math.ceil(nPet/rangs));
+      for(let r=0;r<rangs;r++){
+        const rt = rangs>1? r/(rangs-1) : 0;
+        const tilt = lerp(0.12, 1.62, ouv) * lerp(1.0, 0.55, rt);
+        const lscale = lerp(1.0, 0.62, rt);
+        const rad = lp*g[GI.tailleCoeur]*0.30*(0.4+ouv*0.6);
+        for(let i=0;i<perRang;i++){
+          const az = i*(TAU/perRang) + r*2.399 + this.rng2(s.id*5+f)*0.6;
+          rotAxis(_t1, S, D, az);                     // tangente
+          rotAxis(_t2, D, _t1, tilt);                 // direction du pétale
+          const bp=[P[0]+_t2[0]*rad*0.4, P[1]+_t2[1]*rad*0.4, P[2]+_t2[2]*rad*0.4];
+          petaleMesh(bp, _t2, _t1,
+            lp*lscale*(0.35+0.65*ouv+0.0), g[GI.largPetale],
+            g[GI.courbePetale], g[GI.torsadePetale], g[GI.pointePetale],
+            cA, cB, wind, s.id+1, lod);
+        }
+      }
+      /* --- cœur + étamines --- */
+      const rc = lp*g[GI.tailleCoeur]*0.42;
+      domeMesh(P, D, rc, rc*0.75, cCoeur, [cCoeur[0]*1.25,cCoeur[1]*1.25,cCoeur[2]*1.1], wind, s.id+1, lod);
+      if(!lod && rc>0.008 && ouv>0.4){
+        const ne=Math.min(9,3+Math.round(nPet*0.25));
+        const ce=hsl2rgb(fract(g[GI.teinteCoeur]+0.06), 0.75, 0.62);
+        for(let i=0;i<ne;i++){
+          const az=i*(TAU/ne);
+          rotAxis(_t1,S,D,az);
+          rotAxis(_t2,D,_t1,0.45+this.rng2(i+s.id)*0.4);
+          const ep=[P[0]+_t1[0]*rc*0.5,P[1]+_t1[1]*rc*0.5,P[2]+_t1[2]*rc*0.5];
+          etamineMesh(ep,_t2,_t1, rc*1.5, rc*0.10, ce, wind, s.id+1);
+        }
+      }
+    }
+  }
+
+  /* tous les tronçons terminaux qui portent des fleurs */
+  tronconsFloraux(){
+    const out=[];
+    for(const t of this.troncons) if(t.terminal && !t.coupe && t.g>0.6) out.push(t);
+    return out;
+  }
+  detruire(gl){
+    if(this.mesh){
+      gl.deleteVertexArray(this.mesh.vao);
+      gl.deleteBuffer(this.mesh.vbo); gl.deleteBuffer(this.mesh.ebo);
+      this.mesh=null;
+    }
+  }
+}
+</script>
+<script>
+/* =====================================================================
+   7. RENDU — programmes, décor statique, herbe, particules, ombres
+   ===================================================================== */
+const Rendu = {
+  gl:null, cv:null, W:1, H:1, dpr:1,
+  progs:{}, ombre:null, pick:null,
+  qualite:1,
+  vpMat:M4.create(), viewMat:M4.create(), projMat:M4.create(),
+  lightVP:M4.create(), skyMat:M4.create(), tmp:M4.create(), tmp2:M4.create(),
+  model:M4.create(),
+  dessine:0, tris:0,
+
+  init(cv){
+    const gl = GLU.init(cv);
+    if(!gl) return false;
+    this.gl=gl; this.cv=cv;
+    this.progs.sky   = GLU.program(SH_SKY_VS, SH_SKY_FS, 'ciel');
+    this.progs.ter   = GLU.program(SH_TER_VS, SH_TER_FS, 'terrain');
+    this.progs.plant = GLU.program(SH_PLANT_VS, SH_PLANT_FS, 'plante');
+    this.progs.plantS= GLU.program(SH_PLANT_VS, SH_PLANT_FS, 'planteOmbre', ['SHADOW']);
+    this.progs.plantP= GLU.program(SH_PLANT_VS, SH_PLANT_FS, 'plantePick', ['PICK']);
+    this.progs.grass = GLU.program(SH_GRASS_VS, SH_GRASS_FS, 'herbe');
+    this.progs.part  = GLU.program(SH_PART_VS, SH_PART_FS, 'particules');
+    this.ombre = GLU.shadowTarget(2048);
+    this.pick  = GLU.pickTarget(20);
+    /* ordre de balayage du tampon de sélection : du réticule vers l'extérieur,
+       pour attraper la tige la plus proche du centre de visée */
+    {
+      const S=this.pick.size, c=(S-1)/2, ord=[];
+      for(let j=0;j<S;j++)for(let i=0;i<S;i++) ord.push({k:j*S+i, d:(i-c)*(i-c)+(j-c)*(j-c)});
+      ord.sort((a,b)=>a.d-b.d);
+      this.spirale = Int32Array.from(ord.map(o=>o.k));
+      this.pickBuf = new Uint8Array(S*S*4);
+    }
+    this.vaoVide = gl.createVertexArray();
+    Sol.tex = GLU.dataTexture(SOIL_N, SOIL_N);
+    Sol.sale = true;
+    this.creerTerrain();
+    this.creerHerbe();
+    this.creerDecor();
+    this.creerParticules();
+    this.pixel = new Uint8Array(4);
+    return true;
+  },
+
+  redim(){
+    if(!this.cv) return;
+    this.dpr = Math.min(window.devicePixelRatio||1, 1.6);
+    this.W = Math.max(1,Math.floor(this.cv.clientWidth*this.dpr));
+    this.H = Math.max(1,Math.floor(this.cv.clientHeight*this.dpr));
+    this.cv.width=this.W; this.cv.height=this.H;
+  },
+
+  /* ------------------------------------------------------- terrain */
+  creerTerrain(){
+    const gl=this.gl;
+    const parts=[];
+    const grille=(x0,x1,z0,z1,n,trou)=>{
+      const V=[], I=[];
+      const idx=new Int32Array((n+1)*(n+1)).fill(-1);
+      let c=0;
+      for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){
+        const x=lerp(x0,x1,i/n), z=lerp(z0,z1,j/n);
+        if(trou && Math.abs(x)<trou-0.01 && Math.abs(z)<trou-0.01){ continue; }
+        const y=Terrain.hauteur(x,z);
+        const nn=Terrain.normale(x,z);
+        V.push(x,y,z, nn[0],nn[1],nn[2]);
+        idx[j*(n+1)+i]=c++;
+      }
+      for(let j=0;j<n;j++)for(let i=0;i<n;i++){
+        const a=idx[j*(n+1)+i], b=idx[j*(n+1)+i+1], d=idx[(j+1)*(n+1)+i], e=idx[(j+1)*(n+1)+i+1];
+        if(a<0||b<0||d<0||e<0) continue;
+        I.push(a,d,b, b,d,e);
+      }
+      return {V:new Float32Array(V), I:new Uint32Array(I)};
+    };
+    parts.push(grille(-62,62,-62,62,190,0));
+    parts.push(grille(-TER_EXT/2,TER_EXT/2,-TER_EXT/2,TER_EXT/2,54,62));
+    this.terrain = parts.map(p=>{
+      const vao=gl.createVertexArray();
+      gl.bindVertexArray(vao);
+      const vbo=GLU.buffer(p.V);
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,24,0);
+      gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,3,gl.FLOAT,false,24,12);
+      const ebo=gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ebo);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,p.I,gl.STATIC_DRAW);
+      gl.bindVertexArray(null);
+      return {vao, n:p.I.length};
+    });
+  },
+
+  /* --------------------------------------------------------- herbe */
+  creerHerbe(){
+    const gl=this.gl;
+    const rng=makeRng(9182);
+    const R=62, CH=8, NC=Math.ceil(R*2/CH);
+    const chunks=[];
+    for(let i=0;i<NC*NC;i++) chunks.push([]);
+    const N=262000;
+    for(let i=0;i<N;i++){
+      let x,z;
+      // deux tiers dans l'hectare, le reste autour
+      if(i%3!==0){ x=rng.range(-HALF,HALF); z=rng.range(-HALF,HALF); }
+      else { x=rng.range(-R,R); z=rng.range(-R,R); }
+      const y=Terrain.hauteur(x,z);
+      const n=fbm2(x*0.09,z*0.09,3);
+      const touffe=fbm2(x*0.5+50,z*0.5,2);
+      let h=(0.085+n*0.11+touffe*0.07)*rng.range(0.60,1.42);
+      if(Math.abs(x)>HALF||Math.abs(z)>HALF) h*=0.72;
+      /* on tire la couleur du brin dans la même palette que le terrain
+         pour que l'herbe se lise comme un tapis, pas comme des piquets */
+      const t1=clamp(fbm2(x*0.9,z*0.9,3)+0.5,0,1);
+      const t3=clamp(fbm2(x*0.17,z*0.17,3)+0.5,0,1);
+      const sec=smoothstep(0.60,0.95,t3)*0.34;
+      const v=rng.range(0.86,1.20);
+      const c=[
+        lerp(lerp(0.196,0.318,t1), 0.463, sec)*v,
+        lerp(lerp(0.286,0.396,t1), 0.435, sec)*v,
+        lerp(lerp(0.118,0.157,t1), 0.235, sec)*v*rng.range(0.88,1.10)];
+      const ci=clamp(Math.floor((x+R)/CH),0,NC-1)+clamp(Math.floor((z+R)/CH),0,NC-1)*NC;
+      chunks[ci].push(x,y,z, rng()*TAU, h, 0.008+h*0.032, rng.range(0.10,0.58), c[0],c[1],c[2]);
+    }
+    const data=[]; const meta=[];
+    for(let ci=0;ci<chunks.length;ci++){
+      const arr=chunks[ci];
+      if(!arr.length) continue;
+      const start=data.length/10;
+      for(let k=0;k<arr.length;k++) data.push(arr[k]);
+      meta.push({start, n:arr.length/10,
+        cx:((ci%NC)+0.5)*CH-R, cz:(Math.floor(ci/NC)+0.5)*CH-R});
+    }
+    const buf=new Float32Array(data);
+    const vbo=GLU.buffer(buf);
+    this.herbe = meta.map(m=>{
+      const vao=gl.createVertexArray();
+      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+      const o=m.start*40;
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,40,o);    gl.vertexAttribDivisor(0,1);
+      gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,4,gl.FLOAT,false,40,o+12); gl.vertexAttribDivisor(1,1);
+      gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,3,gl.FLOAT,false,40,o+28); gl.vertexAttribDivisor(2,1);
+      gl.bindVertexArray(null);
+      return {vao, n:m.n, cx:m.cx, cz:m.cz};
+    });
+  },
+
+  /* ------------------------------- clôture, pierres, banc : décor fixe */
+  creerDecor(){
+    const gl=this.gl;
+    MB.reset();
+    const rng=makeRng(4242);
+    const bois=[0.34,0.26,0.18], bois2=[0.28,0.21,0.14];
+    const poteau=(x,z,h,r)=>{
+      const y=Terrain.hauteur(x,z);
+      const c=[bois[0]*rng.range(0.8,1.15),bois[1]*rng.range(0.8,1.15),bois[2]*rng.range(0.8,1.15)];
+      tigeMesh([x,y-0.25,z],[0,1,0],[1,0,0], h+0.25, r, r*0.82, rng.range(-0.05,0.05), 0, 5, 1, c, c, 0, 0.02, 0, null);
+      domeMesh([x,y+h,z],[0,1,0], r*0.85, r*0.7, c, c, 0.02, 0, true);
+    };
+    const barre=(x0,z0,x1,z1,hy,ep)=>{
+      const y0=Terrain.hauteur(x0,z0)+hy, y1=Terrain.hauteur(x1,z1)+hy;
+      const d=[x1-x0, y1-y0, z1-z0]; const L=V3.len(d); V3.norm(d,d);
+      const s=[0,0,0]; perpOf(s,d);
+      const c=[bois2[0]*rng.range(0.85,1.1),bois2[1]*rng.range(0.85,1.1),bois2[2]*rng.range(0.85,1.1)];
+      tigeMesh([x0,y0,z0],d,s,L,ep,ep,0,0,4,1,c,c,0.02,0.02,0,null);
+    };
+    const pas=2.6, lim=HALF;
+    for(let s=0;s<4;s++){
+      for(let t=-lim;t<lim;t+=pas){
+        let x0,z0,x1,z1;
+        if(s===0){x0=t;z0=-lim;x1=Math.min(t+pas,lim);z1=-lim;}
+        else if(s===1){x0=lim;z0=t;x1=lim;z1=Math.min(t+pas,lim);}
+        else if(s===2){x0=t;z0=lim;x1=Math.min(t+pas,lim);z1=lim;}
+        else {x0=-lim;z0=t;x1=-lim;z1=Math.min(t+pas,lim);}
+        poteau(x0,z0, 1.05+rng.range(-0.06,0.06), 0.045);
+        barre(x0,z0,x1,z1, 0.92, 0.022);
+        barre(x0,z0,x1,z1, 0.52, 0.020);
+      }
+    }
+    /* pierres */
+    for(let i=0;i<22;i++){
+      const x=rng.range(-HALF+3,HALF-3), z=rng.range(-HALF+3,HALF-3);
+      const y=Terrain.hauteur(x,z);
+      const r=rng.range(0.18,0.85);
+      const g=rng.range(0.30,0.46);
+      const c=[g*1.0,g*1.02,g*0.96];
+      const c2=[g*0.72,g*0.74,g*0.70];
+      domeMesh([x,y-r*0.25,z],[0,1,0], r, r*rng.range(0.5,0.95), c2, c, 0, 0, false);
+    }
+    /* un banc face au couchant */
+    (function(){
+      const bx=6.5, bz=-14, ang=-0.6;
+      const by=Terrain.hauteur(bx,bz);
+      const dir=[Math.cos(ang),0,Math.sin(ang)];
+      const per=[-dir[2],0,dir[0]];
+      const cb=[0.30,0.23,0.16];
+      for(let s=-1;s<=1;s+=2){
+        const px=bx+dir[0]*0.72*s, pz=bz+dir[2]*0.72*s;
+        for(let q=-1;q<=1;q+=2){
+          const qx=px+per[0]*0.16*q, qz=pz+per[2]*0.16*q;
+          tigeMesh([qx,Terrain.hauteur(qx,qz)-0.1,qz],[0,1,0],[1,0,0],0.52,0.035,0.032,0,0,4,1,cb,cb,0,0,0,null);
+        }
+      }
+      for(let k=0;k<3;k++){
+        const off=(k-1)*0.13;
+        tigeMesh([bx-dir[0]*0.85+per[0]*off, by+0.42, bz-dir[2]*0.85+per[2]*off],
+          dir,[0,1,0], 1.7, 0.045, 0.045, 0,0,4,1,[cb[0]*1.15,cb[1]*1.15,cb[2]*1.1],cb,0,0,0,null);
+      }
+    })();
+
+    const vao=gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    const vbo=GLU.buffer(MB.buf.slice(0,MB.nv*11));
+    const st=44;
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,st,0);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,3,gl.FLOAT,false,st,12);
+    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,3,gl.FLOAT,false,st,24);
+    gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,1,gl.FLOAT,false,st,36);
+    gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4,1,gl.FLOAT,false,st,40);
+    const ebo=gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ebo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, MB.idx.slice(0,MB.ni), gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    this.decor={vao, n:MB.ni};
+  },
+
+  /* ---------------------------------------------------- particules */
+  creerParticules(){
+    const gl=this.gl;
+    this.maxPart=1600;
+    this.partData=new Float32Array(this.maxPart*11);
+    this.partVbo=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,this.partVbo);
+    gl.bufferData(gl.ARRAY_BUFFER,this.partData.byteLength,gl.DYNAMIC_DRAW);
+    const vao=gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER,this.partVbo);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,44,0);  gl.vertexAttribDivisor(0,1);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,4,gl.FLOAT,false,44,12); gl.vertexAttribDivisor(1,1);
+    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,4,gl.FLOAT,false,44,28); gl.vertexAttribDivisor(2,1);
+    gl.bindVertexArray(null);
+    this.partVao=vao;
+  },
+
+  /* ------------------------------------------------ uniformes communs */
+  scene(p, env, cam){
+    const gl=this.gl;
+    gl.useProgram(p);
+    const u=p.u;
+    if(u.uVP) gl.uniformMatrix4fv(u.uVP,false,this.vpMat);
+    if(u.uLightVP) gl.uniformMatrix4fv(u.uLightVP,false,this.lightVP);
+    if(u.uSunDir) gl.uniform3fv(u.uSunDir,env.sunDir);
+    if(u.uSunCol) gl.uniform3fv(u.uSunCol,env.sunCol);
+    if(u.uSkyCol) gl.uniform3fv(u.uSkyCol,env.skyCol);
+    if(u.uGndCol) gl.uniform3fv(u.uGndCol,env.gndCol);
+    if(u.uFogCol) gl.uniform3fv(u.uFogCol,env.fogCol);
+    if(u.uCamPos) gl.uniform3f(u.uCamPos,cam[0],cam[1],cam[2]);
+    if(u.uTime)   gl.uniform1f(u.uTime,this.tempsRendu);
+    if(u.uFogDen) gl.uniform1f(u.uFogDen,env.fogDen);
+    if(u.uWind)   gl.uniform1f(u.uWind,env.vent);
+    if(u.uSnow)   gl.uniform1f(u.uSnow,env.neige);
+    if(u.uShadowStr) gl.uniform1f(u.uShadowStr,env.shadowStr);
+    if(u.uWet)    gl.uniform1f(u.uWet,env.wet);
+    if(u.uAutomne) gl.uniform1f(u.uAutomne,env.automne||0);
+    if(u.uShadow){
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D,this.ombre.tex);
+      gl.uniform1i(u.uShadow,0);
+    }
+    return p;
+  },
+
+  majLumiereOmbre(env, cam, dir){
+    const R=42;
+    const cx=cam[0]+dir[0]*R*0.42, cz=cam[2]+dir[2]*R*0.42;
+    const cy=Terrain.hauteur(cx,cz)+1.5;
+    const texel=(R*2)/this.ombre.size;
+    const sx=Math.round(cx/texel)*texel, sz=Math.round(cz/texel)*texel;
+    const eye=[sx+env.sunDir[0]*70, cy+env.sunDir[1]*70, sz+env.sunDir[2]*70];
+    M4.lookAt(this.tmp,eye,[sx,cy,sz],[0,1,0]);
+    M4.ortho(this.tmp2,-R,R,-R,R,1,150);
+    M4.mul(this.lightVP,this.tmp2,this.tmp);
+  },
+
+  /* ------------------------------------------------------ rendu total */
+  frame(env, cam, dir, monde, tRendu){
+    const gl=this.gl;
+    this.tempsRendu=tRendu;
+    this.dessine=0; this.tris=0;
+    Sol.majTexture(gl);
+    this.majLumiereOmbre(env,cam,dir);
+
+    /* --- passe d'ombre --- */
+    gl.bindFramebuffer(gl.FRAMEBUFFER,this.ombre.fb);
+    gl.viewport(0,0,this.ombre.size,this.ombre.size);
+    gl.colorMask(false,false,false,false);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+    gl.disable(gl.CULL_FACE);
+    const pS=this.scene(this.progs.plantS,env,cam);
+    for(const pl of monde.plantes){
+      if(!pl.nIdx) continue;
+      const dx=pl.x-cam[0], dz=pl.z-cam[2];
+      const d2=dx*dx+dz*dz;
+      /* seules les plantes hautes portent une ombre lisible de loin */
+      if(d2 > (pl.hauteur>1.1 ? 42*42 : 16*16)) continue;
+      this.dessinePlante(pS,pl);
+    }
+    gl.uniformMatrix4fv(pS.u.uModel,false,M4.ident(this.model));
+    gl.uniform1f(pS.u.uPhase,0);
+    gl.bindVertexArray(this.decor.vao);
+    gl.drawElements(gl.TRIANGLES,this.decor.n,gl.UNSIGNED_INT,0);
+    gl.colorMask(true,true,true,true);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+
+    /* --- passe principale --- */
+    gl.viewport(0,0,this.W,this.H);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+    this.dessineCiel(env);
+
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthMask(true);
+    gl.enable(gl.CULL_FACE);
+    const pT=this.scene(this.progs.ter,env,cam);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,Sol.tex);
+    gl.uniform1i(pT.u.uSoil,1);
+    gl.uniform1f(pT.u.uField,FIELD);
+    for(const t of this.terrain){
+      gl.bindVertexArray(t.vao);
+      gl.drawElements(gl.TRIANGLES,t.n,gl.UNSIGNED_INT,0);
+    }
+
+    gl.disable(gl.CULL_FACE);
+    const pP=this.scene(this.progs.plant,env,cam);
+    gl.uniform1f(pP.u.uAlpha,1);
+    gl.uniform3f(pP.u.uTint,1,1,1);
+    gl.uniform1f(pP.u.uHighlight,0);
+    gl.uniformMatrix4fv(pP.u.uModel,false,M4.ident(this.model));
+    gl.uniform1f(pP.u.uPhase,0);
+    gl.bindVertexArray(this.decor.vao);
+    gl.drawElements(gl.TRIANGLES,this.decor.n,gl.UNSIGNED_INT,0);
+    for(const pl of monde.plantes){
+      if(!pl.nIdx) continue;
+      const portee = pl.hauteur>1.1 ? 95 : 44*this.qualite;
+      if(pl.dist2 > portee*portee) continue;
+      const hl = (monde.cible && monde.cible.plante===pl) ? 1 : 0;
+      if(hl){
+        gl.uniform1f(pP.u.uHighlight,1);
+        gl.uniform2f(pP.u.uPickId, pl.id, monde.cible.part);
+      }
+      this.dessinePlante(pP,pl);
+      if(hl) gl.uniform1f(pP.u.uHighlight,0);
+    }
+
+    /* --- herbe --- */
+    const pG=this.scene(this.progs.grass,env,cam);
+    const rHerbe=40*this.qualite;
+    for(const c of this.herbe){
+      const dx=c.cx-cam[0], dz=c.cz-cam[2];
+      if(dx*dx+dz*dz > rHerbe*rHerbe) continue;
+      gl.bindVertexArray(c.vao);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,9,c.n);
+      this.dessine++;
+    }
+
+    /* --- particules --- */
+    if(monde.nPart>0){
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+      gl.depthMask(false);
+      const pA=this.scene(this.progs.part,env,cam);
+      gl.uniform3fv(pA.u.uRight,monde.camRight);
+      gl.uniform3fv(pA.u.uUpv,monde.camUp);
+      gl.bindBuffer(gl.ARRAY_BUFFER,this.partVbo);
+      gl.bufferSubData(gl.ARRAY_BUFFER,0,this.partData.subarray(0,monde.nPart*11));
+      gl.bindVertexArray(this.partVao);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,4,monde.nPart);
+      gl.depthMask(true);
+      gl.disable(gl.BLEND);
+    }
+    gl.bindVertexArray(null);
+    gl.enable(gl.CULL_FACE);
+  },
+
+  dessinePlante(p,pl){
+    const gl=this.gl;
+    M4.trs(this.model, pl.x, pl.y, pl.z, pl.rotY, 1);
+    gl.uniformMatrix4fv(p.u.uModel,false,this.model);
+    gl.uniform1f(p.u.uPhase,pl.phase);
+    gl.bindVertexArray(pl.mesh.vao);
+    gl.drawElements(gl.TRIANGLES,pl.nIdx,gl.UNSIGNED_INT,0);
+    this.dessine++; this.tris+=pl.nIdx/3;
+  },
+
+  dessineCiel(env){
+    const gl=this.gl;
+    gl.depthMask(false);
+    gl.disable(gl.DEPTH_TEST);
+    const p=this.progs.sky;
+    gl.useProgram(p);
+    gl.uniformMatrix4fv(p.u.uSkyMat,false,this.skyMat);
+    gl.uniform3fv(p.u.uSunDir,env.sunDir);
+    gl.uniform3fv(p.u.uSunCol,env.sunCol);
+    gl.uniform3fv(p.u.uZenith,env.zenith);
+    gl.uniform3fv(p.u.uHorizon,env.horizon);
+    gl.uniform3fv(p.u.uGroundHaze,env.haze);
+    gl.uniform1f(p.u.uTime,this.tempsRendu);
+    gl.uniform1f(p.u.uNight,env.nuit);
+    gl.uniform1f(p.u.uCloud,env.cloud);
+    gl.uniform1f(p.u.uStorm,env.storm);
+    gl.bindVertexArray(this.vaoVide);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthMask(true);
+  },
+
+  /* --------- sélection : on rend une fenêtre de quelques pixels
+     centrée sur le réticule, dans une cible minuscule --------- */
+  selection(env, cam, monde){
+    const gl=this.gl, S=this.pick.size;
+    gl.bindFramebuffer(gl.FRAMEBUFFER,this.pick.fb);
+    gl.viewport(0,0,S,S);
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    gl.clearColor(0.05,0.07,0.06,1);
+    gl.disable(gl.CULL_FACE);
+    gl.disable(gl.BLEND);
+    /* on zoome la projection sur une petite fenêtre centrée au réticule :
+       FEN pixels d'écran remplissent tout le tampon, d'où une sélection
+       précise au tronçon près sans lancer de rayon sur le maillage */
+    const FEN=44;
+    M4.ident(this.tmp);
+    this.tmp[0]=this.W/FEN; this.tmp[5]=this.H/FEN;
+    M4.mul(this.tmp2,this.tmp,this.vpMat);
+    const p=this.progs.plantP;
+    gl.useProgram(p);
+    gl.uniformMatrix4fv(p.u.uVP,false,this.tmp2);
+    gl.uniform3f(p.u.uCamPos,cam[0],cam[1],cam[2]);
+    gl.uniform1f(p.u.uTime,this.tempsRendu);
+    gl.uniform1f(p.u.uWind,env.vent);
+    for(const pl of monde.plantes){
+      if(!pl.nIdx || pl.dist2>26*26) continue;
+      gl.uniform2f(p.u.uPickId, pl.id, 0);
+      M4.trs(this.model, pl.x, pl.y, pl.z, pl.rotY, 1);
+      gl.uniformMatrix4fv(p.u.uModel,false,this.model);
+      gl.uniform1f(p.u.uPhase,pl.phase);
+      gl.bindVertexArray(pl.mesh.vao);
+      gl.drawElements(gl.TRIANGLES,pl.nIdx,gl.UNSIGNED_INT,0);
+    }
+    gl.readPixels(0,0,S,S,gl.RGBA,gl.UNSIGNED_BYTE,this.pickBuf);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+    gl.bindVertexArray(null);
+    gl.enable(gl.CULL_FACE);
+    const b=this.pickBuf, sp=this.spirale;
+    for(let n=0;n<sp.length;n++){
+      const o=sp[n]*4;
+      const id=b[o]+b[o+1]*256;
+      if(id>0) return {id, part:b[o+2]+b[o+3]*256};
+    }
+    return null;
+  }
+};
+</script>
+<script>
+/* =====================================================================
+   8. LE MONDE VIVANT — population, pollinisation, semis, particules
+   ===================================================================== */
+const MAX_PLANTES = 780;
+const GRILLE = 10;                       // cellules de 10 m
+const GN = Math.ceil(TER_EXT/GRILLE)+2;
+
+const Monde = {
+  plantes:[], parId:new Map(), grille:null,
+  cible:null, nPart:0, parts:[],
+  camRight:new Float32Array(3), camUp:new Float32Array(3),
+  evenements:[], stats:{naissances:0, morts:0, croisements:0, mutations:0, genMax:1},
+  aRebatir:[], tempsSim:0,
+
+  init(gl){
+    this.gl=gl;
+    this.grille=new Array(GN*GN);
+    for(let i=0;i<GN*GN;i++) this.grille[i]=[];
+    for(let i=0;i<1600;i++) this.parts.push({v:0,x:0,y:0,z:0,vx:0,vy:0,vz:0,vie:0,max:1,
+      r:1,g:1,b:1,a:1,taille:0.05,type:0,rot:0,vrot:0});
+    Sol.init();
+    this.peupler();
+  },
+
+  cle(x,z){
+    const i=clamp(Math.floor((x+TER_EXT/2)/GRILLE),0,GN-1);
+    const j=clamp(Math.floor((z+TER_EXT/2)/GRILLE),0,GN-1);
+    return j*GN+i;
+  },
+  ajouter(pl){
+    this.plantes.push(pl);
+    this.parId.set(pl.id,pl);
+    pl.cell=this.cle(pl.x,pl.z);
+    this.grille[pl.cell].push(pl);
+    if(pl.gen>this.stats.genMax) this.stats.genMax=pl.gen;
+    return pl;
+  },
+  retirer(pl){
+    const i=this.plantes.indexOf(pl); if(i>=0) this.plantes.splice(i,1);
+    const c=this.grille[pl.cell]; const k=c.indexOf(pl); if(k>=0) c.splice(k,1);
+    this.parId.delete(pl.id);
+    pl.detruire(this.gl);
+    if(this.cible && this.cible.plante===pl) this.cible=null;
+    if(UI.epingle===pl) UI.epingle=null;
+    if(UI.editCible===pl) UI.fermerEditeur();
+  },
+  voisins(x,z,r){
+    const out=[];
+    const i0=clamp(Math.floor((x-r+TER_EXT/2)/GRILLE),0,GN-1);
+    const i1=clamp(Math.floor((x+r+TER_EXT/2)/GRILLE),0,GN-1);
+    const j0=clamp(Math.floor((z-r+TER_EXT/2)/GRILLE),0,GN-1);
+    const j1=clamp(Math.floor((z+r+TER_EXT/2)/GRILLE),0,GN-1);
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+      const c=this.grille[j*GN+i];
+      for(let k=0;k<c.length;k++) out.push(c[k]);
+    }
+    return out;
+  },
+
+  /* ------------------------------------------------ peuplement initial */
+  peupler(){
+    const rng=makeRng(20260801);
+    const poids=SPECIES.map(s=>s.poids);
+    const total=poids.reduce((a,b)=>a+b,0);
+    const tire=()=>{ let r=rng()*total; for(let i=0;i<poids.length;i++){ r-=poids[i]; if(r<=0) return i; } return 0; };
+    for(let i=0;i<760;i++){
+      const sp=tire();
+      const S=SPECIES[sp];
+      let x,z,ok=false,tent=0;
+      do{
+        x=rng.range(-HALF+2,HALF-2); z=rng.range(-HALF+2,HALF-2);
+        ok=true;
+        for(const o of this.voisins(x,z,8)){
+          const dmin = (SPECIES[o.sp].port===PORT.ARBRE?4.5:0.45)+(S.port===PORT.ARBRE?4.5:0.42);
+          if(Math.hypot(o.x-x,o.z-z)<dmin){ ok=false; break; }
+        }
+      } while(!ok && ++tent<18);
+      if(!ok) continue;
+      // le saule et la campanule préfèrent le creux humide
+      const g=ADN.wild(sp,rng,1.15);
+      const pl=new Plante(sp,g,x,z,{gen:1});
+      pl.age = rng.range(0.15,0.95)*g[GI.longevite]*0.75;
+      pl.germer();
+      pl.sante=rng.range(0.6,1);
+      this.ajouter(pl);
+      // croissance accélérée à la création
+      const pas=Math.max(6,Math.min(46,Math.round(pl.age/2)));
+      const dt=pl.age/pas;
+      const sauve=pl.age; pl.age=0;
+      for(let k=0;k<pas;k++){
+        pl.age+=dt;
+        for(let t=0;t<pl.troncons.length;t++){
+          const s=pl.troncons[t];
+          if(s.g>=1||(s.parent&&s.parent.g<0.72)) continue;
+          s.g=Math.min(1, s.g+dt*(CROISSANCE/pl.matureJours)*g[GI.vigueur]*s.som('vigueur')/(1+s.depth*0.34));
+          if(s.g>0.80 && s.enfants.length===0 && !s.bourgeonMort && pl.troncons.length<MAXSEG[S.port]) pl.ramifier(s);
+        }
+      }
+      pl.age=sauve;
+      pl.majPoids();
+      pl.aFleuri = pl.age>pl.matureJours;
+      pl.etat = pl.age>pl.matureJours ? 'adulte' : (pl.age>pl.matureJours*0.35?'jeune':'pousse');
+      /* la floraison s'ouvre normalement en un jour de simulation : au
+         démarrage on la met d'emblée à son état d'équilibre */
+      pl.majFloraison(9, Env);
+      pl.majFloraison(9, Env);
+    }
+  },
+
+  /* -------------------------------------------------------- simulation */
+  tick(dt, env){
+    this.tempsSim+=dt;
+    Sol.tick(dt, env);
+    if(Math.random()<dt*3) Sol.diffuser();
+
+    const morts=[];
+    for(let i=0;i<this.plantes.length;i++){
+      const pl=this.plantes[i];
+      if(!pl.tick(dt, env, this)) morts.push(pl);
+    }
+    for(const m of morts){ this.retirer(m); }
+
+    /* --- reproduction --- */
+    for(let i=0;i<this.plantes.length;i++) this.repro(this.plantes[i], dt, env);
+
+    /* --- ombre portée sur le sol (pour le rendu du terrain) --- */
+    this.majOmbreSol(dt);
+  },
+
+  majOmbreSol(dt){
+    this._ombreT=(this._ombreT||0)+dt;
+    if(this._ombreT<0.05) return;
+    this._ombreT=0;
+    const O=Sol.ombre;
+    for(let k=0;k<O.length;k++) O[k]*=0.55;
+    for(const pl of this.plantes){
+      if(pl.etat==='graine'||pl.hauteur<0.15) continue;
+      const r=pl.canopee, d=clamp(pl.densite||0.3,0,1)*clamp(pl.hauteur*0.8,0,1);
+      const i0=clamp(Math.floor((pl.x-r+HALF)/SOIL_CELL),0,SOIL_N-1);
+      const i1=clamp(Math.ceil ((pl.x+r+HALF)/SOIL_CELL),0,SOIL_N-1);
+      const j0=clamp(Math.floor((pl.z-r+HALF)/SOIL_CELL),0,SOIL_N-1);
+      const j1=clamp(Math.ceil ((pl.z+r+HALF)/SOIL_CELL),0,SOIL_N-1);
+      for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+        const cx=(i+0.5)*SOIL_CELL-HALF, cz=(j+0.5)*SOIL_CELL-HALF;
+        const dd=Math.hypot(cx-pl.x,cz-pl.z);
+        if(dd>r) continue;
+        const k=j*SOIL_N+i;
+        O[k]=clamp(O[k]+(1-dd/r)*d*0.85,0,1);
+      }
+    }
+    Sol.sale=true;
+  },
+
+  /* --------------------------------------- pollinisation et semaison */
+  repro(pl, dt, env){
+    if(pl.etat==='morte'||pl.etat==='graine') return;
+    const g=pl.genome;
+    /* recherche d'un partenaire pendant la floraison */
+    if(pl.flor>0.45 && !pl.pollen){
+      pl._chercheT=(pl._chercheT||0)+dt;
+      if(pl._chercheT>0.35){
+        pl._chercheT=0;
+        const port=SPECIES[pl.sp].port;
+        const rayon = 6 + g[GI.dispersion]*1.5 + (port===PORT.ARBRE?18:0);
+        const cands=[];
+        for(const o of this.voisins(pl.x,pl.z,rayon)){
+          if(o===pl || o.sp!==pl.sp || o.flor<0.35) continue;
+          if(Math.hypot(o.x-pl.x,o.z-pl.z)>rayon) continue;
+          cands.push(o);
+        }
+        if(cands.length){
+          const pere=cands[Math.floor(Math.random()*cands.length)];
+          const brs=pere.tronconsFloraux();
+          pl.pollen=pere.genome;
+          pl.pollenDe={id:pere.id, nom:pere.nom, sp:pere.sp};
+          pl.pollenSoma= brs.length? brs[Math.floor(Math.random()*brs.length)].soma : null;
+          pl.autoFeconde=false;
+        } else if(Math.random()<0.10){
+          pl.pollen=pl.genome;
+          pl.pollenDe={id:pl.id, nom:pl.nom, sp:pl.sp};
+          const brs=pl.tronconsFloraux();
+          pl.pollenSoma= brs.length? brs[Math.floor(Math.random()*brs.length)].soma : null;
+          pl.autoFeconde=true;
+        }
+      }
+    }
+    /* fructification puis dispersion */
+    if(pl.aFleuri && pl.flor<0.20 && pl.pollen && pl.grainesLachees<1){
+      pl.fruits = clamp(pl.fruits + dt/(Math.max(pl.longevite*0.06,1.2)), 0, 1);
+      if(pl.fruits>=1){
+        this.semer(pl, env);
+        pl.grainesLachees=1;
+        pl.pollen=null;
+      }
+    }
+    /* remise à zéro pour la saison suivante */
+    if(pl.flor>0.5 && pl.grainesLachees>0){ pl.grainesLachees=0; pl.fruits=0; pl.aFleuri=true; }
+  },
+
+  semer(mere, env){
+    const g=mere.genome;
+    const rng=mere.rng;
+    const n=Math.max(1,Math.round(g[GI.nbGraines]*(0.4+mere.sante*0.8)*1.8));
+    const brs=mere.tronconsFloraux();
+    const somaMere = brs.length? brs[rng.int(brs.length)].soma : null;
+    let nes=0, mutsTotal=0;
+    for(let i=0;i<n;i++){
+      if(this.plantes.length>=MAX_PLANTES) break;
+      const ang=rng()*TAU;
+      const d=Math.pow(rng(),0.62)*g[GI.dispersion];
+      const x=mere.x+Math.cos(ang)*d, z=mere.z+Math.sin(ang)*d;
+      if(!Terrain.dedans(x,z)) continue;
+      /* place libre ? */
+      let libre=true;
+      for(const o of this.voisins(x,z,6)){
+        if(o.etat==='graine') continue;
+        const dmin=(SPECIES[o.sp].port===PORT.ARBRE?3.2:0.55);
+        if(Math.hypot(o.x-x,o.z-z)<dmin*(0.5+o.hauteur*0.12)){ libre=false; break; }
+      }
+      if(!libre) continue;
+      /* --- méiose --- */
+      const m=ADN.meiose(mere.genome, mere.pollen, rng);
+      const enfant=m.g;
+      /* --- hérédité somatique : le rameau qui a porté la fleur influe --- */
+      if(somaMere) this.injecterSoma(enfant, somaMere, 0.30);
+      if(mere.pollenSoma) this.injecterSoma(enfant, mere.pollenSoma, 0.15);
+      /* --- mutations germinales --- */
+      const muts=ADN.muter(enfant, g[GI.tauxMutation], rng);
+      mutsTotal+=muts.length;
+      const pl=new Plante(mere.sp, enfant, x, z, {
+        gen:mere.gen+1,
+        parents:{mere:{id:mere.id,nom:mere.nom}, pere:mere.pollenDe, auto:mere.autoFeconde}
+      });
+      pl.mutations=muts;
+      pl.origine=m.origin; pl.coupures=m.cuts;
+      pl.somaHerite={mere:somaMere?ADN.derive(somaMere):0, pere:mere.pollenSoma?ADN.derive(mere.pollenSoma):0};
+      this.ajouter(pl);
+      nes++;
+    }
+    this.stats.mutations+=mutsTotal;
+    if(nes>0){
+      this.stats.croisements++;
+      const p=mere.pollenDe;
+      if(mere.autoFeconde) this.journal(`${mere.nom} s'est autofécondée — ${nes} graine${nes>1?'s':''}`,'');
+      else this.journal(`${mere.nom} × ${p?p.nom:'?'} → ${nes} graine${nes>1?'s':''}${mutsTotal?`, ${mutsTotal} mutation${mutsTotal>1?'s':''}`:''}`,'evt');
+    }
+  },
+
+  injecterSoma(genome, soma, poids){
+    for(let i=0;i<NS;i++){
+      const s=SOMA[i];
+      const k = s.k==='longueur'?'hauteur':s.k;
+      const gi=GI[k]; if(gi===undefined) continue;
+      const d=GENES[gi];
+      const modifie = s.mode==='x' ? genome[gi]*soma[i] : genome[gi]+soma[i];
+      genome[gi]=clamp(lerp(genome[gi], modifie, poids), d.min, d.max);
+    }
+  },
+
+  /* --------------------------------------------- semis par le joueur */
+  planter(sp, genome, x, z, opts){
+    if(this.plantes.length>=MAX_PLANTES){ return null; }
+    if(!Terrain.dedans(x,z)) return null;
+    const pl=new Plante(sp, ADN.clone(genome), x, z, opts||{});
+    this.ajouter(pl);
+    return pl;
+  },
+
+  /* ------------------------------------------------------- journal */
+  journal(txt, cls){
+    this.evenements.push({txt, cls:cls||'', t:Env.totalJours()});
+    if(this.evenements.length>90) this.evenements.shift();
+    UI.journal(txt, cls);
+  },
+
+  /* ----------------------------------------------------- particules */
+  emettre(x,y,z, type, opts){
+    opts=opts||{};
+    for(let i=0;i<this.parts.length;i++){
+      const p=this.parts[i];
+      if(p.vie>0) continue;
+      p.x=x;p.y=y;p.z=z;
+      p.vx=opts.vx||0; p.vy=opts.vy||0; p.vz=opts.vz||0;
+      p.max=p.vie=opts.vie||2;
+      p.r=opts.r!==undefined?opts.r:1; p.g=opts.g!==undefined?opts.g:1; p.b=opts.b!==undefined?opts.b:1;
+      p.a=opts.a!==undefined?opts.a:1;
+      p.taille=opts.taille||0.03;
+      p.type=type; p.rot=Math.random()*TAU; p.vrot=opts.vrot||(Math.random()-0.5)*2;
+      p.grav=opts.grav!==undefined?opts.grav:0.4;
+      p.flot=opts.flot||0;
+      return p;
+    }
+    return null;
+  },
+
+  tickParticules(dtr, env, cam){
+    /* --- météo --- */
+    if(env.pluie>0.05 && env.temp>0.5){
+      const n=Math.round(env.pluie*22);
+      for(let i=0;i<n;i++){
+        const a=Math.random()*TAU, r=Math.sqrt(Math.random())*22;
+        const x=cam[0]+Math.cos(a)*r, z=cam[2]+Math.sin(a)*r;
+        this.emettre(x, cam[1]+9+Math.random()*6, z, 2,
+          {vy:-13-Math.random()*4, vx:env.vent*2.4, vz:env.vent*0.7, vie:1.4, taille:0.027,
+           r:0.70,g:0.79,b:0.92,a:0.58, grav:0});
+      }
+    }
+    if(env.temp<1.2 && env.pluie>0.05){
+      const n=Math.round(env.pluie*10);
+      for(let i=0;i<n;i++){
+        const a=Math.random()*TAU, r=Math.sqrt(Math.random())*20;
+        this.emettre(cam[0]+Math.cos(a)*r, cam[1]+7+Math.random()*5, cam[2]+Math.sin(a)*r, 3,
+          {vy:-0.7-Math.random()*0.5, vx:env.vent*1.1, vz:env.vent*0.4, vie:9, taille:0.035,
+           r:1,g:1,b:1,a:0.85, grav:0, flot:0.5});
+      }
+    }
+    /* --- pollen au soleil --- */
+    if(env.soleil>0.35 && env.saison<2 && Math.random()<0.5){
+      const a=Math.random()*TAU, r=Math.sqrt(Math.random())*14;
+      this.emettre(cam[0]+Math.cos(a)*r, Terrain.hauteur(cam[0],cam[2])+0.3+Math.random()*2.2, cam[2]+Math.sin(a)*r, 0,
+        {vy:0.05, vx:env.vent*0.5, vz:env.vent*0.2, vie:7, taille:0.014,
+         r:1,g:0.94,b:0.62,a:0.55, grav:-0.01, flot:0.8});
+    }
+    /* --- feuilles d'automne --- */
+    if(env.automne>0.35 && Math.random()<env.automne*0.7){
+      const cands=[];
+      for(const pl of this.plantes){
+        if(pl.hauteur>1.4 && pl.dist2<900 && pl.etat!=='graine') cands.push(pl);
+      }
+      if(cands.length){
+        const pl=cands[Math.floor(Math.random()*cands.length)];
+        const a=Math.random()*TAU, r=Math.random()*pl.canopee;
+        const c=hsl2rgb(0.06+Math.random()*0.06, 0.65, 0.42);
+        this.emettre(pl.x+Math.cos(a)*r, pl.y+pl.hauteur*(0.45+Math.random()*0.5), pl.z+Math.sin(a)*r, 1,
+          {vy:-0.35, vx:env.vent*1.0, vz:env.vent*0.4, vie:11, taille:0.028,
+           r:c[0],g:c[1],b:c[2],a:0.95, grav:0.06, flot:1.4});
+      }
+    }
+
+    /* --- intégration --- */
+    let n=0;
+    const D=Rendu.partData;
+    for(let i=0;i<this.parts.length;i++){
+      const p=this.parts[i];
+      if(p.vie<=0) continue;
+      p.vie-=dtr;
+      if(p.vie<=0) continue;
+      p.vy-=p.grav*dtr;
+      if(p.flot>0){
+        const t=Rendu.tempsRendu;
+        p.vx+=Math.sin(t*1.7+p.rot*3)*p.flot*dtr*0.9;
+        p.vz+=Math.cos(t*1.3+p.rot*2)*p.flot*dtr*0.9;
+        p.vy+=Math.sin(t*2.3+p.rot)*p.flot*dtr*0.25;
+      }
+      p.x+=p.vx*dtr; p.y+=p.vy*dtr; p.z+=p.vz*dtr;
+      p.rot+=p.vrot*dtr;
+      const sol=Terrain.hauteur(p.x,p.z);
+      if(p.y<sol){
+        if(p.type===2){ p.vie=0; Sol.arroser(p.x,p.z,0.9,0.0022); continue; }
+        p.y=sol; p.vy=0; p.vx*=0.6; p.vz*=0.6; p.vie=Math.min(p.vie,1.2);
+      }
+      if(n>=Rendu.maxPart) break;
+      const o=n*11;
+      const fade = clamp(p.vie/Math.min(p.max,1.0),0,1);
+      D[o]=p.x; D[o+1]=p.y; D[o+2]=p.z;
+      D[o+3]=p.r; D[o+4]=p.g; D[o+5]=p.b; D[o+6]=p.a*fade;
+      D[o+7]=p.taille; D[o+8]=p.type; D[o+9]=p.rot; D[o+10]=0;
+      n++;
+    }
+    this.nPart=n;
+  },
+
+  /* --------------------------------------------------------- stats */
+  compter(){
+    let fleuries=0, graines=0, vivantes=0;
+    const esp=new Set();
+    for(const p of this.plantes){
+      if(p.etat==='graine'){ graines++; continue; }
+      if(p.etat==='morte') continue;
+      vivantes++;
+      esp.add(p.sp);
+      if(p.flor>0.25) fleuries++;
+    }
+    return {vivantes, fleuries, graines, especes:esp.size};
+  }
+};
+</script>
+<script>
+/* =====================================================================
+   9. LE JOUEUR — déplacement FPS et outils
+   ===================================================================== */
+const Joueur = {
+  pos:[4, 0, 34], vel:[0,0,0], yaw:-1.9, pitch:-0.08,
+  oeil:1.64, accroupi:false, auSol:true, bob:0, bobY:0,
+  touches:Object.create(null), outil:0, verrou:false,
+  dir:new Float32Array(3), droite:new Float32Array(3), haut:new Float32Array(3),
+  pollen:null, echantillon:null, suivi:null,
+
+  init(){
+    this.pos[1]=Terrain.hauteur(this.pos[0],this.pos[2])+this.oeil;
+    this.majBase();
+  },
+  majBase(){
+    const cy=Math.cos(this.yaw), sy=Math.sin(this.yaw);
+    const cp=Math.cos(this.pitch), sp=Math.sin(this.pitch);
+    this.dir[0]=cy*cp; this.dir[1]=sp; this.dir[2]=sy*cp;
+    V3.norm(this.dir,this.dir);
+    V3.cross(this.droite,this.dir,[0,1,0]); V3.norm(this.droite,this.droite);
+    V3.cross(this.haut,this.droite,this.dir); V3.norm(this.haut,this.haut);
+  },
+  souris(dx,dy){
+    const s=0.0022;
+    this.yaw += dx*s;
+    this.pitch = clamp(this.pitch - dy*s, -1.52, 1.52);
+    this.majBase();
+  },
+  maj(dt){
+    const T=this.touches;
+    const av=(T.KeyW||T.KeyZ||T.ArrowUp)?1:0, ar=(T.KeyS||T.ArrowDown)?1:0;
+    const ga=(T.KeyA||T.KeyQ||T.ArrowLeft)?1:0, dr=(T.KeyD||T.ArrowRight)?1:0;
+    const court=(T.ShiftLeft||T.ShiftRight)?1:0;
+    this.accroupi=!!(T.ControlLeft||T.ControlRight);
+
+    const fx=Math.cos(this.yaw), fz=Math.sin(this.yaw);
+    let mx=(av-ar)*fx + (dr-ga)*(-fz);
+    let mz=(av-ar)*fz + (dr-ga)*(fx);
+    const l=Math.hypot(mx,mz);
+    if(l>0.001){ mx/=l; mz/=l; }
+    let v = 2.5 + court*3.0 - (this.accroupi?1.35:0);
+    const acc = this.auSol?15:3.5;
+    this.vel[0]=lerp(this.vel[0], mx*v, clamp(dt*acc,0,1));
+    this.vel[2]=lerp(this.vel[2], mz*v, clamp(dt*acc,0,1));
+
+    this.pos[0]+=this.vel[0]*dt;
+    this.pos[2]+=this.vel[2]*dt;
+    const lim=HALF-1.35;
+    this.pos[0]=clamp(this.pos[0],-lim,lim);
+    this.pos[2]=clamp(this.pos[2],-lim,lim);
+
+    const sol=Terrain.hauteur(this.pos[0],this.pos[2]);
+    const oeil = this.oeil - (this.accroupi?0.58:0);
+    this.vel[1]-=17*dt;
+    this.pos[1]+=this.vel[1]*dt;
+    if(this.pos[1]<=sol+oeil){ this.pos[1]=sol+oeil; this.vel[1]=0; this.auSol=true; }
+    else this.auSol=false;
+    if(this.touches.Space && this.auSol){ this.vel[1]=5.1; this.auSol=false; }
+
+    /* léger balancement de marche */
+    const vitesse=Math.hypot(this.vel[0],this.vel[2]);
+    this.bob += dt*vitesse*1.9;
+    this.bobY = lerp(this.bobY, Math.sin(this.bob*2)*0.035*clamp(vitesse/4,0,1), clamp(dt*10,0,1));
+  },
+  oeilPos(){ return [this.pos[0], this.pos[1]+this.bobY, this.pos[2]]; }
+};
+
+/* --------------------------------------------------- lancer de rayon sol */
+function viseSol(o, d, maxD){
+  let t=0.35;
+  while(t<maxD){
+    const x=o[0]+d[0]*t, y=o[1]+d[1]*t, z=o[2]+d[2]*t;
+    if(y<=Terrain.hauteur(x,z)){
+      let a=Math.max(t-0.35,0), b=t;
+      for(let i=0;i<10;i++){
+        const m=(a+b)*0.5;
+        const px=o[0]+d[0]*m, py=o[1]+d[1]*m, pz=o[2]+d[2]*m;
+        if(py<=Terrain.hauteur(px,pz)) b=m; else a=m;
+      }
+      const m=(a+b)*0.5, px=o[0]+d[0]*m, pz=o[2]+d[2]*m;
+      return [px, Terrain.hauteur(px,pz), pz];
+    }
+    t += 0.28 + t*0.05;
+  }
+  return null;
+}
+
+/* =====================================================================
+   LES OUTILS
+   ===================================================================== */
+const OUTILS = [
+  { id:'aucun', nom:'Main vide', desc:'ne rien tenir — regarder, simplement',
+    svg:'<circle cx="12" cy="12" r="8.2"/><path d="M6.2 17.8 17.8 6.2"/>' },
+  { id:'loupe', nom:'Loupe génétique', desc:'lire l’ADN — clic : épingler la fiche',
+    svg:'<circle cx="10.5" cy="10.5" r="6.4"/><path d="M15.2 15.2 L21 21"/><path d="M8 10.5h5M10.5 8v5"/>' },
+  { id:'arrosoir', nom:'Arrosoir', desc:'maintenir le clic pour verser',
+    svg:'<path d="M4 10h9v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M13 12l6-4v9l-6-3"/><path d="M6 10V8a2.5 2.5 0 0 1 5 0v2"/><path d="M20 16c0 2 1.6 2.4 1.6 4"/>' },
+  { id:'seve', nom:'Arrosoir de sève', desc:`croissance ×${SURSAUT} tant qu'on verse`,
+    svg:'<path d="M4 10h9v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M13 12l6-4v9l-6-3"/><path d="M6 10V8a2.5 2.5 0 0 1 5 0v2"/><path d="M20 13.6 17.2 18.6h3L18.8 23"/>' },
+  { id:'mutagene', nom:'Arrosoir mutagène', desc:'plus on verse, plus les nouveaux rameaux mutent',
+    svg:'<path d="M4 10h9v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M13 12l6-4v9l-6-3"/><path d="M6 10V8a2.5 2.5 0 0 1 5 0v2"/><path d="M17.8 14c0 2 3.4 2 3.4 4s-3.4 2-3.4 4"/><path d="M21.2 14c0 2-3.4 2-3.4 4s3.4 2 3.4 4"/>' },
+  { id:'pinceau', nom:'Pinceau à pollen', desc:'prélever puis déposer sur une autre fleur',
+    svg:'<path d="M14 4l6 6-7.5 7.5-6-6z"/><path d="M6.5 11.5 3 20l8.5-3.5"/><path d="M3 20l2.6-2.6"/>' },
+  { id:'semoir', nom:'Semoir', desc:'semer la graine conservée dans le flacon',
+    svg:'<path d="M7 4h10l-2 6H9z"/><path d="M9 10c-2 2-3 4-3 6a6 6 0 0 0 12 0c0-2-1-4-3-6"/><circle cx="12" cy="16" r="1.4"/>' },
+  { id:'secateur', nom:'Sécateur', desc:'couper le tronçon visé et sa descendance',
+    svg:'<path d="M8 3l8 12M16 3L8 15"/><circle cx="7" cy="18" r="2.6"/><circle cx="17" cy="18" r="2.6"/>' },
+  { id:'flacon', nom:'Flacon d’échantillon', desc:'conserver le génome et suivre la plante',
+    svg:'<path d="M10 3v6l-4 8a3 3 0 0 0 2.7 4.3h6.6A3 3 0 0 0 18 17l-4-8V3z"/><path d="M9 3h6"/><path d="M7.5 15h9"/>' },
+  { id:'editeur', nom:'Table d’édition génétique', desc:'clic : réécrire l’ADN germinal de la plante visée',
+    svg:'<path d="M8 3c0 4.2 8 4.8 8 9s-8 4.8-8 9"/><path d="M16 3c0 4.2-8 4.8-8 9s8 4.8 8 9"/><path d="M9.4 6.4h5.2M8.2 12h7.6M9.4 17.6h5.2"/>' },
+];
+
+const Outils = {
+  presse:false, tPresse:0, dernierUsage:0,
+
+  /* dtr : secondes réelles depuis l'image précédente (0 au premier clic) */
+  utiliser(monde, env, joueur, cible, maintenu, dtr){
+    const o=OUTILS[joueur.outil];
+    const oeil=joueur.oeilPos();
+    dtr = dtr||0;
+    /* les plantes assez proches du point visé pour recevoir l'eau */
+    const arrosees=(p, r)=>monde.voisins(p[0],p[2],r).filter(pl=>
+      pl.etat!=='morte' && pl.etat!=='graine' && Math.hypot(pl.x-p[0],pl.z-p[2])<=r);
+    switch(o.id){
+      case 'aucun':
+        break;                                   // les mains vides ne font rien
+
+      case 'loupe':
+        if(maintenu) return;
+        if(cible){ UI.epingle = UI.epingle===cible.plante ? null : cible.plante;
+          UI.toast(UI.epingle?'Fiche épinglée':'Fiche libérée'); Son.clic(); }
+        else { UI.epingle=null; }
+        break;
+
+      case 'arrosoir': {
+        const p=viseSol(oeil, joueur.dir, 9);
+        if(!p) return;
+        Sol.arroser(p[0],p[2], 1.9, 0.055);
+        for(let i=0;i<3;i++){
+          const a=Math.random()*TAU, r=Math.random()*0.5;
+          monde.emettre(oeil[0]+joueur.dir[0]*0.7+Math.cos(a)*0.1,
+                        oeil[1]-0.32, oeil[2]+joueur.dir[2]*0.7+Math.sin(a)*0.1, 2,
+            {vx:joueur.dir[0]*2.6+Math.cos(a)*r, vy:-0.4, vz:joueur.dir[2]*2.6+Math.sin(a)*r,
+             vie:1.3, taille:0.016, r:0.66,g:0.78,b:0.92, a:0.55, grav:9});
+        }
+        Son.eau(true);
+        break;
+      }
+
+      /* --- eau de sève : la pousse s'emballe, et seulement pendant qu'on verse --- */
+      case 'seve': {
+        const p=viseSol(oeil, joueur.dir, 9);
+        if(!p) return;
+        Sol.arroser(p[0],p[2], 1.5, 0.030);
+        /* l'échéance est repoussée à chaque image : elle expire d'elle-même
+           dès qu'on relâche, sans avoir à guetter le relâchement */
+        const jusqua = performance.now()+150;
+        const touchees = arrosees(p, 1.7);
+        for(const pl of touchees) pl.sursaut = jusqua;
+        for(let i=0;i<3;i++){
+          const a=Math.random()*TAU, r=Math.random()*0.5;
+          monde.emettre(oeil[0]+joueur.dir[0]*0.7+Math.cos(a)*0.1,
+                        oeil[1]-0.32, oeil[2]+joueur.dir[2]*0.7+Math.sin(a)*0.1, 2,
+            {vx:joueur.dir[0]*2.6+Math.cos(a)*r, vy:-0.4, vz:joueur.dir[2]*2.6+Math.sin(a)*r,
+             vie:1.3, taille:0.017, r:0.86,g:0.78,b:0.38, a:0.62, grav:9});
+        }
+        if(touchees.length) for(let i=0;i<2;i++){
+          const pl=touchees[i%touchees.length], a=Math.random()*TAU;
+          monde.emettre(pl.x+Math.cos(a)*0.12, pl.y+pl.hauteur*Math.random(), pl.z+Math.sin(a)*0.12, 0,
+            {vx:Math.cos(a)*0.2, vy:0.7+Math.random()*0.6, vz:Math.sin(a)*0.2, vie:1.1,
+             taille:0.014, r:1,g:0.90,b:0.46,a:0.85, grav:-0.2, flot:0.5});
+        }
+        Son.eau(true);
+        if(!maintenu) UI.toast(touchees.length
+          ? `Sève versée — croissance ×${SURSAUT} sur ${touchees.length} pied${touchees.length>1?'s':''}`
+          : 'Aucune plante sous le jet');
+        break;
+      }
+
+      /* --- eau mutagène : le risque de mutation des futurs rameaux monte --- */
+      case 'mutagene': {
+        const p=viseSol(oeil, joueur.dir, 9);
+        if(!p) return;
+        Sol.arroser(p[0],p[2], 1.5, 0.022);
+        const touchees = arrosees(p, 1.7);
+        let pire=0;
+        for(const pl of touchees){
+          pl.somaBonus = Math.min(0.85, pl.somaBonus + dtr*0.25);
+          pl.majTauxSoma();
+          if(pl.tauxSoma>pire) pire=pl.tauxSoma;
+        }
+        for(let i=0;i<3;i++){
+          const a=Math.random()*TAU, r=Math.random()*0.5;
+          monde.emettre(oeil[0]+joueur.dir[0]*0.7+Math.cos(a)*0.1,
+                        oeil[1]-0.32, oeil[2]+joueur.dir[2]*0.7+Math.sin(a)*0.1, 2,
+            {vx:joueur.dir[0]*2.6+Math.cos(a)*r, vy:-0.4, vz:joueur.dir[2]*2.6+Math.sin(a)*r,
+             vie:1.3, taille:0.017, r:0.68,g:0.60,b:0.86, a:0.62, grav:9});
+        }
+        Son.eau(true);
+        /* le compteur monte en continu : on ne le dit qu'une fois de temps en temps */
+        const t=performance.now();
+        if(touchees.length && t-(this._mutT||0)>260){
+          this._mutT=t;
+          UI.toast(`Mutation des nouveaux rameaux : ${(pire*100).toFixed(0)} % par gène`);
+          UI.dernierId=-1;
+        } else if(!touchees.length && !maintenu) UI.toast('Aucune plante sous le jet');
+        break;
+      }
+
+      case 'pinceau': {
+        if(maintenu) return;
+        if(!cible){ if(joueur.pollen){ joueur.pollen=null; UI.majHold(); UI.toast('Pollen dispersé au vent'); } return; }
+        const pl=cible.plante, seg=cible.troncon;
+        if(!joueur.pollen){
+          if(pl.flor<0.15){ UI.toast('Cette plante n’est pas en fleur'); Son.raté(); return; }
+          joueur.pollen={sp:pl.sp, nom:pl.nom, id:pl.id, genome:ADN.clone(pl.genome),
+                         soma:seg?ADN.somaCopie(seg.soma,0,pl.rng):null, segId:seg?seg.id:-1,
+                         derive:seg?ADN.derive(seg.soma):0};
+          UI.majHold(); Son.clic();
+          UI.toast(`Pollen prélevé sur ${pl.nom}${seg?` (tronçon #${seg.id})`:''}`);
+          for(let i=0;i<14;i++){
+            const a=Math.random()*TAU;
+            monde.emettre(pl.x+Math.cos(a)*0.1, pl.y+pl.hauteur*0.9, pl.z+Math.sin(a)*0.1, 0,
+              {vx:Math.cos(a)*0.5, vy:0.4+Math.random()*0.5, vz:Math.sin(a)*0.5, vie:2.5,
+               taille:0.012, r:1,g:0.92,b:0.5,a:0.8, grav:0.15, flot:0.6});
+          }
+        } else {
+          if(pl.id===joueur.pollen.id){ UI.toast('Même plante — il faut un autre pied'); Son.raté(); return; }
+          if(pl.sp!==joueur.pollen.sp){ UI.toast('Lignées incompatibles'); Son.raté(); return; }
+          if(pl.flor<0.15 && !pl.aFleuri){ UI.toast('Cette plante n’est pas réceptive'); Son.raté(); return; }
+          pl.pollen=joueur.pollen.genome;
+          pl.pollenDe={id:joueur.pollen.id, nom:joueur.pollen.nom, sp:joueur.pollen.sp};
+          pl.pollenSoma=joueur.pollen.soma;
+          pl.autoFeconde=false;
+          pl.aFleuri=true; pl.grainesLachees=0;
+          const avant=monde.plantes.length;
+          monde.semer(pl, env);
+          const nes=monde.plantes.length-avant;
+          pl.grainesLachees=1; pl.pollen=null;
+          UI.toast(nes? `Croisement réussi — ${nes} graine${nes>1?'s':''}` : 'Aucune place libre pour les graines');
+          nes?Son.reussite():Son.raté();
+          joueur.pollen=null; UI.majHold();
+        }
+        break;
+      }
+
+      case 'semoir': {
+        if(maintenu) return;
+        const p=viseSol(oeil, joueur.dir, 9);
+        if(!p){ UI.toast('Visez le sol'); return; }
+        const e=joueur.echantillon;
+        let sp, gen, opts;
+        if(e){ sp=e.sp; gen=e.genome; opts={gen:e.gen, parents:e.parents, nom:undefined}; }
+        else {
+          sp=Math.floor(Math.random()*SPECIES.length);
+          gen=ADN.wild(sp, RNG, 1.4); opts={gen:1};
+        }
+        const pl=monde.planter(sp, gen, p[0], p[2], opts);
+        if(pl){
+          UI.toast(`Graine semée — ${SPECIES[sp].court}${e?' (échantillon)':' (sauvage)'}`);
+          monde.journal(`Vous avez semé une graine de ${SPECIES[sp].court.toLowerCase()}`,'');
+          Son.clic();
+          for(let i=0;i<7;i++) monde.emettre(p[0],p[1]+0.05,p[2],0,
+            {vx:(Math.random()-0.5)*0.6, vy:0.5, vz:(Math.random()-0.5)*0.6, vie:1.2,
+             taille:0.02, r:0.75,g:0.62,b:0.35,a:0.9, grav:1.4});
+        } else { UI.toast('Le pré est saturé'); Son.raté(); }
+        break;
+      }
+
+      case 'secateur': {
+        if(maintenu) return;
+        if(!cible || !cible.troncon){ UI.toast('Visez un rameau'); return; }
+        const pl=cible.plante, s=cible.troncon;
+        const sub=s.sousArbre([]);
+        if(!s.parent){
+          pl.mourir('coupée à la base');
+          monde.journal(`${pl.nom} a été coupée à la base`,'bad');
+          UI.toast('Plante coupée à la base');
+        } else {
+          for(const t of sub) t.coupe=true;
+          s.parent.terminal = s.parent.enfants.every(c=>c.coupe);
+          if(s.parent.terminal) s.parent.bourgeonMort=false;   // un bourgeon dormant peut repartir
+          pl.majPoids(); pl.sig=-1;
+          UI.toast(`Tronçon #${s.id} coupé — ${sub.length} partie${sub.length>1?'s':''} retirée${sub.length>1?'s':''}`);
+          monde.journal(`Taille sur ${pl.nom} : ${sub.length} tronçon${sub.length>1?'s':''}`,'');
+        }
+        Son.coupe();
+        for(let i=0;i<10;i++){
+          const a=Math.random()*TAU;
+          const c=hsl2rgb(pl.genome[GI.teinteFeuille],0.5,0.35);
+          monde.emettre(cible.point?cible.point[0]:pl.x, (cible.point?cible.point[1]:pl.y+pl.hauteur*0.5), cible.point?cible.point[2]:pl.z, 1,
+            {vx:Math.cos(a)*0.8, vy:0.3, vz:Math.sin(a)*0.8, vie:3.5, taille:0.024,
+             r:c[0],g:c[1],b:c[2],a:0.95, grav:1.1, flot:0.8});
+        }
+        break;
+      }
+
+      case 'flacon': {
+        if(maintenu) return;
+        if(!cible){ UI.toast('Visez une plante'); return; }
+        const pl=cible.plante;
+        joueur.echantillon={sp:pl.sp, nom:pl.nom, genome:ADN.clone(pl.genome), gen:pl.gen,
+          parents:pl.parents, empreinte:ADN.empreinte(pl.genome)};
+        pl.echantillonne=true;
+        joueur.suivi=pl;
+        UI.majHold(); Son.clic();
+        UI.toast(`Génome de ${pl.nom} conservé — semez-le avec le semoir`);
+        break;
+      }
+
+      case 'editeur': {
+        if(maintenu) return;
+        if(!cible){ UI.toast('Visez une plante'); return; }
+        /* à défaut de tronçon visé (fleur ou feuille sans rameau), on
+           prend la base : l'édition porte alors sur le pied entier */
+        UI.ouvrirEditeur(cible.plante, cible.troncon);
+        break;
+      }
+    }
+  }
+};
+</script>
+<script>
+/* =====================================================================
+   10. INTERFACE
+   ===================================================================== */
+const $=(s)=>document.querySelector(s);
+const ETATS={graine:'Graine',pousse:'Pousse',jeune:'Jeune plant',adulte:'Adulte',
+  floraison:'En fleur',fructification:'Fructification','sénescence':'Sénescence',morte:'Morte'};
+
+const UI = {
+  epingle:null, dernierRendu:0, dernierId:-1, dernierPart:-1,
+  init(){
+    const bar=$('#bar');
+    OUTILS.forEach((o,i)=>{
+      const d=document.createElement('div');
+      d.className='tool';
+      d.innerHTML=`<b>${i}</b><svg viewBox="0 0 24 24">${o.svg}</svg>`;
+      d.title=o.nom;
+      d.onclick=(e)=>{ e.stopPropagation(); this.choisirOutil(i); };
+      bar.appendChild(d);
+    });
+    this.tools=[...bar.children];
+    this.choisirOutil(1);                 // on commence la loupe à la main
+    document.querySelectorAll('.sp').forEach(b=>{
+      b.onclick=(e)=>{ e.stopPropagation(); this.vitesse(+b.dataset.s); };
+    });
+  },
+  choisirOutil(i){
+    Joueur.outil=i;
+    this.tools.forEach((t,k)=>t.classList.toggle('on',k===i));
+    const o=OUTILS[i];
+    $('#toolname').innerHTML=`${o.nom}<small>${o.desc}</small>`;
+    this.majHold();
+  },
+  /* ------------------------------------- table d'édition génétique
+     On n'écrit pas sur la plante mais sur le tronçon visé : il reçoit sa
+     propre copie du génome, que sa descendance suit. Seuls les dix gènes
+     indivisibles — l'horloge, les besoins, les graines — restent communs
+     à tout le pied. */
+  editCible:null, editSeg:null, editOrigSeg:null, editOrigPl:null,
+
+  ouvrirEditeur(pl, seg){
+    if(!pl) return;
+    if(pl.etat==='morte'){ this.toast('Cette plante est morte'); Son.raté(); return; }
+    if(!pl.racine){ this.toast('Cette graine n’a pas encore germé'); Son.raté(); return; }
+    seg = seg || pl.racine;
+    if(this.editCible===pl && this.editSeg===seg){ this.fermerEditeur(); return; }
+    this.editCible = pl; this.editSeg = seg;
+    this.editOrigSeg = ADN.clone(seg.gAct);
+    this.editOrigPl  = ADN.clone(pl.genome);
+    const nSub = seg.sousArbre([]).filter(t=>!t.coupe).length;
+    const e=$('#gedit');
+    let h=`<div class="head">
+      <div class="nm serif">${pl.nom}</div>
+      <div class="sub">${SPECIES[pl.sp].nom} · génération ${pl.gen} ·
+        ${seg.parent?`tronçon #${seg.id}`:'pied entier'}</div>
+      <div class="acts">
+        <button class="gold" id="geClose">Fermer</button>
+        <button id="geReset">Rétablir</button>
+      </div></div><div class="body">
+      <div class="gescope">Écriture sur <b>${seg.parent?`le tronçon #${seg.id}`:'la base'}</b>
+        et sa descendance — ${nSub} tronçon${nSub>1?'s':''} sur ${pl.troncons.filter(t=>!t.coupe).length}.</div>`;
+    const bloc=(local)=>{
+      let cat=null, out='';
+      for(let i=0;i<NG;i++){
+        const d=GENES[i];
+        if(!!d.loc!==local) continue;
+        if(d.c!==cat){ cat=d.c;
+          out+=`<div class="gecat" style="color:${CATS[cat].col}">${CATS[cat].l}</div>`; }
+        const pas = d.d===0?1:(d.d===1?0.1:(d.d===2?0.01:0.001));
+        out+=`<div class="ge"><div class="gl"><b>${d.l}</b><em id="gev${i}">${this.valGene(i)}</em></div>
+          <input type="range" data-g="${i}" min="${d.min}" max="${d.max}" step="${pas}" value="${this.genEdite(i)[i]}"></div>`;
+      }
+      return out;
+    };
+    h+= bloc(true);
+    h+=`<div class="gesep">Gènes indivisibles — tout le pied</div>`;
+    h+= bloc(false);
+    h+=`<div class="hint">La branche réécrite garde ses gènes et les repasse à ses
+      nouveaux rameaux ; le reste du pied et les graines conservent l’ADN d’origine.
+      L’ADN somatique de chaque tronçon, lui, garde sa propre dérive.</div></div>`;
+    e.innerHTML=h;
+    e.classList.add('show');
+    e.scrollTop=0;
+    e.querySelectorAll('input[type=range]').forEach(inp=>{
+      inp.addEventListener('input',()=>{
+        const p=this.editCible, s=this.editSeg; if(!p||!s) return;
+        const i=+inp.dataset.g;
+        this.genEcrire(i, +inp.value);
+        $('#gev'+i).textContent=this.valGene(i);
+        p.majGenome(GENES[i].loc ? s : null);
+        this.dernierId=-1;                    // la fiche de droite se redessine
+      });
+    });
+    $('#geClose').onclick=(ev)=>{ ev.stopPropagation(); this.fermerEditeur(); };
+    $('#geReset').onclick=(ev)=>{ ev.stopPropagation(); this.reinitEditeur(); };
+    Son.clic();
+    Jeu.majSouris();
+  },
+  /* le tableau où se lit le gène i : celui du tronçon, ou celui du pied */
+  genEdite(i){
+    return GENES[i].loc ? this.editSeg.gAct : this.editCible.genome;
+  },
+  genEcrire(i, v){
+    /* detacherGenome renvoie la copie propre au tronçon, en la créant au
+       premier gène réécrit */
+    if(GENES[i].loc) this.editCible.detacherGenome(this.editSeg)[i]=v;
+    else this.editCible.genome[i]=v;
+  },
+  valGene(i){
+    const d=GENES[i], v=this.genEdite(i)[i];
+    return (d.d===0?Math.round(v):v.toFixed(d.d))+d.u;
+  },
+  reinitEditeur(){
+    const p=this.editCible, s=this.editSeg;
+    if(!p||!s||!this.editOrigSeg) return;
+    p.genome.set(this.editOrigPl);
+    if(s.gLoc) s.gLoc.set(this.editOrigSeg);
+    p.rattacherGenome(s);
+    p.majGenome();
+    $('#gedit').querySelectorAll('input[type=range]').forEach(inp=>{
+      const i=+inp.dataset.g;
+      inp.value=this.genEdite(i)[i];
+      $('#gev'+i).textContent=this.valGene(i);
+    });
+    this.dernierId=-1;
+    this.toast('ADN d’origine rétabli');
+  },
+  fermerEditeur(){
+    if(!this.editCible) return;
+    this.editCible=null; this.editSeg=null;
+    this.editOrigSeg=null; this.editOrigPl=null;
+    const e=$('#gedit'); e.classList.remove('show'); e.innerHTML='';
+    Jeu.majSouris();
+  },
+
+  vitesse(v){
+    Env.vitesse=v; Env.enPause=(v===0);
+    document.querySelectorAll('.sp').forEach(b=>b.classList.toggle('on',+b.dataset.s===v));
+    $('#paused').classList.toggle('show',v===0);
+  },
+  toast(t){
+    const e=$('#toast'); e.textContent=t; e.classList.add('show');
+    clearTimeout(this._tt); this._tt=setTimeout(()=>e.classList.remove('show'),2100);
+  },
+  journal(txt,cls){
+    const j=$('#journal');
+    const d=document.createElement('div');
+    d.className='jline '+(cls||'');
+    d.innerHTML=`${txt} <i>· j${Env.jour}</i>`;
+    j.appendChild(d);
+    while(j.children.length>6) j.removeChild(j.firstChild);
+    setTimeout(()=>{ if(d.parentNode){ d.style.transition='opacity .8s'; d.style.opacity='0';
+      setTimeout(()=>d.remove(),820);} }, 13000);
+  },
+  majHold(){
+    const h=$('#hold');
+    const p=Joueur.pollen, e=Joueur.echantillon;
+    let html='';
+    if(p){
+      const c=hsl2rgb(p.genome[GI.teintePetale],p.genome[GI.satPetale],p.genome[GI.lumPetale]);
+      html+=`<h5>Pollen en main</h5><div class="nm">${p.nom} · ${SPECIES[p.sp].court}</div>
+        <div class="kv"><span>Rameau</span><span>#${p.segId}</span></div>
+        <div class="kv"><span>Dérive somatique</span><span>${(p.derive*100).toFixed(1)} %</span></div>
+        <div class="swatches"><div class="sw" style="background:${rgbCss(c)}"></div></div>`;
+    }
+    if(e){
+      const c=hsl2rgb(e.genome[GI.teintePetale],e.genome[GI.satPetale],e.genome[GI.lumPetale]);
+      html+=`${p?'<div style="height:9px"></div>':''}<h5>Flacon</h5><div class="nm">${e.nom} · ${SPECIES[e.sp].court}</div>
+        <div class="kv"><span>Empreinte</span><span>${e.empreinte}</span></div>
+        <div class="swatches"><div class="sw" style="background:${rgbCss(c)}"></div></div>`;
+    }
+    h.innerHTML=html;
+    h.classList.toggle('show', !!html);
+  },
+  majTop(env){
+    $('#tSeason').textContent=SAISONS[env.saison].n;
+    $('#tDay').textContent=env.jour;
+    const hh=Math.floor(env.heure), mm=Math.floor((env.heure-hh)*60);
+    $('#tHour').textContent=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+    $('#tWeather').textContent=`${env.nomMeteo()} ${env.temp.toFixed(0)}°`;
+    const sb=$('#seasonbar');
+    sb.style.background=SAISONS[env.saison].col;
+    sb.style.width=(env.phaseSaison*100)+'%';
+  },
+  majStats(monde){
+    const c=monde.compter();
+    $('#sPlants').textContent=c.vivantes;
+    $('#sBloom').textContent=c.fleuries;
+    $('#sSeeds').textContent=c.graines;
+    $('#sSpecies').textContent=c.especes;
+    $('#sGen').textContent=monde.stats.genMax;
+    $('#sWater').textContent=(Sol.moyenneEau()*100).toFixed(0)+' %';
+  },
+
+  /* ------------------------------------------------- fiche génétique */
+  barre(g, i, origine){
+    const d=GENES[i];
+    const v=g[i], n=clamp((v-d.min)/(d.max-d.min),0,1);
+    let col=CATS[d.c].col;
+    let mark='';
+    if(origine!==undefined){
+      const o=origine[i];
+      col = o===0?'#d98fa0':(o===1?'#8fb6cf':'#dcb861');
+      mark = o===0?'<span style="opacity:.55">♀</span>':(o===1?'<span style="opacity:.55">♂</span>':'<span style="opacity:.55">×</span>');
+    }
+    const val = d.d===0? Math.round(v) : v.toFixed(d.d);
+    return `<div class="gene"><div class="gl"><b>${d.l}</b><em>${mark} ${val}${d.u}</em></div>
+      <div class="gbar"><i style="width:${(n*100).toFixed(1)}%;background:${col}"></i></div></div>`;
+  },
+
+  fiche(pl, seg){
+    const g=pl.genome, S=SPECIES[pl.sp];
+    const c=hsl2rgb(g[GI.teintePetale],g[GI.satPetale],g[GI.lumPetale]);
+    const cf=hsl2rgb(g[GI.teinteFeuille],g[GI.satFeuille],g[GI.lumFeuille]);
+    const ct=hsl2rgb(g[GI.teinteTige],g[GI.satTige],g[GI.lumTige]);
+    const vieP=clamp(pl.age/pl.longevite,0,1);
+    let h='';
+
+    h+=`<div class="head">
+      <div class="nm serif">${pl.nom}</div>
+      <div class="sub">${S.nom} · génération ${pl.gen} · ${ADN.empreinte(g)}</div>
+      ${this.epingle===pl?'<div class="pin">épinglée</div>':''}
+    </div><div class="body">`;
+
+    /* état */
+    h+=`<div class="sect"><h5>État</h5>
+      <div class="kv"><span>Stade</span><span>${ETATS[pl.etat]||pl.etat}</span></div>
+      <div class="kv"><span>Âge</span><span>${pl.age.toFixed(1)} / ${pl.longevite.toFixed(0)} j</span></div>
+      <div class="meter"><i style="width:${(vieP*100).toFixed(0)}%;background:${vieP>0.85?'#c9756b':'#9dbb86'}"></i></div>
+      <div class="kv" style="margin-top:6px"><span>Santé</span><span>${(pl.sante*100).toFixed(0)} %</span></div>
+      <div class="meter"><i style="width:${(pl.sante*100).toFixed(0)}%;background:${pl.sante>0.6?'#9dbb86':(pl.sante>0.3?'#dcb861':'#c9756b')}"></i></div>
+      <div class="kv" style="margin-top:6px"><span>Hauteur</span><span>${pl.hauteur.toFixed(2)} m</span></div>
+      <div class="kv"><span>Tronçons</span><span>${pl.troncons.filter(t=>!t.coupe).length}</span></div>
+      ${pl.flor>0.02?`<div class="kv"><span>Floraison</span><span>${(pl.flor*100).toFixed(0)} % · corolles ${(pl.ouverture*100).toFixed(0)} %</span></div>`:''}
+      ${pl.etat==='morte'?`<div class="kv"><span>Cause</span><span style="color:#e0a09a">${pl.cause}</span></div>`:''}
+    </div>`;
+
+    /* stress */
+    const st=pl.stress;
+    const sb=(l,v,col)=>`<div class="kv"><span>${l}</span><span>${v<0.08?'—':(v*100).toFixed(0)+' %'}</span></div>
+      <div class="meter"><i style="width:${(v*100).toFixed(0)}%;background:${col}"></i></div>`;
+    h+=`<div class="sect"><h5>Contraintes du milieu</h5>
+      ${sb('Manque d’eau',st.eau,'#8fb6cf')}${sb('Manque de lumière',st.lum,'#dcb861')}
+      ${sb('Sol pauvre',st.nut,'#c0a184')}${sb('Froid',st.froid,'#a9c6de')}
+      <div class="kv" style="margin-top:6px"><span>Eau au pied</span><span>${(Sol.eauEn(pl.x,pl.z)*100).toFixed(0)} %</span></div>
+    </div>`;
+
+    /* ascendance */
+    h+=`<div class="sect"><h5>Ascendance</h5>`;
+    if(pl.parents){
+      h+=`<div class="kv"><span>Mère ♀</span><span>${pl.parents.mere.nom}</span></div>
+          <div class="kv"><span>Père ♂</span><span>${pl.parents.pere?pl.parents.pere.nom:'—'}${pl.parents.auto?' (auto)':''}</span></div>`;
+      if(pl.somaHerite) h+=`<div class="kv"><span>Hérédité somatique</span><span>♀ 30 % · ♂ 15 %</span></div>`;
+      if(pl.coupures) h+=`<div class="kv"><span>Coupures méiotiques</span><span>${pl.coupures.join(', ')}</span></div>`;
+      if(pl.mutations&&pl.mutations.length){
+        h+=`<div class="kv"><span>Mutations à la conception</span><span>${pl.mutations.length}</span></div>`;
+        h+=`<div style="margin-top:4px">`+pl.mutations.slice(0,6).map(m=>
+          `<span class="tag ${m.grande?'o':''}">${GENES[m.i].l} ${m.after>m.before?'↑':'↓'}${m.grande?' ⚡':''}</span>`).join('')+`</div>`;
+      }
+    } else {
+      h+=`<div class="kv"><span>Origine</span><span>lignée sauvage</span></div>`;
+    }
+    h+=`</div>`;
+
+    /* ------- le tronçon visé : le cœur du système ------- */
+    if(seg){
+      const der=ADN.derive(seg.soma);
+      h+=`<div class="sect"><h5>Tronçon visé <span style="opacity:.7">#${seg.id}</span></h5>
+        <div class="branchbox">
+        <div class="kv"><span>Ordre de ramure</span><span>${seg.depth} · rang ${seg.rang}</span></div>
+        <div class="kv"><span>Longueur</span><span>${(seg.lenMax*seg.g).toFixed(3)} / ${seg.lenMax.toFixed(3)} m</span></div>
+        <div class="kv"><span>Diamètre</span><span>${(seg.r0*200).toFixed(1)} cm</span></div>
+        <div class="kv"><span>Copies depuis la base</span><span>${seg.chemin().length-1}</span></div>
+        <div class="kv"><span>Mutations cumulées</span><span style="color:${seg.muts?'#dcb861':''}">${seg.muts}${seg.nouvMuts?` (dont ${seg.nouvMuts} ici)`:''}</span></div>
+        <div class="kv"><span>Divergence somatique</span><span>${(der*100).toFixed(2)} %</span></div>
+        <div class="meter"><i style="width:${clamp(der*420,0,100).toFixed(0)}%;background:#dcb861"></i></div>
+        <div class="divergence">L’ADN de ce tronçon a été recopié depuis le tronçon précédent, avec ${(pl.tauxSoma*100).toFixed(1)} % de risque de mutation par gène${pl.somaBonus>0.001?` <span style="color:#a99ad6">(dont ${(pl.somaBonus*100).toFixed(0)} % d’eau mutagène)</span>`:''}.</div>
+        ${seg.gLoc?`<div class="divergence" style="color:#dcb861">ADN germinal réécrit sur ce tronçon : il diverge du reste du pied et le repasse à sa descendance.</div>`:''}
+        </div>`;
+      const diffs=[];
+      for(let i=0;i<NS;i++){
+        const d=SOMA[i], neutre=d.mode==='x'?1:0;
+        const dev=seg.soma[i]-neutre;
+        if(Math.abs(dev) < (d.hi-d.lo)*0.012) continue;
+        const n=clamp((seg.soma[i]-d.lo)/(d.hi-d.lo),0,1);
+        const nn=clamp((neutre-d.lo)/(d.hi-d.lo),0,1);
+        const txt = d.mode==='x' ? `×${seg.soma[i].toFixed(2)}` : (dev>0?'+':'')+seg.soma[i].toFixed(2);
+        diffs.push(`<div class="gene"><div class="gl"><b>${d.l}</b><em>${txt}</em></div>
+          <div class="gbar"><i style="width:${(n*100).toFixed(1)}%;background:${dev>0?'#dcb861':'#8fb6cf'}"></i>
+          <u style="left:${(nn*100).toFixed(1)}%"></u></div></div>`);
+      }
+      h+= diffs.length
+        ? `<div style="margin-top:8px">${diffs.join('')}</div>`
+        : `<div class="hint">Ce tronçon est une copie conforme de la souche : aucun gène somatique n’a dérivé.</div>`;
+      h+=`</div>`;
+    } else {
+      h+=`<div class="sect"><h5>Tronçon visé</h5>
+        <div class="hint">Visez une tige, une branche ou une fleur pour lire l’ADN propre à ce tronçon.</div></div>`;
+    }
+
+    /* traits */
+    const tr=ADN.traits(g,pl.sp);
+    h+=`<div class="sect"><h5>Caractères</h5><div>${tr.map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join('')}</div>
+      <div class="swatches">
+        <div class="sw" style="background:${rgbCss(c)}" title="pétales"></div>
+        <div class="sw" style="background:${rgbCss(cf)}" title="feuilles"></div>
+        <div class="sw" style="background:${rgbCss(ct)}" title="tige"></div>
+      </div></div>`;
+
+    /* génome */
+    h+=`<div class="sect"><h5>ADN germinal <span style="opacity:.6">${NG} gènes</span></h5>`;
+    let cat=null;
+    for(let i=0;i<NG;i++){
+      if(GENES[i].c!==cat){
+        cat=GENES[i].c;
+        h+=`<div style="font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.4;margin:9px 0 3px;color:${CATS[cat].col}">${CATS[cat].l}</div>`;
+      }
+      h+=this.barre(g,i,pl.origine);
+    }
+    h+=`<div class="seq">${ADN.sequence(g).replace(/(.{4})/g,'$1 ')}</div>`;
+    if(pl.origine) h+=`<div class="hint">♀ gène de la mère · ♂ gène du père · × codominance. Les coupures méiotiques lient les gènes voisins.</div>`;
+    h+=`</div></div>`;
+    return h;
+  },
+
+  majInspecteur(monde, force){
+    const ins=$('#insp');
+    const outil=OUTILS[Joueur.outil].id;
+    const montre = this.epingle || (monde.cible && monde.cible.plante);
+    if(!montre){ ins.classList.remove('show'); this.dernierId=-1; return; }
+    const seg = this.epingle && (!monde.cible || monde.cible.plante!==this.epingle)
+      ? null : (monde.cible?monde.cible.troncon:null);
+    const idp = montre.id*100000 + (seg?seg.id:0);
+    const t=performance.now();
+    if(!force && idp===this.dernierId && t-this.dernierRendu<340) return;
+    this.dernierId=idp; this.dernierRendu=t;
+    ins.innerHTML=this.fiche(montre, seg);
+    ins.classList.add('show');
+  }
+};
+
+/* =====================================================================
+   11. SON — ambiance procédurale
+   ===================================================================== */
+const Son = {
+  ctx:null, on:true, pret:false, gainMaster:null,
+  init(){
+    if(this.ctx) return;
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      this.ctx=new AC();
+      const g=this.ctx.createGain(); g.gain.value=0.55; g.connect(this.ctx.destination);
+      this.gainMaster=g;
+      /* Bruit de base à peine teinté. Surtout pas de bruit brownien : intégré,
+         il s'effondre dans les graves et donne un ronflement continu au lieu
+         d'un souffle. Le grave est en plus recoupé au passe-haut ci-dessous. */
+      const len=this.ctx.sampleRate*3;
+      const buf=this.ctx.createBuffer(1,len,this.ctx.sampleRate);
+      const d=buf.getChannelData(0);
+      let last=0;
+      for(let i=0;i<len;i++){ const w=Math.random()*2-1; last=last*0.32+w*0.68; d[i]=last*0.9; }
+      /* vent : une bande 300–2000 Hz, le froissement de l'herbe et des feuilles */
+      const src=this.ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+      const lp=this.ctx.createBiquadFilter(); lp.type='lowpass';
+      lp.frequency.value=1100; lp.Q.value=0.4;
+      const hp=this.ctx.createBiquadFilter(); hp.type='highpass';
+      hp.frequency.value=330; hp.Q.value=0.7;
+      const gv=this.ctx.createGain(); gv.gain.value=0.0;
+      src.connect(lp); lp.connect(hp); hp.connect(gv); gv.connect(g); src.start();
+      this.vent={src,lp,hp,gain:gv};
+      /* pluie */
+      const src2=this.ctx.createBufferSource(); src2.buffer=buf; src2.loop=true;
+      const bp=this.ctx.createBiquadFilter(); bp.type='highpass'; bp.frequency.value=1150;
+      const g2=this.ctx.createGain(); g2.gain.value=0;
+      src2.connect(bp); bp.connect(g2); g2.connect(g); src2.start();
+      this.pluie={gain:g2, f:bp};
+      this.pret=true;
+    }catch(e){ this.pret=false; }
+  },
+  maj(env, dt){
+    if(!this.pret) return;
+    const v=this.on?1:0;
+    /* le vent respire par rafales — deux périodes lentes premières entre
+       elles, pour qu'aucun cycle ne s'entende comme tel */
+    this._ph=(this._ph||0)+dt;
+    const rafale = (0.42 + 0.58*(0.5+0.5*Math.sin(this._ph*0.37)))
+                 * (0.70 + 0.30*(0.5+0.5*Math.sin(this._ph*0.113+1.7)));
+    const force = clamp(env.vent,0,1.5);
+    const cible = force>0.03 ? (0.018+force*0.155)*rafale*v : 0;
+    this.vent.gain.gain.value = lerp(this.vent.gain.gain.value, cible, clamp(dt*1.5,0,1));
+    this.vent.lp.frequency.value = lerp(this.vent.lp.frequency.value, 820+force*1250, clamp(dt*1.2,0,1));
+    this.pluie.gain.gain.value = lerp(this.pluie.gain.gain.value, env.pluie*0.075*v, clamp(dt*1.2,0,1));
+    /* oiseaux le jour, grillons la nuit d'été */
+    this._t=(this._t||0)+dt;
+    if(this._t>this._next||!this._next){
+      this._t=0;
+      if(env.nuit<0.4 && env.pluie<0.3 && env.temp>6){ this._next=1.2+Math.random()*6; this.oiseau(); }
+      else if(env.nuit>0.5 && env.saison===1){ this._next=0.9+Math.random()*2.4; this.grillon(); }
+      else this._next=2+Math.random()*4;
+    }
+  },
+  note(f, dur, type, vol, gliss){
+    if(!this.pret||!this.on) return;
+    const c=this.ctx, t=c.currentTime;
+    const o=c.createOscillator(); o.type=type||'sine';
+    const g=c.createGain();
+    o.frequency.setValueAtTime(f,t);
+    if(gliss) o.frequency.exponentialRampToValueAtTime(Math.max(60,f*gliss),t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol||0.06,t+dur*0.15);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.gainMaster);
+    o.start(t); o.stop(t+dur+0.02);
+  },
+  oiseau(){
+    const base=1600+Math.random()*1400;
+    const n=2+Math.floor(Math.random()*3);
+    for(let i=0;i<n;i++)
+      setTimeout(()=>this.note(base*(0.85+Math.random()*0.4), 0.09, 'sine', 0.035, 1.5), i*95+Math.random()*40);
+  },
+  grillon(){
+    for(let i=0;i<3;i++) setTimeout(()=>this.note(4200, 0.02,'square',0.008),i*70);
+  },
+  clic(){ this.note(660,0.07,'triangle',0.05,1.4); },
+  raté(){ this.note(180,0.12,'sine',0.05,0.7); },
+  coupe(){ this.note(2400,0.045,'square',0.03,0.4); setTimeout(()=>this.note(1500,0.05,'square',0.02,0.4),45); },
+  reussite(){ [523,659,784].forEach((f,i)=>setTimeout(()=>this.note(f,0.16,'sine',0.045),i*85)); },
+  eau(on){
+    if(!this.pret||!this.on) return;
+    const t=performance.now();
+    if(t-(this._eauT||0)<70) return;
+    this._eauT=t;
+    this.note(300+Math.random()*500, 0.06, 'sawtooth', 0.012, 0.6);
+  }
+};
+</script>
+<script>
+/* =====================================================================
+   12. BOUCLE PRINCIPALE
+   ===================================================================== */
+const SECONDES_PAR_JOUR = 118;
+
+/* phénologie : quantité de feuillage et teintes d'automne */
+Env.majPheno = function(){
+  const s=this.saison, p=this.phaseSaison;
+  let f=1, a=0;
+  if(s===0){ f=clamp(0.20+p*1.9,0,1); }
+  else if(s===1){ f=1; }
+  else if(s===2){ f=clamp(1-Math.max(0,p-0.40)*1.7,0.10,1); a=smoothstep(0.02,0.62,p); }
+  else { f=0.09; a=1; }
+  this.feuillage=f; this.automne=a;
+};
+
+const Jeu = {
+  cv:null, gl:null, tPrec:0, actif:false, fps:60, aide:false,
+  camPos:[0,0,0], nFrame:0, libre:false,
+
+  /* La souris est rendue au bureau tant qu'Alt est maintenu, que l'aide est
+     ouverte ou que la table d'édition est déployée — sinon on la reprend.
+     Tout passe par ici pour qu'aucun de ces trois états ne se marche dessus. */
+  majSouris(){
+    const doitEtreLibre = this.libre || this.aide || !!UI.editCible;
+    $('#freem').classList.toggle('show', this.libre && !this.aide && !UI.editCible);
+    if(doitEtreLibre){
+      if(document.pointerLockElement) document.exitPointerLock&&document.exitPointerLock();
+    } else if(this.actif && !document.pointerLockElement && this.cv.requestPointerLock){
+      /* le navigateur peut refuser (temporisation après un Échap) : sans
+         importance, un clic sur le pré reprendra la main */
+      try{ const p=this.cv.requestPointerLock(); if(p&&p.catch) p.catch(()=>{}); }catch(e){}
+    }
+  },
+
+  async charger(){
+    this.cv=$('#cv');
+    const msg=(t)=>{ $('#loadmsg').textContent=t; };
+    /* on laisse le navigateur respirer entre deux étapes ; le repli par
+       minuterie évite de bloquer si l'onglet est en arrière-plan */
+    const frame=()=>new Promise(r=>{
+      let fait=false;
+      const f=()=>{ if(!fait){ fait=true; r(); } };
+      requestAnimationFrame(()=>requestAnimationFrame(f));
+      setTimeout(f, 55);
+    });
+
+    msg('modelage du relief…'); await frame();
+    if(!Rendu.init(this.cv)){
+      msg('WebGL 2 indisponible sur cette machine');
+      return false;
+    }
+    Rendu.redim();
+    this.gl=Rendu.gl;
+    Env.avancer(0.0001, RNG); Env.majPheno();
+
+    msg('semis des neuf lignées…'); await frame();
+    Monde.init(this.gl);
+
+    msg('croissance des plantes…'); await frame();
+    Joueur.init();
+    const pl=Monde.plantes;
+    /* on bâtit chaque maillage au niveau de détail correspondant déjà à
+       sa distance au point de départ : rien à reconstruire au réveil */
+    for(let i=0;i<pl.length;i++){
+      const d=Math.hypot(pl[i].x-Joueur.pos[0], pl[i].z-Joueur.pos[2]);
+      pl[i].construire(this.gl, Env, d);
+      pl[i].sig=pl[i].signature(Env,d);
+      if(i%45===0){ msg(`croissance des plantes… ${Math.round(i/pl.length*100)} %`); await frame(); }
+    }
+    UI.init();
+    this.evenements();
+    msg('le pré est prêt');
+    $('#go').disabled=false;
+    $('#go').focus();
+    return true;
+  },
+
+  demarrer(){
+    $('#start').classList.add('gone');
+    setTimeout(()=>$('#start').style.display='none',800);
+    Son.init();
+    this.actif=true;
+    this.tPrec=performance.now();
+    this.cv.requestPointerLock&&this.cv.requestPointerLock();
+    Monde.journal('Vous entrez dans le pré. Prenez le temps.','evt');
+    this._boucle=this.boucle.bind(this);
+    requestAnimationFrame(this._boucle);
+  },
+
+  evenements(){
+    const cv=this.cv;
+    window.addEventListener('resize',()=>{ Rendu.redim(); });
+    cv.addEventListener('click',()=>{
+      if(!Joueur.verrou && this.actif && !this.aide && !this.libre && !UI.editCible)
+        cv.requestPointerLock&&cv.requestPointerLock();
+    });
+    document.addEventListener('pointerlockchange',()=>{
+      Joueur.verrou = document.pointerLockElement===cv;
+    });
+    document.addEventListener('mousemove',(e)=>{
+      if(Joueur.verrou) Joueur.souris(e.movementX||0, e.movementY||0);
+    });
+    document.addEventListener('mousedown',(e)=>{
+      if(!this.actif||!Joueur.verrou) return;
+      if(e.button===0){ Outils.presse=true; Outils.tPresse=0;
+        Outils.utiliser(Monde,Env,Joueur,Monde.cible,false,0);
+        $('#cross').classList.add('act'); }
+      if(e.button===2){ UI.epingle = UI.epingle?null:(Monde.cible?Monde.cible.plante:null);
+        UI.majInspecteur(Monde,true); }
+    });
+    document.addEventListener('mouseup',(e)=>{
+      if(e.button===0){ Outils.presse=false; $('#cross').classList.remove('act'); }
+    });
+    document.addEventListener('contextmenu',e=>e.preventDefault());
+    document.addEventListener('wheel',(e)=>{
+      if(!Joueur.verrou) return;
+      const n=OUTILS.length;
+      UI.choisirOutil((Joueur.outil + (e.deltaY>0?1:n-1))%n);
+    },{passive:true});
+    document.addEventListener('keydown',(e)=>{
+      /* Alt maintenu : on rend la souris pour faire défiler les fiches */
+      if(e.key==='Alt'){
+        e.preventDefault();
+        if(!this.libre){ this.libre=true; this.majSouris(); }
+        return;
+      }
+      if(this.aide){ this.aide=false; $('#help').classList.remove('show');
+        this.majSouris(); return; }
+      Joueur.touches[e.code]=true;
+      if(e.code==='Space') e.preventDefault();
+      /* En AZERTY la rangée du haut renvoie « & é " ' » sans Maj : on se fie
+         au code physique de la touche autant qu'au caractère produit. */
+      const m=/^(?:Digit|Numpad)([0-9])$/.exec(e.code);
+      const n = m ? +m[1] : (e.key.length===1 && e.key>='0' && e.key<='9' ? +e.key : -1);
+      if(n>=0 && n<OUTILS.length) UI.choisirOutil(n);
+      switch(e.code){
+        case 'KeyP': UI.vitesse(Env.vitesse===0?1:0); break;
+        case 'KeyT': {
+          const v=[1,4,16,64,256], i=v.indexOf(Env.vitesse);
+          UI.vitesse(v[(i+1)%v.length]); break; }
+        case 'KeyH': $('#hud').classList.toggle('hidden'); break;
+        case 'KeyN': Son.on=!Son.on; UI.toast(Son.on?'Ambiance sonore activée':'Ambiance sonore coupée'); break;
+        case 'Escape': if(UI.editCible) UI.fermerEditeur(); break;
+        case 'Slash': case 'Backquote': case 'KeyF1':
+          this.aide=true; $('#help').classList.add('show'); this.majSouris(); break;
+      }
+      if(e.key==='?'){ this.aide=true; $('#help').classList.add('show'); this.majSouris(); }
+    });
+    document.addEventListener('keyup',(e)=>{
+      Joueur.touches[e.code]=false;
+      if(e.key==='Alt' && this.libre){ this.libre=false; this.majSouris(); }
+    });
+    /* Alt+Tab emporte le keyup avec lui : on repart d'un état propre */
+    window.addEventListener('blur',()=>{
+      this.libre=false;
+      Outils.presse=false; $('#cross').classList.remove('act');
+      for(const k in Joueur.touches) Joueur.touches[k]=false;
+      $('#freem').classList.remove('show');
+    });
+    $('#help').addEventListener('click',()=>{
+      this.aide=false; $('#help').classList.remove('show'); this.majSouris(); });
+  },
+
+  boucle(t){
+    requestAnimationFrame(this._boucle);
+    const dtr=Math.min((t-this.tPrec)/1000, 0.1);
+    this.tPrec=t;
+    this.nFrame++;
+    if(this.cv.width!==Math.floor(this.cv.clientWidth*Rendu.dpr)) Rendu.redim();
+    this.fps=lerp(this.fps,1/Math.max(dtr,0.0001),0.06);
+    /* si la machine peine, on resserre l'herbe et les herbacées lointaines */
+    if(this.nFrame>90){
+      if(this.fps<38) Rendu.qualite=Math.max(0.50, Rendu.qualite-0.005);
+      else if(this.fps>56) Rendu.qualite=Math.min(1, Rendu.qualite+0.0025);
+    }
+
+    /* --- temps du monde --- */
+    const dj = Env.enPause?0:(dtr*Env.vitesse/SECONDES_PAR_JOUR);
+    if(dj>0){
+      Env.avancer(dj, RNG);
+      Env.majPheno();
+      Monde.tick(dj, Env);
+    }
+
+    /* --- joueur --- */
+    if(!this.aide) Joueur.maj(dtr);
+    const cam=Joueur.oeilPos();
+    this.camPos=cam;
+    Monde.camRight.set(Joueur.droite);
+    Monde.camUp.set(Joueur.haut);
+
+    /* --- matrices --- */
+    const asp=Rendu.W/Rendu.H;
+    M4.perspective(Rendu.projMat, 1.09, asp, 0.045, 380);
+    const centre=[cam[0]+Joueur.dir[0], cam[1]+Joueur.dir[1], cam[2]+Joueur.dir[2]];
+    M4.lookAt(Rendu.viewMat, cam, centre, [0,1,0]);
+    M4.mul(Rendu.vpMat, Rendu.projMat, Rendu.viewMat);
+    M4.lookAt(Rendu.tmp, [0,0,0], Joueur.dir, [0,1,0]);
+    M4.mul(Rendu.tmp2, Rendu.projMat, Rendu.tmp);
+    M4.invert(Rendu.skyMat, Rendu.tmp2);
+
+    /* --- distances + reconstruction des maillages --- */
+    const pls=Monde.plantes;
+    let file=null;
+    for(let i=0;i<pls.length;i++){
+      const p=pls[i];
+      const dx=p.x-cam[0], dz=p.z-cam[2];
+      p.dist2=dx*dx+dz*dz;
+      if(p.etat==='graine'||!p.racine) continue;
+      if(p.dist2>95*95) continue;
+      const s=p.signature(Env, Math.sqrt(p.dist2));
+      if(s!==p.sig){
+        if(!file) file=[];
+        p._prio=p.dist2;
+        file.push(p);
+      }
+    }
+    if(file){
+      file.sort((a,b)=>a._prio-b._prio);
+      const budget = this.fps>50?4:(this.fps>34?2:1);
+      for(let i=0;i<Math.min(budget,file.length);i++){
+        const p=file[i];
+        const d=Math.sqrt(p.dist2);
+        p.construire(this.gl, Env, d);
+        p.sig=p.signature(Env,d);
+      }
+    }
+
+    /* --- outil maintenu --- */
+    if(Outils.presse && Joueur.verrou){
+      Outils.tPresse+=dtr;
+      Outils.utiliser(Monde,Env,Joueur,Monde.cible,true,dtr);
+    }
+
+    /* --- particules --- */
+    Monde.tickParticules(dtr, Env, cam);
+
+    /* --- rendu --- */
+    Rendu.frame(Env, cam, Joueur.dir, Monde, t/1000);
+
+    /* --- sélection au réticule --- */
+    if(Joueur.verrou && (this.nFrame&1)===0){
+      const r=Rendu.selection(Env, cam, Monde);
+      let c=null;
+      if(r){
+        const pl=Monde.parId.get(r.id);
+        if(pl){
+          const seg = r.part>0 ? pl.troncons[r.part-1] : null;
+          c={plante:pl, part:r.part, troncon:seg||null, point:null};
+        }
+      }
+      Monde.cible=c;
+      $('#cross').classList.toggle('tgt', !!c);
+    }
+
+    /* --- interface --- */
+    if((this.nFrame%7)===0){ UI.majTop(Env); UI.majInspecteur(Monde,false); }
+    if((this.nFrame%31)===0) UI.majStats(Monde);
+    Son.maj(Env, dtr);
+  }
+};
+
+/* --------------------------------------------------------- démarrage */
+window.addEventListener('load', async ()=>{
+  try{
+    const ok=await Jeu.charger();
+    if(!ok) return;
+    $('#go').onclick=()=>Jeu.demarrer();
+  }catch(e){
+    console.error(e);
+    $('#loadmsg').innerHTML=`<span style="color:#e0a09a">le pré n'a pas pu germer : ${e.message}</span>`;
+  }
+});
+</script>
+
+</body>
+</html>

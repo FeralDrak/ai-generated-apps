@@ -833,7 +833,16 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <script type="text/babel" data-presets="env,react">
+  <script>
+    // Le preset "react" de Babel utilise le runtime JSX "automatic" par défaut,
+    // ce qui génère `import ... from "react/jsx-runtime"` — impossible dans un
+    // script non-module (React est chargé en UMD). On force le runtime classic.
+    Babel.registerPreset('react-classic', {
+      presets: [[Babel.availablePresets.react, { runtime: 'classic' }]]
+    });
+  </script>
+
+  <script type="text/babel" data-presets="env,react-classic">
 const { useState, useEffect, useRef, useMemo, useCallback, useReducer, useContext, createContext, memo, Fragment } = React;
 
 // ─────────────────────────────────────────────────────────────────────────────
