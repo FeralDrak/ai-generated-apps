@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jardin Génétique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<!-- ============ Interface en jeu ============ -->
+<div id="hud" class="hidden">
+  <div id="clock" class="glass">
+    <div class="c-season"><span id="seasonIcon">🌱</span><span id="seasonName">Printemps</span><span id="yearTxt">an 1</span></div>
+    <div class="c-bar"><div id="seasonBar"></div><span class="tick" style="left:25%"></span><span class="tick" style="left:50%"></span><span class="tick" style="left:75%"></span></div>
+    <div class="c-row"><span id="todTxt">09h00</span><span id="speedTxt">×1</span></div>
+  </div>
+  <div id="stats" class="glass">
+    <div><b id="stHerb">0</b><span>fleurs</span></div>
+    <div><b id="stTree">0</b><span>ligneux</span></div>
+    <div><b id="stSeed">0</b><span>graines au sol</span></div>
+    <div><b id="stSpec">0</b><span>variétés</span></div>
+  </div>
+  <div id="cross"><i></i></div>
+  <div id="aimTip"></div>
+  <div id="toasts"></div>
+  <div id="bottom">
+    <div id="carry"></div>
+    <div id="toolbar"></div>
+    <div id="toolHint"></div>
+  </div>
+  <aside id="inspector" class="glass hidden">
+    <div class="i-head">
+      <div id="iSwatch" class="swatch big"></div>
+      <div class="i-title"><div id="iName"></div><div id="iSub"></div></div>
+      <button id="iClose" class="x" title="Fermer">×</button>
+    </div>
+    <div class="i-scroll">
+      <div id="iInfo" class="kv"></div>
+      <div class="i-sec">Tronçon examiné</div>
+      <div id="iSeg"></div>
+      <div class="i-sec">Caryotype du tronçon <small>deux brins par chromosome</small></div>
+      <canvas id="karyo" width="344" height="236"></canvas>
+      <div id="iTraits"></div>
+      <div id="iClones"></div>
+    </div>
+  </aside>
+  <div id="mapWrap" class="glass hidden">
+    <div class="map-title">Plan du pré <small>1 hectare · 100 m × 100 m</small></div>
+    <canvas id="map" width="460" height="460"></canvas>
+    <div class="map-legend"><span><i style="background:#3d6b35"></i>arbre</span><span><i style="background:#e7c3dc"></i>fleur ouverte</span><span><i style="background:#79a35a"></i>herbacée</span><span><i style="background:#fff"></i>vous</span></div>
+  </div>
+  <div id="lockHint" class="hidden">Cliquez sur le pré pour reprendre</div>
+</div>
+
+<!-- ============ Carnet ============ -->
+<div id="journal" class="glass hidden">
+  <div class="j-head">
+    <div class="j-title">Carnet du jardinier</div>
+    <div class="tabs">
+      <button data-tab="seeds" class="on">Sachet de graines</button>
+      <button data-tab="species">Variétés</button>
+      <button data-tab="chron">Chronique</button>
+      <button data-tab="help">Comprendre</button>
+    </div>
+    <button id="jClose" class="x" title="Fermer (C)">×</button>
+  </div>
+  <div class="j-body">
+    <section data-tab="seeds" class="on"><p class="lead">Cliquez une graine pour la choisir, puis semez-la avec le <b>semoir</b> (touche 5).</p><div id="seedList" class="cards"></div></section>
+    <section data-tab="species"><p class="lead" id="specLead"></p><div id="specList" class="rows"></div></section>
+    <section data-tab="chron">
+      <div class="chron-grid">
+        <div><div class="j-sub">Populations</div><canvas id="popChart" width="560" height="220"></canvas></div>
+        <div><div class="j-sub">Couleurs des fleurs ouvertes</div><canvas id="hueChart" width="220" height="220"></canvas></div>
+      </div>
+      <div class="j-sub">Évènements</div>
+      <div id="logList" class="log"></div>
+    </section>
+    <section data-tab="help" class="help">
+      <div class="help-grid">
+        <div>
+          <h3>Un ADN par tronçon</h3>
+          <p>Chaque plante est faite de <b>tronçons</b> : les portions de tige ou de branche entre deux embranchements. Chaque tronçon porte <b>son propre ADN</b>, copié de celui du tronçon dont il est issu, avec une petite chance de <b>mutation somatique</b>. Une branche peut donc fleurir d'une autre couleur que le reste de l'arbre : utilisez la <b>vue clonale</b> (clic droit avec la loupe) pour voir ces lignées.</p>
+          <h3>Un génome diploïde</h3>
+          <p>40 gènes sur 5 chromosomes, chacun en <b>deux allèles</b>. La plupart s'expriment en <b>codominance</b> (moyenne), les teintes se mélangent sur le cercle chromatique (rouge × bleu → pourpre), et le <b>motif</b> obéit à la <b>dominance</b> : un motif caché peut réapparaître chez les petits-enfants.</p>
+          <h3>Reproduction sexuée</h3>
+          <p>Papillons, abeilles et vent transportent le pollen, c'est-à-dire l'ADN du tronçon qui porte la fleur. À la fécondation, chaque parent fournit un <b>gamète</b> issu d'une méiose avec enjambements : la graine réunit un brin de chaque parent. Seules les plantes génétiquement proches peuvent se croiser : de nouvelles espèces émergent au fil des générations.</p>
+        </div>
+        <div>
+          <h3>Outils</h3>
+          <ul class="tools-help">
+            <li><b>1 · Loupe</b> — examiner une plante, son tronçon et son caryotype. Clic droit : vue clonale.</li>
+            <li><b>2 · Pinceau à pollen</b> — prélever le pollen d'une fleur ouverte, puis féconder d'autres fleurs : vous choisissez les parents.</li>
+            <li><b>3 · Sécateur</b> — couper un tronçon, une fleur, abattre un arbre. Clic droit : récolter les graines mûres.</li>
+            <li><b>4 · Greffoir</b> — prélever un rameau et le greffer sur une autre plante : il garde son ADN.</li>
+            <li><b>5 · Semoir</b> — semer les graines de votre sachet.</li>
+            <li><b>6 · Arrosoir</b> — accélérer la croissance et la germination.</li>
+            <li><b>7 · Rayon mutagène</b> — provoquer une mutation : un rameau mutant pousse.</li>
+          </ul>
+          <h3>Commandes</h3>
+          <ul class="keys">
+            <li><kbd>Z Q S D</kbd> / <kbd>W A S D</kbd> se déplacer · <kbd>Maj</kbd> courir · <kbd>Espace</kbd> sauter</li>
+            <li><kbd>V</kbd> survol (Espace monter, Maj descendre)</li>
+            <li><kbd>1</kbd>–<kbd>7</kbd> ou molette : outils</li>
+            <li><kbd>T</kbd> vitesse du temps · <kbd>P</kbd> pause</li>
+            <li><kbd>C</kbd> carnet · <kbd>M</kbd> plan · <kbd>H</kbd> masquer l'interface</li>
+            <li><kbd>Échap</kbd> libérer la souris / réglages</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ============ Réglages ============ -->
+<div id="menu" class="glass hidden">
+  <div class="m-title">Pause</div>
+  <button id="mResume" class="primary">Reprendre la promenade</button>
+  <div class="m-group">
+    <label>Écoulement du temps</label>
+    <div class="seg" id="mSpeed"></div>
+  </div>
+  <div class="m-group">
+    <label>Soleil</label>
+    <div class="seg" id="mDay">
+      <button data-v="cycle">Cycle jour / nuit</button><button data-v="fixed">Heure figée</button>
+    </div>
+    <input type="range" id="mHour" min="0" max="1" step="0.001">
+    <div class="m-note" id="mHourTxt"></div>
+  </div>
+  <div class="m-group">
+    <label>Densité de l'herbe</label>
+    <div class="seg" id="mGrass"><button data-v="0">Légère</button><button data-v="1">Moyenne</button><button data-v="2">Dense</button></div>
+  </div>
+  <div class="m-group">
+    <label>Ombres</label>
+    <div class="seg" id="mShadow"><button data-v="1">Activées</button><button data-v="0">Désactivées</button></div>
+  </div>
+  <div class="m-group">
+    <label>Sensibilité de la souris</label>
+    <input type="range" id="mSens" min="0.0008" max="0.005" step="0.0001">
+  </div>
+  <div class="m-group">
+    <label>Volume</label>
+    <input type="range" id="mVol" min="0" max="1" step="0.01">
+  </div>
+  <div class="m-row">
+    <button id="mJournal">Carnet (C)</button>
+    <button id="mNew" class="danger">Nouveau pré</button>
+  </div>
+</div>
+
+<!-- ============ Écran titre ============ -->
+<div id="start">
+  <div class="s-inner">
+    <div class="s-kicker">Simulation contemplative</div>
+    <h1>Jardin Génétique</h1>
+    <p class="s-sub">Un hectare de prairie où chaque rameau porte son propre ADN.</p>
+    <p class="s-text">Fleurs et arbres germent, fleurissent, se croisent et meurent au fil des saisons. Leurs formes et leurs couleurs naissent de leurs gènes, hérités de deux parents et altérés, tronçon après tronçon, par de petites mutations. Promenez-vous, observez, et jouez les jardiniers.</p>
+    <div class="s-keys">
+      <div><span class="kk"><kbd>ZQSD</kbd><kbd>WASD</kbd></span><span>marcher</span></div>
+      <div><kbd>Souris</kbd><span>regarder</span></div>
+      <div><kbd>1–7</kbd><span>outils</span></div>
+      <div><kbd>Clic</kbd><span>utiliser</span></div>
+      <div><kbd>C</kbd><span>carnet</span></div>
+      <div><kbd>T</kbd><span>temps</span></div>
+    </div>
+    <button id="startBtn" disabled>Le pré s'éveille…</button>
+    <div class="s-progress"><div id="startBar"></div></div>
+    <div id="startErr"></div>
+  </div>
+</div>
+
+<div id="tooltip" class="hidden"></div>
+
+<script>
+  // si three.js ne peut pas être chargé (hors-ligne), on le signale
+  setTimeout(function () {
+    if (!window.THREE) document.getElementById('startErr').textContent = "Impossible de charger three.js depuis le CDN : une connexion internet est nécessaire au premier lancement.";
+  }, 9000);
+</script>
+<script type="module">
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+  window.THREE = THREE;
+  const files = ['util', 'genome', 'plant', 'eco', 'builder', 'render', 'fx', 'fauna', 'player', 'tools', 'audio', 'ui', 'main'];
+  const v = Date.now();
+  for (const f of files) {
+    const s = document.createElement('script');
+    s.src = 'js/' + f + '.js?v=' + v;
+    s.async = false;
+    document.body.appendChild(s);
+  }
+</script>
+</body>
+</html>

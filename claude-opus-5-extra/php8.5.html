@@ -1,0 +1,3328 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHP 8.5 Academy — Préparation entretien</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#0a0c16; --bg-grad1:#1b1040; --bg-grad2:#06121f;
+  --surface:#12162a; --surface2:#1a1f38; --surface3:#232948;
+  --border:#282e4e; --border-soft:#1e2340;
+  --text:#e9ecff; --text-dim:#a9b0d6; --muted:#7b83ad;
+  --accent:#8b5cf6; --accent-b:#a78bfa; --accent-c:#22d3ee;
+  --php:#787CB5; --ok:#34d399; --warn:#fbbf24; --err:#fb7185; --new:#f472b6;
+  --radius:18px; --radius-s:11px;
+  --shadow:0 18px 50px -18px rgba(0,0,0,.75);
+  --ff:'Outfit',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,'SFMono-Regular',Consolas,monospace;
+}
+[data-theme="light"]{
+  --bg:#f5f6fc; --bg-grad1:#e5ddff; --bg-grad2:#dcf1fb;
+  --surface:#ffffff; --surface2:#f3f4fb; --surface3:#e9ebf7;
+  --border:#dfe2f2; --border-soft:#ebedf8;
+  --text:#161a33; --text-dim:#454c73; --muted:#767d9f;
+  --shadow:0 18px 44px -22px rgba(40,30,90,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--ff); background:var(--bg); color:var(--text);
+  min-height:100vh; -webkit-font-smoothing:antialiased; line-height:1.6;
+  overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
+  background:
+    radial-gradient(900px 500px at 12% -8%, var(--bg-grad1), transparent 60%),
+    radial-gradient(800px 460px at 92% 4%, var(--bg-grad2), transparent 62%);
+}
+::selection{background:var(--accent);color:#fff}
+*::-webkit-scrollbar{width:11px;height:11px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:99px;border:3px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background:var(--muted);background-clip:padding-box;border:3px solid transparent}
+
+/* ============ LAYOUT ============ */
+.app{display:flex;position:relative;z-index:1;min-height:100vh}
+aside{
+  width:282px;flex-shrink:0;height:100vh;position:sticky;top:0;
+  background:color-mix(in srgb,var(--surface) 78%,transparent);
+  backdrop-filter:blur(18px);
+  border-right:1px solid var(--border-soft);
+  display:flex;flex-direction:column;z-index:60;
+}
+.brand{padding:20px 18px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border-soft)}
+.logo{
+  width:44px;height:44px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(140deg,var(--accent),var(--accent-c));
+  display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;
+  box-shadow:0 8px 22px -8px var(--accent);letter-spacing:-.5px;
+}
+.brand h1{font-size:16px;font-weight:700;letter-spacing:-.3px;line-height:1.15}
+.brand small{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.3px}
+.searchbtn{
+  margin:12px 14px 6px;padding:9px 12px;border-radius:11px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--muted);font-family:inherit;font-size:13px;
+  display:flex;align-items:center;gap:8px;cursor:pointer;transition:.18s;width:calc(100% - 28px)
+}
+.searchbtn:hover{border-color:var(--accent);color:var(--text)}
+.searchbtn kbd{margin-left:auto}
+kbd{
+  font-family:var(--fm);font-size:10px;padding:2px 5px;border-radius:5px;
+  background:var(--surface3);border:1px solid var(--border);color:var(--text-dim)
+}
+nav{flex:1;overflow-y:auto;padding:8px 10px 18px}
+.navgroup{margin-top:14px}
+.navgroup>span{
+  display:block;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--muted);padding:6px 10px
+}
+.navitem{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;
+  cursor:pointer;font-size:13.5px;color:var(--text-dim);transition:.16s;
+  border:1px solid transparent;position:relative;font-weight:500;
+}
+.navitem:hover{background:var(--surface2);color:var(--text)}
+.navitem.active{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--text);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.navitem.active::before{content:'';position:absolute;left:-10px;top:50%;translate:0 -50%;width:3px;height:18px;border-radius:9px;background:var(--accent)}
+.navitem i{font-style:normal;font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.navitem .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--ok);opacity:0;transition:.2s;flex-shrink:0}
+.navitem.done .dot{opacity:1}
+.navitem .pill{margin-left:auto;font-size:9.5px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:6px;background:var(--new);color:#fff}
+.sidefoot{padding:12px 14px;border-top:1px solid var(--border-soft);display:flex;align-items:center;gap:10px}
+.ring{width:42px;height:42px;flex-shrink:0;position:relative}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:10.5px;font-weight:700}
+.sidefoot .lv{font-size:12px;line-height:1.3}
+.sidefoot .lv b{display:block;font-size:12.5px}
+.sidefoot .lv span{color:var(--muted);font-size:10.5px}
+.iconbtn{
+  width:32px;height:32px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text-dim);cursor:pointer;display:grid;place-items:center;
+  font-size:14px;transition:.16s;flex-shrink:0
+}
+.iconbtn.push{margin-left:auto}
+.iconbtn:hover{border-color:var(--accent);color:var(--text);transform:translateY(-1px)}
+
+main{flex:1;min-width:0;padding:34px 44px 90px;max-width:1080px;margin:0 auto;width:100%}
+.burger{display:none}
+.scrim{display:none}
+
+/* ============ TYPO ============ */
+h2.page{font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:6px}
+.page-sub{color:var(--text-dim);font-size:15px;margin-bottom:28px;max-width:70ch}
+h3.sec{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 12px;display:flex;align-items:center;gap:10px}
+h3.sec::before{content:'';width:4px;height:19px;border-radius:9px;background:linear-gradient(var(--accent),var(--accent-c))}
+p{color:var(--text-dim);margin-bottom:12px;font-size:14.8px}
+p strong,li strong,td strong{color:var(--text);font-weight:600}
+ul.bul{margin:0 0 14px 2px;list-style:none}
+ul.bul li{color:var(--text-dim);font-size:14.6px;padding-left:20px;position:relative;margin-bottom:7px}
+ul.bul li::before{content:'\25B8';position:absolute;left:2px;color:var(--accent-b);font-size:12px;top:1px}
+code.inl{
+  font-family:var(--fm);font-size:.855em;padding:2px 6px;border-radius:6px;
+  background:color-mix(in srgb,var(--accent) 15%,transparent);
+  color:var(--accent-b);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);
+  overflow-wrap:anywhere;
+}
+[data-theme="light"] code.inl{color:#6d28d9}
+a{color:var(--accent-b)}
+
+/* ============ CODE ============ */
+.codewrap{
+  border-radius:var(--radius-s);overflow:hidden;margin:6px 0 18px;
+  border:1px solid #232845;background:#0d1020;box-shadow:var(--shadow)
+}
+.codehead{
+  display:flex;align-items:center;gap:8px;padding:7px 12px;background:#141935;
+  border-bottom:1px solid #232845;font-size:11px;color:#8890bd;font-weight:600;letter-spacing:.4px
+}
+.codehead .dots{display:flex;gap:5px;margin-right:4px}
+.codehead .dots i{width:9px;height:9px;border-radius:50%;background:#333a63;display:block}
+.codehead .dots i:first-child{background:#f0526d}
+.codehead .dots i:nth-child(2){background:#f5b53f}
+.codehead .dots i:nth-child(3){background:#3ecf8e}
+.copy{
+  margin-left:auto;background:transparent;border:1px solid #2c3257;color:#8890bd;
+  font-family:inherit;font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:7px;cursor:pointer;transition:.16s
+}
+.copy:hover{border-color:var(--accent);color:#fff}
+.copy.ok{border-color:var(--ok);color:var(--ok)}
+pre{
+  margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--fm);
+  font-size:13px;line-height:1.72;color:#c9d0f5;tab-size:2
+}
+pre .c{color:#5d6592;font-style:italic}
+pre .s{color:#8ee6a8}
+pre .v{color:#8ecdf5}
+pre .kw{color:#f472b6;font-weight:600}
+pre .ty{color:#fbbf24}
+pre .fn{color:#a78bfa}
+pre .cls{color:#5ee3d1}
+pre .n{color:#fca17d}
+pre .o{color:#8b93bd}
+pre .at{color:#f9a8d4;font-weight:600}
+pre .tag{color:#f472b6;font-weight:700}
+
+/* ============ CARDS / CALLOUTS ============ */
+.card{
+  background:color-mix(in srgb,var(--surface) 92%,transparent);border:1px solid var(--border-soft);
+  border-radius:var(--radius);padding:20px 22px;margin-bottom:16px;transition:.2s
+}
+.grid{display:grid;gap:14px;margin-bottom:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(285px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.callout{
+  border-radius:var(--radius-s);padding:13px 16px 13px 44px;margin:6px 0 18px;position:relative;
+  font-size:14.2px;border:1px solid;line-height:1.62;color:var(--text-dim)
+}
+.callout::before{position:absolute;left:14px;top:12px;font-size:16px}
+.callout b,.callout strong{font-weight:700;color:var(--text)}
+.callout.tip{background:color-mix(in srgb,var(--accent-c) 11%,transparent);border-color:color-mix(in srgb,var(--accent-c) 30%,transparent)}
+.callout.tip::before{content:'\1F4A1'}
+.callout.warn{background:color-mix(in srgb,var(--warn) 11%,transparent);border-color:color-mix(in srgb,var(--warn) 32%,transparent)}
+.callout.warn::before{content:'\26A0\FE0F'}
+.callout.itw{background:color-mix(in srgb,var(--accent) 13%,transparent);border-color:color-mix(in srgb,var(--accent) 34%,transparent)}
+.callout.itw::before{content:'\1F3A4'}
+.callout.new{background:color-mix(in srgb,var(--new) 12%,transparent);border-color:color-mix(in srgb,var(--new) 32%,transparent)}
+.callout.new::before{content:'\2728'}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.5px;
+  padding:3px 9px;border-radius:99px;text-transform:uppercase;white-space:nowrap
+}
+.b-new{background:color-mix(in srgb,var(--new) 20%,transparent);color:var(--new)}
+.b-dep{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+.b-brk{background:color-mix(in srgb,var(--err) 20%,transparent);color:var(--err)}
+.b-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.b-v{background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent-b)}
+
+.tbwrap{overflow-x:auto;margin:4px 0 20px;-webkit-overflow-scrolling:touch}
+.tbwrap table.tb{margin:0;min-width:320px}
+table.tb{width:100%;border-collapse:collapse;margin:4px 0 20px;font-size:13.8px;border:1px solid var(--border-soft);border-radius:var(--radius-s);overflow:hidden}
+table.tb td{word-break:break-word}
+table.tb th{text-align:left;padding:10px 14px;background:var(--surface2);font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:700}
+table.tb td{padding:10px 14px;border-top:1px solid var(--border-soft);color:var(--text-dim);vertical-align:top}
+table.tb tr:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+
+/* ============ HOME ============ */
+.hero{
+  border-radius:24px;padding:38px 36px;margin-bottom:26px;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 30%,var(--surface)),color-mix(in srgb,var(--accent-c) 16%,var(--surface)));
+  border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+}
+.hero::after{
+  content:'';position:absolute;right:-70px;top:-70px;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent-c) 34%,transparent),transparent 70%)
+}
+.hero .v{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;letter-spacing:1px;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:5px 12px;border-radius:99px;margin-bottom:16px}
+.hero h2{font-size:42px;font-weight:800;letter-spacing:-1.6px;line-height:1.05;margin-bottom:10px;position:relative}
+.hero p{font-size:16px;color:var(--text);opacity:.85;max-width:56ch;position:relative;margin-bottom:22px}
+.hero .cta{display:flex;gap:10px;flex-wrap:wrap;position:relative}
+.btn{
+  font-family:inherit;font-size:13.5px;font-weight:600;padding:11px 20px;border-radius:12px;
+  border:1px solid transparent;cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:8px
+}
+.btn.primary{background:var(--text);color:var(--bg)}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 12px 26px -12px rgba(0,0,0,.8)}
+.btn.ghost{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:var(--text)}
+.btn.ghost:hover{background:rgba(255,255,255,.2)}
+.btn.solid{background:var(--accent);color:#fff}
+.btn.solid:hover{background:var(--accent-b);transform:translateY(-2px)}
+.btn.line{background:var(--surface2);border-color:var(--border);color:var(--text-dim)}
+.btn.line:hover{border-color:var(--accent);color:var(--text)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+
+.stat{
+  background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius);
+  padding:18px 20px;display:flex;flex-direction:column;gap:2px
+}
+.stat b{font-size:28px;font-weight:800;letter-spacing:-1px;background:linear-gradient(120deg,var(--accent-b),var(--accent-c));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.2}
+.stat span{font-size:12px;color:var(--muted);font-weight:500}
+
+.tilelink{
+  background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius);
+  padding:18px 20px;cursor:pointer;transition:.2s;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden
+}
+.tilelink:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 45%,transparent);box-shadow:var(--shadow)}
+.tilelink .ic{font-size:22px;margin-bottom:4px}
+.tilelink b{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.tilelink span{font-size:12.8px;color:var(--muted);line-height:1.5}
+.tilelink .arw{position:absolute;right:16px;top:16px;opacity:0;transition:.2s;color:var(--accent-b)}
+.tilelink:hover .arw{opacity:1;transform:translateX(3px)}
+.prog{height:6px;border-radius:99px;background:var(--surface3);overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent-c));transition:width .5s cubic-bezier(.3,1,.4,1)}
+
+/* ============ LESSON PAGE ============ */
+.crumbs{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+.crumbs span.k{color:var(--accent-b);font-weight:600}
+.pagenav{display:flex;gap:12px;margin-top:40px;padding-top:24px;border-top:1px solid var(--border-soft)}
+.pagenav button{flex:1;text-align:left}
+.pagenav button.r{text-align:right}
+.donebar{
+  display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:var(--radius-s);padding:12px 16px;margin:26px 0 0;flex-wrap:wrap
+}
+.donebar span{font-size:13.5px;color:var(--text-dim)}
+.chk{
+  width:22px;height:22px;border-radius:7px;border:2px solid var(--border);display:grid;place-items:center;
+  cursor:pointer;transition:.18s;font-size:12px;color:transparent;flex-shrink:0;background:var(--surface2)
+}
+.chk.on{background:var(--ok);border-color:var(--ok);color:#06281c}
+
+/* ============ QUIZ ============ */
+.qhead{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.qhead .meta{font-size:12.5px;color:var(--muted);font-weight:600}
+.qbar{flex:1;min-width:140px;height:8px;border-radius:99px;background:var(--surface3);overflow:hidden}
+.qbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-c));transition:width .4s}
+.streak{font-size:12.5px;font-weight:700;color:var(--warn)}
+.qcard{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius);padding:26px 28px;margin-bottom:16px}
+.qcat{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent-b);margin-bottom:10px}
+.qtext{font-size:19px;font-weight:600;letter-spacing:-.3px;line-height:1.45;margin-bottom:18px;color:var(--text)}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{
+  display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-radius:12px;
+  border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:.16s;
+  font-size:14.5px;color:var(--text-dim);text-align:left;font-family:inherit;line-height:1.5
+}
+.opt:hover:not(.locked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface2));color:var(--text);transform:translateX(3px)}
+.opt .key{
+  width:24px;height:24px;border-radius:7px;background:var(--surface3);display:grid;place-items:center;
+  font-size:11.5px;font-weight:700;flex-shrink:0;color:var(--muted);font-family:var(--fm);margin-top:1px
+}
+.opt code{font-family:var(--fm);font-size:.9em}
+.opt.locked{cursor:default}
+.opt.good{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--text)}
+.opt.good .key{background:var(--ok);color:#06281c}
+.opt.bad{border-color:var(--err);background:color-mix(in srgb,var(--err) 14%,transparent);color:var(--text)}
+.opt.bad .key{background:var(--err);color:#3d0713}
+.opt.dim{opacity:.45}
+.expl{
+  margin-top:16px;padding:14px 16px;border-radius:12px;font-size:14px;line-height:1.62;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);
+  animation:slideIn .28s cubic-bezier(.3,1,.4,1)
+}
+.expl b{color:var(--text)}
+.expl .verdict{display:block;font-weight:700;margin-bottom:6px;font-size:14.5px}
+.expl .verdict.ok{color:var(--ok)}
+.expl .verdict.no{color:var(--err)}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.result{text-align:center;padding:40px 24px}
+.result .score{font-size:64px;font-weight:800;letter-spacing:-3px;background:linear-gradient(120deg,var(--accent-b),var(--accent-c));-webkit-background-clip:text;background-clip:text;color:transparent}
+.result h3{font-size:24px;font-weight:700;margin-bottom:8px}
+.result p{max-width:46ch;margin:0 auto 22px}
+.reviewlist{text-align:left;margin-top:28px}
+.revitem{padding:12px 16px;border-radius:11px;border:1px solid var(--border-soft);background:var(--surface2);margin-bottom:8px;font-size:13.6px;color:var(--text-dim);display:flex;gap:10px}
+.revitem b{flex-shrink:0}
+
+/* ============ FLASHCARDS ============ */
+.fcstage{perspective:1600px;margin:0 auto 20px;max-width:620px}
+.fc{
+  position:relative;width:100%;min-height:290px;cursor:pointer;
+  transform-style:preserve-3d;transition:transform .62s cubic-bezier(.4,.2,.2,1)
+}
+.fc.flip{transform:rotateY(180deg)}
+.fcface{
+  position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;padding:30px;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+  border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);overflow:auto
+}
+.fcface.back{transform:rotateY(180deg);background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 22%,var(--surface)),var(--surface));align-items:flex-start;text-align:left;justify-content:flex-start}
+.fcface .tagline{font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent-b);margin-bottom:14px}
+.fcface .q{font-size:23px;font-weight:700;letter-spacing:-.5px;line-height:1.35}
+.fcface .hint{margin-top:auto;padding-top:18px;font-size:11.5px;color:var(--muted)}
+.fcface.back .a{font-size:14.6px;color:var(--text-dim);line-height:1.66;width:100%}
+.fcface.back .a code.inl{white-space:normal}
+.fcbar{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+
+/* ============ INTERVIEW ============ */
+.acc{border:1px solid var(--border-soft);border-radius:var(--radius-s);background:var(--surface);margin-bottom:10px;overflow:hidden;transition:.2s}
+.acc.open{border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+.acch{
+  display:flex;align-items:center;gap:12px;padding:15px 18px;cursor:pointer;font-size:15px;font-weight:600;
+  letter-spacing:-.2px;color:var(--text);transition:.16s
+}
+.acch:hover{background:var(--surface2)}
+.acch .num{
+  width:26px;height:26px;border-radius:8px;background:var(--surface3);display:grid;place-items:center;
+  font-size:11.5px;font-weight:700;color:var(--muted);font-family:var(--fm);flex-shrink:0
+}
+.acc.open .acch .num{background:var(--accent);color:#fff}
+.acch .arw{margin-left:auto;color:var(--muted);transition:.24s;flex-shrink:0;font-size:13px}
+.acc.open .acch .arw{transform:rotate(90deg);color:var(--accent-b)}
+.accb{display:none;padding:2px 18px 18px;border-top:1px solid var(--border-soft)}
+.acc.open .accb{display:block;animation:slideIn .26s}
+.accb>p:first-child{margin-top:14px}
+
+/* ============ SEARCH PALETTE ============ */
+.overlay{
+  position:fixed;inset:0;background:rgba(4,6,14,.68);backdrop-filter:blur(6px);z-index:200;
+  display:none;align-items:flex-start;justify-content:center;padding:14vh 20px 20px
+}
+.overlay.on{display:flex;animation:fade .18s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.palette{
+  width:100%;max-width:620px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:0 30px 80px -20px rgba(0,0,0,.8);overflow:hidden
+}
+.palette input{
+  width:100%;padding:17px 20px;background:transparent;border:0;border-bottom:1px solid var(--border-soft);
+  color:var(--text);font-family:inherit;font-size:16px;outline:none
+}
+.palette input::placeholder{color:var(--muted)}
+.palres{max-height:52vh;overflow-y:auto;padding:8px}
+.palitem{
+  padding:10px 14px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:11px;font-size:14px;color:var(--text-dim)
+}
+.palitem.sel,.palitem:hover{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--text)}
+.palitem .ct{margin-left:auto;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+.palempty{padding:26px;text-align:center;color:var(--muted);font-size:14px}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;translate:-50% 0;background:var(--surface3);color:var(--text);
+  padding:11px 20px;border-radius:12px;border:1px solid var(--border);font-size:13.5px;font-weight:600;
+  z-index:300;opacity:0;pointer-events:none;transition:.3s;box-shadow:var(--shadow)
+}
+.toast.on{opacity:1;translate:-50% -8px}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:920px){
+  aside{
+    position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .3s cubic-bezier(.3,1,.4,1);
+    background:var(--surface)
+  }
+  aside.open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.6)}
+  .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:55;opacity:0;pointer-events:none;transition:.3s}
+  .scrim.on{opacity:1;pointer-events:auto}
+  main{padding:16px 18px 80px}
+  .burger{
+    display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;margin:-16px -18px 16px;
+    padding:11px 16px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border-soft)
+  }
+  .burger b{font-size:14px;font-weight:700}
+  .hero{padding:26px 22px}
+  .hero h2{font-size:30px}
+  h2.page{font-size:26px}
+  .qcard{padding:20px 18px}
+  .qtext{font-size:17px}
+  .fcface .q{font-size:20px}
+  pre{font-size:12px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side">
+    <div class="brand">
+      <div class="logo">8.5</div>
+      <div>
+        <h1>PHP 8.5 Academy</h1>
+        <small>Prépa entretien développeur</small>
+      </div>
+    </div>
+    <button class="searchbtn" onclick="openPal()">
+      <span>&#128269;</span><span>Rechercher…</span><kbd>Ctrl K</kbd>
+    </button>
+    <nav id="nav"></nav>
+    <div class="sidefoot">
+      <div class="ring">
+        <svg width="42" height="42">
+          <circle cx="21" cy="21" r="17" fill="none" stroke="var(--surface3)" stroke-width="4"></circle>
+          <circle id="ringfg" cx="21" cy="21" r="17" fill="none" stroke="url(#gr)" stroke-width="4"
+                  stroke-linecap="round" stroke-dasharray="106.8" stroke-dashoffset="106.8"></circle>
+          <defs><linearGradient id="gr" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#22d3ee"/>
+          </linearGradient></defs>
+        </svg>
+        <b id="ringtxt">0%</b>
+      </div>
+      <div class="lv"><b id="lvname">Junior</b><span id="lvxp">0 XP</span></div>
+      <button class="iconbtn push" id="themebtn" onclick="toggleTheme()" title="Thème clair / sombre">&#9790;</button>
+      <button class="iconbtn" onclick="resetAll()" title="Réinitialiser la progression">&#8635;</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" onclick="closeSide()"></div>
+  <main id="main">
+    <div class="burger">
+      <button class="iconbtn" onclick="openSide()">&#9776;</button>
+      <b>PHP 8.5 Academy</b>
+      <button class="iconbtn push" onclick="openPal()">&#128269;</button>
+    </div>
+    <div id="view"></div>
+  </main>
+</div>
+
+<div class="overlay" id="pal" onclick="if(event.target===this)closePal()">
+  <div class="palette">
+    <input id="palin" placeholder="Chercher une notion, une fonction, une version…" autocomplete="off">
+    <div class="palres" id="palres"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   PHP 8.5 Academy — application mono-fichier
+   Cours en français, terminologie technique en anglais.
+   ========================================================================= */
+
+/* ---------- utils ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const md  = t => esc(t)
+  .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '<code class="inl">$1</code>')
+  .replace(/`([^`]+)`/g, '<code class="inl">$1</code>')
+  .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+const KW = new Set(['abstract','and','as','break','case','catch','class','clone','const','continue','declare','default','do','echo','else','elseif','empty','enum','extends','final','finally','fn','for','foreach','function','global','goto','if','implements','include','include_once','instanceof','insteadof','interface','isset','list','match','namespace','new','or','print','private','protected','public','readonly','require','require_once','return','static','switch','throw','trait','try','unset','use','var','while','xor','yield','exit','die']);
+const TY = new Set(['int','float','string','bool','object','mixed','void','never','null','false','true','self','parent','iterable','this','array','callable']);
+
+const RE_PHP = /(?:<<<(['"]?)([A-Za-z_]\w*)\1[\s\S]*?\n[ \t]*\2)|(\/\*[\s\S]*?\*\/)|(\/\/[^\n]*)|(#\[)|(#[^\n]*)|('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")|(\$[A-Za-z_]\w*)|(<\?php|<\?=|\?>)|(\b\d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)|(\|>|\?->|<=>|\?\?=|\?\?|===|!==|=>|->|::|\.{3}|[-+*\/%=<>!&|^~?:.])/g;
+
+function hl(code){
+  let out = '', last = 0, m;
+  RE_PHP.lastIndex = 0;
+  while ((m = RE_PHP.exec(code)) !== null){
+    if (m.index === RE_PHP.lastIndex) { RE_PHP.lastIndex++; continue; }
+    out += esc(code.slice(last, m.index));
+    last = RE_PHP.lastIndex;
+    const t = m[0];
+    if (m[2] !== undefined)      out += '<span class="s">' + esc(t) + '</span>';
+    else if (m[3] || m[4] || m[6]) out += '<span class="c">' + esc(t) + '</span>';
+    else if (m[5])               out += '<span class="at">' + esc(t) + '</span>';
+    else if (m[7])               out += '<span class="s">' + esc(t) + '</span>';
+    else if (m[8])               out += '<span class="v">' + esc(t) + '</span>';
+    else if (m[9])               out += '<span class="tag">' + esc(t) + '</span>';
+    else if (m[10])              out += '<span class="n">' + esc(t) + '</span>';
+    else if (m[11]){
+      const low = t.toLowerCase();
+      const rest = code.slice(RE_PHP.lastIndex);
+      const isCall = /^\s*\(/.test(rest);
+      let cls = '';
+      if (KW.has(low)) cls = 'kw';
+      else if (TY.has(low)) cls = 'ty';
+      else if (isCall) cls = 'fn';
+      else if (/^[A-Z]/.test(t)) cls = 'cls';
+      out += cls ? '<span class="' + cls + '">' + esc(t) + '</span>' : esc(t);
+    }
+    else out += '<span class="o">' + esc(t) + '</span>';
+  }
+  out += esc(code.slice(last));
+  return out;
+}
+
+let cbId = 0;
+const CODE_STORE = {};
+function codeBlock(src, label){
+  const id = 'cb' + (cbId++);
+  CODE_STORE[id] = src;
+  return '<div class="codewrap"><div class="codehead"><span class="dots"><i></i><i></i><i></i></span>'
+    + esc(label || 'PHP')
+    + '<button class="copy" onclick="copyCode(this,\'' + id + '\')">Copier</button></div>'
+    + '<pre><code>' + hl(src) + '</code></pre></div>';
+}
+function copyCode(btn, id){
+  navigator.clipboard.writeText(CODE_STORE[id]).then(() => {
+    btn.textContent = 'Copié !'; btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('ok'); }, 1400);
+  }).catch(() => toast('Copie impossible dans ce contexte'));
+}
+
+function blocks(list){
+  return list.map(b => {
+    const [t, a, c] = b;
+    switch(t){
+      case 'p':    return '<p>' + md(a) + '</p>';
+      case 'h':    return '<h3 class="sec">' + md(a) + '</h3>';
+      case 'ul':   return '<ul class="bul">' + a.map(x => '<li>' + md(x) + '</li>').join('') + '</ul>';
+      case 'code': return codeBlock(a, c);
+      case 'tip':  return '<div class="callout tip">' + md(a) + '</div>';
+      case 'warn': return '<div class="callout warn">' + md(a) + '</div>';
+      case 'itw':  return '<div class="callout itw"><b>En entretien :</b> ' + md(a) + '</div>';
+      case 'new':  return '<div class="callout new">' + md(a) + '</div>';
+      case 'table':return '<div class="tbwrap"><table class="tb"><thead><tr>' + a[0].map(x => '<th>' + md(x) + '</th>').join('')
+                   + '</tr></thead><tbody>' + a.slice(1).map(r => '<tr>' + r.map(x => '<td>' + md(x) + '</td>').join('') + '</tr>').join('')
+                   + '</tbody></table></div>';
+      default: return '';
+    }
+  }).join('');
+}
+
+/* =========================================================================
+   DONNÉES — LES BASES
+   ========================================================================= */
+const MODULES = [
+{
+id:'types', icon:'\u{1F524}', title:'Types & variables', sub:'Le type system de PHP moderne : strict types, unions, readonly.',
+blocks:[
+['p',"PHP est un langage **dynamically typed** mais **gradually typed** : on peut déclarer des types partout (paramètres, retours, propriétés, constantes) et laisser le moteur les vérifier à l'exécution (runtime)."],
+['code',`<?php
+declare(strict_types=1); // ← toujours, en première ligne de CHAQUE fichier
+
+$name   = 'Marie';        // string
+$age    = 37;             // int
+$ratio  = 1.5;            // float
+$active = true;           // bool
+$tags   = ['php', 'sql']; // array
+$nothing = null;          // null
+
+var_dump(get_debug_type($age)); // string(3) "int"  (PHP 8.0+, préférez-le à gettype)`,'Types scalaires'],
+['h','declare(strict_types=1) : la ligne qui change tout'],
+['p',"Sans elle, PHP est en **coercive mode** : il convertit silencieusement les valeurs. Avec elle, un mauvais type lève une [[TypeError]]. C'est le réflexe attendu d'un développeur senior."],
+['code',`<?php
+function add(int $a, int $b): int { return $a + $b; }
+
+// coercive mode (par défaut)
+add('5', '10');   // 15  — les strings numériques sont converties
+
+// strict_types=1
+add('5', '10');   // TypeError: add(): Argument #1 ($a) must be of type int, string given`,'Coercive vs strict'],
+['warn',"[[strict_types]] s'applique **au fichier appelant**, pas au fichier appelé. C'est une question piège classique en entretien."],
+['h','Les types disponibles'],
+['table',[
+['Type','Depuis','Note'],
+['[[int]] [[float]] [[string]] [[bool]]','5.0 / 7.0','scalar types'],
+['[[array]] [[object]] [[callable]] [[iterable]]','—','[[callable]] interdit sur les propriétés'],
+['[[void]]','7.1','la fonction ne retourne rien'],
+['[[?Type]] (nullable)','7.1','sucre syntaxique pour [[Type|null]]'],
+['[[mixed]]','8.0','« tout », y compris null'],
+['[[static]] (return)','8.0','late static binding, pour les fluent APIs'],
+['[[A|B]] union types','8.0','« l\'un ou l\'autre »'],
+['[[never]]','8.1','la fonction **ne rend jamais la main** (throw ou exit)'],
+['[[A&B]] intersection types','8.1','doit satisfaire les deux interfaces'],
+['[[null]] [[false]] [[true]] seuls','8.2','types autonomes'],
+['[[(A&B)|null]] DNF types','8.2','Disjunctive Normal Form'],
+]],
+['code',`<?php
+declare(strict_types=1);
+
+function findUser(int $id): ?User { /* … */ }              // nullable return
+function parse(string|Stringable $input): array { /* … */ } // union type
+function render(Countable&Traversable $c): string { /* … */ } // intersection
+function fail(string $msg): never { throw new RuntimeException($msg); }
+
+// DNF (8.2) : combinaison d'union et d'intersection
+function handle((Countable&Traversable)|null $items): void {}`,'Types composés'],
+['h','readonly : l\'immuabilité intégrée'],
+['code',`<?php
+final class Money
+{
+    public function __construct(
+        public readonly int $amount,
+        public readonly string $currency,
+    ) {}
+}
+
+$m = new Money(1000, 'EUR');
+$m->amount = 20; // Error: Cannot modify readonly property Money::$amount
+
+// PHP 8.2 : toute la classe en readonly
+final readonly class Point
+{
+    public function __construct(public int $x, public int $y) {}
+}`,'readonly properties (8.1) et readonly classes (8.2)'],
+['ul',[
+"Une propriété [[readonly]] ne peut être **initialisée qu'une fois**, depuis l'intérieur de la classe (scope de déclaration).",
+"[[readonly]] exige un type déclaré : pas de [[readonly]] sans type.",
+"Ce n'est pas un [[const]] : la valeur est décidée à l'exécution, pas à la compilation.",
+"Jusqu'à PHP 8.4 inclus, modifier une propriété readonly dans [[__clone]] est autorisé (depuis 8.3) — PHP 8.5 ajoute [[clone with]] pour faire ça proprement."
+]],
+['h','Constantes'],
+['code',`<?php
+define('LEGACY_MODE', true);      // runtime, déconseillé
+const APP_NAME = 'Billing';       // compile time, scopé au namespace
+
+class Config
+{
+    const int MAX_RETRY = 3;      // PHP 8.3 : typed class constant
+    final const string ENV = 'prod'; // PHP 8.1 : final const (interdit l'override)
+}
+
+echo Config::MAX_RETRY;
+$k = 'MAX_RETRY';
+echo Config::{$k};                // PHP 8.3 : dynamic class constant fetch`,'Constantes'],
+['h','Comparaisons & type juggling'],
+['table',[
+['Expression','PHP 7','PHP 8+'],
+['[[0 == "foo"]]','true','**false**'],
+['[[0 == ""]]','true','**false**'],
+['[["abc" == 0]]','true','**false**'],
+['[["1" == "01"]]','true','true (numériques des deux côtés)'],
+['[[100 == "1e2"]]','true','true'],
+['[[null == false]]','true','true'],
+]],
+['tip',"Depuis PHP 8.0 (**Saner string to number comparisons**), quand on compare un nombre à une string non numérique, c'est **le nombre qui est converti en string**. Utilisez [[===]] par défaut : c'est la seule comparaison sans surprise."],
+['itw',"« Quelle est la différence entre [[==]] et [[===]] ? » puis « et entre [[isset()]], [[empty()]] et [[is_null()]] ? ». Réponse courte : [[isset()]] = existe et n'est pas null ; [[empty()]] = falsy (0, '', '0', [], null, false) ; [[is_null()]] = strictement null."]
+]},
+
+{
+id:'strings', icon:'\u{1F9F5}', title:'Strings', sub:'Interpolation, heredoc, fonctions modernes et multibyte.',
+blocks:[
+['p',"Quatre façons d'écrire une string : simple quote (aucune interpolation), double quote (interpolation), **heredoc** (= double quote multi-ligne) et **nowdoc** (= simple quote multi-ligne)."],
+['code',`<?php
+$user = 'Marie';
+$arr  = ['key' => 'value'];
+$obj  = new stdClass(); $obj->name = 'Léa';
+
+echo 'Bonjour $user';          // Bonjour $user  (littéral)
+echo "Bonjour $user";          // Bonjour Marie
+echo "Clé : {$arr['key']}";    // syntaxe {$…} : toujours la préférer
+echo "Nom : {$obj->name}";
+
+$html = <<<HTML
+    <p>Bonjour {$user}</p>
+    <p>Bienvenue.</p>
+    HTML;   // PHP 7.3+ : l'indentation du marqueur final est retirée
+
+$raw = <<<'SQL'
+    SELECT * FROM users WHERE name = $notInterpolated
+    SQL;`,'Interpolation & heredoc/nowdoc'],
+['h','Les fonctions à connaître'],
+['code',`<?php
+str_contains('Hello World', 'World');     // true   — PHP 8.0
+str_starts_with('Hello', 'He');           // true   — PHP 8.0
+str_ends_with('image.png', '.png');       // true   — PHP 8.0
+
+str_pad('7', 3, '0', STR_PAD_LEFT);       // "007"
+str_repeat('-', 20);
+substr('abcdef', 1, 3);                   // "bcd"
+ucfirst('marie'); ucwords('marie curie'); strtolower('ÉTÉ');
+trim("  x \\n"); rtrim('a/b/', '/');
+explode(',', 'a,b,c');                    // ['a','b','c']
+implode(' | ', ['a','b']);                // "a | b"
+str_replace(['a','b'], ['1','2'], 'ab');  // "12"
+sprintf('%s a %d ans (%.2f)', 'Marie', 37, 1.5); // formatage
+number_format(1234.567, 2, ',', ' ');     // "1 234,57"
+nl2br("a\\nb"); strrev('abc'); str_split('abcdef', 2);
+preg_match('/^\\d{5}$/', '75001', $m);     // regex PCRE
+preg_replace_callback('/\\d+/', fn($m) => $m[0] * 2, 'a1b2');`,'Boîte à outils'],
+['warn',"Avant PHP 8.0 on utilisait [[strpos(\$h, \$n) !== false]]. [[str_contains()]] est plus lisible **et** évite le bug classique du [[!= false]] quand la position vaut 0."],
+['h','Multibyte : le piège UTF-8'],
+['code',`<?php
+$s = 'Crème brûlée';
+strlen($s);        // 15  ← octets !
+mb_strlen($s);     // 12  ← caractères
+
+strtoupper($s);    // "CRèME BRûLéE"  (cassé)
+mb_strtoupper($s); // "CRÈME BRÛLÉE"
+
+mb_substr($s, 0, 5);      // "Crème"
+mb_str_pad($s, 20);       // PHP 8.3
+mb_trim($s);              // PHP 8.4
+grapheme_strlen('👨‍👩‍👧');  // 1  — un grapheme, plusieurs code points`,'mb_* vs fonctions binaires'],
+['tip',"Règle simple : dès qu'il s'agit de **texte affiché à un humain**, utilisez les fonctions [[mb_*]]. Les fonctions historiques travaillent sur des **bytes**, pas des caractères."],
+['h','Sécurité : échapper au bon endroit'],
+['code',`<?php
+// Sortie HTML
+echo htmlspecialchars($userInput, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+// Sortie JSON
+echo json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+// SQL : JAMAIS de concaténation — voir le module « Web, DB & sécurité »
+$stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email');`,'Escaping contextuel'],
+['itw',"« Comment éviter une faille XSS ? » Réponse : échapper **à la sortie**, dans le contexte de sortie (HTML, attribut, JS, URL), jamais « nettoyer » à l'entrée. En pratique, on délègue au moteur de template (Twig auto-escape, Blade [[{{ }}]])."]
+]},
+
+{
+id:'arrays', icon:'\u{1F4DA}', title:'Arrays', sub:'Le couteau suisse de PHP : listes, maps, spread, destructuring.',
+blocks:[
+['p',"En PHP, un [[array]] est en réalité une **ordered hash map**. Il sert à la fois de liste (clés 0..n) et de dictionnaire (clés string). [[array_is_list()]] (PHP 8.1) dit si c'est une vraie liste."],
+['code',`<?php
+$list = ['php', 'sql', 'js'];              // clés 0,1,2
+$map  = ['name' => 'Marie', 'age' => 37];  // clés string
+$mixed = [1, 'a' => 2, 3];                 // légal mais à éviter
+
+array_is_list($list); // true   — PHP 8.1
+array_is_list($map);  // false
+
+$list[] = 'go';                 // push
+unset($list[1]);                // supprime SANS réindexer
+$list = array_values($list);    // réindexe`,'Deux natures, un seul type'],
+['h','Spread & destructuring'],
+['code',`<?php
+$a = [1, 2];
+$b = [0, ...$a, 3];                       // [0,1,2,3]
+
+$x = ['a' => 1];
+$y = ['b' => 2, ...$x];                   // PHP 8.1 : spread avec clés string
+
+// destructuring
+[$first, $second] = [10, 20];
+['name' => $name, 'age' => $age] = $map;  // par clé
+foreach ($rows as ['id' => $id, 'label' => $label]) { /* … */ }
+
+[$a, $b] = [$b, $a];                      // swap`,'Unpacking'],
+['h','Les fonctions array les plus utiles'],
+['code',`<?php
+$users = [
+    ['name' => 'Marie', 'age' => 37, 'admin' => true],
+    ['name' => 'Léo',   'age' => 24, 'admin' => false],
+];
+
+array_map(fn($u) => $u['name'], $users);        // ['Marie','Léo']
+array_filter($users, fn($u) => $u['admin']);    // conserve les clés !
+array_reduce($users, fn($c, $u) => $c + $u['age'], 0); // 61
+array_column($users, 'name', 'age');            // [37=>'Marie', 24=>'Léo']
+array_combine(['a','b'], [1,2]);
+array_merge($a, $b);       // réindexe les clés numériques
+$a + $b;                    // union : garde la clé de GAUCHE
+array_unique($list); array_flip($map); array_fill(0, 3, null);
+in_array('php', $list, true);  // ← le 3e argument strict est important
+array_search('php', $list, true);
+array_key_exists('name', $map); // ≠ isset() si la valeur est null
+usort($users, fn($x, $y) => $x['age'] <=> $y['age']); // spaceship`,'Manipulation'],
+['warn',"[[array_filter()]] **préserve les clés**. Après un filter sur une liste, pensez à [[array_values()]] si vous allez faire un [[json_encode()]], sinon vous obtiendrez un objet JSON au lieu d'un tableau."],
+['h','Les nouveautés récentes'],
+['code',`<?php
+// PHP 8.4
+array_find($users,     fn($u) => $u['admin']);    // la 1re valeur qui matche, ou null
+array_find_key($users, fn($u) => $u['admin']);    // la 1re clé qui matche
+array_any($users,      fn($u) => $u['age'] > 30); // true
+array_all($users,      fn($u) => $u['age'] > 18); // true
+
+// PHP 8.5
+array_first($users);   // 1re valeur, ou null si vide
+array_last($users);    // dernière valeur, ou null si vide`,'8.4 & 8.5'],
+['tip',"Avant 8.5, récupérer le dernier élément demandait [[end($a)]] — qui déplace le pointeur interne — ou un accès via [[array_key_last()]]. [[array_last()]] supprime ce bruit **et** ne lève pas d'erreur sur un tableau vide."],
+['itw',"Question fréquente : « différence entre [[array_merge()]] et l'opérateur [[+]] ? ». [[array_merge]] réindexe les clés numériques et écrase les clés string avec la valeur de droite ; [[+]] garde la valeur de **gauche** et ne réindexe rien."]
+]},
+
+{
+id:'control', icon:'\u{1F500}', title:'Contrôle de flux', sub:'match, null coalescing, nullsafe, boucles.',
+blocks:[
+['h','match (PHP 8.0) : le switch sans les pièges'],
+['code',`<?php
+$statusCode = 403;
+
+// switch : comparaison lâche (==), fallthrough, ne retourne rien
+switch ($statusCode) {
+    case 403: $label = 'Interdit'; break;
+    default:  $label = 'Inconnu';
+}
+
+// match : comparaison stricte (===), expression, exhaustif
+$label = match ($statusCode) {
+    200, 201, 204 => 'OK',
+    301, 302      => 'Redirection',
+    403           => 'Interdit',
+    404           => 'Introuvable',
+    default       => 'Inconnu',
+};
+
+// match(true) : remplace les cascades de if/elseif
+$tier = match (true) {
+    $amount >= 10000 => 'gold',
+    $amount >= 1000  => 'silver',
+    default          => 'bronze',
+};`,'match'],
+['table',[
+['','[[switch]]','[[match]]'],
+['Comparaison','[[==]] (lâche)','[[===]] (stricte)'],
+['Nature','statement','**expression** (retourne une valeur)'],
+['Fallthrough','oui, [[break]] obligatoire','non'],
+['Cas non couvert','silencieux','[[UnhandledMatchError]]'],
+['Corps multi-lignes','oui','une seule expression'],
+]],
+['h','Opérateurs de nullité'],
+['code',`<?php
+$name = $_GET['name'] ?? 'anonyme';        // null coalescing (7.0)
+$config['debug'] ??= false;                // null coalescing assignment (7.4)
+
+$city = $user?->address?->city;            // nullsafe (8.0) → null si un maillon est null
+$city = $user?->getAddress()?->getCity();  // marche aussi sur les méthodes
+
+$value = $a ?: $b;                         // elvis : teste falsy, pas null !
+$label = $isAdmin ? 'admin' : 'user';`,'?? ?-> ?:'],
+['warn',"[[??]] teste **null ou clé inexistante** sans warning. [[?:]] teste **falsy** : [[0 ?: 'x']] renvoie [[\"x\"]], ce qui est rarement voulu. Ne les confondez pas."],
+['warn',"Le nullsafe operator ne **court-circuite que la chaîne d'accès**. [[\$a?->b(\$this->compute())]] : si [[\$a]] est null, [[compute()]] n'est pas appelé. En revanche [[foo(\$a?->b)]] appelle bien [[foo(null)]]."],
+['h','Boucles'],
+['code',`<?php
+foreach ($users as $i => $user) { /* … */ }
+foreach ($users as $key => &$value) { $value *= 2; }
+unset($value); // ← INDISPENSABLE : sinon $value reste une référence sur le dernier élément
+
+for ($i = 0; $i < 10; $i++) {}
+while ($row = $stmt->fetch()) {}
+do { /* … */ } while ($retry);
+
+foreach ($matrix as $row) {
+    foreach ($row as $cell) {
+        if ($cell === null) continue 2; // saute à l'itération suivante de la boucle EXTERNE
+    }
+}`,'Itération'],
+['tip',"Le [[unset(\$value)]] après un [[foreach]] par référence est **le** bug PHP classique. Beaucoup de recruteurs le posent sous forme de « que vaut ce tableau à la fin ? »."],
+['h','throw devient une expression (8.0)'],
+['code',`<?php
+$user = $repo->find($id) ?? throw new NotFoundException("User {$id}");
+
+$callback = fn(int $x) => $x > 0 ? $x : throw new InvalidArgumentException('positif requis');`,'throw expression'],
+['itw',"« Pourquoi préférer [[match]] à [[switch]] ? » : typage strict, exhaustivité vérifiée à l'exécution ([[UnhandledMatchError]]), et c'est une expression donc assignable — idéal pour mapper un enum vers un label."]
+]},
+];
+
+MODULES.push(
+{
+id:'functions', icon:'\u{1F9EE}', title:'Fonctions & closures', sub:'Named arguments, variadics, arrow functions, first-class callables.',
+blocks:[
+['code',`<?php
+declare(strict_types=1);
+
+function slugify(string $text, string $separator = '-', bool $lower = true): string
+{
+    $slug = preg_replace('/[^a-z0-9]+/i', $separator, $text);
+    return $lower ? strtolower(trim($slug, $separator)) : trim($slug, $separator);
+}
+
+// named arguments (PHP 8.0) : on saute les paramètres par défaut
+slugify('Hello World', lower: false);
+slugify(text: 'Hello', separator: '_');`,'Signature & named arguments'],
+['tip',"Les **named arguments** rendent les appels auto-documentés et évitent les « boolean traps » ([[save(\$user, true, false, true)]]). Attention : le nom du paramètre devient alors une **partie du contrat public** de votre fonction."],
+['h','Variadics et spread'],
+['code',`<?php
+function sum(int ...$numbers): int
+{
+    return array_sum($numbers);
+}
+sum(1, 2, 3);          // 6
+sum(...[1, 2, 3]);     // spread d'un array
+sum(...['a' => 1]);    // spread avec clés string = named arguments (8.1)
+
+function log(string $level, string ...$lines): void {}`,'...$args'],
+['h','Closures et arrow functions'],
+['code',`<?php
+$multiplier = 3;
+
+// closure classique : capture EXPLICITE via use
+$times = function (int $n) use ($multiplier): int {
+    return $n * $multiplier;
+};
+
+// arrow function (7.4) : capture IMPLICITE par valeur, une seule expression
+$times = fn(int $n): int => $n * $multiplier;
+
+// capture par référence
+$total = 0;
+$add = function (int $n) use (&$total): void { $total += $n; };
+
+// static closure : ne capture pas $this (évite les fuites de scope)
+$pure = static fn(int $n): int => $n * 2;`,'Closures'],
+['table',[
+['','[[function () use ()]]','[[fn() =>]]'],
+['Capture','explicite','automatique, par valeur'],
+['Corps','multi-instructions','une seule expression'],
+['Par référence','[[use (&$x)]]','impossible'],
+['Retour','[[return]] requis','implicite'],
+]],
+['h','First-class callable syntax (PHP 8.1)'],
+['code',`<?php
+$fn = strlen(...);                 // Closure à partir d'une fonction
+$fn = $this->handle(...);          // méthode d'instance
+$fn = Service::create(...);        // méthode statique
+$fn = $object(...);                // __invoke
+
+// avant 8.1 :
+$fn = 'strlen';
+$fn = [$this, 'handle'];
+$fn = Closure::fromCallable([$this, 'handle']);
+
+array_map(strtoupper(...), ['a', 'b']);`,'callable(...)'],
+['new',"**PHP 8.5** autorise les closures et les first-class callables **dans les expressions constantes** : on peut désormais écrire [[#[Route(handler: Controller::show(...))]]] ou une valeur par défaut qui est une closure."],
+['h','Closure::bind & scope'],
+['code',`<?php
+class Counter { private int $count = 42; }
+
+$spy = function () { return $this->count; };
+$bound = Closure::bind($spy, new Counter(), Counter::class);
+echo $bound(); // 42 — accès au private via rebinding
+
+// PHP 8.5 : Closure::getCurrent() permet la récursion anonyme
+$fact = static function (int $n): int {
+    return $n <= 1 ? 1 : $n * Closure::getCurrent()($n - 1);
+};`,'Rebinding'],
+['itw',"« Différence entre [[fn]] et [[function]] ? » Insistez sur la capture : [[fn]] capture automatiquement **par valeur** les variables utilisées, ce qui la rend parfaite pour les callbacks courts ([[array_map]], [[usort]]) mais inadaptée aux traitements multi-lignes."]
+]},
+
+{
+id:'oop', icon:'\u{1F3D7}', title:'POO : classes & objets', sub:'Constructor promotion, visibility, statics, magic methods, property hooks.',
+blocks:[
+['code',`<?php
+declare(strict_types=1);
+
+final class Invoice
+{
+    private array $lines = [];
+
+    // constructor property promotion (PHP 8.0)
+    public function __construct(
+        public readonly string $reference,
+        private Customer $customer,
+        private string $currency = 'EUR',
+    ) {}
+
+    public function addLine(string $label, int $cents): static
+    {
+        $this->lines[] = compact('label', 'cents');
+        return $this; // fluent interface
+    }
+
+    public function total(): int
+    {
+        return array_sum(array_column($this->lines, 'cents'));
+    }
+}
+
+$invoice = (new Invoice('FA-001', $customer))
+    ->addLine('Audit', 120000)
+    ->addLine('Formation', 80000);`,'Une classe moderne'],
+['tip',"La **constructor property promotion** supprime le triple boilerplate (propriété + paramètre + affectation). En PHP 8.5, on peut même écrire [[public final readonly string \$ref]] dans le constructeur."],
+['h','Visibilité'],
+['table',[
+['Modificateur','Accessible depuis'],
+['[[public]]','partout'],
+['[[protected]]','la classe et ses enfants'],
+['[[private]]','la classe de déclaration uniquement'],
+['[[public private(set)]]','lecture publique, **écriture privée** — asymmetric visibility, PHP 8.4'],
+]],
+['code',`<?php
+class Order
+{
+    // PHP 8.4 : asymmetric visibility
+    public private(set) string $status = 'draft';
+
+    public function pay(): void { $this->status = 'paid'; }
+}
+
+$o = new Order();
+echo $o->status;     // OK
+$o->status = 'paid'; // Error: Cannot modify private(set) property`,'Asymmetric visibility (8.4)'],
+['h','static, self, parent, $this'],
+['code',`<?php
+class Model
+{
+    public static int $instances = 0;
+
+    public static function create(): static   // late static binding
+    {
+        static::$instances++;
+        return new static();                   // la classe RÉELLEMENT appelée
+    }
+
+    public function copySelf(): self { return new self(); } // toujours Model
+}
+
+class User extends Model {}
+
+User::create();          // retourne un User
+(new User())->copySelf(); // retourne un Model`,'self vs static'],
+['warn',"[[self]] est résolu **à la compilation** (la classe où le code est écrit) ; [[static]] est résolu **à l'exécution** (late static binding). Pour une factory ou une fluent API héritable, utilisez toujours [[static]]."],
+['h','Magic methods'],
+['code',`<?php
+class Bag implements Stringable
+{
+    private array $data = [];
+
+    public function __get(string $k): mixed  { return $this->data[$k] ?? null; }
+    public function __set(string $k, mixed $v): void { $this->data[$k] = $v; }
+    public function __isset(string $k): bool { return isset($this->data[$k]); }
+    public function __unset(string $k): void { unset($this->data[$k]); }
+    public function __call(string $m, array $args): mixed { /* … */ }
+    public static function __callStatic(string $m, array $args): mixed { /* … */ }
+    public function __invoke(): string { return 'appelé comme une fonction'; }
+    public function __toString(): string { return json_encode($this->data); }
+    public function __clone(): void { /* deep copy des objets internes */ }
+    public function __serialize(): array { return $this->data; }
+    public function __unserialize(array $d): void { $this->data = $d; }
+}`,'Les magic methods'],
+['warn',"PHP 8.2 **déprécie les dynamic properties** : écrire [[\$obj->inconnu = 1]] sur une classe qui ne les déclare pas émet un deprecation (et sera une erreur en PHP 9). Solution : déclarer la propriété, ou l'attribut [[#[\\AllowDynamicProperties]]]. En 8.5, [[__sleep]] / [[__wakeup]] sont soft-deprecated au profit de [[__serialize]] / [[__unserialize]]."],
+['h','Property hooks (PHP 8.4)'],
+['code',`<?php
+class Temperature
+{
+    public float $celsius = 0.0;
+
+    public float $fahrenheit {
+        get => $this->celsius * 9 / 5 + 32;
+        set (float $value) { $this->celsius = ($value - 32) * 5 / 9; }
+    }
+
+    // hook sur une propriété « normale » : validation à l'écriture
+    public string $email {
+        set (string $value) {
+            if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                throw new InvalidArgumentException('Email invalide');
+            }
+            $this->email = $value;
+        }
+    }
+}`,'Getters/setters natifs'],
+['tip',"Les **property hooks** remplacent la majorité des getters/setters manuels **sans casser l'API publique** : on peut transformer une propriété publique en propriété calculée plus tard, sans changer le code appelant."],
+['h','Instanciation & chaînage'],
+['code',`<?php
+// PHP 8.4 : plus besoin de parenthèses autour de « new »
+$name = new ReflectionClass($obj)->getShortName();
+
+// PHP 8.1 : new dans les initializers
+class Service
+{
+    public function __construct(
+        private LoggerInterface $logger = new NullLogger(),
+    ) {}
+}`,'new sans parenthèses (8.4)'],
+['itw',"« Qu'est-ce que le late static binding ? » — c'est la capacité de [[static::]] à résoudre la classe **appelée** plutôt que la classe **déclarante**. Exemple type : une méthode [[create()]] héritée qui doit retourner une instance de la sous-classe."]
+]},
+
+{
+id:'oop2', icon:'\u{1F9E9}', title:'POO avancée', sub:'Interfaces, abstract, traits, composition et contrats.',
+blocks:[
+['h','Interface : le contrat'],
+['code',`<?php
+interface PaymentGateway
+{
+    public const string VERSION = '2';   // PHP 8.3 : typed constant
+
+    public function charge(Money $amount, string $token): Receipt;
+}
+
+interface Refundable
+{
+    public function refund(Receipt $receipt): void;
+}
+
+final class StripeGateway implements PaymentGateway, Refundable
+{
+    public function charge(Money $amount, string $token): Receipt { /* … */ }
+    public function refund(Receipt $receipt): void { /* … */ }
+}`,'interface'],
+['ul',[
+"Une interface ne contient **aucune implémentation** : uniquement des signatures publiques et des constantes.",
+"Une classe peut implémenter **plusieurs** interfaces (contrairement à l'héritage, simple en PHP).",
+"On type-hint **l'interface**, jamais l'implémentation : c'est le **D** de SOLID (Dependency Inversion).",
+"Interfaces natives à connaître : [[Stringable]], [[Countable]], [[Iterator]], [[IteratorAggregate]], [[ArrayAccess]], [[JsonSerializable]], [[Throwable]], [[UnitEnum]] / [[BackedEnum]]."
+]],
+['h','Classe abstraite'],
+['code',`<?php
+abstract class Repository
+{
+    public function __construct(protected PDO $pdo) {}
+
+    abstract protected function table(): string;   // à implémenter
+
+    public function find(int $id): ?array          // comportement partagé
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM {$this->table()} WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+}
+
+final class UserRepository extends Repository
+{
+    protected function table(): string { return 'users'; }
+}`,'abstract class'],
+['table',[
+['','[[interface]]','[[abstract class]]'],
+['Implémentation','aucune','partielle'],
+['État (propriétés)','non','oui'],
+['Héritage multiple','oui','non'],
+['Constructeur','non','oui'],
+['Question à se poser','« **peut faire** »','« **est un** »'],
+]],
+['h','Traits : réutilisation horizontale'],
+['code',`<?php
+trait Timestampable
+{
+    private ?DateTimeImmutable $createdAt = null;
+
+    public function touch(): void
+    {
+        $this->createdAt ??= new DateTimeImmutable();
+    }
+
+    abstract public function getId(): int;  // un trait peut exiger un contrat
+}
+
+final class Article
+{
+    use Timestampable;
+
+    const string SOURCE = 'cms';  // PHP 8.2 : constantes dans les traits
+
+    public function getId(): int { return 1; }
+}`,'trait'],
+['warn',"Un trait n'est **pas** un type : on ne peut pas faire de type-hint dessus, ni d'[[instanceof]]. C'est un copier-coller à la compilation. Abusez-en et vous obtiendrez du code impossible à tester — préférez la **composition** (injecter un collaborateur) quand c'est possible."],
+['code',`<?php
+// Résolution de conflits entre traits
+class Report
+{
+    use Csv, Excel {
+        Csv::export insteadof Excel;
+        Excel::export as exportExcel;
+    }
+}`,'insteadof / as'],
+['h','Composition plutôt qu\'héritage'],
+['code',`<?php
+// ❌ héritage : couplage fort, hiérarchie rigide
+class PdfInvoice extends Invoice {}
+
+// ✅ composition + injection : testable, remplaçable
+final class InvoicePrinter
+{
+    public function __construct(private Renderer $renderer) {}
+
+    public function print(Invoice $invoice): string
+    {
+        return $this->renderer->render($invoice);
+    }
+}`,'Composition'],
+['itw',"Question classique : « interface ou classe abstraite ? ». Réponse attendue : **interface par défaut** (contrat, héritage multiple, découplage) ; classe abstraite seulement quand il y a du **code et de l'état** réellement communs à toutes les implémentations."]
+]},
+
+{
+id:'enums', icon:'\u{1F39B}', title:'Enums', sub:'PHP 8.1 : des types énumérés vrais, pas des constantes déguisées.',
+blocks:[
+['p',"Avant 8.1, on simulait les enums avec des constantes de classe : aucune garantie de type, n'importe quelle string pouvait passer. L'enum est un **vrai type**, donc type-hintable."],
+['code',`<?php
+enum Suit                    // pure enum : pas de valeur scalaire
+{
+    case Hearts;
+    case Spades;
+}
+
+enum Status: string          // backed enum : adossée à un int ou une string
+{
+    case Draft     = 'draft';
+    case Published = 'published';
+    case Archived  = 'archived';
+
+    public function label(): string
+    {
+        return match ($this) {
+            Status::Draft     => 'Brouillon',
+            Status::Published => 'Publié',
+            Status::Archived  => 'Archivé',
+        };
+    }
+
+    public function isEditable(): bool
+    {
+        return $this !== self::Archived;
+    }
+
+    public static function default(): self { return self::Draft; }
+}`,'Pure enum vs backed enum'],
+['code',`<?php
+Status::Published->value;          // 'published'
+Status::Published->name;           // 'Published'
+Status::cases();                   // [Status::Draft, Status::Published, Status::Archived]
+
+Status::from('draft');             // Status::Draft
+Status::from('boom');              // ValueError
+Status::tryFrom('boom');           // null   ← à privilégier sur des données externes
+
+function publish(Status $status): void {}  // impossible de passer autre chose`,'API d\'un enum'],
+['h','Enum + interface + constante'],
+['code',`<?php
+interface HasColor { public function color(): string; }
+
+enum Level: int implements HasColor
+{
+    case Info    = 1;
+    case Warning = 2;
+    case Error   = 3;
+
+    const Level DEFAULT = self::Info;   // constante dans l'enum
+
+    public function color(): string
+    {
+        return match($this) {
+            self::Info    => 'blue',
+            self::Warning => 'orange',
+            self::Error   => 'red',
+        };
+    }
+}`,'Enums avancés'],
+['ul',[
+"Un enum est un **singleton par case** : [[Status::Draft === Status::Draft]] est toujours vrai, on compare avec [[===]].",
+"Un enum **ne peut pas avoir d'état** : pas de propriétés, uniquement des méthodes et des constantes.",
+"Un enum ne peut pas être instancié ni étendu ; il peut implémenter des interfaces et utiliser des traits.",
+"[[UnitEnum]] et [[BackedEnum]] sont les interfaces natives ; [[JsonSerializable]] est utile pour contrôler la sérialisation."
+]],
+['tip',"Combo gagnant en entretien : [[match(\$this)]] dans l'enum + [[tryFrom()]] à la frontière (HTTP, DB). Vous montrez que vous savez où valider les données externes."],
+['itw',"« Comment persister un enum en base ? » — Doctrine gère nativement les backed enums via [[enumType]] ; sinon on stocke [[->value]] et on relit avec [[tryFrom()]] en gérant le cas null (donnée legacy invalide)."]
+]},
+
+{
+id:'errors', icon:'\u{1F6A8}', title:'Erreurs & exceptions', sub:'Throwable, hiérarchie, try/catch/finally, handlers globaux.',
+blocks:[
+['code',`<?php
+// Hiérarchie
+Throwable (interface)
+ ├── Error                      ← erreurs du moteur, NE PAS rattraper à la légère
+ │    ├── TypeError
+ │    ├── ValueError            (8.0)
+ │    ├── ArithmeticError → DivisionByZeroError
+ │    ├── ArgumentCountError
+ │    └── UnhandledMatchError   (8.0)
+ └── Exception                  ← erreurs métier
+      ├── RuntimeException      → LogicException est son pendant « bug du dev »
+      ├── InvalidArgumentException
+      ├── JsonException
+      └── PDOException`,'La hiérarchie Throwable'],
+['tip',"Règle mentale : **[[LogicException]] = bug de programmation** (à corriger, pas à rattraper) ; **[[RuntimeException]] = accident d'exécution** (réseau, fichier, DB) qu'on peut gérer."],
+['code',`<?php
+declare(strict_types=1);
+
+final class PaymentDeclined extends RuntimeException
+{
+    public function __construct(
+        public readonly string $reference,
+        string $message = 'Paiement refusé',
+        ?Throwable $previous = null,
+    ) {
+        parent::__construct($message, 402, $previous);
+    }
+}
+
+try {
+    $gateway->charge($amount, $token);
+} catch (PaymentDeclined $e) {
+    $logger->warning($e->getMessage(), ['ref' => $e->reference]);
+    return Response::error(402);
+} catch (NetworkException | TimeoutException $e) {   // multi-catch (7.1)
+    throw new PaymentDeclined($ref, previous: $e);   // exception chaining
+} catch (Throwable) {                                 // non-capturing catch (8.0)
+    return Response::error(500);
+} finally {
+    $gateway->close();   // toujours exécuté
+}`,'Exceptions métier'],
+['ul',[
+"[[finally]] s'exécute **même après un [[return]]** dans le [[try]] ou le [[catch]].",
+"Chaîner avec [[previous]] conserve la cause racine — indispensable pour le debug.",
+"[[catch (Throwable)]] sans variable (PHP 8.0) quand on n'utilise pas l'objet.",
+"Ne rattrapez jamais [[Throwable]] pour le **silencer** : loggez ou relancez."
+]],
+['h','Handlers globaux'],
+['code',`<?php
+set_error_handler(static function (int $no, string $str, string $file, int $line): bool {
+    throw new ErrorException($str, 0, $no, $file, $line); // warnings → exceptions
+});
+
+set_exception_handler(static function (Throwable $e): void {
+    error_log((string) $e);
+    http_response_code(500);
+});
+
+register_shutdown_function(static function (): void {
+    $err = error_get_last();
+    if ($err !== null && $err['type'] === E_ERROR) { /* fatal */ }
+});
+
+// PHP 8.5 : on peut enfin LIRE les handlers en place
+$current = get_error_handler();      // ?callable
+$currentEx = get_exception_handler(); // ?callable`,'Error & exception handlers'],
+['new',"**PHP 8.5** ajoute les **backtraces sur les fatal errors** (ini [[fatal_error_backtraces=1]], activé par défaut) : un memory exhausted ou un timeout affiche enfin la stack trace. Énorme gain en production."],
+['h','Le reporting'],
+['code',`<?php
+// php.ini — développement
+error_reporting = E_ALL
+display_errors = On
+
+// php.ini — production
+display_errors = Off
+log_errors = On
+error_log = /var/log/php/error.log`,'Configuration'],
+['warn',"L'opérateur [[@]] (error suppression) est à bannir : il masque aussi les erreurs que vous n'attendiez pas. Depuis PHP 8, il ne masque plus les erreurs fatales."],
+['itw',"« [[Error]] vs [[Exception]] ? » — les deux implémentent [[Throwable]], mais [[Error]] signale un problème **du moteur PHP** (type, division par zéro, méthode inexistante) et n'hérite **pas** de [[Exception]] : un [[catch (Exception \$e)]] ne les attrape pas. C'est un piège très fréquent."]
+]},
+);
+
+MODULES.push(
+{
+id:'namespaces', icon:'\u{1F4E6}', title:'Namespaces, Composer & autoload', sub:'PSR-4, use, Composer et l\'écosystème.',
+blocks:[
+['code',`<?php
+declare(strict_types=1);
+
+namespace App\\Billing\\Invoice;
+
+use App\\Customer\\Customer;
+use App\\Billing\\Money as Amount;      // alias
+use function App\\Support\\slugify;     // import de fonction
+use const App\\Support\\VAT_RATE;       // import de constante
+use App\\Billing\\{Tax, Discount};      // group use (7.0)
+
+final class Generator
+{
+    public function make(Customer $c): string
+    {
+        $date = new \\DateTimeImmutable(); // \\ = namespace global
+        return slugify($c->name) . '-' . $date->format('Ymd');
+    }
+}`,'Namespaces'],
+['ul',[
+"[[namespace]] doit être la **première instruction** du fichier (après [[declare]]).",
+"Un nom **sans antislash initial** est résolu relativement au namespace courant ; préfixé d'un antislash, il est absolu.",
+"Les fonctions et constantes ont un **fallback automatique** vers le global scope, pas les classes.",
+"Convention **PSR-4** : le FQCN [[App\\Billing\\Generator]] correspond au fichier [[src/Billing/Generator.php]]."
+]],
+['h','Composer'],
+['code',`{
+  "name": "acme/billing",
+  "require": {
+    "php": ">=8.5",
+    "psr/log": "^3.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.0",
+    "phpstan/phpstan": "^2.0"
+  },
+  "autoload": {
+    "psr-4": { "App\\\\": "src/" },
+    "files": [ "src/Support/helpers.php" ]
+  },
+  "autoload-dev": {
+    "psr-4": { "Tests\\\\": "tests/" }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "stan": "phpstan analyse src --level=8"
+  }
+}`,'composer.json'],
+['table',[
+['Commande','Effet'],
+['[[composer install]]','installe **exactement** le [[composer.lock]] — à utiliser en CI et en prod'],
+['[[composer update]]','recalcule les versions selon [[composer.json]] et réécrit le lock'],
+['[[composer require x/y]]','ajoute une dépendance'],
+['[[composer dump-autoload -o]]','régénère un classmap optimisé (prod)'],
+['[[composer audit]]','vérifie les vulnérabilités connues'],
+]],
+['tip',"**Semantic versioning** : [[^3.2]] autorise [[>=3.2 <4.0]] (pas de breaking change) ; [[~3.2]] autorise [[>=3.2 <3.3]]. En prod on **commit le [[composer.lock]]** et on déploie avec [[composer install --no-dev --optimize-autoloader]]."],
+['h','Les PSR utiles'],
+['table',[
+['PSR','Sujet'],
+['PSR-1 / PSR-12','coding style (remplace PSR-2)'],
+['PSR-4','autoloading'],
+['PSR-3','[[LoggerInterface]]'],
+['PSR-6 / PSR-16','cache (pool / simple)'],
+['PSR-7 / PSR-15 / PSR-17','HTTP messages, middlewares, factories'],
+['PSR-11','[[ContainerInterface]] (DI)'],
+['PSR-14','event dispatcher'],
+]],
+['itw',"« Comment fonctionne l'autoload ? » — Composer génère un [[vendor/autoload.php]] qui enregistre une closure via [[spl_autoload_register()]]. Quand PHP rencontre une classe inconnue, il appelle les autoloaders enregistrés, qui mappent le FQCN vers un chemin de fichier selon PSR-4."]
+]},
+
+{
+id:'generators', icon:'\u{267E}', title:'Generators & iterators', sub:'Traiter des millions de lignes sans exploser la mémoire.',
+blocks:[
+['p',"Un **generator** est une fonction qui contient [[yield]]. Elle retourne un objet [[Generator]] (qui implémente [[Iterator]]) et produit ses valeurs **à la demande**, sans jamais construire le tableau complet en mémoire."],
+['code',`<?php
+// ❌ charge tout le fichier en RAM
+function readAll(string $path): array
+{
+    return file($path);   // 2 Go de CSV = 2 Go de RAM
+}
+
+// ✅ lazy : une ligne à la fois
+function readLines(string $path): Generator
+{
+    $handle = fopen($path, 'rb');
+    try {
+        while (($line = fgets($handle)) !== false) {
+            yield rtrim($line, "\\r\\n");
+        }
+    } finally {
+        fclose($handle);
+    }
+}
+
+foreach (readLines('huge.csv') as $i => $line) {
+    // mémoire constante, quel que soit le volume
+}`,'Generator'],
+['code',`<?php
+function keyed(): Generator
+{
+    yield 'a' => 1;              // yield avec clé
+    yield from ['b' => 2];       // délégation à un autre iterable
+    $received = yield 3;         // valeur renvoyée par ->send()
+    return 'terminé';            // récupérée via ->getReturn()
+}
+
+$gen = keyed();
+$gen->current(); $gen->next(); $gen->send('x'); $gen->getReturn();`,'yield from, send, getReturn'],
+['h','Iterator et IteratorAggregate'],
+['code',`<?php
+final class Collection implements IteratorAggregate, Countable, JsonSerializable
+{
+    public function __construct(private array $items = []) {}
+
+    public function getIterator(): Generator
+    {
+        yield from $this->items;   // le plus simple
+    }
+
+    public function count(): int { return count($this->items); }
+    public function jsonSerialize(): array { return $this->items; }
+
+    public function map(callable $fn): static
+    {
+        return new static(array_map($fn, $this->items));
+    }
+}`,'Collection idiomatique'],
+['tip',"Préférez [[IteratorAggregate]] à [[Iterator]] : une seule méthode ([[getIterator]]) au lieu de cinq ([[current]], [[key]], [[next]], [[rewind]], [[valid]])."],
+['h','SPL : la bibliothèque standard'],
+['table',[
+['Classe','Usage'],
+['[[ArrayObject]] / [[ArrayIterator]]','array manipulable comme un objet'],
+['[[SplStack]] / [[SplQueue]]','LIFO / FIFO'],
+['[[SplObjectStorage]]','set d\'objets, ou map objet → donnée'],
+['[[SplFixedArray]]','tableau de taille fixe, mémoire réduite'],
+['[[SplPriorityQueue]] / [[SplHeap]]','files à priorité'],
+['[[WeakMap]] (8.0)','cache par objet sans empêcher le garbage collection'],
+]],
+['h','Fibers (PHP 8.1)'],
+['code',`<?php
+$fiber = new Fiber(function (string $start): string {
+    $received = Fiber::suspend($start . ' → suspendu');
+    return $received . ' → terminé';
+});
+
+$out = $fiber->start('début');   // 'début → suspendu'
+$res = $fiber->resume('repris'); // le fiber reprend
+$fiber->getReturn();             // 'repris → terminé'`,'Fibers'],
+['itw',"« Generator vs Fiber ? » — un generator est une **coroutine unidirectionnelle** pilotée par l'appelant, conçue pour l'itération lazy. Un fiber est une **coroutine complète** qui peut se suspendre depuis n'importe quel niveau de la pile : c'est la brique bas niveau utilisée par ReactPHP, Amp, Swoole ou FrankenPHP pour l'asynchrone."]
+]},
+
+{
+id:'attributes', icon:'\u{1F3F7}', title:'Attributes & Reflection', sub:'Métadonnées natives : la base des frameworks modernes.',
+blocks:[
+['p',"Les **attributes** (PHP 8.0) remplacent les annotations en docblock. Ce sont de vraies classes, vérifiées par le compilateur et lues via la **Reflection API**."],
+['code',`<?php
+#[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
+final class Route
+{
+    public function __construct(
+        public string $path,
+        public string $method = 'GET',
+        public ?string $name = null,
+    ) {}
+}
+
+final class UserController
+{
+    #[Route('/users', name: 'user_index')]
+    #[Route('/users/', method: 'POST')]
+    public function index(): Response { /* … */ }
+}`,'Définir et poser un attribute'],
+['code',`<?php
+$rc = new ReflectionClass(UserController::class);
+
+foreach ($rc->getMethods() as $method) {
+    foreach ($method->getAttributes(Route::class) as $attribute) {
+        $route = $attribute->newInstance();   // instancie réellement l'objet Route
+        $router->add($route->path, $route->method, [$rc->getName(), $method->getName()]);
+    }
+}`,'Les lire par Reflection'],
+['h','Les attributes natifs'],
+['table',[
+['Attribute','Depuis','Rôle'],
+['[[#[\\Attribute]]]','8.0','déclare qu\'une classe est un attribute'],
+['[[#[\\ReturnTypeWillChange]]]','8.1','silence une incompatibilité de signature'],
+['[[#[\\SensitiveParameter]]]','8.2','masque un argument dans les stack traces'],
+['[[#[\\AllowDynamicProperties]]]','8.2','réautorise les propriétés dynamiques'],
+['[[#[\\Override]]]','8.3','**erreur** si la méthode ne surcharge rien (8.5 : aussi sur les propriétés)'],
+['[[#[\\Deprecated]]]','8.4','marque comme déprécié (8.5 : aussi les constantes et traits)'],
+['[[#[\\NoDiscard]]]','8.5','warning si la valeur de retour est ignorée'],
+['[[#[\\DelayedTargetValidation]]]','8.5','reporte la validation de cible à la Reflection'],
+]],
+['code',`<?php
+final class Session
+{
+    #[\\Override]                    // garantit qu'on surcharge vraiment
+    public function close(): void {}
+
+    public function login(
+        string $user,
+        #[\\SensitiveParameter] string $password,  // n'apparaîtra pas dans les logs
+    ): void {}
+}
+
+#[\\Deprecated(message: 'Utilisez Clock::now()', since: '3.2')]
+function now(): DateTimeImmutable { return new DateTimeImmutable(); }`,'Attributes natifs en pratique'],
+['new',"**PHP 8.5** : les attributes peuvent cibler les **constantes** ([[#[\\Deprecated] const OLD = 1;]]) et accepter des **closures** en argument, ce qui ouvre la porte à des attributs porteurs de logique."],
+['h','Reflection : à quoi ça sert vraiment'],
+['ul',[
+"**Dependency injection containers** : lire les types du constructeur pour autowirer.",
+"**Routing** : scanner les contrôleurs et leurs attributes.",
+"**ORM** : mapper les propriétés vers des colonnes.",
+"**Serializers / validators** : lire les contraintes déclarées.",
+"**Tests** : instancier et inspecter du code privé."
+]],
+['warn',"La Reflection a un **coût**. Tous les frameworks sérieux la font tourner une fois puis **compilent le résultat en cache** (conteneur compilé Symfony, metadata cache Doctrine). Ne l'utilisez jamais dans une boucle chaude."],
+['itw',"« Comment fonctionne l'autowiring de Symfony ? » — le conteneur utilise [[ReflectionMethod::getParameters()]] sur le constructeur, lit le [[ReflectionNamedType]] de chaque paramètre, résout le service correspondant, puis **compile** le tout en PHP dans le cache pour ne plus payer la Reflection à l'exécution."]
+]},
+
+{
+id:'web', icon:'\u{1F512}', title:'Web, DB & sécurité', sub:'Requête HTTP, PDO, sessions, hashing, OWASP.',
+blocks:[
+['h','Le cycle de vie d\'une requête'],
+['ul',[
+"PHP est **share-nothing** : chaque requête part d'un état vierge, tout est détruit à la fin.",
+"**PHP-FPM** gère un pool de workers ; le serveur web (nginx) lui passe la requête via FastCGI.",
+"Les runtimes long-running (Swoole, RoadRunner, FrankenPHP) gardent le process vivant : attention aux **fuites d'état** dans les statics et singletons."
+]],
+['code',`<?php
+$_GET; $_POST; $_SERVER; $_FILES; $_COOKIE; $_SESSION; $_ENV;
+
+// Toujours valider / filtrer les entrées
+$id    = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+$email = filter_var($raw, FILTER_VALIDATE_EMAIL);
+if ($id === false || $id === null) { http_response_code(400); exit; }
+
+// PHP 8.4 : parser un body non-POST (PUT/PATCH multipart)
+[$post, $files] = request_parse_body();`,'Superglobales & validation'],
+['h','PDO : la seule bonne façon de parler à une base'],
+['code',`<?php
+$pdo = new PDO(
+    'mysql:host=localhost;dbname=app;charset=utf8mb4',
+    $user,
+    $pass,
+    [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // défaut depuis 8.0
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,  // vraies prepared statements
+    ],
+);
+
+// ✅ prepared statement : les données ne sont JAMAIS interprétées comme du SQL
+$stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email AND active = :active');
+$stmt->execute(['email' => $email, 'active' => 1]);
+$user = $stmt->fetch();
+
+// Transaction
+$pdo->beginTransaction();
+try {
+    $pdo->prepare('UPDATE accounts SET balance = balance - ? WHERE id = ?')->execute([100, 1]);
+    $pdo->prepare('UPDATE accounts SET balance = balance + ? WHERE id = ?')->execute([100, 2]);
+    $pdo->commit();
+} catch (PDOException $e) {
+    $pdo->rollBack();
+    throw $e;
+}`,'PDO'],
+['warn',"Une prepared statement protège les **valeurs**, jamais les **identifiants** (noms de table/colonne) ni le [[ORDER BY]]. Pour ceux-là, utilisez une **allow-list** explicite."],
+['h','Mots de passe'],
+['code',`<?php
+// Hash (bcrypt par défaut, argon2id recommandé)
+$hash = password_hash($plain, PASSWORD_ARGON2ID);
+
+// Vérification — comparaison en temps constant
+if (password_verify($plain, $hash)) {
+    if (password_needs_rehash($hash, PASSWORD_ARGON2ID)) {
+        $hash = password_hash($plain, PASSWORD_ARGON2ID); // re-hash transparent
+    }
+}
+
+// Jamais md5/sha1 pour un mot de passe.
+// Comparaison de secrets (tokens, signatures) :
+hash_equals($expected, $given);
+bin2hex(random_bytes(32));   // token cryptographiquement sûr`,'password_* '],
+['h','Sessions & cookies'],
+['code',`<?php
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'secure'   => true,       // HTTPS uniquement
+    'httponly' => true,       // inaccessible en JS → anti-XSS
+    'samesite' => 'Lax',      // anti-CSRF
+]);
+session_start();
+session_regenerate_id(true);  // après un login → anti session fixation
+
+// PHP 8.5 : cookies partitionnés (CHIPS)
+setcookie('id', $v, ['partitioned' => true, 'secure' => true, 'samesite' => 'None']);`,'Session hardening'],
+['h','Le top OWASP en PHP'],
+['table',[
+['Faille','Parade'],
+['**SQL injection**','prepared statements, jamais de concaténation'],
+['**XSS**','[[htmlspecialchars()]] à la sortie, auto-escape du moteur de template, CSP'],
+['**CSRF**','token synchronizer par formulaire + [[SameSite]]'],
+['**Session fixation**','[[session_regenerate_id(true)]] après authentification'],
+['**Path traversal**','[[realpath()]] + vérification du préfixe autorisé'],
+['**File upload**','vérifier le MIME réel ([[finfo]]), renommer, stocker hors webroot'],
+['**Mass assignment**','DTO explicite plutôt que [[new User(...$_POST)]]'],
+['**Secrets en dur**','variables d\'environnement, jamais dans le dépôt'],
+]],
+['itw',"Attendez-vous à : « comment empêchez-vous une injection SQL ? ». Ne répondez pas « j'échappe avec [[addslashes]] » : la réponse est **prepared statements avec [[ATTR_EMULATE_PREPARES => false]]**, et allow-list pour tout ce qui n'est pas une valeur."]
+]},
+
+{
+id:'perf', icon:'\u{26A1}', title:'Performance & architecture', sub:'OPcache, JIT, SOLID, DI, testing.',
+blocks:[
+['h','OPcache & JIT'],
+['ul',[
+"**OPcache** met en cache le **bytecode** compilé : c'est le gain n°1, à activer en production. Sans lui, PHP recompile chaque fichier à chaque requête.",
+"**Preloading** (7.4) charge des classes en mémoire partagée au démarrage du process.",
+"Le **JIT** (8.0) compile le bytecode en code machine. Gain majeur sur du calcul pur, **quasi nul sur du web classique** (le goulot est la DB et les I/O).",
+"PHP 8.4 a retravaillé le JIT (nouvelle représentation intermédiaire) ; il reste désactivé par défaut."
+]],
+['code',`; php.ini production
+opcache.enable=1
+opcache.memory_consumption=256
+opcache.max_accelerated_files=20000
+opcache.validate_timestamps=0     ; invalidation manuelle au déploiement
+opcache.jit_buffer_size=64M
+opcache.jit=tracing               ; ou "disable" sur une app web classique
+realpath_cache_size=4096k`,'Configuration'],
+['h','Mesurer avant d\'optimiser'],
+['table',[
+['Outil','Usage'],
+['**Xdebug**','debug pas à pas, profiling, coverage (⚠ lent en prod)'],
+['**Blackfire** / **Tideways**','profiling continu, comparaison avant/après'],
+['**SPX**','profiler léger open-source'],
+['[[memory_get_peak_usage(true)]]','pic mémoire réel'],
+['[[hrtime(true)]]','chronométrage nanoseconde'],
+]],
+['warn',"Le vrai piège de performance en PHP n'est presque jamais le langage : c'est le **N+1 query problem** (une requête par entité dans une boucle). Réponse : [[JOIN]], eager loading, ou requête d'hydratation groupée."],
+['h','SOLID en une carte'],
+['table',[
+['','Principe','En pratique'],
+['**S**','Single Responsibility','une classe, une raison de changer'],
+['**O**','Open/Closed','ouverte à l\'extension, fermée à la modification (interfaces, stratégies)'],
+['**L**','Liskov Substitution','une sous-classe doit pouvoir remplacer sa classe mère sans surprise'],
+['**I**','Interface Segregation','plusieurs petites interfaces valent mieux qu\'une grosse'],
+['**D**','Dependency Inversion','dépendre d\'abstractions, injectées par le constructeur'],
+]],
+['code',`<?php
+// ❌ dépendance concrète, non testable
+final class Newsletter
+{
+    public function send(): void
+    {
+        (new SmtpMailer())->send(/* … */);   // couplage dur
+    }
+}
+
+// ✅ injection de dépendance via une interface
+final class Newsletter
+{
+    public function __construct(private MailerInterface $mailer) {}
+
+    public function send(): void { $this->mailer->send(/* … */); }
+}
+
+// en test :
+$newsletter = new Newsletter(new InMemoryMailer());`,'Dependency Injection'],
+['h','Qualité & outillage'],
+['table',[
+['Outil','Rôle'],
+['**PHPUnit** / **Pest**','tests unitaires et d\'intégration'],
+['**PHPStan** / **Psalm**','static analysis (visez le level 8+)'],
+['**PHP-CS-Fixer** / **Pint**','formatage PSR-12 automatique'],
+['**Rector**','refactoring et migration automatisés (ex. PHP 8.4 → 8.5)'],
+['**Infection**','mutation testing : teste la qualité de vos tests'],
+['**Deptrac**','vérifie les règles d\'architecture entre couches'],
+]],
+['tip',"Mentionner **Rector** en entretien est un signal fort : c'est l'outil qui automatise les migrations de version PHP (il applique les nouvelles syntaxes, par exemple convertir un [[switch]] en [[match]] ou adopter la constructor promotion)."],
+['itw',"« Comment migreriez-vous une app de PHP 8.1 à 8.5 ? » Plan en 5 points : (1) [[composer audit]] et mise à jour des dépendances, (2) exécuter la suite de tests sur 8.5 avec [[E_ALL]] pour repérer les deprecations, (3) passer **Rector** avec le set [[PHP_85]], (4) relire les BC breaks du changelog (casts non canoniques, [[null]] comme offset, backtick operator), (5) déployer progressivement (canary) en surveillant les logs."]
+]},
+);
+
+/* =========================================================================
+   DONNÉES — LES NOUVEAUTÉS PAR VERSION
+   ========================================================================= */
+const VERSIONS = [
+{
+id:'v85', v:'8.5', date:'20 novembre 2025', hot:true,
+sub:'La version au cœur de votre entretien : pipe operator, clone with, NoDiscard, extension URI.',
+blocks:[
+['h','1. Pipe operator |> — le nouveau chouchou'],
+['p',"L'opérateur [[|>]] passe la valeur de gauche comme **unique argument** de la callable de droite. Il remplace les appels imbriqués illisibles et les variables temporaires."],
+['code',`<?php
+$title = '  PHP 8.5 Released  ';
+
+// ❌ avant : lecture de droite à gauche
+$slug = strtolower(str_replace(' ', '-', trim($title)));
+
+// ❌ ou variables jetables
+$tmp = trim($title);
+$tmp = str_replace(' ', '-', $tmp);
+$slug = strtolower($tmp);
+
+// ✅ PHP 8.5 : lecture de gauche à droite
+$slug = $title
+    |> trim(...)
+    |> (fn(string $s) => str_replace(' ', '-', $s))
+    |> (fn(string $s) => str_replace('.', '', $s))
+    |> strtolower(...);
+// "php-85-released"`,'Pipe operator'],
+['ul',[
+"La partie droite doit être un **callable à un seul argument** : d'où l'usage massif de la first-class callable syntax [[trim(...)]] et des arrow functions.",
+"Pour une fonction à plusieurs paramètres, on l'enveloppe : [[|> (fn(\$x) => explode(',', \$x))]].",
+"[[|>]] a une priorité plus basse que les opérateurs arithmétiques et plus haute que [[??]] ou les comparaisons.",
+"Ce n'est **pas** un pipe shell : rien n'est asynchrone, tout reste synchrone et typé."
+]],
+['tip',"Argument à sortir en entretien : le pipe operator rend les **transformations de données** (parsing, normalisation, sanitization) déclaratives, sans introduire de framework ni de collection library."],
+['h','2. Clone with — l\'immuabilité enfin ergonomique'],
+['p',"Jusqu'ici, faire évoluer un objet [[readonly]] demandait de recopier tout le constructeur. PHP 8.5 permet de cloner **en surchargeant des propriétés**, y compris [[readonly]]."],
+['code',`<?php
+final readonly class Color
+{
+    public function __construct(
+        public int $red,
+        public int $green,
+        public int $blue,
+        public int $alpha = 255,
+    ) {}
+
+    // ❌ avant : recopie manuelle, fragile à chaque nouveau champ
+    public function withAlphaOld(int $alpha): self
+    {
+        return new self($this->red, $this->green, $this->blue, $alpha);
+    }
+
+    // ✅ PHP 8.5
+    public function withAlpha(int $alpha): self
+    {
+        return clone($this, ['alpha' => $alpha]);
+    }
+}
+
+$base = new Color(255, 0, 0);
+$ghost = $base->withAlpha(40);   // nouvel objet, $base intact`,'clone with'],
+['ul',[
+"Les propriétés sont assignées **après** le clonage et **avant** l'appel à [[__clone()]].",
+"Cela fonctionne sur les propriétés [[readonly]] **depuis l'intérieur de la classe** (scope de déclaration).",
+"C'est le pattern **wither** (objets immuables type [[DateTimeImmutable]], PSR-7) sans boilerplate."
+]],
+['h','3. #[\\NoDiscard] — ne plus ignorer un retour'],
+['code',`<?php
+#[\\NoDiscard('le résultat contient la liste des erreurs de validation')]
+function validate(array $data): ValidationResult { /* … */ }
+
+validate($input);
+// Warning: The return value of function validate() should either be used
+// or intentionally ignored by casting it as (void)
+
+(void) validate($input);   // intention explicite : aucun warning
+$result = validate($input); // usage normal`,'NoDiscard'],
+['tip',"Parfait pour les APIs **immuables** ([[\$date->modify()]] ne modifie rien sur un [[DateTimeImmutable]]) et pour tout ce qui retourne un statut d'erreur. Le cast [[(void)]] est un nouvel usage introduit pour cet attribut."],
+['h','4. Closures dans les expressions constantes'],
+['p',"Les [[static]] closures et les first-class callables sont désormais autorisées partout où une **constant expression** est attendue : attributs, valeurs par défaut de paramètres, constantes, propriétés statiques."],
+['code',`<?php
+#[AccessControl(static function (Request $r, Post $p): bool {
+    return $r->user === $p->getAuthor();
+})]
+final class PostController
+{
+    public const FORMATTER = strtoupper(...);
+
+    public function __construct(
+        private \\Closure $normalizer = static fn(string $s): string => trim($s),
+    ) {}
+}`,'Closures constantes'],
+['h','5. Attributes : nouvelles cibles'],
+['code',`<?php
+class Config
+{
+    #[\\Deprecated(since: '3.4', message: 'Utilisez Config::TIMEOUT_MS')]
+    public const TIMEOUT = 30;          // attribut sur une CONSTANTE (8.5)
+}
+
+class Base { public string $name = ''; }
+
+class Child extends Base
+{
+    #[\\Override]                        // sur une PROPRIÉTÉ (8.5)
+    public string $name = 'child';
+}
+
+#[\\Deprecated]
+trait LegacyHelper {}                    // sur un TRAIT (8.5)
+
+#[\\DelayedTargetValidation]             // valide la cible à la Reflection, pas à la compilation
+#[SomeAttribute]
+const FEATURE_X = true;`,'Nouvelles cibles'],
+['h','6. Propriétés : final promoted et static asymétriques'],
+['code',`<?php
+class Service
+{
+    // « final » directement dans la constructor promotion (8.5)
+    public function __construct(
+        public final readonly string $id,
+    ) {}
+
+    // asymmetric visibility sur une propriété STATIQUE (8.5)
+    public private(set) static int $counter = 0;
+}`,'Propriétés'],
+['h','7. array_first() et array_last()'],
+['code',`<?php
+$queue = ['a' => 1, 'b' => 2, 'c' => 3];
+
+array_first($queue);   // 1
+array_last($queue);    // 3
+array_first([]);       // null  — aucune erreur, aucun warning
+
+// ❌ avant
+reset($queue);                        // déplace le pointeur interne
+$queue[array_key_first($queue)];      // notice si le tableau est vide
+end($queue);`,'array_first / array_last'],
+['h','8. Debugging : backtraces et handlers lisibles'],
+['code',`<?php
+// Les fatal errors affichent enfin une stack trace (ini fatal_error_backtraces=1, ON par défaut)
+// Fatal error: Allowed memory size exhausted in /app/Import.php on line 42
+// Stack trace:
+// #0 /app/Import.php(42): str_repeat('x', 999999999)
+// #1 /app/run.php(7): Import->process()
+
+// Lire les handlers en place, sans les écraser
+$previous = get_error_handler();       // ?callable  (8.5)
+$previousEx = get_exception_handler(); // ?callable  (8.5)
+
+set_error_handler(function (...$args) use ($previous) {
+    // chaînage propre avec le handler précédent
+    return $previous ? $previous(...$args) : false;
+});`,'Diagnostics'],
+['h','9. Extension URI native'],
+['code',`<?php
+use Uri\\Rfc3986\\Uri;
+use Uri\\WhatWg\\Url;
+
+$uri = new Uri('https://user@php.net:8080/releases/8.5/en.php?x=1#top');
+$uri->getScheme();   // "https"
+$uri->getHost();     // "php.net"
+$uri->getPort();     // 8080
+$uri->getPath();     // "/releases/8.5/en.php"
+$uri->getQuery();    // "x=1"
+$uri->getFragment(); // "top"
+
+$url = new Url('https://php.net/');
+$resolved = $url->resolve('../manual/fr/');   // résolution relative conforme WHATWG`,'Uri\\Rfc3986\\Uri et Uri\\WhatWg\\Url'],
+['tip',"[[parse_url()]] n'a jamais été conforme aux specs et casse sur les URLs internationalisées. L'extension **URI** apporte deux implémentations strictes : **RFC 3986** (générique) et **WHATWG** (celle des navigateurs). Bon exemple à citer pour montrer que vous suivez l'évolution du langage."],
+['h','10. Le reste, en bref'],
+['table',[
+['Nouveauté','Ce que ça apporte'],
+['[[curl_share_init_persistent()]]','partage DNS / connexions **entre requêtes** — gros gain pour les APIs sortantes'],
+['[[curl_multi_get_handles()]]','récupérer les handles d\'un multi handle'],
+['[[Closure::getCurrent()]]','récursion dans une closure anonyme'],
+['[[IntlListFormatter]]','« a, b et c » correctement localisé'],
+['[[locale_is_right_to_left()]]','détection RTL (arabe, hébreu)'],
+['[[grapheme_levenshtein()]]','distance d\'édition sur des graphemes, pas des octets'],
+['[[Dom\\Element::getElementsByClassName()]]','API DOM plus proche du navigateur'],
+['[[setcookie(partitioned: true)]]','cookies CHIPS'],
+['[[php --ini=diff]]','affiche uniquement les directives différentes des valeurs par défaut'],
+['[[max_memory_limit]]','plafond que [[memory_limit]] ne peut pas dépasser'],
+['[[PHP_BUILD_DATE]] / [[PHP_BUILD_PROVIDER]]','traçabilité du build'],
+]],
+['h','11. Deprecations & BC breaks à connaître'],
+['table',[
+['Élément','Statut','À faire'],
+['Backtick operator','déprécié','utiliser [[shell_exec()]]'],
+['[[(boolean)]] [[(integer)]] [[(double)]] [[(binary)]]','dépréciés','[[(bool)]] [[(int)]] [[(float)]] [[(string)]]'],
+['[[__sleep()]] / [[__wakeup()]]','soft-deprecated','[[__serialize()]] / [[__unserialize()]]'],
+['[[null]] comme offset de tableau','déprécié','utiliser [[\'\']]'],
+['Point-virgule après [[case X;]]','déprécié','utiliser [[:]]'],
+['Cast de [[NAN]] / float non représentable en [[int]]','warning','vérifier avant le cast'],
+['Destructuring d\'une valeur non-array','warning','contrôler le type'],
+['[[curl_close()]], [[xml_parser_free()]], [[socket_set_timeout()]]','dépréciés','ces ressources sont des objets, ils se libèrent seuls'],
+['[[mysqli_execute()]]','déprécié','[[mysqli_stmt_execute()]]'],
+['Constantes [[MHASH_*]]','dépréciées','[[hash()]]'],
+['INI [[disable_classes]]','supprimé','—'],
+['CLI [[-z]] / [[--zend-extension]]','supprimé','[[zend_extension]] dans le php.ini'],
+]],
+['itw',"Si on vous demande « qu'apporte PHP 8.5 ? », structurez : **(1) ergonomie du code** — pipe operator, clone with, closures constantes ; **(2) robustesse** — NoDiscard, backtraces sur fatal, get_error_handler ; **(3) standard library** — extension URI, array_first/last, cURL persistant. Trois axes, c'est beaucoup plus convaincant qu'une liste."]
+]},
+
+{
+id:'v84', v:'8.4', date:'21 novembre 2024',
+sub:'Property hooks, asymmetric visibility, lazy objects : la plus grosse évolution POO depuis les enums.',
+blocks:[
+['h','Property hooks'],
+['code',`<?php
+class User
+{
+    public string $fullName {
+        get => $this->first . ' ' . $this->last;
+        set (string $v) {
+            [$this->first, $this->last] = explode(' ', $v, 2);
+        }
+    }
+
+    public function __construct(private string $first, private string $last) {}
+}
+
+// Un hook peut aussi vivre dans une INTERFACE
+interface HasTitle
+{
+    public string $title { get; }
+}`,'get / set natifs'],
+['h','Asymmetric visibility'],
+['code',`<?php
+class Order
+{
+    public private(set) string $status = 'new';   // lecture publique, écriture privée
+    public protected(set) int $version = 1;       // écriture par les enfants
+
+    public function __construct(public private(set) string $ref) {}
+}`,'public private(set)'],
+['h','array_find, array_any, array_all'],
+['code',`<?php
+$users = [['age' => 17], ['age' => 42]];
+
+array_find($users, fn($u) => $u['age'] >= 18);      // ['age' => 42]
+array_find_key($users, fn($u) => $u['age'] >= 18);  // 1
+array_any($users, fn($u) => $u['age'] >= 18);       // true
+array_all($users, fn($u) => $u['age'] >= 18);       // false`,'Nouvelles fonctions array'],
+['h','new sans parenthèses & lazy objects'],
+['code',`<?php
+// Chaînage direct sur « new » (8.4)
+$json = new JsonEncoder()->encode($data);
+
+// Lazy objects : l'initialisation est repoussée au premier accès réel
+$reflector = new ReflectionClass(HeavyService::class);
+$proxy = $reflector->newLazyGhost(function (HeavyService $service): void {
+    $service->__construct(new PdoConnection());   // exécuté au 1er accès seulement
+});`,'Ergonomie & performance'],
+['table',[
+['Autre nouveauté','Détail'],
+['[[#[\\Deprecated]]]','attribut natif de dépréciation, visible par les IDE et la Reflection'],
+['[[Dom\\HTMLDocument]]','parser HTML5 conforme, remplace l\'antique [[DOMDocument]]'],
+['[[request_parse_body()]]','parser un body multipart sur PUT/PATCH'],
+['[[mb_trim()]] / [[mb_ltrim()]] / [[mb_rtrim()]]','trim multibyte'],
+['Sous-classes PDO','[[Pdo\\Mysql]], [[Pdo\\Pgsql]], [[Pdo\\Sqlite]] avec des méthodes dédiées'],
+['BCMath object API','[[BcMath\\Number]], opérateurs surchargés pour les décimaux exacts'],
+['Deprecation des nullables implicites','[[function f(string $s = null)]] → écrire [[?string $s = null]]'],
+]],
+['itw',"Question probable : « que changent les property hooks dans votre façon de coder ? » — ils rendent inutiles la majorité des getters/setters, permettent d'ajouter de la validation **sans casser l'API publique**, et peuvent être déclarés dans une interface, ce qui n'était pas possible avec des propriétés."]
+]},
+];
+
+VERSIONS.push(
+{
+id:'v83', v:'8.3', date:'23 novembre 2023',
+sub:'Typed class constants, #[\\Override], json_validate().',
+blocks:[
+['code',`<?php
+class Config
+{
+    const string ENV = 'prod';       // typed class constant (8.3)
+    const int RETRIES = 3;
+}
+
+interface Serializer { public function serialize(): string; }
+
+class JsonSerializer implements Serializer
+{
+    #[\\Override]                     // erreur de compilation si ça ne surcharge rien
+    public function serialize(): string { return '{}'; }
+}
+
+json_validate($payload);             // true/false sans construire la structure en mémoire
+
+$name = 'ENV';
+echo Config::{$name};                // dynamic class constant fetch (8.3)
+
+readonly class Point { public function __construct(public int $x) {} }
+// clonage avec modification d'une readonly property autorisé dans __clone (8.3)`,'PHP 8.3'],
+['table',[
+['Nouveauté','Détail'],
+['[[#[\\Override]]]','documente **et vérifie** l\'intention de surcharger'],
+['[[json_validate()]]','valider un gros JSON sans le décoder (mémoire)'],
+['[[Randomizer::getBytesFromString()]]','génération aléatoire depuis un alphabet'],
+['[[mb_str_pad()]]','padding multibyte'],
+['Stack overflow detection','[[zend.max_allowed_stack_size]] : une récursion infinie donne une Error, plus un segfault'],
+['[[gc_status()]] enrichi','diagnostic du garbage collector'],
+]]
+]},
+{
+id:'v82', v:'8.2', date:'8 décembre 2022',
+sub:'readonly classes, DNF types, constantes dans les traits, fin des dynamic properties.',
+blocks:[
+['code',`<?php
+final readonly class Dto                    // toutes les propriétés sont readonly
+{
+    public function __construct(public string $id, public int $version) {}
+}
+
+// DNF types (8.2)
+function process((Countable&Traversable)|null $items): void {}
+
+// null, false et true deviennent des types autonomes
+function never(): false { return false; }
+
+trait Version
+{
+    const string VERSION = '1.0';           // constante dans un trait (8.2)
+}
+
+#[\\AllowDynamicProperties]                  // sinon : deprecation
+class Legacy {}
+
+final class Auth
+{
+    public function login(string $user, #[\\SensitiveParameter] string $pass): void {}
+    // $pass sera masqué dans les stack traces
+}
+
+$r = new Random\\Randomizer(new Random\\Engine\\Xoshiro256StarStar());
+$r->getInt(1, 6);                            // extension random (8.2)`,'PHP 8.2'],
+['warn',"La dépréciation des **dynamic properties** est le BC break le plus impactant de 8.2 : tout code legacy qui affecte une propriété non déclarée émet un deprecation, et cela deviendra une [[Error]] en PHP 9."]
+]},
+{
+id:'v81', v:'8.1', date:'25 novembre 2021',
+sub:'Enums, readonly, fibers, never, first-class callable syntax.',
+blocks:[
+['code',`<?php
+enum Status: string
+{
+    case Active = 'active';
+    case Banned = 'banned';
+}
+
+final class User
+{
+    public function __construct(
+        public readonly string $id,          // readonly property (8.1)
+    ) {}
+}
+
+$fn = strlen(...);                            // first-class callable syntax (8.1)
+
+function fail(string $m): never { throw new RuntimeException($m); }  // never (8.1)
+
+class Service
+{
+    public function __construct(
+        private Logger $logger = new NullLogger(),   // new in initializers (8.1)
+    ) {}
+}
+
+function render(Countable&Traversable $c): void {}   // pure intersection types (8.1)
+
+interface I { final public const VERSION = 1; }      // final class constants (8.1)
+
+array_is_list([1, 2, 3]);                            // true (8.1)
+$merged = ['a' => 1, ...['b' => 2]];                 // spread avec clés string (8.1)
+
+$fiber = new Fiber(fn() => Fiber::suspend('pause')); // fibers (8.1)`,'PHP 8.1'],
+['tip',"PHP 8.1 est la version qui a le plus changé la façon d'écrire du PHP « moderne » : enum + readonly + first-class callables couvrent 80 % des questions d'entretien sur le PHP récent."]
+]},
+{
+id:'v80', v:'8.0', date:'26 novembre 2020',
+sub:'Le grand saut : named arguments, attributes, promotion, union types, match, nullsafe, JIT.',
+blocks:[
+['code',`<?php
+// constructor property promotion
+final class Point
+{
+    public function __construct(
+        public float $x = 0.0,
+        public float $y = 0.0,
+    ) {}
+}
+
+// named arguments
+$p = new Point(y: 3.5);
+
+// union types + static return type
+class Query
+{
+    public function where(string|Closure $cond): static { return $this; }
+}
+
+// match expression
+$label = match($code) { 200 => 'OK', 404 => 'Not found', default => '?' };
+
+// nullsafe operator
+$city = $order?->customer?->address?->city;
+
+// throw expression
+$user = $repo->find($id) ?? throw new NotFoundException();
+
+// non-capturing catch
+try { risky(); } catch (RuntimeException) { /* on ignore l'objet */ }
+
+// attributes
+#[Route('/home')]
+function home(): void {}
+
+// nouvelles fonctions string
+str_contains('abc', 'b'); str_starts_with('abc', 'a'); str_ends_with('abc', 'c');
+
+// ::class sur une instance
+$fqcn = $object::class;`,'PHP 8.0'],
+['table',[
+['Nouveauté','Impact'],
+['**JIT**','compilation en code machine ; utile en CPU-bound, marginal en web'],
+['**Saner string/number comparisons**','[[0 == "foo"]] vaut désormais [[false]]'],
+['**Consistent type errors**','les fonctions internes lèvent des [[TypeError]] au lieu de warnings'],
+['[[WeakMap]]','cache indexé par objet, sans fuite mémoire'],
+['[[mixed]]','type explicite « n\'importe quoi »'],
+['[[static]] en type de retour','fluent APIs correctement typées'],
+]],
+['itw',"« Quelles sont les grandes nouveautés de PHP 8 ? » — ne récitez pas la liste : regroupez. **Typage** (union types, mixed, static, erreurs cohérentes), **ergonomie** (promotion, named args, match, nullsafe, throw expression), **métadonnées** (attributes), **performance** (JIT, opcache). Puis enchaînez sur ce que vous utilisez au quotidien."]
+]},
+);
+
+/* =========================================================================
+   DONNÉES — QUIZ (les réponses sont mélangées à l'exécution)
+   ========================================================================= */
+const QUIZ = [
+{cat:'PHP 8.5', q:"Que fait l'opérateur |> introduit en PHP 8.5 ?",
+ opts:["Il passe la valeur de gauche comme unique argument de la callable de droite","Il effectue un OU binaire puis une comparaison","Il redirige la sortie vers un flux, comme un pipe shell","Il fusionne deux tableaux en préservant les clés"],
+ correct:0, why:"Le **pipe operator** applique la callable de droite à la valeur de gauche. Il attend une callable à un seul paramètre, d'où l'usage fréquent de `trim(...)` ou d'arrow functions."},
+
+{cat:'PHP 8.5', q:"Quelle syntaxe PHP 8.5 permet de cloner un objet en modifiant une propriété readonly ?",
+ opts:["clone($this, ['alpha' => 40])","clone $this with alpha = 40","$this->clone(['alpha' => 40])","(clone $this)->alpha = 40"],
+ correct:0, why:"**Clone with** s'écrit `clone($object, ['prop' => $value])`. Les propriétés sont assignées après la copie et avant l'appel à `__clone()`, ce qui autorise la modification de propriétés `readonly` depuis le scope de la classe."},
+
+{cat:'PHP 8.5', q:"Que provoque l'appel d'une fonction marquée #[\\NoDiscard] sans utiliser son retour ?",
+ opts:["Un Warning à l'exécution","Une erreur fatale","Une TypeError","Rien, l'attribut est purement documentaire"],
+ correct:0, why:"PHP émet un **Warning**. Pour ignorer volontairement le retour sans warning, on écrit `(void) maFonction();`."},
+
+{cat:'PHP 8.5', q:"Que retourne array_last([]) en PHP 8.5 ?",
+ opts:["null","false","Une ValueError","Un tableau vide"],
+ correct:0, why:"`array_first()` et `array_last()` retournent **null** sur un tableau vide, sans warning — c'est tout l'intérêt par rapport à `end()` ou `$a[array_key_last($a)]`."},
+
+{cat:'PHP 8.5', q:"Quelles classes apporte la nouvelle extension URI de PHP 8.5 ?",
+ opts:["Uri\\Rfc3986\\Uri et Uri\\WhatWg\\Url","Http\\Uri et Http\\Url","Net\\Uri et Net\\Parser","Uri\\Parser et Uri\\Builder"],
+ correct:0, why:"PHP 8.5 embarque deux implémentations : **RFC 3986** (stricte, générique) et **WHATWG** (celle des navigateurs). Elles remplacent avantageusement `parse_url()`, jamais conforme aux specs."},
+
+{cat:'PHP 8.5', q:"Quelle fonction PHP 8.5 permet de lire le gestionnaire d'erreurs actuellement installé ?",
+ opts:["get_error_handler()","current_error_handler()","error_handler_get()","restore_error_handler()"],
+ correct:0, why:"PHP 8.5 ajoute `get_error_handler()` et `get_exception_handler()`. Avant, la seule façon de connaître le handler courant était l'astuce `set_error_handler(null)` suivie d'un `restore_error_handler()`."},
+
+{cat:'PHP 8.5', q:"Quel opérateur est déprécié en PHP 8.5 ?",
+ opts:["L'opérateur backtick (exécution shell)","L'opérateur spaceship <=>","L'opérateur nullsafe ?->","L'opérateur de concaténation ."],
+ correct:0, why:"Le **backtick operator**, alias de `shell_exec()`, est déprécié en 8.5 : il était invisible à la relecture et source de failles. On utilise `shell_exec()` explicitement."},
+
+{cat:'PHP 8.5', q:"Parmi ces casts, lequel est déprécié en PHP 8.5 ?",
+ opts:["(integer)","(int)","(float)","(string)"],
+ correct:0, why:"Les **casts non canoniques** `(boolean)`, `(integer)`, `(double)` et `(binary)` sont dépréciés au profit de `(bool)`, `(int)`, `(float)` et `(string)`."},
+
+{cat:'PHP 8.5', q:"Quel apport de PHP 8.5 aide le plus au debug en production ?",
+ opts:["Les stack traces sur les fatal errors","Le mode debug de l'extension URI","Le nouveau format de var_dump","Le JIT activé par défaut"],
+ correct:0, why:"Avec `fatal_error_backtraces=1` (activé par défaut), un memory exhausted ou un timeout affiche enfin la **stack trace**, ce qui rendait ces erreurs très difficiles à diagnostiquer auparavant."},
+
+{cat:'PHP 8.4', q:"Que permet la syntaxe public private(set) string $status ; ?",
+ opts:["Lecture publique, écriture réservée à la classe","Lecture privée, écriture publique","Une propriété readonly modifiable une seule fois","Un getter automatique"],
+ correct:0, why:"C'est l'**asymmetric visibility** (PHP 8.4) : la visibilité en lecture et en écriture sont dissociées. PHP 8.5 l'étend aux propriétés statiques."},
+
+{cat:'PHP 8.4', q:"Quel est le principal intérêt des property hooks ?",
+ opts:["Ajouter get/set à une propriété sans changer l'API publique","Rendre les propriétés thread-safe","Accélérer l'accès aux propriétés","Permettre l'héritage multiple"],
+ correct:0, why:"Les **property hooks** remplacent la plupart des getters/setters manuels et permettent d'ajouter de la validation ou du calcul plus tard, sans modifier le code appelant. Ils peuvent aussi être déclarés dans une interface."},
+
+{cat:'PHP 8.4', q:"Que retourne array_find($a, $callback) si aucun élément ne correspond ?",
+ opts:["null","false","-1","Un tableau vide"],
+ correct:0, why:"`array_find()` retourne la **première valeur** qui satisfait le callback, ou **null**. `array_find_key()` retourne la clé, `array_any()` et `array_all()` retournent des booléens."},
+
+{cat:'PHP 8.1', q:"Quelle méthode d'un backed enum renvoie null si la valeur n'existe pas ?",
+ opts:["tryFrom()","from()","cases()","valueOf()"],
+ correct:0, why:"`from()` lève une **ValueError**, `tryFrom()` retourne **null**. À la frontière du système (HTTP, base de données), on utilise toujours `tryFrom()`."},
+
+{cat:'PHP 8.1', q:"Que peut contenir un enum en PHP ?",
+ opts:["Des méthodes, des constantes et des interfaces implémentées","Des propriétés d'instance modifiables","Un constructeur public","Des sous-classes"],
+ correct:0, why:"Un enum **ne peut pas avoir d'état** : ni propriétés, ni constructeur, ni héritage. Il peut en revanche déclarer des méthodes, des constantes, utiliser des traits et implémenter des interfaces."},
+
+{cat:'PHP 8.1', q:"Que signifie le type de retour never ?",
+ opts:["La fonction ne rend jamais la main : elle throw ou termine le script","La fonction retourne toujours null","La fonction retourne un type inconnu","La fonction ne peut pas être appelée deux fois"],
+ correct:0, why:"`never` (PHP 8.1) indique que la fonction **ne retourne jamais** : elle lève une exception, appelle `exit()` ou boucle indéfiniment. C'est un *bottom type*, plus strict que `void`."},
+
+{cat:'PHP 8.0', q:"Quelle est la différence essentielle entre match et switch ?",
+ opts:["match compare avec === et est une expression","match autorise le fallthrough","switch retourne une valeur, pas match","match ne gère pas de cas par défaut"],
+ correct:0, why:"`match` fait une comparaison **stricte** (`===`), c'est une **expression** (donc assignable), il n'y a pas de fallthrough et un cas non couvert lève une `UnhandledMatchError`."},
+
+{cat:'PHP 8.0', q:"Que vaut 0 == \"foo\" depuis PHP 8.0 ?",
+ opts:["false","true","null","Une TypeError"],
+ correct:0, why:"Avec les **saner string to number comparisons** (PHP 8.0), quand on compare un nombre à une string non numérique, c'est le nombre qui est converti en string : `\"0\" == \"foo\"` → false. En PHP 7 le résultat était `true`."},
+
+{cat:'PHP 8.0', q:"À quoi sert l'opérateur ?-> ?",
+ opts:["Court-circuiter la chaîne d'appel si l'objet est null","Fournir une valeur par défaut si null","Tester l'existence d'une propriété","Convertir null en false"],
+ correct:0, why:"Le **nullsafe operator** interrompt toute la chaîne d'accès et retourne `null` dès qu'un maillon est `null`, au lieu de lever une Error."},
+
+{cat:'Types', q:"Que fait declare(strict_types=1) exactement ?",
+ opts:["Il désactive la coercition de types pour les appels faits dans ce fichier","Il force le typage de toutes les variables","Il active le typage strict dans tout le projet","Il transforme les warnings en exceptions"],
+ correct:0, why:"C'est une directive **par fichier**, et elle s'applique au fichier **appelant**. Sans elle, PHP est en coercive mode et convertit `\"5\"` en `5`. Avec elle, une `TypeError` est levée."},
+
+{cat:'Types', q:"Quelle affirmation sur readonly est correcte ?",
+ opts:["La propriété doit être typée et ne peut être initialisée qu'une fois depuis sa classe","Elle est équivalente à une constante de classe","Elle peut être modifiée depuis n'importe quel scope","Elle rend l'objet entier immuable automatiquement"],
+ correct:0, why:"`readonly` exige un **type déclaré**, l'initialisation ne peut se faire que depuis le scope de déclaration, et une seule fois. Depuis PHP 8.2 on peut marquer la classe entière `readonly`."},
+
+{cat:'Types', q:"Quelle est la différence entre array_key_exists() et isset() ?",
+ opts:["array_key_exists() renvoie true même si la valeur est null","isset() est plus lent","array_key_exists() fonctionne sur les objets seulement","Aucune, ce sont des alias"],
+ correct:0, why:"`isset($a['k'])` renvoie **false** si la valeur est `null`, alors que `array_key_exists('k', $a)` renvoie **true** dès que la clé existe."},
+
+{cat:'POO', q:"Quelle est la différence entre self et static dans une méthode ?",
+ opts:["self est résolu à la compilation, static à l'exécution (late static binding)","static ne fonctionne que dans les méthodes statiques","self autorise l'héritage multiple","Aucune depuis PHP 8"],
+ correct:0, why:"`self` désigne toujours la classe **où le code est écrit** ; `static` désigne la classe **réellement appelée**. C'est le *late static binding*, indispensable pour les factories héritables."},
+
+{cat:'POO', q:"Peut-on faire un type-hint sur un trait ?",
+ opts:["Non, un trait n'est pas un type","Oui, comme une interface","Oui, mais uniquement en paramètre","Oui depuis PHP 8.2"],
+ correct:0, why:"Un trait est un **mécanisme de réutilisation à la compilation**, pas un type : ni type-hint, ni `instanceof`. Si vous avez besoin d'un contrat, ajoutez une interface à côté du trait."},
+
+{cat:'POO', q:"Quand préférer une classe abstraite à une interface ?",
+ opts:["Quand il y a du code ET de l'état réellement communs à toutes les implémentations","Toujours, c'est plus performant","Quand on veut de l'héritage multiple","Quand on ne connaît pas encore les méthodes"],
+ correct:0, why:"L'interface définit un **contrat** (« peut faire ») et autorise l'implémentation multiple. La classe abstraite impose une relation « **est un** » et n'est justifiée que s'il y a de l'implémentation et de l'état partagés."},
+
+{cat:'POO', q:"Que se passe-t-il si une classe PHP 8.2+ affecte une propriété non déclarée ?",
+ opts:["Un deprecation notice (dynamic properties dépréciées)","Une erreur fatale","Rien, c'est le comportement normal","La propriété est ignorée"],
+ correct:0, why:"Depuis PHP 8.2 les **dynamic properties** sont dépréciées ; ce sera une `Error` en PHP 9. On déclare la propriété, ou on ajoute `#[\\AllowDynamicProperties]` sur la classe legacy."},
+
+{cat:'Exceptions', q:"Un catch (Exception $e) attrape-t-il une TypeError ?",
+ opts:["Non : TypeError hérite de Error, pas de Exception","Oui, toutes les erreurs héritent d'Exception","Oui, depuis PHP 8","Seulement en mode strict_types"],
+ correct:0, why:"`Error` et `Exception` implémentent tous les deux `Throwable` mais sont **deux branches séparées**. Pour tout attraper : `catch (Throwable $e)`."},
+
+{cat:'Exceptions', q:"Quand utiliser LogicException plutôt que RuntimeException ?",
+ opts:["Pour signaler un bug de programmation détectable à la relecture du code","Pour les erreurs réseau et base de données","Pour les erreurs de validation utilisateur","Elles sont interchangeables"],
+ correct:0, why:"`LogicException` = erreur de conception (mauvais usage de l'API, invariant cassé) qu'il faut **corriger**. `RuntimeException` = accident d'exécution (I/O, réseau, DB) qu'on peut **gérer**."},
+
+{cat:'Exceptions', q:"Le bloc finally s'exécute-t-il si le try contient un return ?",
+ opts:["Oui, avant que la valeur ne soit réellement retournée","Non, le return sort immédiatement","Uniquement s'il n'y a pas d'exception","Seulement si un catch a été déclenché"],
+ correct:0, why:"`finally` s'exécute **systématiquement**, y compris après un `return` dans le `try` ou le `catch`. C'est le bon endroit pour libérer une ressource."},
+
+{cat:'Arrays', q:"Quelle est la différence entre array_merge($a, $b) et $a + $b ?",
+ opts:["array_merge réindexe les clés numériques ; + conserve la valeur de gauche","Elles sont équivalentes","+ réindexe, array_merge non","+ ne fonctionne que sur les listes"],
+ correct:0, why:"`array_merge()` réindexe les clés numériques et **écrase** les clés string avec la valeur de droite. L'opérateur `+` fait une union qui **garde la valeur de gauche** et ne réindexe rien."},
+
+{cat:'Arrays', q:"Que faut-il faire après un array_filter() sur une liste destinée à json_encode() ?",
+ opts:["Appeler array_values() pour réindexer","Rien, les clés sont déjà réindexées","Appeler array_merge()","Caster en (array)"],
+ correct:0, why:"`array_filter()` **préserve les clés** : après filtrage, la liste a des trous et `json_encode()` produit alors un **objet** `{\"1\":…}` au lieu d'un tableau. `array_values()` corrige cela."},
+
+{cat:'Arrays', q:"Après un foreach ($a as &$v), pourquoi écrire unset($v) ?",
+ opts:["Parce que $v reste une référence sur le dernier élément et corrompt la boucle suivante","Pour libérer de la mémoire","Pour réindexer le tableau","Ce n'est jamais nécessaire"],
+ correct:0, why:"Sans `unset($v)`, la variable reste une **référence** vers le dernier élément : un second `foreach` utilisant `$v` écrase silencieusement cette dernière case. C'est le bug PHP le plus classique."},
+
+{cat:'Fonctions', q:"Quelle différence entre fn() => et function () use () ?",
+ opts:["fn capture automatiquement par valeur et se limite à une expression","fn capture par référence","function ne peut pas retourner de valeur","fn est plus lente"],
+ correct:0, why:"L'**arrow function** (7.4) capture automatiquement les variables du scope parent **par valeur** et n'accepte qu'une seule expression. La closure classique exige `use` et accepte plusieurs instructions et la capture par référence."},
+
+{cat:'Fonctions', q:"Que produit strlen(...) en PHP 8.1+ ?",
+ opts:["Un objet Closure","La chaîne 'strlen'","Un tableau callable","Une erreur de syntaxe"],
+ correct:0, why:"C'est la **first-class callable syntax** : elle crée un objet `Closure`, équivalent typé et analysable de `Closure::fromCallable('strlen')`."},
+
+{cat:'Sécurité', q:"Quelle est la parade de référence contre l'injection SQL ?",
+ opts:["Les prepared statements avec ATTR_EMULATE_PREPARES => false","addslashes() sur chaque variable","htmlspecialchars() avant la requête","Échapper les guillemets manuellement"],
+ correct:0, why:"Une **prepared statement** envoie la requête et les données séparément : les valeurs ne peuvent jamais être interprétées comme du SQL. Désactiver l'émulation garantit que c'est bien le serveur SQL qui prépare."},
+
+{cat:'Sécurité', q:"Quelle fonction hacher un mot de passe en PHP ?",
+ opts:["password_hash()","md5()","sha1()","crypt() avec un sel fixe"],
+ correct:0, why:"`password_hash()` (avec `PASSWORD_ARGON2ID` ou `PASSWORD_BCRYPT`) génère un sel aléatoire et un hash lent. On vérifie avec `password_verify()` et on re-hash via `password_needs_rehash()`."},
+
+{cat:'Sécurité', q:"Que faut-il faire juste après une authentification réussie ?",
+ opts:["session_regenerate_id(true)","session_destroy()","session_write_close()","Rien de particulier"],
+ correct:0, why:"Régénérer l'identifiant de session empêche la **session fixation** : un attaquant ayant imposé un ID avant login ne peut plus réutiliser la session authentifiée."},
+
+{cat:'Sécurité', q:"Où faut-il échapper les données pour éviter une faille XSS ?",
+ opts:["À la sortie, dans le contexte d'affichage","À l'entrée, avant stockage","Dans la base de données","Dans le fichier .htaccess"],
+ correct:0, why:"L'échappement dépend du **contexte de sortie** (HTML, attribut, JS, URL). Nettoyer à l'entrée corrompt les données et ne protège pas les autres contextes. En pratique on laisse le moteur de template auto-échapper."},
+
+{cat:'Performance', q:"Quel réglage apporte le plus gros gain de performance en production ?",
+ opts:["Activer OPcache","Activer le JIT","Augmenter memory_limit","Désactiver les sessions"],
+ correct:0, why:"**OPcache** met en cache le bytecode compilé et évite de recompiler chaque fichier à chaque requête. Le JIT n'apporte presque rien sur une application web classique, dont le goulot est la base de données et les I/O."},
+
+{cat:'Performance', q:"Quel est le principal intérêt d'un generator ?",
+ opts:["Itérer sur de gros volumes avec une mémoire constante","Paralléliser les traitements","Accélérer les calculs mathématiques","Mettre en cache les résultats"],
+ correct:0, why:"Un generator produit ses valeurs **à la demande** : on ne construit jamais le tableau complet. C'est la réponse type à « comment traiter un CSV de 5 Go ? »."},
+
+{cat:'Performance', q:"Qu'est-ce que le problème N+1 ?",
+ opts:["Une requête par entité dans une boucle, au lieu d'une requête groupée","Une fuite mémoire dans les closures","Un débordement de pile en récursion","Un conflit de versions Composer"],
+ correct:0, why:"Le **N+1 query problem** : une requête pour la liste, puis une requête par élément pour ses relations. Solution : `JOIN`, eager loading, ou une requête d'hydratation groupée."},
+
+{cat:'Outillage', q:"Quelle commande utiliser lors d'un déploiement en production ?",
+ opts:["composer install --no-dev --optimize-autoloader","composer update","composer require --dev","composer dump-autoload --dev"],
+ correct:0, why:"`composer install` installe **exactement** ce que contient le `composer.lock` (reproductible). `composer update` recalcule les versions : à ne jamais faire en production."},
+
+{cat:'Outillage', q:"Que signifie la contrainte ^3.2 dans composer.json ?",
+ opts:[">=3.2.0 et <4.0.0",">=3.2.0 et <3.3.0","exactement 3.2","3.2 ou supérieur, sans limite"],
+ correct:0, why:"Le caret suit le **semantic versioning** : il autorise toutes les versions qui ne contiennent pas de breaking change. `~3.2` est plus restrictif (`>=3.2 <3.3`)."},
+
+{cat:'Outillage', q:"À quoi sert Rector ?",
+ opts:["Automatiser les refactorings et les migrations de version PHP","Analyser statiquement les types","Mesurer la couverture de tests","Formater le code selon PSR-12"],
+ correct:0, why:"**Rector** applique des règles de transformation du code (sets `PHP_84`, `PHP_85`, Symfony, PHPUnit…). Le citer montre que vous savez industrialiser une montée de version."},
+
+{cat:'Namespaces', q:"Que suppose la convention PSR-4 ?",
+ opts:["Le FQCN correspond au chemin du fichier à partir d'un préfixe de namespace","Tous les fichiers doivent être dans src/","Les noms de classes doivent être en snake_case","Chaque fichier peut contenir plusieurs classes"],
+ correct:0, why:"**PSR-4** mappe un préfixe de namespace (`App\\`) vers un répertoire (`src/`) : `App\\Billing\\Invoice` → `src/Billing/Invoice.php`. Composer génère l'autoloader correspondant."},
+
+{cat:'Output', q:"Que produit ce code ?", code:`<?php
+$a = ['x' => 1, 'y' => 2, 'z' => 3];
+$b = array_filter($a, fn($v) => $v > 1);
+echo json_encode(array_values($b));`,
+ opts:["[2,3]","{\"y\":2,\"z\":3}","[1,2,3]","{\"0\":2,\"1\":3}"],
+ correct:0, why:"`array_filter()` conserve les clés `y` et `z`, mais `array_values()` les remplace par `0` et `1` : `json_encode()` produit alors un vrai tableau JSON `[2,3]`."},
+
+{cat:'Output', q:"Que produit ce code en PHP 8 ?", code:`<?php
+var_dump(0 == 'foo');
+var_dump('1' == '01');
+var_dump(null ?? 'default');`,
+ opts:["false, true, 'default'","true, true, null","false, false, 'default'","true, false, null"],
+ correct:0, why:"Depuis PHP 8 : `0 == 'foo'` → **false** (le nombre est converti en string). `'1' == '01'` → **true** (les deux sont numériques, comparaison numérique). `??` retourne la valeur de droite car l'opérande gauche est null."},
+
+{cat:'Output', q:"Que vaut $items après ce code ?", code:`<?php
+$items = [1, 2, 3];
+foreach ($items as &$v) { $v *= 2; }
+foreach ($items as $v) { }
+print_r($items);`,
+ opts:["[2, 4, 4]","[2, 4, 6]","[1, 2, 3]","[2, 4, 8]"],
+ correct:0, why:"Le piège classique : `$v` est resté une **référence vers le dernier élément**. La seconde boucle y écrit successivement 2, 4, puis 4 (la valeur qu'elle vient d'écrire). Il fallait `unset($v)` après la première boucle."},
+
+{cat:'Output', q:"Que produit ce code PHP 8.5 ?", code:`<?php
+$result = '  Hello World  '
+    |> trim(...)
+    |> strtolower(...)
+    |> (fn(string $s) => str_replace(' ', '_', $s));
+echo $result;`,
+ opts:["hello_world","Hello_World","  hello world  ","hello world"],
+ correct:0, why:"Le pipe applique les transformations **de gauche à droite** : trim → lowercase → remplacement des espaces. Résultat : `hello_world`."},
+
+{cat:'Output', q:"Que se passe-t-il ici en PHP 8 ?", code:`<?php
+$status = 'unknown';
+echo match ($status) {
+    'active' => 'Actif',
+    'banned' => 'Banni',
+};`,
+ opts:["Une UnhandledMatchError est levée","Le code affiche une chaîne vide","Une Warning est émise","Le code affiche null"],
+ correct:0, why:"`match` est **exhaustif** : sans branche `default` et sans cas correspondant, PHP lève une `UnhandledMatchError`. C'est justement ce qui le rend plus sûr que `switch`."},
+];
+
+/* =========================================================================
+   DONNÉES — FLASHCARDS
+   ========================================================================= */
+const CARDS = [
+{cat:'PHP 8.5', q:"Pipe operator", a:"`|>` passe la valeur de gauche comme **unique argument** de la callable de droite. On l'utilise avec la first-class callable syntax (`trim(...)`) ou une arrow function. Lecture de **gauche à droite**, plus d'appels imbriqués."},
+{cat:'PHP 8.5', q:"Clone with", a:"`clone($object, ['prop' => $value])` : clone l'objet en surchargeant des propriétés, **y compris readonly**, depuis le scope de la classe. Implémente le pattern **wither** sans recopier le constructeur."},
+{cat:'PHP 8.5', q:"#[\\NoDiscard]", a:"Attribut qui émet un **Warning** si la valeur de retour n'est pas utilisée. Pour ignorer volontairement : `(void) maFonction();`. Idéal pour les APIs immuables et les retours de statut."},
+{cat:'PHP 8.5', q:"array_first() / array_last()", a:"Retournent la première / dernière **valeur** d'un tableau, ou **null** si vide. Remplacent `reset()`/`end()` (qui déplacent le pointeur interne) et `$a[array_key_last($a)]`."},
+{cat:'PHP 8.5', q:"Extension URI", a:"Deux implémentations natives : `Uri\\Rfc3986\\Uri` (stricte) et `Uri\\WhatWg\\Url` (comportement navigateur). Remplace `parse_url()`, qui n'a jamais été conforme aux specs."},
+{cat:'PHP 8.5', q:"Backtraces sur fatal errors", a:"Directive `fatal_error_backtraces` (ON par défaut) : les erreurs fatales (memory exhausted, timeout) affichent enfin une **stack trace**. Gain majeur pour le debug en production."},
+{cat:'PHP 8.5', q:"get_error_handler()", a:"Avec `get_exception_handler()`, permet de **lire** le handler installé sans l'écraser. Auparavant il fallait l'astuce `set_error_handler(null)` + `restore_error_handler()`."},
+{cat:'PHP 8.5', q:"Closures en expression constante", a:"Les `static` closures et les first-class callables sont autorisées dans les **constant expressions** : attributs, valeurs par défaut de paramètres, constantes de classe."},
+{cat:'PHP 8.5', q:"Deprecations 8.5", a:"Backtick operator, casts non canoniques `(integer)`/`(boolean)`/`(double)`/`(binary)`, `__sleep`/`__wakeup`, `null` comme offset de tableau, `case X;` avec point-virgule, `curl_close()`, `mysqli_execute()`."},
+{cat:'PHP 8.4', q:"Property hooks", a:"`public string $x { get => …; set (string $v) { … } }` : getters/setters natifs. Déclarables dans une **interface**. Permettent d'ajouter validation ou calcul sans casser l'API publique."},
+{cat:'PHP 8.4', q:"Asymmetric visibility", a:"`public private(set) string $status;` — lecture publique, écriture restreinte. PHP 8.5 l'étend aux propriétés **statiques**."},
+{cat:'PHP 8.4', q:"array_find / any / all", a:"`array_find()` → 1re valeur qui matche ou **null** ; `array_find_key()` → la clé ; `array_any()` / `array_all()` → booléens. Évitent les `foreach` avec `break`."},
+{cat:'PHP 8.4', q:"Lazy objects", a:"`newLazyGhost()` / `newLazyProxy()` via la Reflection : l'initialisation coûteuse est **repoussée au premier accès**. Utilisé par les conteneurs DI et les ORM."},
+{cat:'PHP 8.3', q:"Typed class constants", a:"`const string ENV = 'prod';` — le type est vérifié, y compris lors d'un override dans une classe fille."},
+{cat:'PHP 8.3', q:"#[\\Override]", a:"Erreur de compilation si la méthode ne surcharge rien (typo, renommage dans la classe mère). PHP 8.5 l'étend aux **propriétés**."},
+{cat:'PHP 8.2', q:"readonly class", a:"`final readonly class Dto {}` : toutes les propriétés d'instance deviennent `readonly`. Les dynamic properties y sont interdites."},
+{cat:'PHP 8.2', q:"DNF types", a:"**Disjunctive Normal Form** : combiner union et intersection, ex. `(Countable&Traversable)|null`. Les intersections doivent être entre parenthèses."},
+{cat:'PHP 8.2', q:"Dynamic properties dépréciées", a:"Affecter une propriété non déclarée émet un deprecation (Error en PHP 9). Échappatoire pour le legacy : `#[\\AllowDynamicProperties]`."},
+{cat:'PHP 8.1', q:"Enum", a:"Type énuméré vrai. **Pure enum** (cases sans valeur) ou **backed enum** (`: string` / `: int`). `cases()`, `from()`, `tryFrom()`, `->name`, `->value`. Pas d'état, pas d'héritage, mais méthodes, constantes et interfaces."},
+{cat:'PHP 8.1', q:"readonly property", a:"Initialisable **une seule fois**, depuis le scope de déclaration, et doit être typée. Ce n'est pas une constante : la valeur est calculée à l'exécution."},
+{cat:'PHP 8.1', q:"First-class callable syntax", a:"`strlen(...)`, `$this->handle(...)`, `Service::create(...)` créent un objet **Closure** typé et analysable par les IDE, en remplacement de `'strlen'` ou `[$this, 'handle']`."},
+{cat:'PHP 8.1', q:"Fiber", a:"Coroutine complète : elle peut se **suspendre depuis n'importe quel niveau de la pile** (`Fiber::suspend()`), contrairement au generator. Brique de base de ReactPHP, Amp, FrankenPHP."},
+{cat:'PHP 8.0', q:"match", a:"Expression, comparaison **stricte** (`===`), pas de fallthrough, `UnhandledMatchError` si aucun cas ne correspond. `match(true)` remplace les cascades de `if/elseif`."},
+{cat:'PHP 8.0', q:"Constructor promotion", a:"`public function __construct(private string $name) {}` : déclare la propriété, le paramètre et l'affectation en une fois. En 8.5 on peut y ajouter `final`."},
+{cat:'PHP 8.0', q:"Nullsafe operator", a:"`$a?->b?->c` court-circuite toute la chaîne et retourne `null` dès qu'un maillon est null. Ne fonctionne pas sur les offsets de tableau."},
+{cat:'PHP 8.0', q:"Attributes", a:"Métadonnées natives `#[Attr(...)]`, lues par la **Reflection** (`getAttributes()` puis `newInstance()`). Base du routing, de l'ORM et de la validation dans les frameworks modernes."},
+{cat:'Bases', q:"declare(strict_types=1)", a:"Directive **par fichier** qui désactive la coercition : un mauvais type lève une `TypeError`. Elle s'applique au fichier **appelant**, pas au fichier appelé."},
+{cat:'Bases', q:"self vs static", a:"`self` = classe où le code est écrit (résolu à la compilation). `static` = classe réellement appelée (**late static binding**, résolu à l'exécution). Toujours `static` pour une factory héritable."},
+{cat:'Bases', q:"Error vs Exception", a:"Les deux implémentent `Throwable` mais sont deux branches distinctes. `Error` (TypeError, ValueError, DivisionByZeroError) vient du **moteur** ; `catch (Exception)` ne l'attrape pas."},
+{cat:'Bases', q:"?? vs ?:", a:"`??` teste **null ou clé inexistante**, sans warning. `?:` (elvis) teste **falsy** : `0 ?: 'x'` vaut `'x'`, ce qui est rarement voulu."},
+{cat:'Bases', q:"array_merge vs +", a:"`array_merge()` réindexe les clés numériques et écrase les clés string avec la **droite**. `+` fait une union qui garde la valeur de **gauche** et ne réindexe rien."},
+{cat:'Bases', q:"foreach par référence", a:"Après `foreach ($a as &$v)`, il faut `unset($v)` : sinon `$v` reste une référence vers le dernier élément et la boucle suivante l'écrase silencieusement."},
+{cat:'Bases', q:"isset / empty / array_key_exists", a:"`isset()` = existe **et** non null. `empty()` = falsy (`0`, `''`, `'0'`, `[]`, `null`, `false`). `array_key_exists()` = la clé existe, même si la valeur est null."},
+{cat:'Bases', q:"Generator", a:"Fonction contenant `yield` : produit les valeurs **à la demande**, mémoire constante. `yield from` délègue, `->send()` injecte, `->getReturn()` récupère la valeur finale."},
+{cat:'Sécurité', q:"Prepared statement", a:"La requête et les données partent **séparément** : les valeurs ne peuvent jamais être interprétées comme du SQL. Toujours avec `PDO::ATTR_EMULATE_PREPARES => false`. Ne protège pas les identifiants (table, colonne, ORDER BY) → allow-list."},
+{cat:'Sécurité', q:"password_hash", a:"`password_hash($p, PASSWORD_ARGON2ID)` génère un sel aléatoire ; `password_verify()` compare en temps constant ; `password_needs_rehash()` permet la migration d'algorithme transparente."},
+{cat:'Sécurité', q:"Cookie de session sûr", a:"`secure` (HTTPS only), `httponly` (inaccessible en JS, anti-XSS), `samesite=Lax` (anti-CSRF), puis `session_regenerate_id(true)` après le login (anti session fixation)."},
+{cat:'Perf', q:"OPcache", a:"Cache du **bytecode** compilé : le gain n°1 en production. En prod, `validate_timestamps=0` et invalidation au déploiement. Le JIT, lui, n'apporte presque rien sur du web classique."},
+{cat:'Perf', q:"Problème N+1", a:"Une requête pour la liste puis **une requête par élément** pour ses relations. Solution : `JOIN`, eager loading, ou requête d'hydratation groupée. Détectable avec un profiler ou la debug bar."},
+{cat:'Archi', q:"Dependency Inversion", a:"Le **D** de SOLID : dépendre d'**abstractions** (interfaces) injectées par le constructeur, jamais d'implémentations concrètes instanciées à l'intérieur. C'est ce qui rend le code testable."},
+{cat:'Archi', q:"PSR à citer", a:"PSR-12 (style), PSR-4 (autoload), PSR-3 (logger), PSR-7/15/17 (HTTP, middlewares), PSR-11 (container), PSR-6/16 (cache), PSR-14 (events)."},
+{cat:'Archi', q:"Composition vs héritage", a:"L'héritage crée un couplage fort et une hiérarchie rigide (« est un »). La composition injecte un collaborateur remplaçable (« a un ») : plus testable, plus flexible. Préférer la composition par défaut."},
+];
+
+/* =========================================================================
+   DONNÉES — QUESTIONS D'ENTRETIEN
+   ========================================================================= */
+const INTERVIEW = [
+{q:"Qu'apporte PHP 8.5 par rapport à 8.4 ?", a:[
+['p',"Structurez la réponse en trois axes plutôt qu'en liste."],
+['ul',[
+"**Ergonomie du code** : le pipe operator [[|>]], [[clone with]] pour les objets immuables, les closures autorisées dans les expressions constantes.",
+"**Robustesse & debug** : l'attribut [[#[\\NoDiscard]]], les **backtraces sur les fatal errors**, [[get_error_handler()]] / [[get_exception_handler()]].",
+"**Standard library** : l'extension **URI** (RFC 3986 + WHATWG), [[array_first()]] / [[array_last()]], les cURL share handles persistants, [[IntlListFormatter]]."
+]],
+['p',"Terminez en mentionnant les **deprecations** à anticiper lors d'une migration : backtick operator, casts non canoniques, [[__sleep]] / [[__wakeup]], [[null]] comme offset de tableau."]
+]},
+{q:"Expliquez le pipe operator et dites quand vous l'utiliseriez.", a:[
+['p',"[[|>]] applique la callable de droite à la valeur de gauche. La callable doit accepter **un seul argument**, d'où l'usage de la first-class callable syntax."],
+['code',`<?php
+$emails = $csv
+    |> file_get_contents(...)
+    |> (fn(string $c) => explode("\\n", $c))
+    |> (fn(array $l) => array_filter($l, strlen(...)))
+    |> (fn(array $l) => array_map(trim(...), $l));`,'Pipeline de transformation'],
+['p',"Cas d'usage naturels : **parsing**, normalisation, sanitization, construction de slugs. À éviter quand chaque étape a besoin d'être nommée pour rester lisible : une variable intermédiaire bien nommée reste parfois préférable."]
+]},
+{q:"Pourquoi et comment rendre un objet immuable en PHP ?", a:[
+['p',"L'immuabilité supprime toute une classe de bugs : un objet partagé ne peut plus être modifié à distance, il est thread-safe par construction et se compare sereinement."],
+['code',`<?php
+final readonly class Money
+{
+    public function __construct(
+        public int $cents,
+        public string $currency,
+    ) {}
+
+    public function add(Money $other): self
+    {
+        return clone($this, ['cents' => $this->cents + $other->cents]); // PHP 8.5
+    }
+}`,'Immuabilité'],
+['p',"Avant 8.5 il fallait recopier tout le constructeur dans chaque méthode [[withX()]]. [[clone with]] rend ce pattern enfin ergonomique. Exemples natifs : [[DateTimeImmutable]], les PSR-7 messages."]
+]},
+{q:"Comment traiteriez-vous un fichier CSV de 5 Go ?", a:[
+['ul',[
+"Lecture **streamée** avec [[fopen]] + [[fgetcsv]], encapsulée dans un **generator** : mémoire constante.",
+"Traitement par **batch** (ex. 1 000 lignes) avec insertion groupée et [[commit]] par lot.",
+"Pas d'accumulation dans un tableau ; si l'ORM est utilisé, [[clear()]] l'unit of work régulièrement.",
+"Surveiller avec [[memory_get_peak_usage(true)]] et exécuter en CLI (pas de [[max_execution_time]] par défaut)."
+]],
+['code',`<?php
+function rows(string $path): Generator
+{
+    $h = fopen($path, 'rb');
+    try {
+        while (($row = fgetcsv($h)) !== false) { yield $row; }
+    } finally { fclose($h); }
+}
+
+$batch = [];
+foreach (rows('big.csv') as $row) {
+    $batch[] = $row;
+    if (count($batch) === 1000) { $repo->insertMany($batch); $batch = []; }
+}
+if ($batch !== []) { $repo->insertMany($batch); }`,'Streaming + batch']
+]},
+{q:"Interface ou classe abstraite : comment choisissez-vous ?", a:[
+['p',"**Interface par défaut.** Elle définit un contrat (« peut faire »), autorise l'implémentation multiple et découple totalement l'appelant de l'implémentation — c'est le **D** de SOLID."],
+['p',"**Classe abstraite** uniquement s'il existe du **code et de l'état réellement communs** à toutes les implémentations, et que la relation est bien « est un ». Sinon, on préfère une interface + un trait, ou mieux, la **composition**."],
+['itw',"Bonne formule : « je type-hint toujours l'interface ; la classe abstraite est un détail d'implémentation partagé, pas un contrat »."]
+]},
+{q:"Quelle est la différence entre Error et Exception ?", a:[
+['p',"Les deux implémentent [[Throwable]], mais forment **deux branches séparées** de la hiérarchie."],
+['ul',[
+"[[Error]] : problème détecté par le **moteur PHP** — [[TypeError]], [[ValueError]], [[DivisionByZeroError]], [[ArgumentCountError]], [[UnhandledMatchError]]. En général, un bug à corriger.",
+"[[Exception]] : erreur **applicative** — [[RuntimeException]] (accident d'exécution) vs [[LogicException]] (mauvais usage de l'API).",
+"[[catch (Exception $e)]] **n'attrape pas** les [[Error]] : pour tout capturer, [[catch (Throwable $e)]]."
+]]
+]},
+{q:"Comment sécurisez-vous une application PHP ?", a:[
+['ul',[
+"**SQL injection** → prepared statements PDO, [[ATTR_EMULATE_PREPARES => false]], allow-list pour les identifiants et les [[ORDER BY]].",
+"**XSS** → échappement **à la sortie** dans le bon contexte, auto-escape du moteur de template, Content-Security-Policy.",
+"**CSRF** → token synchronizer par formulaire + cookie [[SameSite=Lax]].",
+"**Sessions** → [[secure]], [[httponly]], [[samesite]], [[session_regenerate_id(true)]] après login.",
+"**Mots de passe** → [[password_hash()]] en Argon2id, [[password_needs_rehash()]] pour migrer.",
+"**Uploads** → vérifier le MIME réel via [[finfo]], renommer, stocker hors webroot.",
+"**Secrets** → variables d'environnement, jamais dans le dépôt ; [[composer audit]] en CI.",
+"**Erreurs** → [[display_errors=Off]] en production, log côté serveur."
+]]
+]},
+{q:"Comment migreriez-vous une application de PHP 8.1 vers 8.5 ?", a:[
+['ul',[
+"**1.** Vérifier la compatibilité des dépendances ([[composer outdated]], [[composer audit]]) et monter les majeures une par une.",
+"**2.** Lancer la suite de tests sur 8.5 avec [[error_reporting=E_ALL]] et traiter **toutes** les deprecations.",
+"**3.** Passer **Rector** avec le set [[PHP_85]] (et [[PHP_82]] à [[PHP_84]] si on saute des versions) pour automatiser les réécritures.",
+"**4.** Traiter les BC breaks connus : dynamic properties (8.2), nullables implicites (8.4), casts non canoniques et backtick operator (8.5).",
+"**5.** Renforcer le filet : **PHPStan** au niveau max sur les zones touchées.",
+"**6.** Déployer en **canary** sur un sous-ensemble de trafic, surveiller les logs, puis généraliser."
+]],
+['p',"Mentionnez aussi que PHP 8.5 aide la migration elle-même : les **backtraces sur fatal errors** rendent enfin diagnosticables les erreurs mémoire rencontrées pendant les tests de charge."]
+]},
+{q:"Qu'est-ce que le late static binding ?", a:[
+['p',"C'est la capacité de [[static::]] à résoudre la classe **réellement appelée** à l'exécution, alors que [[self::]] est figé à la compilation sur la classe où le code est écrit."],
+['code',`<?php
+abstract class Model
+{
+    public static function create(): static { return new static(); }
+    public static function wrong(): self   { return new self(); }
+}
+final class User extends Model {}
+
+User::create();  // User
+User::wrong();   // Error : Model est abstraite`,'static vs self'],
+['p',"Indispensable pour les **factories**, les **fluent interfaces** héritables et les Active Record."]
+]},
+{q:"Quelle différence entre == et === ? Donnez un piège.", a:[
+['p',"[[==]] compare après **type juggling**, [[===]] compare **type et valeur**. Depuis PHP 8, une comparaison nombre/string non numérique convertit le nombre en string, ce qui a corrigé le pire piège historique."],
+['code',`<?php
+0 == 'foo';       // PHP 7: true  | PHP 8: false
+'1' == '01';      // true  — deux strings numériques → comparaison numérique
+'10' == '1e1';    // true
+100 == '1e2';     // true
+null == false;    // true
+[] == false;      // true
+in_array('abc', [0, 1]);        // PHP 7: true (!) | PHP 8: false
+in_array('abc', [0, 1], true);  // false — TOUJOURS passer le 3e argument`,'Pièges de comparaison'],
+['p',"Réflexe à afficher : **[[===]] par défaut**, et le troisième argument [[strict]] systématique sur [[in_array()]] et [[array_search()]]."]
+]},
+{q:"Comment testez-vous votre code ?", a:[
+['ul',[
+"**Tests unitaires** (PHPUnit / Pest) sur la logique métier pure, avec des **test doubles** pour les collaborateurs.",
+"L'**injection de dépendances** est ce qui rend le test possible : on injecte un [[InMemoryRepository]] ou un mock à la place de la vraie base.",
+"**Tests d'intégration** sur les repositories avec une base réelle (conteneur Docker), transaction rollback entre les tests.",
+"**Data providers** pour couvrir les cas limites sans dupliquer le test.",
+"**PHPStan / Psalm** en complément : ils suppriment toute une catégorie de tests (typage) statiquement.",
+"**Mutation testing** (Infection) pour mesurer la qualité réelle des assertions, pas seulement la couverture."
+]],
+['itw',"Si on vous demande votre taux de couverture, répondez qu'un taux seul ne veut rien dire : une couverture de 90 % sans assertions pertinentes est inutile, d'où l'intérêt du mutation testing."]
+]},
+{q:"Comment fonctionne l'autoloading en PHP ?", a:[
+['p',"Quand PHP rencontre une classe inconnue, il appelle les fonctions enregistrées via [[spl_autoload_register()]]. Composer en enregistre une, construite à partir de la section [[autoload]] du [[composer.json]]."],
+['code',`<?php
+spl_autoload_register(static function (string $fqcn): void {
+    $prefix = 'App\\\\';
+    if (!str_starts_with($fqcn, $prefix)) { return; }
+    $path = __DIR__ . '/src/' . str_replace('\\\\', '/', substr($fqcn, strlen($prefix))) . '.php';
+    if (is_file($path)) { require $path; }
+});`,'Un autoloader PSR-4 minimal'],
+['p',"En production, [[composer dump-autoload --optimize]] génère un **classmap** statique : plus aucune résolution de chemin à l'exécution."]
+]},
+{q:"Enum : quels usages concrets en avez-vous ?", a:[
+['ul',[
+"Remplacer les **constantes de classe** non typées : on peut désormais type-hinter [[Status $status]].",
+"Centraliser le comportement lié à un état avec [[match($this)]] : libellé, couleur, transitions autorisées.",
+"[[tryFrom()]] à la **frontière** (payload HTTP, colonne en base) pour gérer proprement une valeur inconnue.",
+"Implémenter une interface pour rendre l'enum interchangeable ([[HasLabel]], [[JsonSerializable]])."
+]],
+['code',`<?php
+enum OrderStatus: string
+{
+    case Pending = 'pending';
+    case Paid    = 'paid';
+    case Shipped = 'shipped';
+
+    public function canTransitionTo(self $next): bool
+    {
+        return in_array($next, match ($this) {
+            self::Pending => [self::Paid],
+            self::Paid    => [self::Shipped],
+            self::Shipped => [],
+        }, true);
+    }
+}`,'State machine légère']
+]},
+{q:"Qu'est-ce qui fait la performance d'une application PHP ?", a:[
+['ul',[
+"**OPcache** activé (gain n°1) ; en prod [[validate_timestamps=0]] avec invalidation au déploiement.",
+"La **base de données** : index, absence de N+1, requêtes projetées plutôt qu'hydratation complète.",
+"Le **cache applicatif** (Redis, APCu) pour les données coûteuses et stables.",
+"L'**I/O réseau** : appels HTTP parallélisés ([[curl_multi]]), et en 8.5 des **share handles persistants** qui réutilisent DNS et connexions entre requêtes.",
+"Le **JIT** n'intervient que sur du CPU-bound ; sur du web classique, l'impact est marginal.",
+"Mesurer d'abord : Blackfire, Xdebug profiler, [[hrtime()]]. Sans profil, on optimise au hasard."
+]]
+]},
+{q:"Que sont les property hooks et qu'est-ce que ça change ?", a:[
+['code',`<?php
+class Product
+{
+    public string $slug {
+        get => strtolower(str_replace(' ', '-', $this->name));
+    }
+
+    public int $price {
+        set (int $v) {
+            if ($v < 0) { throw new InvalidArgumentException('Prix négatif'); }
+            $this->price = $v;
+        }
+    }
+
+    public function __construct(public string $name) {}
+}`,'PHP 8.4'],
+['ul',[
+"Suppriment la majorité des getters/setters manuels.",
+"Permettent de transformer une propriété publique en propriété calculée **sans casser l'API publique** : le code appelant ne change pas.",
+"Peuvent être déclarés dans une **interface** ([[public string $title { get; }]]), ce qui était impossible avec de simples propriétés.",
+"Se combinent avec l'**asymmetric visibility** pour exposer une lecture publique et une écriture contrôlée."
+]]
+]},
+{q:"Comment gérez-vous la configuration et les secrets ?", a:[
+['ul',[
+"Configuration **par environnement** via variables d'environnement (12-factor), jamais de fichier de config commité avec des secrets.",
+"[[.env]] en local uniquement (Dotenv) ; en production, les variables sont injectées par l'orchestrateur ou un **secret manager** (Vault, SSM, Secrets Manager).",
+"Un [[.env.example]] versionné documente les clés attendues, sans valeur.",
+"Valider la configuration **au démarrage** (fail fast) plutôt que de découvrir une clé manquante en pleine requête.",
+"Rotation des secrets et [[composer audit]] dans la CI."
+]]
+]},
+{q:"Expliquez les generators et donnez un cas réel.", a:[
+['p',"Une fonction contenant [[yield]] retourne un [[Generator]] qui produit ses valeurs **à la demande**. Elle ne construit jamais le tableau complet, donc la mémoire reste constante."],
+['ul',[
+"Lecture de **gros fichiers** ou de **curseurs SQL** ligne à ligne.",
+"**Pagination transparente** d'une API : le generator enchaîne les pages sans que l'appelant le sache.",
+"Pipelines de transformation composables ([[yield from]]).",
+"Limite à connaître : un generator n'est parcourable **qu'une fois** et ne supporte pas [[count()]] ni l'accès par index."
+]],
+['code',`<?php
+function apiPages(HttpClient $c, string $url): Generator
+{
+    $page = 1;
+    do {
+        $data = $c->get($url, ['page' => $page]);
+        yield from $data['items'];
+        $page++;
+    } while ($data['has_more']);
+}`,'Pagination lazy']
+]},
+{q:"Qu'est-ce que SOLID, avec un exemple concret ?", a:[
+['ul',[
+"**S**ingle Responsibility — une classe, une seule raison de changer. Un contrôleur qui valide, calcule la TVA et envoie un mail en a trois.",
+"**O**pen/Closed — ajouter un nouveau moyen de paiement doit se faire en **ajoutant** une classe, pas en modifiant un [[switch]].",
+"**L**iskov — une sous-classe ne doit pas renforcer les préconditions ni affaiblir les postconditions (le classique [[Square extends Rectangle]]).",
+"**I**nterface Segregation — [[Readable]] et [[Writable]] séparés valent mieux qu'un gros [[Storage]] que personne n'implémente entièrement.",
+"**D**ependency Inversion — [[__construct(private MailerInterface $mailer)]] et non [[new SmtpMailer()]] au milieu d'une méthode."
+]],
+['itw',"Préparez **un** exemple vécu par principe. Réciter les cinq noms sans illustration est le meilleur moyen de perdre le recruteur."]
+]},
+{q:"Comment concevez-vous une API REST en PHP ?", a:[
+['ul',[
+"Ressources au pluriel, verbes HTTP porteurs de sens, **codes de statut** corrects (201 création, 204 no content, 409 conflit, 422 validation).",
+"**Validation en entrée** dans un DTO typé, jamais [[new Entity(...$_POST)]] (mass assignment).",
+"Sérialisation explicite ([[JsonSerializable]] ou un serializer), jamais l'entité Doctrine brute.",
+"Gestion d'erreurs uniformisée : un **exception handler** global qui traduit chaque exception métier en réponse JSON (RFC 7807 problem+json).",
+"Pagination, filtrage, tri via **allow-list** de colonnes ; versionner l'API ([[/v1]]).",
+"Authentification par token (JWT ou opaque), rate limiting, CORS explicite.",
+"Standards PSR-7 / PSR-15 pour les middlewares, et [[json_encode(..., JSON_THROW_ON_ERROR)]]."
+]]
+]},
+{q:"Que regardez-vous dans une code review ?", a:[
+['ul',[
+"**Correction** d'abord : le code fait-il ce que dit le ticket, les cas limites sont-ils couverts par un test ?",
+"**Frontières** : validation des entrées externes, gestion des erreurs, transactions correctement délimitées.",
+"**Typage** : types déclarés partout, pas de [[mixed]] par facilité, [[strict_types]] présent.",
+"**Lisibilité** : nommage, fonctions courtes, absence de logique dans les templates.",
+"**Sécurité** : requêtes paramétrées, échappement en sortie, secrets absents du diff.",
+"**Conception** : couplage, responsabilités, duplication — mais sans réécrire la PR du collègue.",
+"Ton : commentaires factuels, questions plutôt qu'injonctions, et distinguer le bloquant du « nice to have »."
+]]
+]},
+{q:"Quelles questions poser au recruteur à la fin ?", a:[
+['ul',[
+"Quelle version de PHP tourne en production, et quelle est la stratégie de montée de version ?",
+"Quel est l'état de la suite de tests et de l'analyse statique (PHPStan level) ?",
+"Comment sont gérés les déploiements : CI/CD, feature flags, rollback ?",
+"Quelle part du temps est consacrée à la dette technique ?",
+"Comment se passe une code review dans l'équipe ?",
+"Quel sera mon premier chantier concret sur les trois premiers mois ?"
+]],
+['itw',"Ces questions montrent que vous raisonnez en **ingénieur logiciel**, pas seulement en exécutant. Elles vous servent aussi à évaluer l'équipe."]
+]},
+];
+
+/* =========================================================================
+   DONNÉES — CHEATSHEET
+   ========================================================================= */
+const CHEAT = [
+['h','Le squelette d\'un fichier moderne'],
+['code',`<?php
+
+declare(strict_types=1);
+
+namespace App\\Billing;
+
+use App\\Customer\\Customer;
+use Psr\\Log\\LoggerInterface;
+
+final readonly class InvoiceService
+{
+    public function __construct(
+        private InvoiceRepository $repository,
+        private LoggerInterface $logger,
+    ) {}
+
+    public function issue(Customer $customer, Money $amount): Invoice
+    {
+        $invoice = new Invoice(reference: $this->nextReference(), amount: $amount);
+        $this->repository->save($invoice);
+        $this->logger->info('Invoice issued', ['ref' => $invoice->reference]);
+
+        return $invoice;
+    }
+}`,'Template'],
+['h','Timeline des versions'],
+['table',[
+['Version','Sortie','À retenir'],
+['**8.0**','nov. 2020','named args, attributes, promotion, union types, match, nullsafe, JIT'],
+['**8.1**','nov. 2021','enums, readonly, fibers, never, first-class callables, new in initializers'],
+['**8.2**','déc. 2022','readonly classes, DNF types, constantes dans les traits, fin des dynamic properties'],
+['**8.3**','nov. 2023','typed class constants, [[#[\\Override]]], [[json_validate()]]'],
+['**8.4**','nov. 2024','property hooks, asymmetric visibility, [[array_find]], lazy objects, [[new X()->y()]]'],
+['**8.5**','nov. 2025','[[|>]], clone with, [[#[\\NoDiscard]]], extension URI, [[array_first/last]], fatal backtraces'],
+]],
+['h','Les 12 syntaxes à ne pas confondre'],
+['code',`<?php
+$a ?? $b;              // null coalescing : $a si défini ET non null
+$a ?: $b;              // elvis : $a si TRUTHY
+$a ??= $b;             // assigne seulement si $a est null
+$a <=> $b;             // spaceship : -1, 0, 1
+$obj?->method();       // nullsafe : null si $obj est null
+$obj::class;           // FQCN d'une instance (8.0)
+fn($x) => $x * 2;      // arrow function : capture auto par valeur
+strlen(...);           // first-class callable → Closure (8.1)
+$v |> trim(...);       // pipe operator (8.5)
+clone($o, ['x' => 1]); // clone with (8.5)
+match (true) { … };    // remplace if/elseif
+(void) f();            // ignore volontairement un retour #[\\NoDiscard] (8.5)`,'Mémo syntaxe'],
+['h','Checklist « je suis prêt pour l\'entretien »'],
+['ul',[
+"Je sais expliquer [[declare(strict_types=1)]] et qu'elle agit sur le fichier **appelant**.",
+"Je sais différencier [[==]] / [[===]], [[isset]] / [[empty]] / [[array_key_exists]].",
+"Je sais expliquer [[self]] vs [[static]] (late static binding).",
+"Je sais quand choisir une interface, une classe abstraite, un trait ou la composition.",
+"Je sais ce qu'apportent les enums et quand utiliser [[tryFrom()]].",
+"Je connais la hiérarchie [[Throwable]] et pourquoi [[catch (Exception)]] rate une [[TypeError]].",
+"Je sais expliquer un generator et pourquoi il économise la mémoire.",
+"Je sais citer les parades OWASP : prepared statements, escaping en sortie, CSRF token, [[password_hash]].",
+"Je sais expliquer OPcache, le JIT et le problème N+1.",
+"Je sais citer 5 nouveautés de PHP 8.5 **et** les justifier.",
+"Je sais décrire une stratégie de migration de version (Rector, PHPStan, canary).",
+"J'ai trois anecdotes de projet prêtes : un bug difficile, un refactoring, un désaccord technique."
+]],
+['h','Commandes utiles'],
+['table',[
+['Commande','Effet'],
+['[[php -v]] / [[php -m]]','version et extensions chargées'],
+['[[php --ini=diff]]','**8.5** : directives différentes des valeurs par défaut'],
+['[[php -l fichier.php]]','lint syntaxique'],
+['[[php -a]]','REPL interactif'],
+['[[php -S localhost:8000 -t public]]','serveur de développement intégré'],
+['[[composer install --no-dev -o]]','installation de production'],
+['[[vendor/bin/phpstan analyse src --level=8]]','analyse statique'],
+['[[vendor/bin/rector process src --dry-run]]','prévisualiser une migration'],
+]],
+];
+
+/* =========================================================================
+   NAVIGATION & ÉTAT
+   ========================================================================= */
+const NAV = [
+  {group:'Parcours', items:[{route:'#/', icon:'\u{1F3E0}', label:'Accueil'}]},
+  {group:'Les bases', items: MODULES.map(m => ({route:'#/m/' + m.id, icon:m.icon, label:m.title, key:'m:' + m.id}))},
+  {group:'Nouveautés', items: VERSIONS.map(v => ({route:'#/v/' + v.id, icon:'\u{1F4E1}', label:'PHP ' + v.v, key:'v:' + v.id, hot:v.hot}))},
+  {group:"S'entraîner", items:[
+    {route:'#/quiz',      icon:'\u{1F9E0}', label:'Quiz'},
+    {route:'#/cards',     icon:'\u{1F0CF}', label:'Flashcards'},
+    {route:'#/interview', icon:'\u{1F4BC}', label:'Questions d\'entretien'},
+    {route:'#/cheat',     icon:'\u{1F4CB}', label:'Cheatsheet'},
+  ]},
+];
+
+const KEY = 'php85academy.v1';
+let S = {done:{}, xp:0, best:0, played:0, theme:'dark', cardsKnown:{}};
+try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+
+const TOTAL_LESSONS = MODULES.length + VERSIONS.length;
+const LEVELS = [[0,'Débutant'],[60,'Junior'],[160,'Confirmé'],[320,'Senior'],[520,'Expert PHP']];
+function levelName(xp){ let n = LEVELS[0][1]; for (const [t, name] of LEVELS) if (xp >= t) n = name; return n; }
+
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 1900);
+}
+function addXp(n){ S.xp += n; save(); refreshSide(); }
+
+/* ---------- sidebar ---------- */
+function buildNav(){
+  const cur = curRoute();
+  document.getElementById('nav').innerHTML = NAV.map(g =>
+    '<div class="navgroup"><span>' + esc(g.group) + '</span>' + g.items.map(it => {
+      const active = cur === it.route ? ' active' : '';
+      const done = it.key && S.done[it.key] ? ' done' : '';
+      const right = it.hot ? '<span class="pill">8.5</span>' : (it.key ? '<span class="dot"></span>' : '');
+      return '<div class="navitem' + active + done + '" onclick="go(\'' + it.route + '\')">'
+        + '<i>' + it.icon + '</i><span>' + esc(it.label) + '</span>' + right + '</div>';
+    }).join('') + '</div>'
+  ).join('');
+}
+function refreshSide(){
+  const done = Object.keys(S.done).length;
+  const pct = TOTAL_LESSONS ? Math.round(done / TOTAL_LESSONS * 100) : 0;
+  const circ = 2 * Math.PI * 17;
+  document.getElementById('ringfg').setAttribute('stroke-dashoffset', String(circ - circ * pct / 100));
+  document.getElementById('ringtxt').textContent = pct + '%';
+  document.getElementById('lvname').textContent = levelName(S.xp);
+  document.getElementById('lvxp').textContent = S.xp + ' XP';
+  buildNav();
+}
+function openSide(){ document.getElementById('side').classList.add('open'); document.getElementById('scrim').classList.add('on'); }
+function closeSide(){ document.getElementById('side').classList.remove('open'); document.getElementById('scrim').classList.remove('on'); }
+function toggleTheme(){
+  S.theme = S.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', S.theme);
+  document.getElementById('themebtn').innerHTML = S.theme === 'dark' ? '&#9790;' : '&#9728;';
+  save();
+}
+function resetAll(){
+  if (!confirm('Réinitialiser toute la progression (leçons lues, XP, meilleur score) ?')) return;
+  S = {done:{}, xp:0, best:0, played:0, theme:S.theme, cardsKnown:{}};
+  save(); refreshSide(); render(); toast('Progression réinitialisée');
+}
+
+/* ---------- routeur ---------- */
+let CURRENT = '#/';
+const curRoute = () => location.hash || CURRENT;
+function go(route){
+  CURRENT = route;
+  try { location.hash = route; } catch(e) {}
+  render(); closeSide();
+}
+window.addEventListener('hashchange', () => { CURRENT = location.hash || CURRENT; render(); });
+
+function render(){
+  const h = curRoute();
+  const view = document.getElementById('view');
+  window.scrollTo({top:0});
+  if (h.startsWith('#/m/'))        view.innerHTML = viewLesson(MODULES.find(m => m.id === h.slice(4)), 'm');
+  else if (h.startsWith('#/v/'))   view.innerHTML = viewVersion(VERSIONS.find(v => v.id === h.slice(4)));
+  else if (h === '#/quiz')         quizHome();
+  else if (h === '#/cards')        cardsHome();
+  else if (h === '#/interview')    view.innerHTML = viewInterview();
+  else if (h === '#/cheat')        view.innerHTML = viewCheat();
+  else                             view.innerHTML = viewHome();
+  buildNav();
+}
+
+/* ---------- vues statiques ---------- */
+function viewHome(){
+  const done = Object.keys(S.done).length;
+  const pct = TOTAL_LESSONS ? Math.round(done / TOTAL_LESSONS * 100) : 0;
+  return `
+  <div class="hero">
+    <div class="v">\u{1F680} PHP 8.5 — sortie le 20 novembre 2025</div>
+    <h2>Révisez PHP, des bases aux nouveautés 8.5</h2>
+    <p>Un parcours complet pour arriver serein à votre entretien : ${MODULES.length} modules de fondamentaux,
+       ${VERSIONS.length} versions décryptées, ${QUIZ.length} questions de quiz, ${CARDS.length} flashcards
+       et ${INTERVIEW.length} questions d'entretien corrigées.</p>
+    <div class="cta">
+      <button class="btn primary" onclick="go('#/v/v85')">Commencer par PHP 8.5 →</button>
+      <button class="btn ghost" onclick="go('#/quiz')">Lancer un quiz</button>
+      <button class="btn ghost" onclick="go('#/interview')">Questions d'entretien</button>
+    </div>
+  </div>
+
+  <div class="grid g3">
+    <div class="stat"><b>${pct}%</b><span>du cours parcouru</span></div>
+    <div class="stat"><b>${S.xp}</b><span>XP — niveau ${levelName(S.xp)}</span></div>
+    <div class="stat"><b>${S.best}%</b><span>meilleur score au quiz</span></div>
+    <div class="stat"><b>${S.played}</b><span>quiz terminés</span></div>
+  </div>
+
+  <h3 class="sec">Votre progression</h3>
+  <div class="card">
+    <p style="margin:0 0 4px">${done} / ${TOTAL_LESSONS} chapitres marqués comme lus.</p>
+    <div class="prog"><i style="width:${pct}%"></i></div>
+  </div>
+
+  <h3 class="sec">Par où commencer ?</h3>
+  <div class="grid g2">
+    <div class="tilelink" onclick="go('#/v/v85')">
+      <span class="arw">→</span><div class="ic">\u{1F680}</div>
+      <b>Les nouveautés PHP 8.5</b>
+      <span>Pipe operator, clone with, #[\\NoDiscard], extension URI, array_first/last, backtraces sur fatal errors.</span>
+    </div>
+    <div class="tilelink" onclick="go('#/m/types')">
+      <span class="arw">→</span><div class="ic">\u{1F4DA}</div>
+      <b>Réviser les fondamentaux</b>
+      <span>Types, strings, arrays, POO, enums, exceptions, sécurité, performance : ${MODULES.length} modules condensés.</span>
+    </div>
+    <div class="tilelink" onclick="go('#/quiz')">
+      <span class="arw">→</span><div class="ic">\u{1F9E0}</div>
+      <b>Se tester</b>
+      <span>${QUIZ.length} questions, réponses mélangées à chaque tentative, avec explication détaillée.</span>
+    </div>
+    <div class="tilelink" onclick="go('#/cheat')">
+      <span class="arw">→</span><div class="ic">\u{1F4CB}</div>
+      <b>Réviser 10 minutes avant</b>
+      <span>Timeline des versions, syntaxes à ne pas confondre, checklist finale.</span>
+    </div>
+  </div>
+
+  <div class="callout tip" style="margin-top:26px">
+    <b>Astuce :</b> <kbd>Ctrl</kbd> <kbd>K</kbd> ouvre la recherche globale. Dans le quiz, les touches
+    <kbd>1</kbd> à <kbd>4</kbd> répondent et <kbd>Entrée</kbd> passe à la question suivante.
+  </div>`;
+}
+
+function doneBar(key){
+  const on = S.done[key] ? ' on' : '';
+  return `<div class="donebar">
+    <div class="chk${on}" onclick="toggleDone('${key}')">✓</div>
+    <span>Marquer ce chapitre comme lu (+15 XP)</span>
+  </div>`;
+}
+function toggleDone(key){
+  if (S.done[key]) { delete S.done[key]; S.xp = Math.max(0, S.xp - 15); }
+  else { S.done[key] = 1; S.xp += 15; toast('Chapitre validé  +15 XP'); }
+  save(); refreshSide(); render();
+}
+
+function neighbours(list, id, prefix){
+  const i = list.findIndex(x => x.id === id);
+  const prev = i > 0 ? list[i - 1] : null;
+  const next = i < list.length - 1 ? list[i + 1] : null;
+  let html = '<div class="pagenav">';
+  html += prev
+    ? `<button class="btn line" onclick="go('${prefix}${prev.id}')">← ${esc(prev.title || ('PHP ' + prev.v))}</button>`
+    : '<span style="flex:1"></span>';
+  html += next
+    ? `<button class="btn line r" onclick="go('${prefix}${next.id}')">${esc(next.title || ('PHP ' + next.v))} →</button>`
+    : '<span style="flex:1"></span>';
+  return html + '</div>';
+}
+
+function viewLesson(m, kind){
+  if (!m) return viewHome();
+  const idx = MODULES.indexOf(m) + 1;
+  return `<div class="crumbs"><span>Les bases</span> / <span class="k">${esc(m.title)}</span>
+            <span style="margin-left:auto">Module ${idx} / ${MODULES.length}</span></div>
+          <h2 class="page">${m.icon} ${esc(m.title)}</h2>
+          <p class="page-sub">${esc(m.sub)}</p>
+          ${blocks(m.blocks)}
+          ${doneBar('m:' + m.id)}
+          ${neighbours(MODULES, m.id, '#/m/')}`;
+}
+
+function viewVersion(v){
+  if (!v) return viewHome();
+  return `<div class="crumbs"><span>Nouveautés</span> / <span class="k">PHP ${esc(v.v)}</span>
+            <span style="margin-left:auto">${esc(v.date)}</span></div>
+          <h2 class="page">PHP ${esc(v.v)} ${v.hot ? '<span class="badge b-new" style="vertical-align:middle">nouveau</span>' : ''}</h2>
+          <p class="page-sub">${esc(v.sub)}</p>
+          ${blocks(v.blocks)}
+          ${doneBar('v:' + v.id)}
+          ${neighbours(VERSIONS, v.id, '#/v/')}`;
+}
+
+function viewInterview(){
+  return `<h2 class="page">\u{1F4BC} Questions d'entretien</h2>
+    <p class="page-sub">${INTERVIEW.length} questions fréquentes en entretien PHP, avec une réponse structurée.
+       Formulez la vôtre à voix haute avant d'ouvrir la correction.</p>
+    ${INTERVIEW.map((it, i) => `
+      <div class="acc" id="acc${i}">
+        <div class="acch" onclick="toggleAcc(${i})">
+          <span class="num">${i + 1}</span><span>${esc(it.q)}</span><span class="arw">❯</span>
+        </div>
+        <div class="accb">${blocks(it.a)}</div>
+      </div>`).join('')}`;
+}
+function toggleAcc(i){ document.getElementById('acc' + i).classList.toggle('open'); }
+
+function viewCheat(){
+  return `<h2 class="page">\u{1F4CB} Cheatsheet</h2>
+    <p class="page-sub">La page à relire dans le métro, juste avant l'entretien.</p>
+    ${blocks(CHEAT)}`;
+}
+
+/* =========================================================================
+   QUIZ
+   ========================================================================= */
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+/* Mélange les propositions ET recalcule l'index de la bonne réponse :
+   la bonne réponse n'est donc jamais à une position prévisible. */
+function prepareQuestion(q){
+  const answer = q.opts[q.correct];
+  const opts = shuffle(q.opts);
+  return {cat:q.cat, q:q.q, code:q.code, why:q.why, opts, correct:opts.indexOf(answer)};
+}
+
+const QUIZ_CATS = [...new Set(QUIZ.map(q => q.cat))];
+let QZ = null;
+
+function quizHome(){
+  QZ = null;
+  document.getElementById('view').innerHTML = `
+    <h2 class="page">\u{1F9E0} Quiz</h2>
+    <p class="page-sub">${QUIZ.length} questions sur les fondamentaux et les nouveautés.
+       Les propositions sont <strong>mélangées à chaque tentative</strong> — impossible de retenir « c'est toujours la B ».</p>
+
+    <div class="card">
+      <h3 class="sec" style="margin-top:0">Choisir un thème</h3>
+      <div class="grid g3" style="margin-bottom:18px">
+        <select id="qcat" class="btn line" style="width:100%;padding:11px 14px">
+          <option value="all">Tous les thèmes (${QUIZ.length} questions)</option>
+          ${QUIZ_CATS.map(c => `<option value="${esc(c)}">${esc(c)} (${QUIZ.filter(q => q.cat === c).length})</option>`).join('')}
+        </select>
+      </div>
+      <div class="fcbar" style="justify-content:flex-start">
+        <button class="btn solid" onclick="startQuiz(10)">Quiz rapide — 10 questions</button>
+        <button class="btn line" onclick="startQuiz(20)">Entraînement — 20 questions</button>
+        <button class="btn line" onclick="startQuiz(999)">Marathon — tout</button>
+      </div>
+    </div>
+
+    <div class="grid g3">
+      <div class="stat"><b>${S.best}%</b><span>meilleur score</span></div>
+      <div class="stat"><b>${S.played}</b><span>quiz terminés</span></div>
+      <div class="stat"><b>${QUIZ_CATS.length}</b><span>thèmes couverts</span></div>
+    </div>
+
+    <div class="callout tip">Raccourcis : <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> pour répondre,
+      <kbd>Entrée</kbd> pour passer à la suivante.</div>`;
+}
+
+function startQuiz(n){
+  const cat = document.getElementById('qcat') ? document.getElementById('qcat').value : 'all';
+  const pool = cat === 'all' ? QUIZ : QUIZ.filter(q => q.cat === cat);
+  QZ = {
+    deck: shuffle(pool).slice(0, Math.min(n, pool.length)).map(prepareQuestion),
+    i: 0, score: 0, streak: 0, bestStreak: 0, answered: null, wrong: [],
+  };
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q = QZ.deck[QZ.i];
+  const pct = Math.round(QZ.i / QZ.deck.length * 100);
+  const letters = ['A','B','C','D','E'];
+  document.getElementById('view').innerHTML = `
+    <div class="qhead">
+      <span class="meta">Question ${QZ.i + 1} / ${QZ.deck.length}</span>
+      <div class="qbar"><i style="width:${pct}%"></i></div>
+      <span class="meta">${QZ.score} bonne${QZ.score > 1 ? 's' : ''}</span>
+      ${QZ.streak > 1 ? `<span class="streak">\u{1F525} ${QZ.streak} d'affilée</span>` : ''}
+    </div>
+    <div class="qcard">
+      <div class="qcat">${esc(q.cat)}</div>
+      <div class="qtext">${md(q.q)}</div>
+      ${q.code ? codeBlock(q.code, 'Code') : ''}
+      <div class="opts" id="opts">
+        ${q.opts.map((o, i) => `<button class="opt" onclick="answer(${i})">
+            <span class="key">${letters[i]}</span><span>${md(o)}</span></button>`).join('')}
+      </div>
+      <div id="expl"></div>
+    </div>
+    <div class="fcbar" style="justify-content:space-between">
+      <button class="btn line" onclick="go('#/quiz')">Abandonner</button>
+      <button class="btn solid" id="nextbtn" disabled onclick="nextQuestion()">Suivant →</button>
+    </div>`;
+}
+
+function answer(choice){
+  if (QZ.answered !== null) return;
+  const q = QZ.deck[QZ.i];
+  QZ.answered = choice;
+  const ok = choice === q.correct;
+  if (ok){ QZ.score++; QZ.streak++; QZ.bestStreak = Math.max(QZ.bestStreak, QZ.streak); addXp(5); }
+  else { QZ.streak = 0; QZ.wrong.push(q); }
+
+  [...document.querySelectorAll('#opts .opt')].forEach((el, i) => {
+    el.classList.add('locked');
+    if (i === q.correct) el.classList.add('good');
+    else if (i === choice) el.classList.add('bad');
+    else el.classList.add('dim');
+    el.onclick = null;
+  });
+  document.getElementById('expl').innerHTML = `<div class="expl">
+      <span class="verdict ${ok ? 'ok' : 'no'}">${ok ? '✓ Correct  (+5 XP)' : '✕ Incorrect'}</span>
+      ${md(q.why)}</div>`;
+  const b = document.getElementById('nextbtn');
+  b.disabled = false;
+  b.textContent = QZ.i === QZ.deck.length - 1 ? 'Voir le résultat →' : 'Suivant →';
+  b.focus();
+}
+
+function nextQuestion(){
+  if (QZ.answered === null) return;
+  QZ.answered = null;
+  QZ.i++;
+  if (QZ.i >= QZ.deck.length) finishQuiz(); else renderQuestion();
+}
+
+function finishQuiz(){
+  const pct = Math.round(QZ.score / QZ.deck.length * 100);
+  S.played++;
+  if (pct > S.best) S.best = pct;
+  save(); refreshSide();
+  const verdict =
+    pct >= 90 ? "Excellent. Vous pouvez parler de PHP 8.5 sans trembler." :
+    pct >= 70 ? "Bon niveau. Relisez les chapitres correspondant à vos erreurs." :
+    pct >= 50 ? "Des bases solides, mais les nouveautés récentes méritent une relecture." :
+                "Reprenez les modules « Les bases » puis la page PHP 8.5, et retentez.";
+  document.getElementById('view').innerHTML = `
+    <div class="card result">
+      <div class="score">${pct}%</div>
+      <h3>${QZ.score} / ${QZ.deck.length} bonnes réponses</h3>
+      <p>${esc(verdict)}${QZ.bestStreak > 2 ? ` Meilleure série : ${QZ.bestStreak} d'affilée.` : ''}</p>
+      <div class="fcbar">
+        <button class="btn solid" onclick="startQuiz(${QZ.deck.length})">Rejouer (nouveau mélange)</button>
+        <button class="btn line" onclick="go('#/quiz')">Changer de thème</button>
+      </div>
+      ${QZ.wrong.length ? `<div class="reviewlist">
+        <h3 class="sec">À revoir (${QZ.wrong.length})</h3>
+        ${QZ.wrong.map(q => `<div class="revitem"><b>${esc(q.cat)}</b><span>${md(q.q)}<br>→ ${md(q.opts[q.correct])}</span></div>`).join('')}
+      </div>` : ''}
+    </div>`;
+}
+
+/* =========================================================================
+   FLASHCARDS
+   ========================================================================= */
+const CARD_CATS = [...new Set(CARDS.map(c => c.cat))];
+let FC = {deck:[], i:0, flip:false, cat:'all'};
+
+function cardsHome(){
+  buildDeck(FC.cat);
+  renderCards();
+}
+function buildDeck(cat){
+  FC.cat = cat;
+  FC.deck = shuffle(cat === 'all' ? CARDS : CARDS.filter(c => c.cat === cat));
+  FC.i = 0; FC.flip = false;
+}
+function setCardCat(cat){ buildDeck(cat); renderCards(); }
+function flipCard(){ FC.flip = !FC.flip; renderCards(); }
+function moveCard(d){
+  FC.i = (FC.i + d + FC.deck.length) % FC.deck.length;
+  FC.flip = false; renderCards();
+}
+function markCard(known){
+  const c = FC.deck[FC.i];
+  const id = c.cat + '|' + c.q;
+  if (known){ if (!S.cardsKnown[id]) { S.cardsKnown[id] = 1; addXp(2); } }
+  else delete S.cardsKnown[id];
+  save(); moveCard(1);
+}
+
+function renderCards(){
+  const c = FC.deck[FC.i];
+  const knownCount = Object.keys(S.cardsKnown).length;
+  document.getElementById('view').innerHTML = `
+    <h2 class="page">\u{1F0CF} Flashcards</h2>
+    <p class="page-sub">${CARDS.length} notions à réciter. Cliquez la carte (ou <kbd>Espace</kbd>) pour la retourner,
+       <kbd>←</kbd> <kbd>→</kbd> pour naviguer.</p>
+
+    <div class="fcbar" style="margin-bottom:18px">
+      <select class="btn line" style="padding:10px 14px" onchange="setCardCat(this.value)">
+        <option value="all"${FC.cat === 'all' ? ' selected' : ''}>Toutes les cartes (${CARDS.length})</option>
+        ${CARD_CATS.map(x => `<option value="${esc(x)}"${FC.cat === x ? ' selected' : ''}>${esc(x)} (${CARDS.filter(k => k.cat === x).length})</option>`).join('')}
+      </select>
+      <button class="btn line" onclick="setCardCat(FC.cat)">\u{1F500} Mélanger</button>
+      <span class="meta" style="color:var(--muted);font-size:12.5px">${knownCount} carte${knownCount > 1 ? 's' : ''} maîtrisée${knownCount > 1 ? 's' : ''}</span>
+    </div>
+
+    <div class="fcstage">
+      <div class="fc${FC.flip ? ' flip' : ''}" onclick="flipCard()">
+        <div class="fcface">
+          <div class="tagline">${esc(c.cat)}</div>
+          <div class="q">${md(c.q)}</div>
+          <div class="hint">Cliquez pour voir la réponse</div>
+        </div>
+        <div class="fcface back">
+          <div class="tagline">${esc(c.cat)} — réponse</div>
+          <div class="a">${md(c.a)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fcbar">
+      <button class="btn line" onclick="moveCard(-1)">← Précédente</button>
+      <span style="font-size:13px;color:var(--muted);min-width:70px;text-align:center">${FC.i + 1} / ${FC.deck.length}</span>
+      <button class="btn line" onclick="moveCard(1)">Suivante →</button>
+    </div>
+    <div class="fcbar" style="margin-top:12px">
+      <button class="btn line" onclick="markCard(false)">\u{1F504} À revoir</button>
+      <button class="btn solid" onclick="markCard(true)">✓ Je maîtrise (+2 XP)</button>
+    </div>`;
+}
+
+/* =========================================================================
+   RECHERCHE GLOBALE
+   ========================================================================= */
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const INDEX = [];
+MODULES.forEach(m => {
+  INDEX.push({label:m.title, sub:m.sub, route:'#/m/' + m.id, cat:'Module'});
+  m.blocks.forEach(b => { if (b[0] === 'h') INDEX.push({label:b[1], sub:m.title, route:'#/m/' + m.id, cat:'Section'}); });
+});
+VERSIONS.forEach(v => {
+  INDEX.push({label:'PHP ' + v.v, sub:v.sub, route:'#/v/' + v.id, cat:'Version'});
+  v.blocks.forEach(b => { if (b[0] === 'h') INDEX.push({label:b[1], sub:'PHP ' + v.v, route:'#/v/' + v.id, cat:'Nouveauté'}); });
+});
+CARDS.forEach(c => INDEX.push({label:c.q, sub:c.cat, route:'#/cards', cat:'Flashcard'}));
+INTERVIEW.forEach(it => INDEX.push({label:it.q, sub:"Question d'entretien", route:'#/interview', cat:'Entretien'}));
+INDEX.push({label:'Cheatsheet', sub:'Mémo final', route:'#/cheat', cat:'Page'});
+INDEX.push({label:'Quiz', sub:QUIZ.length + ' questions', route:'#/quiz', cat:'Page'});
+
+let palSel = 0, palHits = [];
+function openPal(){
+  document.getElementById('pal').classList.add('on');
+  const inp = document.getElementById('palin');
+  inp.value = ''; inp.focus(); palSearch('');
+}
+function closePal(){ document.getElementById('pal').classList.remove('on'); }
+function palSearch(q){
+  const n = norm(q.trim());
+  palHits = n === ''
+    ? INDEX.slice(0, 9)
+    : INDEX.filter(x => norm(x.label + ' ' + x.sub).includes(n)).slice(0, 24);
+  palSel = 0;
+  paintPal();
+}
+function paintPal(){
+  const el = document.getElementById('palres');
+  if (!palHits.length){ el.innerHTML = '<div class="palempty">Aucun résultat</div>'; return; }
+  el.innerHTML = palHits.map((h, i) =>
+    `<div class="palitem${i === palSel ? ' sel' : ''}" onclick="palGo(${i})">
+       <span>${esc(h.label)}</span><span class="ct">${esc(h.cat)}</span></div>`).join('');
+}
+function palGo(i){
+  const h = palHits[i];
+  if (!h) return;
+  closePal(); go(h.route);
+}
+
+/* =========================================================================
+   CLAVIER & INIT
+   ========================================================================= */
+document.getElementById('palin').addEventListener('input', e => palSearch(e.target.value));
+document.getElementById('palin').addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown'){ e.preventDefault(); palSel = Math.min(palSel + 1, palHits.length - 1); paintPal(); }
+  else if (e.key === 'ArrowUp'){ e.preventDefault(); palSel = Math.max(palSel - 1, 0); paintPal(); }
+  else if (e.key === 'Enter'){ e.preventDefault(); palGo(palSel); }
+  else if (e.key === 'Escape'){ closePal(); }
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); openPal(); return; }
+  if (document.getElementById('pal').classList.contains('on')) return;
+  if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  const h = curRoute();
+
+  if (h === '#/quiz' && QZ){
+    if (['1','2','3','4'].includes(e.key)){
+      const btns = document.querySelectorAll('#opts .opt');
+      const idx = Number(e.key) - 1;
+      if (btns[idx] && QZ.answered === null){ e.preventDefault(); answer(idx); }
+    } else if (e.key === 'Enter' || e.key === ' '){
+      if (QZ.answered !== null){ e.preventDefault(); nextQuestion(); }
+    }
+  }
+  if (h === '#/cards'){
+    if (e.key === ' '){ e.preventDefault(); flipCard(); }
+    else if (e.key === 'ArrowRight'){ e.preventDefault(); moveCard(1); }
+    else if (e.key === 'ArrowLeft'){ e.preventDefault(); moveCard(-1); }
+  }
+});
+
+document.documentElement.setAttribute('data-theme', S.theme || 'dark');
+document.getElementById('themebtn').innerHTML = (S.theme === 'light') ? '&#9728;' : '&#9790;';
+refreshSide();
+render();
+</script>
+</body>
+</html>

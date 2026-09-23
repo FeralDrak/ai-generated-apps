@@ -1144,6 +1144,16 @@ const QUIZ = [
     a: 1, why: "Le lag mesure le retard entre production et consommation. S'il croît en continu, le système ne suit plus : c'est le signal d'alerte n°1, avant même les erreurs. On y branche l'auto-scaling des consumers." }
 ];
 let quizIdx = 0, quizScore = 0;
+/* Fisher-Yates : les options sont remélangées à chaque affichage pour que
+   la bonne réponse ne tombe pas toujours au même endroit. */
+function shuffled(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 function renderQuiz(){
   const body = $("#quizBody");
   $("#quizScore").textContent = "Score : " + quizScore;
@@ -1165,9 +1175,11 @@ function renderQuiz(){
   }
   const item = QUIZ[quizIdx];
   $("#quizProgress").textContent = "Question " + (quizIdx + 1) + "/" + QUIZ.length;
+  // data-i garde l'index d'origine : seul l'ordre d'affichage (et donc la lettre) change.
+  const order = shuffled(item.opts.map((_, i) => i));
   body.innerHTML = '<div class="quiz-q">' + item.q + '</div>'
-    + '<div class="quiz-opts">' + item.opts.map((o, i) =>
-      '<button class="opt" data-i="' + i + '"><span class="letter">' + "ABCD"[i] + '</span><span>' + o + '</span></button>').join("") + '</div>'
+    + '<div class="quiz-opts">' + order.map((orig, pos) =>
+      '<button class="opt" data-i="' + orig + '"><span class="letter">' + "ABCD"[pos] + '</span><span>' + item.opts[orig] + '</span></button>').join("") + '</div>'
     + '<div class="quiz-why" id="quizWhy"></div>'
     + '<button class="btn primary quiz-next" id="quizNext">Question suivante →</button>';
   body.querySelectorAll(".opt").forEach(btn => btn.addEventListener("click", () => {

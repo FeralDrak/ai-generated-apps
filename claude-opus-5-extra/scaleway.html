@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scaleway Academy — Cloud, CLI &amp; API</title>
+<style>
+/* ============================================================
+   Scaleway Academy — single file app
+   ============================================================ */
+:root{
+  --purple:#8b2fff; --purple-2:#c084fc; --purple-dk:#4f0599;
+  --green:#25d07a; --amber:#ffb020; --red:#ff5470; --cyan:#31d4e8;
+  --bg:#08050f; --bg-2:#0f0a1c; --panel:#140d24; --panel-2:#1b1230;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+  --txt:#efeaf9; --muted:#a394c2; --muted-2:#7d6f9b;
+  --code-bg:#0c0716;
+  --shadow:0 18px 50px -22px rgba(0,0,0,.9);
+}
+html[data-theme="light"]{
+  --bg:#f6f3fc; --bg-2:#ffffff; --panel:#ffffff; --panel-2:#f3eefc;
+  --line:rgba(20,5,50,.10); --line-2:rgba(20,5,50,.2);
+  --txt:#1b1030; --muted:#5c4a80; --muted-2:#7d6f9b;
+  --code-bg:#160e29;
+  --shadow:0 14px 40px -20px rgba(60,20,120,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,sans-serif;
+  font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(900px 500px at 12% -8%, rgba(139,47,255,.22), transparent 60%),
+    radial-gradient(800px 480px at 92% 6%, rgba(49,212,232,.10), transparent 62%),
+    radial-gradient(700px 500px at 60% 108%, rgba(192,132,252,.10), transparent 60%);
+}
+html[data-theme="light"] body::before{opacity:.55}
+a{color:var(--purple-2); text-decoration:none}
+a:hover{text-decoration:underline}
+::selection{background:rgba(139,47,255,.4)}
+
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:rgba(139,47,255,.35);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background:rgba(139,47,255,.6);background-clip:padding-box}
+
+.app{position:relative; z-index:1; display:grid; grid-template-columns:290px 1fr; min-height:100vh}
+.side{
+  border-right:1px solid var(--line); background:linear-gradient(180deg,rgba(139,47,255,.08),transparent 30%), var(--bg-2);
+  padding:18px 14px 30px; position:sticky; top:0; height:100vh; overflow-y:auto;
+}
+html[data-theme="light"] .side{background:linear-gradient(180deg,rgba(139,47,255,.07),transparent 30%), #fff}
+.main{min-width:0; display:flex; flex-direction:column}
+
+.brand{display:flex; align-items:center; gap:11px; padding:6px 8px 16px}
+.logo{
+  width:40px;height:40px;border-radius:12px;flex:none;
+  background:linear-gradient(140deg,#8b2fff,#4f0599 60%,#31d4e8);
+  display:grid;place-items:center;font-weight:800;color:#fff;font-size:19px;
+  box-shadow:0 8px 22px -8px rgba(139,47,255,.9);
+}
+.brand h1{font-size:16px;margin:0;letter-spacing:-.02em;font-weight:750}
+.brand small{color:var(--muted);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase}
+
+.xpbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:14px}
+.xprow{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--muted);margin-bottom:7px}
+.xprow b{color:var(--txt);font-size:13.5px}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+html[data-theme="light"] .bar{background:rgba(20,5,50,.09)}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8b2fff,#c084fc,#31d4e8);transition:width .5s cubic-bezier(.2,.9,.3,1)}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.bdg{font-size:15px;width:26px;height:26px;display:grid;place-items:center;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--line);filter:grayscale(1);opacity:.35;cursor:help;transition:.25s}
+.bdg.on{filter:none;opacity:1;background:rgba(139,47,255,.16);border-color:rgba(139,47,255,.5)}
+
+.navlabel{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);padding:14px 10px 6px;font-weight:700}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:none;border:1px solid transparent;color:var(--muted);
+  padding:8px 10px;border-radius:10px;cursor:pointer;font:inherit;font-size:13.5px;transition:.16s;
+}
+.nav button:hover{background:rgba(139,47,255,.10);color:var(--txt)}
+.nav button.active{background:linear-gradient(90deg,rgba(139,47,255,.26),rgba(139,47,255,.06));color:#fff;border-color:rgba(139,47,255,.35)}
+html[data-theme="light"] .nav button.active{color:var(--purple-dk)}
+.nav button .ic{font-size:15px;width:20px;text-align:center;flex:none}
+.nav button .tx{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.14);flex:none}
+.dot.done{background:var(--green);box-shadow:0 0 8px var(--green)}
+
+.top{
+  position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;
+  padding:12px 26px;border-bottom:1px solid var(--line);
+  background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:blur(14px);
+}
+.burger{display:none}
+.search{position:relative;flex:1;max-width:440px}
+.search input{
+  width:100%;background:var(--panel);border:1px solid var(--line);color:var(--txt);
+  padding:9px 12px 9px 34px;border-radius:11px;font:inherit;font-size:13.5px;outline:none;transition:.2s
+}
+.search input:focus{border-color:rgba(139,47,255,.6);box-shadow:0 0 0 3px rgba(139,47,255,.14)}
+.search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.5;font-size:13px}
+.sres{position:absolute;top:46px;left:0;right:0;background:var(--panel-2);border:1px solid var(--line-2);border-radius:12px;box-shadow:var(--shadow);max-height:60vh;overflow:auto;display:none;z-index:40}
+.sres.on{display:block}
+.sres div{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--line)}
+.sres div:hover{background:rgba(139,47,255,.16)}
+.sres div small{display:block;color:var(--muted);font-size:11.5px}
+.tools{display:flex;gap:8px;margin-left:auto}
+.ibtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:15px;transition:.18s;display:grid;place-items:center}
+.ibtn:hover{color:var(--txt);border-color:var(--line-2);background:var(--panel-2)}
+
+.wrap{padding:30px 34px 90px;max-width:1120px;width:100%;margin:0 auto;flex:1}
+.page-h{margin-bottom:26px}
+.eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--purple-2);font-weight:700;background:rgba(139,47,255,.12);border:1px solid rgba(139,47,255,.28);padding:4px 10px;border-radius:99px}
+.page-h h2{font-size:31px;line-height:1.2;margin:12px 0 8px;letter-spacing:-.03em;font-weight:780}
+.page-h p.lead{color:var(--muted);font-size:15.5px;margin:0;max-width:78ch}
+h3.sub{font-size:19px;margin:34px 0 10px;letter-spacing:-.02em;font-weight:720;display:flex;align-items:center;gap:9px}
+h3.sub::before{content:"";width:4px;height:19px;border-radius:3px;background:linear-gradient(180deg,var(--purple),var(--cyan))}
+p{margin:0 0 12px}
+ul.li{margin:0 0 14px;padding-left:0;list-style:none}
+ul.li li{position:relative;padding-left:20px;margin-bottom:7px}
+ul.li li::before{content:"";position:absolute;left:4px;top:9px;width:6px;height:6px;border-radius:2px;background:var(--purple);transform:rotate(45deg)}
+ol.st{margin:0 0 14px;padding-left:0;list-style:none;counter-reset:s}
+ol.st li{counter-increment:s;position:relative;padding-left:34px;margin-bottom:9px}
+ol.st li::before{content:counter(s);position:absolute;left:0;top:1px;width:23px;height:23px;border-radius:8px;background:rgba(139,47,255,.18);border:1px solid rgba(139,47,255,.4);color:var(--purple-2);font-size:11.5px;font-weight:800;display:grid;place-items:center}
+code.ic{background:rgba(139,47,255,.14);border:1px solid rgba(139,47,255,.24);color:var(--purple-2);padding:1px 6px;border-radius:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;white-space:nowrap}
+html[data-theme="light"] code.ic{color:#6b1fc0}
+b,strong{color:var(--txt);font-weight:700}
+
+.codeb{background:var(--code-bg);border:1px solid var(--line-2);border-radius:13px;margin:0 0 16px;overflow:hidden;box-shadow:var(--shadow)}
+.codeb .ch{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
+.codeb .ch .dots{display:flex;gap:5px}
+.codeb .ch .dots i{width:9px;height:9px;border-radius:99px;display:block}
+.codeb .ch .dots i:nth-child(1){background:#ff5f57}.codeb .ch .dots i:nth-child(2){background:#febc2e}.codeb .ch .dots i:nth-child(3){background:#28c840}
+.codeb .ch span{font-size:11.5px;color:#9c8fbb;font-family:ui-monospace,monospace;margin-left:4px}
+.codeb .ch button{margin-left:auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#cbbfe4;font-size:11px;padding:3px 9px;border-radius:7px;cursor:pointer;font-family:inherit;transition:.15s}
+.codeb .ch button:hover{background:rgba(139,47,255,.35);color:#fff}
+.codeb pre{margin:0;padding:14px 15px;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.9px;line-height:1.72;color:#ded4f3}
+.k-cmd{color:#c084fc;font-weight:600}.k-flag{color:#31d4e8}.k-str{color:#8ee89a}.k-cmt{color:#6d6188;font-style:italic}
+.k-num{color:#ffb020}.k-key{color:#ff8fb1}.k-http{color:#25d07a;font-weight:700}
+
+.note{border-radius:13px;padding:13px 15px 13px 44px;margin:0 0 16px;position:relative;border:1px solid;font-size:14px}
+.note::before{position:absolute;left:14px;top:12px;font-size:16px}
+.note.info{background:rgba(49,212,232,.08);border-color:rgba(49,212,232,.3)}.note.info::before{content:"\1F4A1"}
+.note.warn{background:rgba(255,176,32,.09);border-color:rgba(255,176,32,.32)}.note.warn::before{content:"\26A0"}
+.note.exam{background:rgba(139,47,255,.11);border-color:rgba(139,47,255,.36)}.note.exam::before{content:"\1F3AF"}
+.note.ok{background:rgba(37,208,122,.09);border-color:rgba(37,208,122,.3)}.note.ok::before{content:"\2705"}
+.note.bad{background:rgba(255,84,112,.09);border-color:rgba(255,84,112,.3)}.note.bad::before{content:"\26D4"}
+.note b{display:block;margin-bottom:2px}
+
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:13.4px;min-width:520px}
+th{text-align:left;padding:10px 13px;background:rgba(139,47,255,.13);color:var(--txt);font-weight:700;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+td{padding:9px 13px;border-top:1px solid var(--line);vertical-align:top}
+tbody tr:hover{background:rgba(139,47,255,.06)}
+td code{font-family:ui-monospace,monospace;font-size:12.2px;color:var(--purple-2)}
+
+.grid{display:grid;gap:13px;margin:0 0 18px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;transition:.2s}
+.card:hover{border-color:rgba(139,47,255,.45);transform:translateY(-2px);box-shadow:var(--shadow)}
+.card .ci{font-size:21px;margin-bottom:7px;display:block}
+.card h4{margin:0 0 5px;font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.card p{margin:0;font-size:13.2px;color:var(--muted);line-height:1.6}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:6px;background:rgba(139,47,255,.16);color:var(--purple-2);border:1px solid rgba(139,47,255,.3);margin-top:8px}
+.tag.z{background:rgba(255,176,32,.14);color:var(--amber);border-color:rgba(255,176,32,.3)}
+.tag.r{background:rgba(49,212,232,.13);color:var(--cyan);border-color:rgba(49,212,232,.3)}
+.tag.g{background:rgba(37,208,122,.13);color:var(--green);border-color:rgba(37,208,122,.3)}
+
+.btn{background:linear-gradient(135deg,var(--purple),#6d17d6);color:#fff;border:none;padding:10px 18px;border-radius:11px;font:inherit;font-weight:650;font-size:13.5px;cursor:pointer;transition:.18s;box-shadow:0 10px 26px -12px rgba(139,47,255,.9)}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.1)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn.ghost{background:var(--panel);border:1px solid var(--line-2);color:var(--txt);box-shadow:none}
+.btn.ghost:hover{border-color:rgba(139,47,255,.55);background:var(--panel-2)}
+.btn.sm{padding:7px 13px;font-size:12.5px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:22px 0 0}
+
+.pgnav{display:flex;gap:12px;justify-content:space-between;margin-top:44px;padding-top:22px;border-top:1px solid var(--line);flex-wrap:wrap}
+
+.term{background:#07040d;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.term .th{display:flex;align-items:center;gap:8px;padding:9px 13px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.08)}
+.term .th .dots{display:flex;gap:5px}.term .th .dots i{width:10px;height:10px;border-radius:99px;display:block}
+.term .th .dots i:nth-child(1){background:#ff5f57}.term .th .dots i:nth-child(2){background:#febc2e}.term .th .dots i:nth-child(3){background:#28c840}
+.term .th span{font-size:11.5px;color:#9c8fbb;font-family:ui-monospace,monospace}
+.term .body{height:390px;overflow-y:auto;padding:13px 15px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.7px;line-height:1.65;color:#ded4f3}
+.term .body .ln{white-space:pre-wrap;word-break:break-word}
+.term .inrow{display:flex;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.08);padding:9px 14px;background:rgba(255,255,255,.02)}
+.term .inrow span{color:#25d07a;font-family:ui-monospace,monospace;font-size:12.7px;font-weight:700}
+.term .inrow input{flex:1;background:none;border:none;outline:none;color:#ded4f3;font-family:ui-monospace,monospace;font-size:12.7px}
+.terr{color:#ff5470}.tok{color:#25d07a}.tdim{color:#7d6f9b}.tacc{color:#c084fc}.twarn{color:#ffb020}.tcy{color:#31d4e8}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}
+.chip{background:var(--panel);border:1px solid var(--line);color:var(--muted);font-size:11.8px;padding:5px 10px;border-radius:8px;cursor:pointer;font-family:ui-monospace,monospace;transition:.15s}
+.chip:hover{border-color:rgba(139,47,255,.5);color:var(--txt);background:rgba(139,47,255,.12)}
+
+.mission{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:13px;align-items:flex-start}
+.mission.done{border-color:rgba(37,208,122,.45);background:rgba(37,208,122,.07)}
+.mission .mi{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:none;background:rgba(139,47,255,.16);border:1px solid rgba(139,47,255,.35);font-size:13px;font-weight:800;color:var(--purple-2)}
+.mission.done .mi{background:rgba(37,208,122,.2);border-color:rgba(37,208,122,.5);color:var(--green)}
+.mission h4{margin:0 0 3px;font-size:14px}
+.mission p{margin:0;font-size:13px;color:var(--muted)}
+.mission .hint{margin-top:6px;font-size:12px;color:var(--muted-2);font-family:ui-monospace,monospace}
+
+.qbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:5px 13px;font-size:12.5px;color:var(--muted)}
+.pill b{color:var(--txt)}
+select.sel{background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:8px 11px;border-radius:10px;font:inherit;font-size:13px;cursor:pointer;outline:none}
+.qcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.qmeta{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px}
+.qtext{font-size:17.5px;font-weight:650;line-height:1.45;margin-bottom:18px;letter-spacing:-.01em}
+.qtext code{background:rgba(139,47,255,.14);border:1px solid rgba(139,47,255,.24);color:var(--purple-2);padding:1px 6px;border-radius:6px;font-family:ui-monospace,monospace;font-size:14.5px}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;background:var(--panel-2);border:1px solid var(--line);color:var(--txt);padding:12px 14px;border-radius:12px;cursor:pointer;font:inherit;font-size:14px;transition:.16s;width:100%}
+.opt:hover:not(:disabled){border-color:rgba(139,47,255,.55);transform:translateX(3px)}
+.opt .ltr{width:23px;height:23px;border-radius:7px;background:rgba(255,255,255,.07);display:grid;place-items:center;font-size:11.5px;font-weight:800;flex:none;color:var(--muted)}
+.opt.good{border-color:var(--green);background:rgba(37,208,122,.13)}.opt.good .ltr{background:var(--green);color:#04210f}
+.opt.bad{border-color:var(--red);background:rgba(255,84,112,.13)}.opt.bad .ltr{background:var(--red);color:#2a0009}
+.opt:disabled{cursor:default;opacity:.85}
+.opt.good:disabled,.opt.bad:disabled{opacity:1}
+.opt code{font-family:ui-monospace,monospace;font-size:12.8px;color:var(--purple-2)}
+.expl{margin-top:16px;padding:13px 15px;border-radius:12px;background:rgba(49,212,232,.08);border:1px solid rgba(49,212,232,.28);font-size:13.6px;display:none}
+.expl.on{display:block;animation:fade .35s}
+.expl code{font-family:ui-monospace,monospace;font-size:12.6px;color:var(--cyan)}
+@keyframes fade{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.qprog{height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:18px}
+.qprog i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));transition:width .4s}
+.score{text-align:center;padding:34px 20px}
+.score .big{font-size:56px;font-weight:800;letter-spacing:-.04em;background:linear-gradient(135deg,var(--purple-2),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+.fcwrap{perspective:1400px;margin-bottom:16px}
+.fc{position:relative;height:250px;transition:transform .6s cubic-bezier(.3,.9,.3,1);transform-style:preserve-3d;cursor:pointer}
+.fc.flip{transform:rotateY(180deg)}
+.fc .f,.fc .b{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;border:1px solid var(--line-2);padding:26px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:var(--shadow)}
+.fc .f{background:linear-gradient(150deg,var(--panel-2),var(--panel))}
+.fc .b{background:linear-gradient(150deg,rgba(139,47,255,.22),var(--panel));transform:rotateY(180deg)}
+.fc .f h4{font-size:19px;margin:0;font-weight:700;letter-spacing:-.02em}
+.fc .b p{font-size:14.5px;margin:0;color:var(--txt);max-width:60ch}
+.fc .b code,.fc .f code{font-family:ui-monospace,monospace;font-size:13px;color:var(--purple-2)}
+.fc small{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:var(--muted-2);font-size:11px;letter-spacing:.09em;text-transform:uppercase}
+
+.exp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fld{margin-bottom:12px}
+.fld label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted-2);font-weight:700;margin-bottom:5px}
+.fld select,.fld input{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--txt);padding:9px 11px;border-radius:10px;font:inherit;font-size:13.2px;outline:none}
+.fld select:focus,.fld input:focus{border-color:rgba(139,47,255,.6)}
+.scopebadge{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.07em;padding:3px 9px;border-radius:7px;margin-left:6px}
+.sc-z{background:rgba(255,176,32,.16);color:var(--amber)}
+.sc-r{background:rgba(49,212,232,.16);color:var(--cyan)}
+.sc-g{background:rgba(37,208,122,.16);color:var(--green)}
+
+.map{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:18px}
+.reg{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:16px;position:relative;overflow:hidden}
+.reg::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:99px;background:radial-gradient(circle,rgba(139,47,255,.25),transparent 70%)}
+.reg h4{margin:0 0 2px;font-size:15.5px}
+.reg .code{font-family:ui-monospace,monospace;color:var(--purple-2);font-size:12.5px}
+.reg .azs{display:flex;gap:6px;margin-top:11px;flex-wrap:wrap}
+.az{font-family:ui-monospace,monospace;font-size:11.3px;padding:4px 8px;border-radius:7px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--muted)}
+
+#toast{position:fixed;right:22px;bottom:22px;z-index:99;display:flex;flex-direction:column;gap:9px;align-items:flex-end}
+.toast{background:var(--panel-2);border:1px solid rgba(139,47,255,.5);border-radius:12px;padding:11px 16px;font-size:13.5px;box-shadow:var(--shadow);animation:slide .3s;display:flex;gap:9px;align-items:center}
+@keyframes slide{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+
+.backdrop{display:none}
+@media (max-width:960px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;left:0;top:0;width:280px;z-index:60;transform:translateX(-100%);transition:transform .28s;box-shadow:var(--shadow)}
+  .side.open{transform:none}
+  .burger{display:grid}
+  .wrap{padding:22px 16px 80px}
+  .page-h h2{font-size:25px}
+  .exp{grid-template-columns:1fr}
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:55}
+  .backdrop.on{display:block}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <div class="logo">S</div>
+      <div><h1>Scaleway Academy</h1><small>Cloud · CLI · API</small></div>
+    </div>
+    <div class="xpbox">
+      <div class="xprow"><span>Niveau <b id="lvl">1</b></span><span id="xptxt">0 / 100 XP</span></div>
+      <div class="bar"><i id="xpbar" style="width:0%"></i></div>
+      <div class="badges" id="badges"></div>
+    </div>
+    <div class="navlabel">Cours</div>
+    <div class="nav" id="nav-lessons"></div>
+    <div class="navlabel">Pratique</div>
+    <div class="nav" id="nav-tools"></div>
+  </aside>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="main">
+    <div class="top">
+      <button class="ibtn burger" id="burger">☰</button>
+      <div class="search">
+        <span class="mag">🔍</span>
+        <input id="q" placeholder="Rechercher (VPC, IAM, scw, X-Auth-Token…)" autocomplete="off">
+        <div class="sres" id="sres"></div>
+      </div>
+      <div class="tools">
+        <button class="ibtn" id="theme" title="Thème clair / sombre">🌙</button>
+        <button class="ibtn" id="reset" title="Réinitialiser la progression">↺</button>
+      </div>
+    </div>
+    <div class="wrap" id="view"></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+"use strict";
+/* ============================================================
+   0. Helpers
+   ============================================================ */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function md(s){
+  return esc(s)
+    /* on ré-autorise une petite liste de balises écrites à la main dans le contenu */
+    .replace(/&lt;(\/?)(code|strong|em|b|br)&gt;/g,function(m,sl,tag){
+      return "<"+sl+tag+(tag==="code"&&!sl?' class="ic"':"")+">";
+    })
+    .replace(/&amp;(lt|gt|amp|nbsp|quot);/g,"&$1;")
+    .replace(/`([^`]+)`/g,'<code class="ic">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+    .replace(/__([^_]+)__/g,'<em>$1</em>');
+}
+var MODULES=[], TOOLS=[], QUIZ=[], CARDS=[], MISSIONS=[], API_PRODUCTS=[];
+/* ============================================================
+   1. Contenu du cours
+   ============================================================ */
+MODULES.push({
+id:"intro", icon:"🚀", title:"Fondamentaux Scaleway",
+lead:"Qui est Scaleway, comment son cloud est organisé, et le vocabulaire que ton recruteur utilisera dans les 10 premières minutes de l'entretien.",
+blocks:[
+ {t:"p",x:"**Scaleway** est un cloud provider européen (groupe **Iliad**, France) qui propose une offre complète : compute, storage, network, managed databases, serverless, Kubernetes, AI. Son argument central face à AWS / GCP / Azure est la **souveraineté** (données hébergées en Europe, droit européen, pas de CLOUD Act) associée à un modèle **pay-as-you-go** à la seconde ou à l'heure selon les produits."},
+ {t:"cards",x:[
+  {i:"🏢",t:"Historique",d:"Online.net / Dedibox à l'origine (dedicated servers), devenu Scaleway en 2015 avec une offre cloud public complète."},
+  {i:"🇪🇺",t:"Souveraineté",d:"Data centers en France, Pays-Bas, Pologne. Conformité RGPD/GDPR, certifications ISO 27001, HDS sur certains périmètres."},
+  {i:"🌱",t:"Sustainability",d:"DC5 (Paris) refroidi par adiabatic cooling, sans climatisation classique, PUE très bas. Argument commercial fort chez Scaleway."},
+  {i:"💶",t:"Pricing",d:"Pay-as-you-go, facturation à l'heure pour la plupart des ressources, Savings Plans, et un free tier sur plusieurs produits."}
+ ]},
+ {t:"h",x:"Les 4 façons de piloter Scaleway"},
+ {t:"p",x:"C'est **la** question d'ouverture classique. Tout ce que fait la console passe par la même API publique : la console n'est qu'un client parmi d'autres."},
+ {t:"cards",x:[
+  {i:"🖥️",t:"Console",d:"L'interface web console.scaleway.com. Idéale pour découvrir, mauvaise idée pour du reproductible.",tag:"UI",tc:""},
+  {i:"⌨️",t:"CLI scw",d:"Binaire Go officiel. Scriptable, sortie JSON, parfait pour l'ops et le debug.",tag:"CLI",tc:"g"},
+  {i:"🔌",t:"API REST",d:"api.scaleway.com. Source de vérité : tout le reste s'appuie dessus.",tag:"API",tc:"r"},
+  {i:"📦",t:"SDK / IaC",d:"SDK Go, Python, JS/TS ; Terraform / OpenTofu provider, Pulumi, Ansible, Crossplane.",tag:"IaC",tc:"z"}
+ ]},
+ {t:"note",k:"exam",b:"Réponse type en entretien",x:"« La console, le CLI `scw`, les SDK et le provider Terraform sont tous des **clients de la même REST API**. Pour de la production je fais du **Terraform** pour l'infra, le **CLI** pour l'exploitation et le debug, et l'**API directe** quand j'intègre Scaleway dans une application. »"},
+ {t:"h",x:"Hiérarchie : Organization → Project → Resource"},
+ {t:"p",x:"C'est le modèle mental le plus important. Une confusion ici se voit immédiatement en entretien."},
+ {t:"table",head:["Niveau","Rôle","Identifiant"],rows:[
+  ["**Organization**","Le compte racine. Porte la facturation, les users, les groupes, les policies IAM. Une seule par compte (en pratique).","<code>organization_id</code> (UUID)"],
+  ["**Project**","Un conteneur logique de ressources (ex. <code>prod</code>, <code>staging</code>, <code>data</code>). Sert de périmètre d'isolation et de scope IAM. Il existe toujours un project <code>default</code>.","<code>project_id</code> (UUID)"],
+  ["**Resource**","L'objet concret : Instance, bucket, cluster Kapsule, base RDB…","<code>id</code> (UUID) + zone/region"]
+ ]},
+ {t:"note",k:"warn",b:"Piège classique",x:"Un **Project n'est pas un compte de facturation séparé**. La facture est consolidée au niveau de l'Organization ; le Project sert à séparer les ressources, appliquer des permissions et ventiler les coûts (cost breakdown par project)."},
+ {t:"note",k:"info",b:"Historique à connaître",x:"Avant l'IAM actuel, Scaleway avait des « Organizations » et des tokens globaux. Les **Projects** ont remplacé les anciens « accounts » et l'**IAM** (users, applications, groups, policies) a remplacé les tokens tout-puissants. Si tu vois du code qui envoie un `organization_id` là où on attend un `project_id`, c'est souvent du legacy."},
+ {t:"h",x:"Regions & Availability Zones"},
+ {t:"p",x:"Scaleway distingue trois **scopes** de ressources. Savoir si un produit est zonal, régional ou global est un réflexe indispensable, aussi bien pour l'API que pour l'architecture."},
+ {t:"regions"},
+ {t:"table",head:["Scope","Format","Exemples de produits"],rows:[
+  ["**Zonal**","<code>fr-par-1</code>, <code>nl-ams-2</code>","Instances, Block Storage, Elastic Metal, Load Balancer (zonal), snapshots"],
+  ["**Regional**","<code>fr-par</code>, <code>nl-ams</code>, <code>pl-waw</code>","Object Storage, VPC & Private Networks, Kapsule, Managed Databases, Container Registry, Serverless, Cockpit"],
+  ["**Global**","(aucun)","IAM, Account/Projects, Billing, Domains & DNS, Secret Manager (multi-region)"]
+ ]},
+ {t:"note",k:"exam",b:"À placer absolument",x:"« Une **region** = un site géographique (`fr-par`), une **AZ** = un data center isolé dans cette region (`fr-par-1`, `fr-par-2`, `fr-par-3`). Pour de la haute disponibilité je répartis mes Instances sur **plusieurs AZ d'une même region** et je mets devant un **Load Balancer multi-AZ (regional)**. »"},
+ {t:"h",x:"Facturation & quotas"},
+ {t:"ul",x:[
+  "**Pay-as-you-go** : facturation à l'heure entamée pour les Instances, à la seconde/requête pour le serverless, au Go stocké pour l'Object Storage.",
+  "Une Instance **stopped** ne facture pas le CPU/RAM, mais **le volume (block storage) et la flexible IP réservée continuent d'être facturés**. Piège d'entretien très fréquent.",
+  "**Savings Plans** : engagement mensuel/annuel sur un montant de compute en échange d'une remise.",
+  "**Quotas** : limites par Organization/Project (nombre d'Instances, d'IP, de vCPU). Elles augmentent avec l'ancienneté et la vérification du compte ; sinon ticket support.",
+  "**Cost Manager** + **budget alerts** pour suivre la consommation ; export de la consommation détaillée."
+ ]},
+ {t:"note",k:"bad",b:"Erreur qui coûte cher",x:"Supprimer une Instance sans supprimer son **volume** ni libérer sa **flexible IP** : tu continues à payer. En CLI on écrit donc `scw instance server terminate <id> with-ip=true with-volumes=all`."}
+]});
+
+MODULES.push({
+id:"iam", icon:"🔐", title:"IAM, clés & sécurité",
+lead:"Le sujet où l'on repère un développeur sérieux : comment on s'authentifie, comment on limite les droits, et où l'on ne met surtout pas ses secrets.",
+blocks:[
+ {t:"h",x:"Les principals"},
+ {t:"cards",x:[
+  {i:"👤",t:"User",d:"Un humain qui se connecte à la console (email + mot de passe + MFA). Peut posséder des API keys."},
+  {i:"🤖",t:"Application",d:"Une identité machine : CI/CD, script, Terraform, backend applicatif. C'est ce qu'il faut utiliser pour un service."},
+  {i:"👥",t:"Group",d:"Un ensemble de users et/ou d'applications, pour attacher les policies une seule fois."},
+  {i:"👑",t:"Owner",d:"Le propriétaire de l'Organization. Droits absolus, ne peut pas être restreint. À ne jamais utiliser au quotidien."}
+ ]},
+ {t:"h",x:"Policy = Principal + Rules"},
+ {t:"p",x:"Une **policy** IAM associe **un** principal (user, application ou group) à une liste de **rules**. Chaque rule = un ensemble de **permission sets** appliqué à un **scope** : soit une liste de `project_ids`, soit `organization_id` (donc tous les projects)."},
+ {t:"code",lang:"json",cap:"policy (modèle mental)",x:`{
+  "name": "ci-deploy-staging",
+  "application_id": "5f2a...",          // le principal
+  "rules": [
+    {
+      "permission_set_names": [
+        "InstancesFullAccess",
+        "ContainerRegistryFullAccess"
+      ],
+      "project_ids": ["c0ffee00-...-staging"]   // le scope
+    },
+    {
+      "permission_set_names": ["ObjectStorageReadOnly"],
+      "organization_id": "a1b2..."              // scope global
+    }
+  ]
+}`},
+ {t:"ul",x:[
+  "Un **permission set** est un paquet de permissions prédéfini par Scaleway : `InstancesFullAccess`, `ObjectStorageReadOnly`, `KubernetesFullAccess`, `IAMManager`, `BillingReadOnly`, `AllProductsFullAccess`…",
+  "Le modèle est **allow-only** : il n'y a pas de `Deny` explicite comme dans une policy AWS. On accorde, on n'interdit pas.",
+  "Les droits sont **cumulatifs** : union de toutes les policies qui touchent le principal, directement ou via ses groups."
+ ]},
+ {t:"note",k:"exam",b:"Comparaison AWS attendue",x:"« Le modèle Scaleway est plus simple qu'IAM AWS : pas de JSON policy language avec `Effect: Deny`, pas de conditions. On attache des **permission sets** prédéfinis à un principal sur un **scope de projects**. C'est moins expressif mais beaucoup moins facile à casser. »"},
+ {t:"h",x:"API keys : access key & secret key"},
+ {t:"table",head:["Élément","Format","Usage"],rows:[
+  ["**Access key**","<code>SCWXXXXXXXXXXXXXXXXX</code>","Identifiant public de la clé. Utilisé pour l'authentification **S3 / Object Storage** (signature AWS SigV4)."],
+  ["**Secret key**","un UUID","Le secret. Envoyé dans le header <code>X-Auth-Token</code> pour l'API Scaleway, et comme secret key S3."],
+  ["**Preferred project**","<code>project_id</code>","Project utilisé par défaut quand la requête n'en précise pas."]
+ ]},
+ {t:"note",k:"warn",b:"La secret key n'est affichée qu'une fois",x:"À la création (console ou API), la **secret key** n'est retournée qu'une seule fois. Si elle est perdue, on ne la récupère pas : on révoque la clé et on en crée une nouvelle. Les rotations doivent donc être scriptées."},
+ {t:"code",lang:"bash",cap:"créer une identité machine propre",x:`# 1. une application dédiée au service
+scw iam application create name=ci-runner \\
+  description="GitHub Actions deploy"
+
+# 2. une policy la plus étroite possible
+scw iam policy create name=ci-runner-staging \\
+  application-id=$APP_ID \\
+  rules.0.permission-set-names.0=ContainerRegistryFullAccess \\
+  rules.0.permission-set-names.1=ServerlessContainersFullAccess \\
+  rules.0.project-ids.0=$STAGING_PROJECT_ID
+
+# 3. la clé d API (secret affiché UNE seule fois)
+scw iam api-key create application-id=$APP_ID \\
+  description="gha runner" \\
+  default-project-id=$STAGING_PROJECT_ID`},
+ {t:"h",x:"Bonnes pratiques à réciter"},
+ {t:"ul",x:[
+  "**Une application par service**, jamais une clé humaine partagée dans une CI.",
+  "**Least privilege** : les permission sets strictement nécessaires, scopés à un seul project.",
+  "**Rotation** des clés, et révocation immédiate au départ d'un collaborateur.",
+  "**Jamais de clé dans le repo** : variables d'environnement, GitHub/GitLab secrets, ou **Secret Manager**.",
+  "**MFA obligatoire** sur les users de la console.",
+  "**Audit Trail** activé pour tracer qui a fait quoi (qui a supprimé le bucket de prod à 3 h du matin).",
+  "Le fichier `~/.config/scw/config.yaml` du CLI contient la secret key **en clair** : droits `600`, jamais commité, jamais dans une image Docker."
+ ]},
+ {t:"h",x:"Secret Manager & Key Manager"},
+ {t:"cards",x:[
+  {i:"🗝️",t:"Secret Manager",d:"Stocke et versionne des secrets (mots de passe, tokens, certificats). Accès par IAM, versions, révocation, intégration CLI/SDK.",tag:"REGIONAL",tc:"r"},
+  {i:"🔏",t:"Key Manager (KMS)",d:"Gère des clés de chiffrement pour du encrypt/decrypt et de la data key generation côté application.",tag:"REGIONAL",tc:"r"},
+  {i:"📜",t:"Audit Trail",d:"Journal des événements de l'Organization : création, modification, suppression de ressources, par qui et quand.",tag:"REGIONAL",tc:"r"}
+ ]},
+ {t:"note",k:"bad",b:"Réponse éliminatoire",x:"Dire qu'on met la secret key « dans le code, mais dans un fichier `config.js` qui n'est pas versionné ». On attend : variable d'environnement injectée par la plateforme, ou Secret Manager, avec rotation."}
+]});
+
+MODULES.push({
+id:"compute", icon:"🖥️", title:"Compute : Instances & bare metal",
+lead:"Le socle. Gammes d'Instances, volumes, images, security groups, cloud-init, et bare metal quand il faut du dédié.",
+blocks:[
+ {t:"h",x:"Les gammes d'Instances"},
+ {t:"p",x:"Scaleway nomme ses Instances par **gamme + taille**, par exemple `DEV1-S`, `PRO2-M`, `POP2-HC-4C-16G`. Il n'est pas nécessaire de connaître le catalogue par cœur, mais il faut savoir **classer les familles**."},
+ {t:"table",head:["Famille","Type","Pour quoi"],rows:[
+  ["**Cost-Optimized** (ex. DEV1, PLAY2)","vCPU partagés","Dev, test, petits services, charges irrégulières. Le moins cher."],
+  ["**General Purpose** (ex. GP1, POP2)","vCPU dédiés","Applications de production équilibrées CPU/RAM."],
+  ["**Production-Optimized** (ex. PRO2, POP2-HC/HM)","vCPU dédiés, ratios spécialisés","Compute-intensive (HC = high CPU) ou memory-intensive (HM = high memory)."],
+  ["**GPU** (ex. L4, L40S, H100)","GPU NVIDIA","Inference, training, rendu, transcodage."],
+  ["**ARM** (ex. COPARM1)","CPU Ampere ARM64","Workloads compatibles ARM, meilleur rapport perf/prix/watt."]
+ ]},
+ {t:"note",k:"info",b:"Le catalogue bouge",x:"Les noms de gammes évoluent régulièrement (POP2 a succédé à GP1/PRO2 sur plusieurs zones). En entretien, parle en **familles** (cost-optimized / general purpose / production-optimized / GPU / ARM) et précise que tu vérifies le catalogue avec `scw instance server-type list zone=fr-par-1`."},
+ {t:"h",x:"Volumes : local vs block"},
+ {t:"table",head:["Type","Caractéristique","Conséquence"],rows:[
+  ["**Local storage** (l_ssd)","SSD physiquement attaché à l'hyperviseur","Très rapide, mais la taille est liée au type d'Instance et le volume **ne survit pas** à un changement d'Instance"],
+  ["**Block Storage** (b_ssd / SBS)","Volume réseau, 5 000 ou 15 000 IOPS","Détachable, redimensionnable à chaud, snapshot-able, survit à la suppression de l'Instance"],
+  ["**Snapshot**","Copie ponctuelle d'un volume","Base pour créer une **image** réutilisable"],
+  ["**Image**","Modèle de démarrage (OS + volumes)","Images officielles (`ubuntu_jammy`, `debian_bookworm`…) ou custom"]
+ ]},
+ {t:"note",k:"warn",b:"Piège",x:"Un **Block Storage volume détaché continue d'être facturé**. Idem pour les snapshots et les flexible IP réservées mais non attachées."},
+ {t:"h",x:"Réseau d'une Instance"},
+ {t:"ul",x:[
+  "**Flexible IP** : IP publique réservable, détachable et réattachable à une autre Instance (utile pour un failover manuel). IPv4 payante, IPv6 fournie en /64.",
+  "**Security Group** : firewall stateful au niveau de l'Instance, règles inbound/outbound, politique par défaut accept ou drop. C'est l'équivalent des security groups AWS.",
+  "**Private Network** : interface L2 privée, rattachée au **VPC** régional, pour faire communiquer les ressources sans passer par Internet.",
+  "**Placement Group** : contrainte d'ordonnancement — `max_availability` pour forcer des hyperviseurs différents (anti-affinity), `low_latency` pour les rapprocher."
+ ]},
+ {t:"h",x:"Cycle de vie & cloud-init"},
+ {t:"code",lang:"bash",cap:"cycle de vie complet en CLI",x:`# créer, avec IP publique et 20 Go de block storage
+scw instance server create \\
+  type=DEV1-S \\
+  image=ubuntu_jammy \\
+  name=web-01 \\
+  zone=fr-par-1 \\
+  ip=new \\
+  root-volume=block:20GB \\
+  tags.0=env=staging
+
+# injecter du cloud-init (user data)
+scw instance user-data set server-id=$ID key=cloud-init \\
+  content=@./cloud-init.yaml zone=fr-par-1
+
+scw instance server start  $ID zone=fr-par-1 --wait
+scw instance server stop   $ID zone=fr-par-1 --wait
+# supprimer PROPREMENT : serveur + IP + volumes
+scw instance server terminate $ID zone=fr-par-1 \\
+  with-ip=true with-volumes=all`},
+ {t:"note",k:"info",b:"States",x:"Une Instance passe par `starting` → `running` → `stopping` → `stopped`. L'API est **asynchrone** : la réponse de création arrive avant que la machine soit prête. D'où le flag `--wait` du CLI, ou du polling côté API."},
+ {t:"h",x:"Au-delà des Instances"},
+ {t:"cards",x:[
+  {i:"⚙️",t:"Elastic Metal",d:"Serveurs bare metal provisionnés à la demande, facturés à l'heure, pilotables par API. Pour l'isolation totale, la licence liée au CPU, ou la performance brute.",tag:"ZONAL",tc:"z"},
+  {i:"🗄️",t:"Dedibox",d:"Serveurs dédiés historiques, engagement mensuel, moins élastiques mais très bon rapport prix/performance.",tag:"DEDICATED",tc:""},
+  {i:"🍎",t:"Apple silicon",d:"Mac mini M1/M2/M4 à l'heure, pour builder et signer des applications iOS/macOS en CI.",tag:"ZONAL",tc:"z"},
+  {i:"🧠",t:"GPU Instances",d:"L4, L40S, H100… pour l'inference et le training, avec images pré-installées CUDA/Docker.",tag:"ZONAL",tc:"z"}
+ ]},
+ {t:"note",k:"exam",b:"Question fréquente",x:"« Instance vs Elastic Metal ? » → « Une **Instance** est une VM sur hyperviseur mutualisé, provisionnée en secondes, avec volumes réseau. **Elastic Metal** est un serveur physique dédié, provisionné en quelques minutes, sans voisin bruyant, facturé à l'heure et piloté par la même API. Je prends de l'Elastic Metal pour de la virtualisation imbriquée, des contraintes de licence CPU ou des I/O extrêmes. »"}
+]});
+MODULES.push({
+id:"serverless", icon:"⚡", title:"Serverless : Functions, Containers, Jobs",
+lead:"Le terrain préféré des recruteurs pour un profil développeur : trois produits, trois usages, et un scale-to-zero qui change le modèle de coût.",
+blocks:[
+ {t:"cards",x:[
+  {i:"λ",t:"Serverless Functions",d:"Tu fournis du code (Node, Python, Go, PHP, Rust) et un handler. Scaleway builde et exécute. Équivalent AWS Lambda.",tag:"REGIONAL",tc:"r"},
+  {i:"📦",t:"Serverless Containers",d:"Tu fournis une image OCI depuis le Container Registry. N'importe quel langage, n'importe quelle stack. Équivalent Cloud Run.",tag:"REGIONAL",tc:"r"},
+  {i:"⏱️",t:"Serverless Jobs",d:"Exécution batch qui tourne jusqu'à la fin puis s'arrête. Cron, ETL, migrations. Pas de serveur HTTP.",tag:"REGIONAL",tc:"r"}
+ ]},
+ {t:"h",x:"Le vocabulaire commun"},
+ {t:"table",head:["Notion","Ce que c'est"],rows:[
+  ["**Namespace**","Le conteneur logique d'un ensemble de functions ou de containers. Porte les variables d'environnement et les secrets communs, et le registry associé."],
+  ["**min-scale / max-scale**","Nombre minimum et maximum d'instances. <code>min-scale=0</code> = <strong>scale to zero</strong> : tu ne paies plus rien mais tu subis un <strong>cold start</strong>. <code>min-scale=1</code> supprime le cold start mais facture en permanence."],
+  ["**Concurrency**","Nombre de requêtes traitées simultanément par une instance. C'est le déclencheur du scaling horizontal."],
+  ["**Memory limit**","De 128 Mo à plusieurs Go. Le CPU alloué est <strong>proportionnel</strong> à la mémoire choisie."],
+  ["**Timeout**","Durée maximale d'une invocation."],
+  ["**Privacy**","<code>public</code> (endpoint ouvert) ou <code>private</code> (nécessite un token IAM dans l'appel)."],
+  ["**Trigger**","Ce qui déclenche l'exécution : HTTP (par défaut), <strong>CRON</strong>, ou message NATS / SQS."]
+ ]},
+ {t:"note",k:"exam",b:"Function vs Container : la réponse qui marque des points",x:"« Une **Function** part de mon code source, Scaleway construit l'image pour moi : c'est plus rapide à mettre en place mais je suis limité aux runtimes supportés. Un **Container** part d'une image que je maîtrise entièrement : dépendances système, binaires, n'importe quel langage. Dès que j'ai besoin d'une lib native ou d'un runtime non supporté, je passe en Container. Les deux scalent à zéro et sont facturés à la requête et au GB-seconde. »"},
+ {t:"code",lang:"bash",cap:"déployer un Serverless Container",x:`# 1. namespace
+scw container namespace create name=api-prod region=fr-par
+
+# 2. le container pointe vers une image du registry
+scw container container create \\
+  namespace-id=$NS_ID \\
+  name=orders-api \\
+  registry-image=rg.fr-par.scw.cloud/api-prod/orders:1.4.2 \\
+  port=8080 \\
+  min-scale=0 max-scale=10 \\
+  memory-limit=512 \\
+  max-concurrency=40 \\
+  privacy=public \\
+  environment-variables.LOG_LEVEL=info \\
+  secret-environment-variables.0.key=DB_PASSWORD \\
+  secret-environment-variables.0.value=$DB_PASSWORD
+
+# 3. déploiement effectif
+scw container container deploy $CONTAINER_ID --wait`},
+ {t:"h",x:"Cold start : la question piège"},
+ {t:"ul",x:[
+  "Avec `min-scale=0`, la première requête après une période d'inactivité doit démarrer une instance : c'est le **cold start** (de quelques centaines de ms à quelques secondes selon l'image).",
+  "Mitigations : `min-scale=1` (on paie une instance en permanence), **image la plus légère possible**, éviter les initialisations lourdes hors du handler, et un **CRON trigger** de keep-alive (bricolage, mais ça se dit).",
+  "Un `max-scale` trop élevé sur une base de données mal dimensionnée = **connection storm**. Réponse attendue : pooling ou proxy de connexions, et un `max-scale` cohérent avec `max_connections`."
+ ]},
+ {t:"h",x:"Serverless Jobs"},
+ {t:"p",x:"On définit une **job definition** (image, CPU, RAM, timeout, variables, éventuellement un cron) puis on déclenche des **job runs**. Chaque run a un état : `queued`, `running`, `succeeded`, `failed`."},
+ {t:"code",lang:"bash",cap:"job batch planifié",x:`scw jobs definition create \\
+  name=nightly-etl \\
+  image-uri=rg.fr-par.scw.cloud/data/etl:latest \\
+  cpu-limit=1000 memory-limit=2048 \\
+  job-timeout=3600s \\
+  cron.schedule="0 3 * * *" cron.timezone=Europe/Paris
+
+scw jobs definition start $DEF_ID     # lancement manuel
+scw jobs run list definition-id=$DEF_ID`},
+ {t:"note",k:"info",b:"Comment choisir",x:"Requête HTTP courte et code simple → **Function**. Application web/API complète, stack maîtrisée → **Container**. Traitement qui tourne puis se termine (ETL, migration, batch nocturne) → **Job**. Charge permanente et prévisible → une **Instance** ou **Kapsule** coûte souvent moins cher que du serverless."}
+]});
+
+MODULES.push({
+id:"k8s", icon:"☸️", title:"Kubernetes & Container Registry",
+lead:"Kapsule, Kosmos, le registry privé, et l'intégration native avec le Load Balancer et le Block Storage.",
+blocks:[
+ {t:"cards",x:[
+  {i:"☸️",t:"Kapsule",d:"Kubernetes managé : Scaleway gère le control plane, les nodes sont des Instances Scaleway dans tes pools.",tag:"REGIONAL",tc:"r"},
+  {i:"🌍",t:"Kosmos",d:"Kubernetes managé multi-cloud : le control plane est chez Scaleway, mais les nodes peuvent être n'importe où (autre cloud, on-premise).",tag:"MULTI-CLOUD",tc:"g"},
+  {i:"🗃️",t:"Container Registry",d:"Registry OCI privé ou public, endpoint rg.<region>.scw.cloud, namespaces, quotas et scan d'images.",tag:"REGIONAL",tc:"r"}
+ ]},
+ {t:"h",x:"Anatomie d'un cluster Kapsule"},
+ {t:"ul",x:[
+  "**Control plane managé** : API server, etcd, scheduler gérés par Scaleway. Offres avec ou sans SLA de haute disponibilité.",
+  "**Pools** : groupes de nodes homogènes (même type d'Instance, même zone). On peut avoir plusieurs pools dans un cluster, dont des pools GPU.",
+  "**Autoscaling** : `min-size` / `max-size` par pool, piloté par le cluster-autoscaler.",
+  "**Autohealing** : un node en `NotReady` est automatiquement remplacé.",
+  "**CNI** : Cilium par défaut (également Calico/Flannel selon les versions).",
+  "**CSI** : le driver Scaleway crée automatiquement un **Block Storage** volume quand tu crées un PersistentVolumeClaim.",
+  "**CCM** (Cloud Controller Manager) : un `Service type=LoadBalancer` provisionne automatiquement un **Load Balancer Scaleway**, configurable par annotations.",
+  "**Upgrade** : montée de version du control plane puis des pools, avec une **maintenance window** configurable."
+ ]},
+ {t:"code",lang:"bash",cap:"cluster + kubeconfig en 3 commandes",x:`scw k8s cluster create \\
+  name=prod-cluster \\
+  version=1.31 \\
+  cni=cilium \\
+  region=fr-par \\
+  pools.0.name=default \\
+  pools.0.node-type=PRO2-XXS \\
+  pools.0.size=3 \\
+  pools.0.min-size=3 pools.0.max-size=8 \\
+  pools.0.autoscaling=true \\
+  pools.0.autohealing=true \\
+  pools.0.zone=fr-par-1
+
+# fusionne le kubeconfig dans ~/.kube/config
+scw k8s kubeconfig install $CLUSTER_ID
+
+kubectl get nodes`},
+ {t:"note",k:"exam",b:"Kapsule vs Kosmos",x:"« **Kapsule** = control plane managé + nodes Scaleway, c'est le cas standard. **Kosmos** = control plane managé Scaleway mais nodes hétérogènes, y compris chez un autre provider ou on-premise. Kosmos sert aux stratégies multi-cloud ou hybrides ; en contrepartie les intégrations natives (LoadBalancer, CSI Block) ne s'appliquent qu'aux nodes Scaleway. »"},
+ {t:"h",x:"Container Registry"},
+ {t:"code",lang:"bash",cap:"push d'une image",x:`scw registry namespace create name=api-prod is-public=false region=fr-par
+
+# login : l utilisateur est litteralement "nologin", le mot de passe est la secret key
+docker login rg.fr-par.scw.cloud -u nologin --password-stdin <<< "$SCW_SECRET_KEY"
+
+docker build -t rg.fr-par.scw.cloud/api-prod/orders:1.4.2 .
+docker push  rg.fr-par.scw.cloud/api-prod/orders:1.4.2`},
+ {t:"note",k:"info",b:"Détail qui fait mouche",x:"Le login Docker du Container Registry utilise le username littéral `nologin` et la **secret key** comme mot de passe. Pour qu'un cluster Kapsule tire une image d'un namespace **privé**, il faut un `imagePullSecret` de type `docker-registry` construit avec ces mêmes identifiants (ou rendre le namespace public)."},
+ {t:"h",x:"Exposer une application"},
+ {t:"code",lang:"yaml",cap:"Service LoadBalancer annoté",x:`apiVersion: v1
+kind: Service
+metadata:
+  name: orders
+  annotations:
+    service.beta.kubernetes.io/scw-loadbalancer-use-hostname: "true"
+    service.beta.kubernetes.io/scw-loadbalancer-protocol-http: "true"
+spec:
+  type: LoadBalancer   # provisionne un Load Balancer Scaleway
+  selector: { app: orders }
+  ports:
+    - port: 80
+      targetPort: 8080`},
+ {t:"note",k:"warn",b:"Coût",x:"Chaque `Service type=LoadBalancer` crée **un** Load Balancer facturé. En production on met plutôt **un seul** Ingress Controller (nginx, Traefik) derrière un unique Load Balancer, et on route ensuite par Ingress."}
+]});
+
+MODULES.push({
+id:"storage", icon:"🗄️", title:"Storage : Object, Block, File",
+lead:"Object Storage compatible S3, Block Storage pour les Instances, et les classes de stockage qui font la différence sur la facture.",
+blocks:[
+ {t:"h",x:"Object Storage (S3-compatible)"},
+ {t:"p",x:"C'est le produit le plus manipulé par un développeur. Il est **compatible avec l'API S3 d'AWS**, ce qui veut dire que tous les SDK et outils existants fonctionnent : `aws-cli`, `boto3`, `rclone`, `s3cmd`, `mc`, `@aws-sdk/client-s3`."},
+ {t:"table",head:["Élément","Valeur"],rows:[
+  ["Endpoint","<code>https://s3.fr-par.scw.cloud</code> — également <code>s3.nl-ams.scw.cloud</code>, <code>s3.pl-waw.scw.cloud</code>"],
+  ["Endpoint d'un bucket","<code>https://mon-bucket.s3.fr-par.scw.cloud</code> (virtual-hosted) ou path-style"],
+  ["Authentification","<strong>AWS Signature V4</strong> avec access key + secret key — <strong>pas</strong> le header <code>X-Auth-Token</code>"],
+  ["Region S3","le nom de la region Scaleway : <code>fr-par</code>"],
+  ["Scope","<strong>Regional</strong> : un bucket appartient à une region, son nom est unique dans cette region"]
+ ]},
+ {t:"note",k:"exam",b:"Piège d'entretien très courant",x:"« Comment s'authentifie-t-on sur l'Object Storage ? » La bonne réponse n'est **pas** `X-Auth-Token`. L'Object Storage suit le protocole S3, donc **SigV4** avec l'access key et la secret key. Le `X-Auth-Token` sert pour toutes les **autres** APIs Scaleway."},
+ {t:"code",lang:"bash",cap:"aws-cli sur Scaleway",x:`# le CLI genere la configuration pour toi
+scw object config install type=aws-cli
+
+# puis c est du S3 standard
+aws s3 ls --endpoint-url https://s3.fr-par.scw.cloud
+aws s3 cp ./build s3://mon-bucket/site --recursive \\
+  --endpoint-url https://s3.fr-par.scw.cloud
+
+# URL pre-signee valable 1 h
+aws s3 presign s3://mon-bucket/rapport.pdf --expires-in 3600 \\
+  --endpoint-url https://s3.fr-par.scw.cloud`},
+ {t:"h",x:"Classes de stockage"},
+ {t:"table",head:["Classe","Usage","À savoir"],rows:[
+  ["<code>STANDARD</code> (Multi-AZ)","Données chaudes, accès fréquent","Répliqué sur plusieurs AZ de la region"],
+  ["<code>ONEZONE_IA</code>","Accès peu fréquent","Moins cher au Go, stocké dans une seule AZ, coût de récupération"],
+  ["<code>GLACIER</code>","Archivage long terme","Le moins cher, mais <strong>restauration différée</strong> (plusieurs heures) avant de pouvoir lire l'objet"]
+ ]},
+ {t:"h",x:"Fonctionnalités à connaître"},
+ {t:"ul",x:[
+  "**Versioning** : conserve les versions successives d'un objet, protège des suppressions accidentelles.",
+  "**Lifecycle rules** : transition automatique STANDARD → ONEZONE_IA → GLACIER, ou expiration après N jours. Le levier n°1 d'optimisation de coût.",
+  "**Bucket website** : héberger un site statique directement depuis un bucket.",
+  "**CORS** : indispensable si un front appelle le bucket depuis un navigateur.",
+  "**Bucket policy** : JSON de style S3 pour ouvrir/fermer l'accès, en complément de l'IAM Scaleway.",
+  "**Pre-signed URL** : donner un accès temporaire à un objet privé sans distribuer de clé.",
+  "**Multipart upload** : obligatoire au-delà de quelques Go, et bien plus robuste.",
+  "**Edge Services** : mettre un CDN et un nom de domaine personnalisé devant un bucket."
+ ]},
+ {t:"note",k:"warn",b:"Coûts cachés",x:"Le stockage n'est pas le seul poste : le **trafic sortant (egress)** et les **requêtes** sont facturés, et GLACIER facture la **restauration**. Une lifecycle rule mal réglée qui fait des allers-retours de classe peut coûter plus cher que de ne rien faire."},
+ {t:"h",x:"Block Storage & File Storage"},
+ {t:"cards",x:[
+  {i:"💽",t:"Block Storage",d:"Volumes réseau attachés à une Instance. Paliers 5 000 et 15 000 IOPS, redimensionnables à chaud, snapshots. Un volume est attaché à une seule Instance.",tag:"ZONAL",tc:"z"},
+  {i:"📁",t:"File Storage",d:"Partage NFS accessible simultanément par plusieurs Instances. Pour les cas où plusieurs machines doivent écrire dans le même répertoire.",tag:"ZONAL",tc:"z"},
+  {i:"📸",t:"Snapshots & Images",d:"Snapshot = copie d'un volume. Image = modèle de démarrage complet, base pour du golden image / autoscaling.",tag:"ZONAL",tc:"z"},
+  {i:"🧊",t:"Glacier",d:"Classe d'archivage de l'Object Storage, pas un produit séparé. Restauration différée avant lecture.",tag:"REGIONAL",tc:"r"}
+ ]},
+ {t:"note",k:"exam",b:"Object vs Block : formulation courte",x:"« **Block Storage** = un disque, attaché à **une** machine, on y met un système de fichiers, latence faible, idéal pour une base de données. **Object Storage** = une API HTTP, accès concurrent illimité, scalabilité quasi infinie, idéal pour des assets, des backups et de la data. On ne fait pas tourner une base de données sur de l'Object Storage. »"}
+]});
+MODULES.push({
+id:"network", icon:"🌐", title:"Network : VPC, Load Balancer, Edge",
+lead:"VPC régional, Private Networks, Public Gateway, Load Balancer et Edge Services : de quoi dessiner une architecture au tableau blanc.",
+blocks:[
+ {t:"h",x:"VPC & Private Networks"},
+ {t:"ul",x:[
+  "Un **VPC** est **régional** : un VPC par region et par project (un `default` est créé automatiquement).",
+  "Un **Private Network** est un réseau privé **régional** à l'intérieur du VPC. Les ressources qui y sont attachées communiquent en privé, **entre AZ de la même region**.",
+  "**IPAM** gère l'attribution des adresses privées (CIDR par Private Network, réservations, adresses statiques).",
+  "Le **routing VPC** permet de faire communiquer plusieurs Private Networks d'un même VPC.",
+  "Peuvent être attachés à un Private Network : Instances, Elastic Metal, Load Balancers, Managed Databases, Kapsule, Public Gateways."
+ ]},
+ {t:"note",k:"warn",b:"Évolution importante",x:"Historiquement les Private Networks étaient **zonaux** avec un DHCP porté par le Public Gateway. Depuis **VPC v2**, ils sont **régionaux** et l'adressage est géré par **IPAM**. Si un recruteur mentionne le DHCP du Public Gateway, tu sais qu'il parle de l'ancien modèle."},
+ {t:"h",x:"Public Gateway"},
+ {t:"p",x:"Une ressource sans IP publique, placée sur un Private Network, n'a pas d'accès Internet. Le **Public Gateway** fournit :"},
+ {t:"ul",x:[
+  "**NAT sortant** : les machines privées peuvent joindre Internet sans être exposées.",
+  "**Port forwarding / static NAT** : exposer un port précis d'une machine privée.",
+  "**SSH bastion** : un point d'entrée unique pour administrer les machines privées.",
+  "(historiquement) **DHCP** et résolution DNS interne du Private Network."
+ ]},
+ {t:"h",x:"Load Balancer"},
+ {t:"table",head:["Notion","Détail"],rows:[
+  ["**Frontend**","Le point d'entrée : port d'écoute, certificat TLS, ACL."],
+  ["**Backend**","Le pool de serveurs : protocole (TCP/HTTP), algorithme (round robin, least conn, first), sticky sessions."],
+  ["**Health check**","TCP, HTTP, HTTPS ou custom. Un backend qui échoue est retiré de la rotation."],
+  ["**ACL**","Filtrage par IP ou par règle HTTP, autorisation ou blocage avant de router vers le backend."],
+  ["**Certificats**","Certificat **Let's Encrypt managé** (renouvellement automatique) ou certificat custom importé."],
+  ["**Zonal vs Regional**","Un LB <strong>zonal</strong> vit dans une seule AZ. Un LB <strong>multi-AZ / regional</strong> survit à la perte d'une AZ : c'est ce qu'on veut en production."]
+ ]},
+ {t:"note",k:"exam",b:"Architecture HA à savoir dessiner",x:"Internet → **Load Balancer multi-AZ** (TLS Let's Encrypt) → Instances réparties sur `fr-par-1` et `fr-par-2` dans un **Private Network** → **Managed Database PostgreSQL en HA** joignable uniquement par son endpoint privé → **Public Gateway** pour le NAT sortant → **Object Storage** pour les assets, exposé via **Edge Services** → **Cockpit** pour les métriques et les logs."},
+ {t:"h",x:"Edge Services, DNS, IP"},
+ {t:"cards",x:[
+  {i:"🛰️",t:"Edge Services",d:"CDN devant un bucket Object Storage ou un Load Balancer : cache, domaine personnalisé, certificat TLS managé.",tag:"REGIONAL",tc:"r"},
+  {i:"🔤",t:"Domains & DNS",d:"Enregistrement de noms de domaine et DNS managé : zones, records A/AAAA/CNAME/MX/TXT, API complète.",tag:"GLOBAL",tc:"g"},
+  {i:"📮",t:"Flexible IP",d:"IP publique réservable et déplaçable d'une Instance à une autre. IPv6 en /64 disponible.",tag:"ZONAL",tc:"z"},
+  {i:"🔗",t:"Interlink",d:"Connexion privée dédiée entre un réseau on-premise et un VPC Scaleway, pour l'hybride.",tag:"REGIONAL",tc:"r"}
+ ]},
+ {t:"code",lang:"bash",cap:"private network + LB",x:`scw vpc private-network create name=back-net region=fr-par
+scw instance private-nic create server-id=$ID \\
+  private-network-id=$PN_ID zone=fr-par-1
+
+scw lb lb create name=front type=LB-S \\
+  zone=fr-par-1 assign-flexible-ip=true
+scw lb backend create lb-id=$LB_ID name=web \\
+  forward-protocol=http forward-port=8080 \\
+  health-check-http.uri=/healthz \\
+  server-ip.0=10.10.0.12 server-ip.1=10.10.0.13
+scw lb frontend create lb-id=$LB_ID name=https \\
+  inbound-port=443 backend-id=$BACKEND_ID`}
+]});
+
+MODULES.push({
+id:"db", icon:"🐘", title:"Managed Databases & data",
+lead:"PostgreSQL, MySQL, Redis, Serverless SQL, DocumentDB : ce que Scaleway gère à ta place et ce qui reste ta responsabilité.",
+blocks:[
+ {t:"cards",x:[
+  {i:"🐘",t:"Managed DB (RDB)",d:"PostgreSQL et MySQL managés : backups automatiques, patchs, HA avec node standby, read replicas.",tag:"REGIONAL",tc:"r"},
+  {i:"⚡",t:"Serverless SQL DB",d:"PostgreSQL compatible qui scale automatiquement et descend à zéro. Facturé à l'usage réel, idéal pour le dev et les charges intermittentes.",tag:"REGIONAL",tc:"r"},
+  {i:"🧠",t:"Managed Redis",d:"Cache et store en mémoire managé, en cluster ou standalone.",tag:"ZONAL",tc:"z"},
+  {i:"📄",t:"DocumentDB / MongoDB",d:"Base documentaire managée compatible MongoDB, pour les schémas souples.",tag:"REGIONAL",tc:"r"}
+ ]},
+ {t:"h",x:"Ce qu'il faut maîtriser sur RDB"},
+ {t:"ul",x:[
+  "**Node type** : le dimensionnement CPU/RAM de l'instance de base (`DB-DEV-S`, `DB-GP-S`…), redimensionnable.",
+  "**High Availability** : un node **standby** synchrone dans une autre AZ, avec **basculement automatique**. C'est une option payante, pas le défaut.",
+  "**Read replicas** : répliques en lecture seule pour décharger les requêtes analytiques. Attention au **replication lag**.",
+  "**Backups automatiques** + backups manuels, avec durée de rétention configurable et restauration vers une nouvelle instance.",
+  "**ACL / allowed IPs** : par défaut **rien n'est autorisé**. Il faut déclarer explicitement les CIDR qui peuvent se connecter à l'endpoint public.",
+  "**Private Network endpoint** : la bonne pratique en production — la base n'a **aucune** IP publique et n'est joignable que depuis le VPC.",
+  "**Users & databases** gérés par API : création d'un user applicatif avec des droits limités, plutôt que d'utiliser l'utilisateur admin.",
+  "**Encryption at rest** et TLS en transit."
+ ]},
+ {t:"code",lang:"bash",cap:"base PostgreSQL HA, sans IP publique",x:`scw rdb instance create \\
+  name=orders-db \\
+  engine=PostgreSQL-15 \\
+  node-type=DB-GP-S \\
+  is-ha-cluster=true \\
+  volume-type=bssd volume-size=100GB \\
+  user-name=app_admin password=$PG_PASSWORD \\
+  region=fr-par \\
+  init-endpoints.0.private-network.private-network-id=$PN_ID
+
+scw rdb database create instance-id=$DB_ID name=orders
+scw rdb user create instance-id=$DB_ID name=orders_app password=$APP_PWD
+scw rdb privilege set instance-id=$DB_ID \\
+  database-name=orders user-name=orders_app permission=all`},
+ {t:"note",k:"exam",b:"Question de responsabilité partagée",x:"« Qu'est-ce que Scaleway gère et qu'est-ce qui reste à ma charge ? » → « Scaleway gère l'infrastructure, l'installation, les patchs du moteur, les backups automatiques, le failover HA et la supervision matérielle. **Moi je reste responsable** du schéma, des index, des requêtes, du dimensionnement, des droits applicatifs et de **tester** mes restaurations. »"},
+ {t:"note",k:"warn",b:"Piège",x:"Activer la HA **ne dispense pas** de sauvegardes : la HA protège d'une panne matérielle, **pas** d'un `DROP TABLE` malencontreux. Et un backup jamais restauré n'est pas un backup."},
+ {t:"h",x:"Écosystème data"},
+ {t:"ul",x:[
+  "**Data Lab / Apache Spark** managé pour le traitement distribué.",
+  "**Object Storage** comme data lake, requêtable par les outils de l'écosystème S3.",
+  "**Cockpit** pour les métriques de la base (connexions, CPU, disque) et les alertes."
+ ]}
+]});
+
+MODULES.push({
+id:"integ", icon:"📡", title:"Messaging, Email, IA & Observabilité",
+lead:"Les briques d'intégration qu'un développeur branche autour de son application, et la supervision qui va avec.",
+blocks:[
+ {t:"h",x:"Messaging & Queuing"},
+ {t:"p",x:"Scaleway propose trois protocoles sous un même produit, avec des **credentials dédiés par protocole** :"},
+ {t:"table",head:["Protocole","Modèle","Usage typique"],rows:[
+  ["**NATS**","Pub/sub + JetStream (persistance)","Communication temps réel entre microservices, faible latence"],
+  ["**SQS**","File de messages, compatible AWS SQS","Découplage producteur/consommateur, retry, dead-letter queue"],
+  ["**SNS**","Pub/sub par topic, compatible AWS SNS","Fan-out d'un événement vers plusieurs abonnés"]
+ ]},
+ {t:"note",k:"info",b:"Bon argument",x:"La compatibilité **SQS/SNS** signifie que les SDK AWS (`boto3`, `@aws-sdk/client-sqs`) fonctionnent en changeant simplement l'endpoint. Combiné avec un **trigger** sur une Serverless Function ou un Container, on obtient un pipeline événementiel complet sans serveur."},
+ {t:"h",x:"Transactional Email (TEM)"},
+ {t:"ul",x:[
+  "Envoi d'emails transactionnels par **API REST** ou **SMTP**.",
+  "Il faut **vérifier le domaine** en publiant des enregistrements **SPF**, **DKIM** et idéalement **DMARC** dans le DNS.",
+  "Suivi de la délivrabilité : statuts `sent`, `delivered`, `bounced`, webhooks, blocklist.",
+  "Ce n'est pas un outil de campagne marketing : c'est du transactionnel (reset de mot de passe, facture, notification)."
+ ]},
+ {t:"h",x:"IA : Generative APIs & Managed Inference"},
+ {t:"cards",x:[
+  {i:"🤖",t:"Generative APIs",d:"Endpoint d'inference serverless compatible OpenAI (https://api.scaleway.ai/v1), facturé au token, sur des modèles open-weights hébergés en Europe.",tag:"SERVERLESS",tc:"g"},
+  {i:"🖧",t:"Managed Inference",d:"Un modèle déployé sur des GPU dédiés, endpoint privé ou public, débit garanti et isolation.",tag:"DEDICATED",tc:"z"},
+  {i:"🔎",t:"Embeddings & RAG",d:"Modèles d'embeddings servis par la même API, à combiner avec une base vectorielle (pgvector sur Managed PostgreSQL).",tag:"AI",tc:"r"}
+ ]},
+ {t:"code",lang:"bash",cap:"inference compatible OpenAI",x:`curl https://api.scaleway.ai/v1/chat/completions \\
+  -H "Authorization: Bearer $SCW_SECRET_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "llama-3.1-8b-instruct",
+    "messages": [{"role":"user","content":"Explique le VPC Scaleway"}]
+  }'`},
+ {t:"h",x:"Cockpit : observabilité managée"},
+ {t:"ul",x:[
+  "**Cockpit** est la stack d'observabilité managée : **Grafana** pour la visualisation, **Prometheus/Mimir** pour les métriques, **Loki** pour les logs, **Tempo** pour les traces.",
+  "Les produits Scaleway y poussent leurs métriques **automatiquement** (Instances, Kapsule, RDB, Load Balancer, Object Storage…).",
+  "On peut y pousser ses **métriques et logs custom** via des **tokens** dédiés (push par remote write Prometheus, ou agent type Grafana Alloy / Promtail).",
+  "**Alerting** : règles d'alerte et contacts de notification.",
+  "**Grafana users** : on crée des utilisateurs Grafana avec un rôle viewer ou editor, distincts des users IAM."
+ ]},
+ {t:"note",k:"exam",b:"Phrase qui rassure un recruteur",x:"« Je n'installe pas ma propre stack Prometheus + Grafana sur une Instance : j'utilise **Cockpit**, je récupère les métriques produit gratuitement, et je pousse mes métriques applicatives avec un token de push. Les alertes partent vers l'équipe d'astreinte. »"}
+]});
+MODULES.push({
+id:"cli", icon:"⌨️", title:"Scaleway CLI (scw)",
+lead:"Installation, configuration, grammaire des commandes, formats de sortie et les astuces qui montrent que tu t'en sers vraiment.",
+blocks:[
+ {t:"h",x:"Installation & initialisation"},
+ {t:"code",lang:"bash",cap:"install",x:`# macOS / Linux (Homebrew)
+brew install scw
+
+# Linux : binaire officiel
+curl -o /usr/local/bin/scw -L \\
+  "https://github.com/scaleway/scaleway-cli/releases/latest/download/scaleway-cli_linux_amd64"
+chmod +x /usr/local/bin/scw
+
+# Windows
+winget install scaleway.scaleway-cli   # ou : choco install scaleway-cli
+
+scw version
+scw init          # assistant interactif : access key, secret key, project, zone`},
+ {t:"p",x:"`scw init` écrit un fichier de configuration YAML — c'est **la** question suivante du recruteur."},
+ {t:"code",lang:"yaml",cap:"~/.config/scw/config.yaml",x:`access_key: SCWXXXXXXXXXXXXXXXXX
+secret_key: 11111111-1111-1111-1111-111111111111
+default_organization_id: 22222222-2222-2222-2222-222222222222
+default_project_id: 33333333-3333-3333-3333-333333333333
+default_region: fr-par
+default_zone: fr-par-1
+
+profiles:
+  staging:
+    access_key: SCWYYYYYYYYYYYYYYYYY
+    secret_key: 44444444-4444-4444-4444-444444444444
+    default_project_id: 55555555-5555-5555-5555-555555555555
+    default_zone: nl-ams-1`},
+ {t:"note",k:"info",b:"Emplacement",x:"`~/.config/scw/config.yaml` sur Linux/macOS, `%USERPROFILE%\\.config\\scw\\config.yaml` sur Windows. Modifiable avec `SCW_CONFIG_PATH`."},
+ {t:"h",x:"Profils & variables d'environnement"},
+ {t:"code",lang:"bash",cap:"basculer d'environnement",x:`scw --profile staging instance server list
+export SCW_PROFILE=staging          # ou via la variable d environnement
+scw config profile activate staging # profil actif par defaut
+scw config get default-zone
+scw config set default-zone=nl-ams-1
+scw config dump                     # affiche toute la configuration
+scw info                            # config effective + origine de chaque valeur`},
+ {t:"table",head:["Variable","Rôle"],rows:[
+  ["<code>SCW_ACCESS_KEY</code> / <code>SCW_SECRET_KEY</code>","Les identifiants. Prioritaires sur le fichier de config."],
+  ["<code>SCW_DEFAULT_PROJECT_ID</code>","Project par défaut des commandes."],
+  ["<code>SCW_DEFAULT_ORGANIZATION_ID</code>","Organization par défaut."],
+  ["<code>SCW_DEFAULT_REGION</code> / <code>SCW_DEFAULT_ZONE</code>","Scope géographique par défaut."],
+  ["<code>SCW_PROFILE</code>","Profil actif."],
+  ["<code>SCW_CONFIG_PATH</code>","Chemin du fichier de configuration."],
+  ["<code>SCW_API_URL</code>","Surcharge de l'endpoint (tests, proxy)."]
+ ]},
+ {t:"note",k:"exam",b:"Ordre de précédence — question classique",x:"**Flags de la commande** > **variables d'environnement** > **profil actif du fichier de config** > **valeurs par défaut**. C'est exactement ce qui permet de faire tourner le même script en CI sans fichier de config : on injecte `SCW_ACCESS_KEY` et `SCW_SECRET_KEY` en variables d'environnement."},
+ {t:"h",x:"La grammaire des commandes"},
+ {t:"p",x:"Toute commande suit le même schéma : `scw <namespace> <resource> <verb> [args] [flags]`."},
+ {t:"code",lang:"bash",cap:"anatomie",x:`scw   instance   server   list      zone=fr-par-1   -o json
+      ^^^^^^^^   ^^^^^^   ^^^^      ^^^^^^^^^^^^^   ^^^^^^^
+      namespace  resource verbe     argument         flag
+
+# les arguments sont en cle=valeur (PAS --cle valeur)
+scw instance server create type=DEV1-S image=ubuntu_jammy name=web-01
+
+# les listes utilisent un index
+scw instance server create tags.0=env=prod tags.1=team=api
+
+# les objets imbriques utilisent un point
+scw rdb instance create init-endpoints.0.private-network.private-network-id=$PN
+
+# @fichier pour injecter un contenu
+scw instance user-data set key=cloud-init content=@init.yaml server-id=$ID`},
+ {t:"note",k:"warn",b:"Détail qui trahit un débutant",x:"Dans le CLI Scaleway, les **arguments** de ressource s'écrivent `cle=valeur` (sans tirets), alors que les **flags** globaux gardent la forme `--flag`. Écrire `scw instance server create --type DEV1-S` ne fonctionne pas."},
+ {t:"h",x:"Formats de sortie"},
+ {t:"code",lang:"bash",cap:"-o : le flag le plus utile",x:`scw instance server list -o human    # tableau lisible (defaut)
+scw instance server list -o json     # pour jq et les scripts
+scw instance server list -o yaml
+scw instance server list -o wide     # plus de colonnes
+
+# colonnes choisies
+scw instance server list -o json | jq -r '.[] | "\\(.name) \\(.state) \\(.public_ip.address)"'
+
+# template Go
+scw instance server list -o template="{{ .Name }} -> {{ .State }}"`},
+ {t:"h",x:"Les flags qui font la différence"},
+ {t:"table",head:["Flag","Effet"],rows:[
+  ["<code>-w</code> / <code>--wait</code>","Bloque jusqu'à ce que l'opération asynchrone soit terminée. Indispensable en script."],
+  ["<code>-o</code>","Format de sortie : <code>human</code>, <code>json</code>, <code>yaml</code>, <code>wide</code>, <code>template=…</code>"],
+  ["<code>-p</code> / <code>--profile</code>","Profil de configuration à utiliser"],
+  ["<code>--debug</code>","Affiche les requêtes HTTP émises : parfait pour <strong>apprendre l'API</strong> à partir du CLI"],
+  ["<code>-h</code> / <code>scw help</code>","Aide contextuelle sur n'importe quel niveau de commande"]
+ ]},
+ {t:"note",k:"exam",b:"Astuce à raconter",x:"« Quand je ne connais pas un endpoint de l'API, je lance la commande CLI équivalente avec `--debug` : je vois la **méthode**, l'**URL** et le **body** exacts. C'est ma façon la plus rapide de découvrir l'API. »"},
+ {t:"h",x:"Confort & intégrations"},
+ {t:"code",lang:"bash",cap:"autocomplete et outils S3",x:`scw autocomplete install        # bash, zsh, fish
+scw autocomplete script shell=zsh
+
+# genere la conf des outils S3 a partir de tes credentials Scaleway
+scw object config install type=aws-cli
+scw object config install type=rclone
+scw object config install type=s3cmd
+scw object config install type=mc      # MinIO client
+
+# kubernetes
+scw k8s kubeconfig install $CLUSTER_ID
+scw k8s kubeconfig uninstall $CLUSTER_ID`},
+ {t:"h",x:"Le mémo des commandes utiles"},
+ {t:"code",lang:"bash",cap:"cheat sheet",x:`scw instance server list zone=fr-par-1
+scw instance server-type list zone=fr-par-1     # catalogue + prix
+scw instance image list arch=x86_64
+scw instance ip list
+scw instance security-group list
+
+scw k8s cluster list
+scw k8s pool list cluster-id=$ID
+scw k8s version list
+
+scw rdb instance list
+scw rdb engine list
+scw rdb backup list
+
+scw object bucket list
+scw registry namespace list
+scw registry image list
+
+scw container namespace list
+scw function namespace list
+scw jobs definition list
+
+scw lb lb list
+scw vpc private-network list
+scw ipam ip list
+
+scw iam user list
+scw iam application list
+scw iam policy list
+scw iam api-key list
+scw iam permission-set list                     # tous les permission sets
+
+scw account project list
+scw billing consumption get`}
+]});
+
+MODULES.push({
+id:"api", icon:"🔌", title:"L'API REST Scaleway",
+lead:"Structure des URLs, authentification, pagination, filtres, erreurs, asynchronisme et SDK. Le cœur d'un entretien de développeur.",
+blocks:[
+ {t:"h",x:"Structure des endpoints"},
+ {t:"p",x:"Tout part de `https://api.scaleway.com`, puis le chemin encode le **produit**, la **version** et le **scope**."},
+ {t:"code",lang:"http",cap:"3 scopes, 3 formes d'URL",x:`# ZONAL   : /<produit>/<version>/zones/<zone>/<ressource>
+GET https://api.scaleway.com/instance/v1/zones/fr-par-1/servers
+
+# REGIONAL: /<produit>/<version>/regions/<region>/<ressource>
+GET https://api.scaleway.com/rdb/v1/regions/fr-par/instances
+GET https://api.scaleway.com/k8s/v1/regions/fr-par/clusters
+
+# GLOBAL  : /<produit>/<version>/<ressource>
+GET https://api.scaleway.com/iam/v1alpha1/users
+GET https://api.scaleway.com/account/v3/projects`},
+ {t:"note",k:"info",b:"Versions",x:"On croise `v1`, `v2`, `v1alpha1`, `v1beta1`. Les suffixes `alpha`/`beta` signalent une API encore susceptible de changer : à mentionner comme un point de vigilance si on l'utilise en production."},
+ {t:"h",x:"Authentification"},
+ {t:"code",lang:"bash",cap:"le header à retenir",x:`curl -H "X-Auth-Token: $SCW_SECRET_KEY" \\
+     https://api.scaleway.com/instance/v1/zones/fr-par-1/servers`},
+ {t:"table",head:["API","Authentification"],rows:[
+  ["Toutes les APIs Scaleway","Header <code>X-Auth-Token: &lt;secret_key&gt;</code>"],
+  ["Object Storage (S3)","<strong>AWS Signature V4</strong> : access key + secret key, comme sur S3"],
+  ["Generative APIs (IA)","<code>Authorization: Bearer &lt;secret_key&gt;</code> (compatibilité OpenAI)"]
+ ]},
+ {t:"note",k:"warn",b:"Erreur fréquente",x:"Envoyer l'**access key** dans `X-Auth-Token`. Le header attend la **secret key**. L'access key ne sert qu'à identifier la clé (et à signer les requêtes S3)."},
+ {t:"h",x:"Pagination, tri et filtres"},
+ {t:"code",lang:"http",cap:"pagination",x:`GET /instance/v1/zones/fr-par-1/servers?page=2&per_page=50
+GET /instance/v1/zones/fr-par-1/servers?name=web&state=running
+GET /rdb/v1/regions/fr-par/instances?order_by=created_at_desc
+
+Reponse :
+{
+  "servers": [ ... ],
+  "total_count": 137
+}`},
+ {t:"ul",x:[
+  "`page` commence à **1** (pas à 0), `per_page` est plafonné (souvent **100**).",
+  "La réponse contient `total_count` : c'est ce qui permet de savoir combien de pages parcourir.",
+  "Les filtres sont des **query params** simples (`name`, `state`, `tags`, `project_id`…), pas un langage de requête.",
+  "`order_by` accepte des valeurs comme `created_at_asc` / `created_at_desc`.",
+  "Les **SDK officiels** proposent des helpers qui itèrent automatiquement sur les pages : c'est ce qu'on utilise en vrai."
+ ]},
+ {t:"h",x:"Gestion des erreurs"},
+ {t:"code",lang:"json",cap:"corps d'erreur typique",x:`{
+  "type": "invalid_arguments",
+  "message": "invalid argument(s)",
+  "details": [
+    { "argument": "volumes.0.size", "reason": "constraint", "help_message": "must be a multiple of 1GB" }
+  ]
+}`},
+ {t:"table",head:["Code","Signification","Réflexe"],rows:[
+  ["<code>400</code>","<code>invalid_arguments</code> — payload invalide","Lire <code>details</code>, corriger le champ"],
+  ["<code>401</code>","<code>unauthenticated</code> — token absent ou invalide","Vérifier <code>X-Auth-Token</code> (secret key, pas access key)"],
+  ["<code>403</code>","<code>permissions_denied</code> — authentifié mais pas autorisé","Ajouter le bon permission set sur le bon project"],
+  ["<code>404</code>","<code>not_found</code>","Mauvais ID, ou <strong>mauvaise zone/region</strong> dans l'URL"],
+  ["<code>409</code>","Conflit / ressource dans un état incompatible","Attendre la fin de l'opération en cours puis réessayer"],
+  ["<code>412</code>","<code>precondition_failed</code>","Une dépendance manque (volume attaché, IP utilisée…)"],
+  ["<code>429</code>","Rate limit / quota dépassé","<strong>Backoff exponentiel</strong> avec jitter, ou demande d'augmentation de quota"],
+  ["<code>5xx</code>","Erreur côté plateforme","Retry idempotent avec backoff"]
+ ]},
+ {t:"note",k:"exam",b:"Le 404 qui n'en est pas un",x:"Un `404` alors que la ressource existe bien est presque toujours une **erreur de scope** : on interroge `fr-par-1` alors que la ressource est dans `fr-par-2`, ou on tape l'URL régionale d'un produit zonal. C'est une excellente réponse à « racontez-moi un bug d'intégration API »."},
+ {t:"h",x:"Asynchronisme"},
+ {t:"p",x:"La plupart des créations sont **asynchrones** : l'API répond `200/201` immédiatement avec un objet dont le champ `state` (ou `status`) vaut par exemple `starting`, `provisioning`, `creating`. La ressource n'est pas encore utilisable."},
+ {t:"code",lang:"bash",cap:"polling propre",x:`# 1. creation : retour immediat
+ID=$(curl -s -X POST -H "X-Auth-Token: $SCW_SECRET_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"name":"web-01","commercial_type":"DEV1-S","image":"ubuntu_jammy","project":"'$PROJECT_ID'"}' \\
+  https://api.scaleway.com/instance/v1/zones/fr-par-1/servers | jq -r .server.id)
+
+# 2. polling avec backoff jusqu a l etat cible
+until [ "$(curl -s -H "X-Auth-Token: $SCW_SECRET_KEY" \\
+  https://api.scaleway.com/instance/v1/zones/fr-par-1/servers/$ID | jq -r .server.state)" = "running" ]; do
+  sleep 5
+done`},
+ {t:"note",k:"info",b:"En pratique",x:"On ne réécrit pas ce polling à la main : les **SDK** exposent des `WaitForServer(...)` / `wait_for_*`, et le CLI expose `--wait`. Le savoir montre qu'on a compris que l'API est asynchrone."},
+ {t:"h",x:"SDK & Infrastructure as Code"},
+ {t:"cards",x:[
+  {i:"🐹",t:"SDK Go",d:"scaleway-sdk-go — le plus complet, c'est celui qui alimente le CLI et le provider Terraform.",tag:"OFFICIEL",tc:"g"},
+  {i:"🐍",t:"SDK Python",d:"scaleway-sdk-python, versions sync et async, générée depuis les specs de l'API.",tag:"OFFICIEL",tc:"g"},
+  {i:"🟨",t:"SDK JS/TS",d:"@scaleway/sdk, typé, utilisable côté Node.",tag:"OFFICIEL",tc:"g"},
+  {i:"🏗️",t:"Terraform / OpenTofu",d:"provider scaleway/scaleway : la référence pour décrire l'infra en IaC.",tag:"IaC",tc:"z"},
+  {i:"🧩",t:"Pulumi / Ansible",d:"Pulumi pour l'IaC en langage généraliste, collection Ansible pour la config management.",tag:"IaC",tc:"z"},
+  {i:"📐",t:"OpenAPI",d:"Les spécifications OpenAPI publiques permettent de générer un client dans n'importe quel langage.",tag:"SPEC",tc:"r"}
+ ]},
+ {t:"code",lang:"hcl",cap:"Terraform : le format attendu en entretien",x:`terraform {
+  required_providers {
+    scaleway = { source = "scaleway/scaleway", version = "~> 2.0" }
+  }
+}
+
+provider "scaleway" {
+  zone   = "fr-par-1"
+  region = "fr-par"
+  # access_key / secret_key / project_id via SCW_* env vars
+}
+
+resource "scaleway_vpc_private_network" "back" { name = "back-net" }
+
+resource "scaleway_instance_server" "web" {
+  count = 2
+  name  = "web-0"
+  type  = "DEV1-S"
+  image = "ubuntu_jammy"
+  zone  = count.index == 0 ? "fr-par-1" : "fr-par-2"
+
+  private_network { pn_id = scaleway_vpc_private_network.back.id }
+}`},
+ {t:"code",lang:"python",cap:"SDK Python",x:`from scaleway import Client
+from scaleway.instance.v1 import InstanceV1API
+
+client = Client.from_config_file_and_env()   # lit ~/.config/scw/config.yaml puis les SCW_*
+api = InstanceV1API(client)
+
+res = api.list_servers(zone="fr-par-1", state="running")
+for s in res.servers:
+    print(s.id, s.name, s.public_ip.address if s.public_ip else "-")
+
+srv = api.create_server(zone="fr-par-1", name="web-01",
+                        commercial_type="DEV1-S", image="ubuntu_jammy")
+api.wait_for_server(server_id=srv.server.id, zone="fr-par-1")`}
+]});
+MODULES.push({
+id:"archi", icon:"🏛️", title:"Architecture & équivalences AWS",
+lead:"Assembler les briques, et savoir traduire instantanément un vocabulaire AWS/GCP vers Scaleway — l'exercice le plus probable de ton entretien.",
+blocks:[
+ {t:"h",x:"Tableau d'équivalences"},
+ {t:"table",head:["Besoin","Scaleway","AWS","GCP"],rows:[
+  ["Machine virtuelle","**Instances**","EC2","Compute Engine"],
+  ["Serveur dédié","**Elastic Metal** / Dedibox","EC2 Bare Metal","Bare Metal Solution"],
+  ["Object storage","**Object Storage**","S3","Cloud Storage"],
+  ["Disque réseau","**Block Storage**","EBS","Persistent Disk"],
+  ["Partage NFS","**File Storage**","EFS","Filestore"],
+  ["Kubernetes managé","**Kapsule** / Kosmos","EKS","GKE"],
+  ["Registry d'images","**Container Registry**","ECR","Artifact Registry"],
+  ["FaaS","**Serverless Functions**","Lambda","Cloud Functions"],
+  ["Container serverless","**Serverless Containers**","App Runner / Fargate","Cloud Run"],
+  ["Batch / cron","**Serverless Jobs**","Batch / EventBridge","Cloud Run Jobs"],
+  ["Base relationnelle","**Managed DB (RDB)**","RDS","Cloud SQL"],
+  ["Base serverless","**Serverless SQL DB**","Aurora Serverless","AlloyDB / Cloud SQL"],
+  ["Cache mémoire","**Managed Redis**","ElastiCache","Memorystore"],
+  ["File de messages","**Queues (SQS)**","SQS","Pub/Sub"],
+  ["Pub/Sub","**Topics (SNS) / NATS**","SNS","Pub/Sub"],
+  ["Réseau privé","**VPC + Private Network**","VPC + Subnet","VPC"],
+  ["NAT sortant","**Public Gateway**","NAT Gateway","Cloud NAT"],
+  ["Répartiteur de charge","**Load Balancer**","ELB / ALB","Cloud Load Balancing"],
+  ["CDN","**Edge Services**","CloudFront","Cloud CDN"],
+  ["DNS","**Domains & DNS**","Route 53","Cloud DNS"],
+  ["Secrets","**Secret Manager**","Secrets Manager","Secret Manager"],
+  ["Clés de chiffrement","**Key Manager**","KMS","Cloud KMS"],
+  ["Observabilité","**Cockpit**","CloudWatch","Cloud Monitoring"],
+  ["Audit","**Audit Trail**","CloudTrail","Cloud Audit Logs"],
+  ["Identités","**IAM** (users, applications, groups)","IAM","IAM"],
+  ["Cloisonnement","**Project**","Account / OU","Project"]
+ ]},
+ {t:"note",k:"exam",b:"Nuance à souligner",x:"« La correspondance n'est pas parfaite : un **Project** Scaleway est plus léger qu'un **compte AWS**, l'IAM Scaleway est **allow-only** sans `Deny` explicite ni conditions, et un **Private Network** est **régional** là où un subnet AWS est lié à une seule AZ. »"},
+ {t:"h",x:"Une architecture web de référence"},
+ {t:"code",lang:"text",cap:"schéma à savoir dessiner",x:`                       Internet
+                          |
+                [ Edge Services / CDN ]  --> Object Storage (assets, front statique)
+                          |
+              [ Load Balancer multi-AZ + TLS ]
+                          |
+        +-----------------+------------------+
+        |                                    |
+  Instance / Container            Instance / Container
+     (fr-par-1)                      (fr-par-2)
+        |                                    |
+        +----------- Private Network --------+
+                          |
+        +-----------------+-----------------+
+        |                                   |
+  Managed PostgreSQL HA              Managed Redis
+  (endpoint prive uniquement)
+                          |
+                 [ Public Gateway ]  --> NAT sortant
+                          |
+                     [ Cockpit ]  <-- metriques, logs, alertes`},
+ {t:"h",x:"Les 6 réflexes « well-architected » à citer"},
+ {t:"cards",x:[
+  {i:"🛡️",t:"Résilience",d:"Répartir sur plusieurs AZ, LB multi-AZ, base en HA, autohealing des pools Kapsule, et des backups testés."},
+  {i:"🔐",t:"Sécurité",d:"IAM least privilege, applications plutôt qu'users, endpoints privés, security groups fermés par défaut, secrets hors du code."},
+  {i:"📈",t:"Scalabilité",d:"Autoscaling des pools, scale-to-zero en serverless, découplage par queue pour absorber les pics."},
+  {i:"💰",t:"Coût",d:"Lifecycle rules sur l'Object Storage, arrêt des environnements de dev, Savings Plans, suppression des volumes et IP orphelins."},
+  {i:"👁️",t:"Observabilité",d:"Cockpit pour métriques, logs et traces ; alertes routées vers l'astreinte ; Audit Trail activé."},
+  {i:"🏗️",t:"Reproductibilité",d:"Terraform pour tout ce qui est durable, CLI pour l'exploitation, aucun clic manuel en production."}
+ ]},
+ {t:"h",x:"Optimisation de coût : le top 6"},
+ {t:"ol",x:[
+  "Supprimer les **volumes détachés** et les **flexible IP réservées non attachées** : c'est le gaspillage n°1.",
+  "Poser des **lifecycle rules** sur les buckets (transition vers ONEZONE_IA / GLACIER, expiration des vieux objets).",
+  "Éteindre les environnements de dev/staging la nuit et le week-end (un Serverless Job avec un cron suffit).",
+  "Choisir la bonne famille : du **cost-optimized** pour le dev, du dédié uniquement quand la charge le justifie.",
+  "Passer les charges intermittentes en **serverless scale-to-zero**, et garder l'Instance pour la charge permanente.",
+  "Souscrire un **Savings Plan** une fois la baseline connue, et suivre le **Cost Manager** avec des budget alerts."
+ ]}
+]});
+
+MODULES.push({
+id:"entretien", icon:"🎤", title:"Préparation à l'entretien",
+lead:"Les questions les plus probables, une trame de réponse pour chacune, et les phrases qui font la différence.",
+blocks:[
+ {t:"note",k:"exam",b:"Méthode",x:"Pour chaque question : **définition en une phrase** → **comment ça marche** → **un exemple concret vécu** → **la limite ou le piège**. Cette structure en quatre temps donne l'impression d'une maîtrise réelle même sur un sujet que tu viens d'apprendre."},
+ {t:"h",x:"1. « Qu'est-ce qui différencie Scaleway des hyperscalers ? »"},
+ {t:"p",x:"Souveraineté européenne et RGPD sans zone grise ; un **catalogue plus resserré donc plus lisible** ; une tarification simple et souvent moins chère sur le compute et l'egress ; une **API cohérente** et un CLI agréable ; une forte culture développeur (open source, documentation, communauté). En contrepartie : moins de services de niche, moins de regions, un écosystème tiers plus petit."},
+ {t:"h",x:"2. « Explique-moi la différence entre region et availability zone »"},
+ {t:"p",x:"Une **region** est une zone géographique (`fr-par`) qui regroupe plusieurs **AZ** (`fr-par-1`, `fr-par-2`, `fr-par-3`), chaque AZ étant un data center isolé en énergie et en réseau. Certains produits sont **zonaux** (Instances, Block Storage), d'autres **régionaux** (Object Storage, VPC, Kapsule, RDB), d'autres **globaux** (IAM, DNS, Billing). Pour de la HA on répartit sur plusieurs AZ d'une même region ; pour du disaster recovery on réplique sur une autre region."},
+ {t:"h",x:"3. « Comment tu t'authentifies sur l'API ? »"},
+ {t:"p",x:"Une **API key** liée à un principal IAM (idéalement une **application**, pas un user), composée d'un **access key** et d'un **secret key**. La secret key part dans le header `X-Auth-Token`. Exception : l'**Object Storage** utilise le protocole S3 et donc la **signature AWS V4** avec les deux clés. En CI, on injecte `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` en variables d'environnement plutôt qu'un fichier de config."},
+ {t:"h",x:"4. « Function, Container ou Job ? »"},
+ {t:"p",x:"**Function** : je fournis du code, Scaleway builde, runtimes limités, mise en place la plus rapide. **Container** : je fournis une image OCI, liberté totale sur la stack. **Job** : un traitement qui démarre, s'exécute et se termine, avec un cron possible, sans endpoint HTTP. Les trois scalent à zéro. Piège à mentionner spontanément : le **cold start** et le risque de **connection storm** sur la base quand `max-scale` est trop haut."},
+ {t:"h",x:"5. « Comment tu déploies une app en production sur Scaleway ? »"},
+ {t:"ol",x:[
+  "Infra décrite en **Terraform** : VPC, Private Network, Kapsule ou Serverless Containers, RDB, bucket.",
+  "CI/CD (GitHub Actions ou GitLab CI) qui build l'image et la pousse sur le **Container Registry**.",
+  "Déploiement via `scw container container deploy` ou `kubectl` / Helm sur **Kapsule**.",
+  "Secrets dans **Secret Manager** ou dans les secrets du CI, jamais dans le repo.",
+  "Base en **HA**, endpoint **privé** uniquement, backups automatiques et restauration testée.",
+  "Exposition par **Load Balancer multi-AZ** avec certificat Let's Encrypt managé, assets derrière **Edge Services**.",
+  "Supervision **Cockpit** : dashboards, logs, alertes vers l'astreinte, **Audit Trail** activé."
+ ]},
+ {t:"h",x:"6. « Un appel API renvoie 404 alors que la ressource existe. Que fais-tu ? »"},
+ {t:"p",x:"Je vérifie d'abord le **scope** : bonne zone ou bonne region dans l'URL, et bon `project_id`. C'est la cause la plus fréquente. Ensuite l'**authentification** (une clé scopée sur un autre project peut donner un `403`, parfois masqué en `404`). Puis je rejoue la commande CLI équivalente avec `--debug` pour comparer l'URL et le body exacts."},
+ {t:"h",x:"7. « Comment tu réduirais la facture ? »"},
+ {t:"p",x:"Je commence par un inventaire des **ressources orphelines** (volumes détachés, IP réservées, snapshots anciens), puis les **lifecycle rules** sur l'Object Storage, l'extinction planifiée des environnements hors production, le passage des charges intermittentes en **serverless**, et enfin un **Savings Plan** une fois la baseline mesurée. Je mets des **budget alerts** pour ne pas découvrir le problème à la facture."},
+ {t:"h",x:"8. « Une question pour nous ? » — prépare-en trois"},
+ {t:"ul",x:[
+  "Quelle part de l'infrastructure est décrite en Terraform aujourd'hui, et quelle part reste manuelle ?",
+  "Comment est organisé le découpage en **Projects** et la stratégie IAM entre les équipes ?",
+  "Sur quels produits Scaleway l'équipe s'appuie-t-elle le plus, et quels sont les points de friction rencontrés ?"
+ ]},
+ {t:"note",k:"ok",b:"Les phrases qui rassurent",x:"« Je vérifie toujours le **scope** avant de débugger. » — « Je fais du Terraform pour l'infra et du CLI pour l'exploitation. » — « Une clé d'API appartient à une **application**, jamais à un humain. » — « La HA ne remplace pas les backups. » — « Je regarde `--debug` pour apprendre l'API. »"},
+ {t:"note",k:"bad",b:"Les phrases à éviter",x:"« C'est comme AWS mais moins cher » (sans rien ajouter). — « Je mettrais tout dans le project default. » — « Je donne AllProductsFullAccess, c'est plus simple. » — « Le serverless c'est toujours moins cher. » — « Les backups, c'est géré automatiquement donc je n'y touche pas. »"}
+]});
+/* ============================================================
+   2. Quiz — la bonne réponse est indiquée par `a`,
+      l'ordre affiché est mélangé à chaque tirage.
+   ============================================================ */
+QUIZ = [
+{m:"intro",q:"Quel est le bon ordre hiérarchique chez Scaleway ?",
+ o:["Project → Organization → Resource","Organization → Project → Resource","Account → Region → Project","Organization → Region → Project"],a:1,
+ e:"L'**Organization** est la racine (facturation, users, IAM). Elle contient des **Projects**, qui contiennent les **Resources**."},
+{m:"intro",q:"`fr-par-2` désigne :",
+ o:["une region","un project","une availability zone","un endpoint S3"],a:2,
+ e:"`fr-par` est la **region**, `fr-par-2` est une **availability zone** de cette region."},
+{m:"intro",q:"Parmi ces produits, lequel est **régional** et non zonal ?",
+ o:["Object Storage","Instance","Block Storage","Elastic Metal"],a:0,
+ e:"L'Object Storage est **régional** : un bucket appartient à `fr-par`, pas à `fr-par-1`. Instances, Block Storage et Elastic Metal sont zonaux."},
+{m:"intro",q:"Quelle affirmation est vraie sur les Projects ?",
+ o:["Chaque Project a sa propre facture séparée","Un Project ne peut contenir que des Instances","Les Projects servent de scope d'isolation et de permissions IAM","Il ne peut y avoir qu'un seul Project par Organization"],a:2,
+ e:"Le Project isole les ressources et sert de **scope IAM**. La facturation reste consolidée au niveau de l'Organization, avec une ventilation par project."},
+{m:"intro",q:"Une Instance est arrêtée (`stopped`). Que continues-tu à payer ?",
+ o:["Rien du tout","Le block storage volume et la flexible IP réservée","Uniquement le trafic réseau","Seulement la RAM"],a:1,
+ e:"L'arrêt libère le CPU/RAM, mais le **volume** et l'**IP réservée** restent facturés. C'est le piège de coût le plus courant."},
+{m:"intro",q:"Combien d'availability zones compte la region `fr-par` ?",
+ o:["1","2","3","6"],a:2,
+ e:"`fr-par-1`, `fr-par-2` et `fr-par-3`. Les regions `nl-ams` et `pl-waw` ont également plusieurs AZ."},
+{m:"iam",q:"Quel principal IAM faut-il utiliser pour une CI/CD ?",
+ o:["Une Application","Le user Owner de l'Organization","Un user dédié avec MFA désactivé","Un Group vide"],a:0,
+ e:"Une **Application** est une identité machine. Utiliser une clé d'un humain (a fortiori l'Owner) est une mauvaise pratique majeure."},
+{m:"iam",q:"Que met-on dans le header `X-Auth-Token` ?",
+ o:["L'access key (SCWXXXX…)","Le project_id","La secret key","Un JWT généré par la console"],a:2,
+ e:"`X-Auth-Token` attend la **secret key**. L'access key ne sert qu'à identifier la clé et à signer les requêtes S3."},
+{m:"iam",q:"Tu as perdu la secret key d'une API key. Que fais-tu ?",
+ o:["Tu la récupères dans la console, onglet Credentials","Tu la retrouves via `scw iam api-key get`","Tu révoques la clé et tu en crées une nouvelle","Tu contactes le support pour qu'il te la renvoie"],a:2,
+ e:"La secret key n'est affichée **qu'une seule fois**, à la création. Elle n'est jamais réaffichée : il faut révoquer et recréer."},
+{m:"iam",q:"Comment est composée une policy IAM Scaleway ?",
+ o:["Un principal + des rules (permission sets + scope)","Un document JSON avec Effect Allow/Deny et des conditions","Une liste d'IP autorisées","Un rôle assumé temporairement via STS"],a:0,
+ e:"Le modèle est **allow-only** : une policy lie **un principal** à des **rules**, chaque rule combinant des **permission sets** et un **scope** (project_ids ou organization_id)."},
+{m:"iam",q:"Quelle est la principale différence avec l'IAM d'AWS ?",
+ o:["Scaleway n'a pas de notion de groupe","Scaleway ne gère pas les identités machine","Il n'y a pas de `Deny` explicite ni de conditions chez Scaleway","Les permissions Scaleway sont globales uniquement"],a:2,
+ e:"Le modèle Scaleway est **allow-only**, sans `Effect: Deny` ni conditions. Plus simple, moins expressif."},
+{m:"iam",q:"Où ne faut-il surtout pas stocker une secret key ?",
+ o:["Dans Secret Manager","Dans une variable d'environnement injectée par la CI","Dans un fichier commité au repo, même en .gitignore local","Dans ~/.config/scw/config.yaml avec des droits 600"],a:2,
+ e:"Un fichier de credentials dans le repo finit toujours par être poussé. Secret Manager, variables d'environnement ou secrets CI."},
+{m:"compute",q:"Quelle différence entre local storage et block storage ?",
+ o:["Le local storage est répliqué sur 3 AZ","Le block storage est un volume réseau détachable et redimensionnable","Le block storage ne supporte pas les snapshots","Le local storage se monte sur plusieurs Instances à la fois"],a:1,
+ e:"Le **block storage** est un volume réseau : détachable, redimensionnable à chaud, snapshot-able, il survit à la suppression de l'Instance. Le **local storage** est physiquement lié à l'hyperviseur."},
+{m:"compute",q:"À quoi sert un placement group en `max_availability` ?",
+ o:["Rapprocher les Instances pour réduire la latence","Garantir que les Instances tournent sur des hyperviseurs différents","Répartir les Instances sur plusieurs regions","Créer un cluster Kubernetes"],a:1,
+ e:"C'est de l'**anti-affinity** : le placement group force la répartition sur des hyperviseurs distincts pour éviter un point de défaillance unique."},
+{m:"compute",q:"Quelle commande supprime proprement une Instance avec son IP et ses volumes ?",
+ o:["`scw instance server delete <id>`","`scw instance server stop <id> --force`","`scw instance server terminate <id> with-ip=true with-volumes=all`","`scw instance server destroy <id> --all`"],a:2,
+ e:"`terminate` avec `with-ip=true` et `with-volumes=all` évite de laisser des ressources orphelines facturées."},
+{m:"compute",q:"Quand choisir Elastic Metal plutôt qu'une Instance ?",
+ o:["Pour héberger un site statique","Pour de la virtualisation imbriquée ou une licence liée au CPU physique","Pour réduire le temps de provisioning à quelques secondes","Pour bénéficier du scale-to-zero"],a:1,
+ e:"Elastic Metal donne un **serveur physique dédié** : nécessaire pour la nested virtualization, certaines licences ou des I/O extrêmes."},
+{m:"compute",q:"Comment injecte-t-on un script d'initialisation dans une Instance ?",
+ o:["Via un security group","Via le user data `cloud-init`","Via une bucket policy","Via une annotation Kubernetes"],a:1,
+ e:"On pose un user data de clé `cloud-init` : `scw instance user-data set server-id=… key=cloud-init content=@init.yaml`."},
+{m:"compute",q:"Un security group Scaleway agit :",
+ o:["au niveau de l'Instance, de façon stateful","au niveau du VPC entier, de façon stateless","au niveau du bucket Object Storage","au niveau du DNS"],a:0,
+ e:"C'est un firewall **stateful** attaché aux Instances, avec des règles inbound/outbound — l'équivalent des security groups AWS."},
+{m:"serverless",q:"Quel produit part d'une image OCI plutôt que de code source ?",
+ o:["Serverless Functions","Serverless Containers","Serverless SQL Database","Managed Inference"],a:1,
+ e:"Les **Containers** déploient une image du Container Registry ; les **Functions** partent du code et Scaleway builde l'image."},
+{m:"serverless",q:"Que provoque `min-scale=0` ?",
+ o:["Un scale-to-zero, donc un cold start possible","Une erreur de configuration","La suppression du namespace après 24 h","Un plafond de 0 requête par seconde"],a:0,
+ e:"`min-scale=0` arrête toutes les instances en l'absence de trafic : coût nul, mais **cold start** à la requête suivante."},
+{m:"serverless",q:"Quel type de trigger permet d'exécuter une fonction toutes les nuits à 3 h ?",
+ o:["Un trigger HTTP","Un trigger CRON","Un webhook Object Storage","Un health check du Load Balancer"],a:1,
+ e:"Un **CRON trigger** avec une expression et une timezone. Pour un batch qui se termine, un **Serverless Job** avec cron est encore plus adapté."},
+{m:"serverless",q:"Un `max-scale` très élevé devant une base managée peut provoquer :",
+ o:["un cold start permanent","une connection storm qui sature `max_connections`","une perte des logs","un changement de region automatique"],a:1,
+ e:"Chaque instance ouvre ses connexions : sans pooling, un scaling agressif sature la base. Réponse attendue : pooling/proxy et `max-scale` cohérent."},
+{m:"serverless",q:"Le CPU alloué à une Serverless Function est déterminé par :",
+ o:["le nombre de requêtes par seconde","la mémoire allouée","la region choisie","le runtime sélectionné"],a:1,
+ e:"Le CPU est **proportionnel à la mémoire** configurée : augmenter la mémoire accélère aussi le traitement."},
+{m:"k8s",q:"Quelle est la différence entre Kapsule et Kosmos ?",
+ o:["Kosmos est la version gratuite de Kapsule","Kapsule est mono-AZ, Kosmos est multi-region","Kosmos permet des nodes hors Scaleway (multi-cloud / on-premise)","Kapsule n'a pas de control plane managé"],a:2,
+ e:"Les deux ont un **control plane managé**. **Kapsule** = nodes Scaleway ; **Kosmos** = nodes hétérogènes, y compris chez un autre provider."},
+{m:"k8s",q:"Que se passe-t-il quand tu crées un `Service type=LoadBalancer` sur Kapsule ?",
+ o:["Rien, il faut un Ingress obligatoirement","Le CCM provisionne un Load Balancer Scaleway facturé","Le trafic passe par le Public Gateway","Kubernetes crée un bucket Object Storage"],a:1,
+ e:"Le **Cloud Controller Manager** crée un vrai **Load Balancer Scaleway**. C'est pour ça qu'on met plutôt un seul Ingress Controller devant."},
+{m:"k8s",q:"Quel est le username à utiliser pour `docker login rg.fr-par.scw.cloud` ?",
+ o:["ton email Scaleway","`nologin`","l'access key","`root`"],a:1,
+ e:"Le username littéral est **`nologin`** et le mot de passe est la **secret key**."},
+{m:"k8s",q:"Que fait `scw k8s kubeconfig install <cluster-id>` ?",
+ o:["Installe kubectl sur la machine","Fusionne le kubeconfig du cluster dans ~/.kube/config","Crée un nouveau pool de nodes","Met à jour la version du control plane"],a:1,
+ e:"La commande récupère le kubeconfig du cluster et l'ajoute à ta configuration kubectl locale."},
+{m:"k8s",q:"Quand un PersistentVolumeClaim est créé sur Kapsule, que provisionne le CSI driver ?",
+ o:["Un bucket Object Storage","Un partage NFS","Un Block Storage volume","Une flexible IP"],a:2,
+ e:"Le driver CSI Scaleway crée dynamiquement un **Block Storage volume** attaché au node qui héberge le pod."},
+{m:"storage",q:"Comment s'authentifie-t-on sur l'Object Storage Scaleway ?",
+ o:["Header `X-Auth-Token` avec la secret key","Signature AWS V4 avec access key + secret key","Basic auth email / mot de passe","OAuth2 avec un refresh token"],a:1,
+ e:"L'Object Storage est **compatible S3** : on utilise la **signature AWS V4**. Le `X-Auth-Token` sert aux autres APIs Scaleway."},
+{m:"storage",q:"Quel est l'endpoint S3 de la region Paris ?",
+ o:["https://api.scaleway.com/s3/fr-par","https://s3.fr-par.scw.cloud","https://fr-par-1.s3.scaleway.com","https://object.fr-par.scaleway.com"],a:1,
+ e:"`https://s3.<region>.scw.cloud`, donc `https://s3.fr-par.scw.cloud`. Le bucket peut aussi être adressé en virtual-hosted : `https://mon-bucket.s3.fr-par.scw.cloud`."},
+{m:"storage",q:"Quelle classe de stockage impose une restauration différée avant lecture ?",
+ o:["STANDARD","ONEZONE_IA","GLACIER","MULTI_AZ"],a:2,
+ e:"**GLACIER** est de l'archivage : l'objet doit être restauré (opération qui prend des heures et qui est facturée) avant d'être lisible."},
+{m:"storage",q:"Quel mécanisme permet de donner un accès temporaire à un objet privé ?",
+ o:["Une pre-signed URL","Une bucket policy publique","Un security group","Un CNAME dans le DNS"],a:0,
+ e:"La **pre-signed URL** encode une signature et une expiration : l'accès est temporaire sans distribuer de credentials."},
+{m:"storage",q:"Quel levier réduit le plus efficacement la facture Object Storage ?",
+ o:["Renommer les objets avec des noms plus courts","Des lifecycle rules de transition et d'expiration","Activer le versioning","Passer les buckets en public"],a:1,
+ e:"Les **lifecycle rules** déplacent automatiquement les données froides vers ONEZONE_IA/GLACIER et suppriment les objets périmés."},
+{m:"storage",q:"Un Block Storage volume peut être attaché :",
+ o:["à plusieurs Instances simultanément","à une seule Instance à la fois","à un bucket","à un cluster entier"],a:1,
+ e:"Le Block Storage est attaché à **une** Instance. Pour un accès partagé simultané, c'est **File Storage** (NFS)."},
+{m:"network",q:"Un Private Network Scaleway (VPC v2) est :",
+ o:["global","régional","zonal","lié à un seul serveur"],a:1,
+ e:"Depuis VPC v2 les Private Networks sont **régionaux** : les ressources de plusieurs AZ d'une même region peuvent y communiquer."},
+{m:"network",q:"À quoi sert principalement un Public Gateway ?",
+ o:["Répartir le trafic entrant entre plusieurs serveurs","Fournir le NAT sortant et un bastion SSH aux machines privées","Chiffrer les volumes","Distribuer du contenu statique en CDN"],a:1,
+ e:"Le Public Gateway donne un accès Internet sortant (NAT), du port forwarding et un bastion SSH aux ressources sans IP publique."},
+{m:"network",q:"Pour survivre à la perte d'une AZ, quel type de Load Balancer choisis-tu ?",
+ o:["Un LB zonal avec une flexible IP","Un LB multi-AZ (regional)","Deux LB zonaux avec un round robin DNS manuel","Aucun, le Public Gateway suffit"],a:1,
+ e:"Le **Load Balancer multi-AZ / regional** est réparti sur plusieurs AZ. Un LB zonal disparaît avec son AZ."},
+{m:"network",q:"Quel produit met un CDN et un domaine personnalisé devant un bucket ?",
+ o:["Edge Services","Public Gateway","IPAM","Interlink"],a:0,
+ e:"**Edge Services** apporte cache CDN, nom de domaine personnalisé et certificat TLS managé devant un bucket ou un Load Balancer."},
+{m:"network",q:"Que gère IPAM ?",
+ o:["Les certificats TLS","L'attribution des adresses IP privées dans le VPC","Le routage BGP vers Internet","Les règles de firewall"],a:1,
+ e:"IPAM (IP Address Management) gère les plages et l'attribution des adresses privées des Private Networks."},
+{m:"db",q:"Que garantit l'option High Availability d'une Managed Database ?",
+ o:["Des backups plus fréquents","Un node standby dans une autre AZ avec basculement automatique","Une protection contre un DROP TABLE","Des read replicas illimités"],a:1,
+ e:"La HA ajoute un **standby** avec failover automatique. Elle protège d'une panne d'infrastructure, **pas** d'une erreur humaine : les backups restent indispensables."},
+{m:"db",q:"Quelle est la bonne pratique pour exposer une Managed Database en production ?",
+ o:["Endpoint public avec une ACL 0.0.0.0/0","Endpoint public sans ACL, protégé par le mot de passe","Endpoint sur Private Network uniquement","Tunnel SSH depuis le poste de chaque développeur"],a:2,
+ e:"On attache la base à un **Private Network** et on supprime l'endpoint public : la base n'est joignable que depuis le VPC."},
+{m:"db",q:"Quel produit descend automatiquement à zéro quand personne ne l'utilise ?",
+ o:["Managed Database PostgreSQL","Serverless SQL Database","Managed Redis","Elastic Metal"],a:1,
+ e:"La **Serverless SQL Database** (compatible PostgreSQL) scale automatiquement et jusqu'à zéro, facturée à l'usage réel."},
+{m:"db",q:"Par défaut, qui peut se connecter à l'endpoint public d'une Managed Database ?",
+ o:["Tout Internet","Personne : il faut déclarer explicitement les CIDR autorisés","Uniquement les Instances du même project","Uniquement la console"],a:1,
+ e:"Les **ACL / allowed IPs** sont vides au départ : aucune connexion externe n'est possible tant qu'on n'a pas ajouté de CIDR."},
+{m:"integ",q:"Quels protocoles propose Messaging & Queuing ?",
+ o:["AMQP, MQTT et Kafka","NATS, SQS et SNS","gRPC, GraphQL et REST","Redis Streams et RabbitMQ"],a:1,
+ e:"**NATS** (pub/sub + JetStream), **SQS** (files, compatible AWS) et **SNS** (topics, compatible AWS)."},
+{m:"integ",q:"Que faut-il configurer dans le DNS pour utiliser Transactional Email ?",
+ o:["Un enregistrement A vers l'IP du serveur SMTP","Les enregistrements SPF, DKIM (et DMARC)","Un CNAME vers scaleway.com","Rien, la vérification est automatique"],a:1,
+ e:"La vérification du domaine repose sur **SPF** et **DKIM**, avec **DMARC** fortement recommandé pour la délivrabilité."},
+{m:"integ",q:"Cockpit repose sur quelle stack ?",
+ o:["Elasticsearch, Logstash, Kibana","Grafana, Prometheus/Mimir, Loki, Tempo","Datadog managé","Zabbix et Nagios"],a:1,
+ e:"Cockpit est une stack **Grafana** (visualisation), **Prometheus/Mimir** (métriques), **Loki** (logs), **Tempo** (traces)."},
+{m:"integ",q:"Les Generative APIs de Scaleway sont :",
+ o:["compatibles avec l'API OpenAI, facturées au token","réservées aux clients Elastic Metal","accessibles uniquement via la console","limitées aux modèles entraînés par le client"],a:0,
+ e:"L'endpoint `https://api.scaleway.ai/v1` est **compatible OpenAI** : on réutilise les SDK existants en changeant le base URL et la clé."},
+{m:"cli",q:"Quelle est la grammaire d'une commande scw ?",
+ o:["`scw <verbe> <ressource> <namespace>`","`scw <namespace> <ressource> <verbe>`","`scw --resource <x> --action <y>`","`scw run <commande>`"],a:1,
+ e:"Toujours `scw <namespace> <resource> <verb>`, par exemple `scw instance server list`."},
+{m:"cli",q:"Comment passe-t-on un argument à une commande scw ?",
+ o:["`--type DEV1-S`","`type=DEV1-S`","`-t DEV1-S`","`type: DEV1-S`"],a:1,
+ e:"Les **arguments de ressource** s'écrivent `cle=valeur`. Les tirets sont réservés aux **flags** globaux comme `-o` ou `--wait`."},
+{m:"cli",q:"Quel est l'ordre de précédence de la configuration du CLI ?",
+ o:["config file > env vars > flags","env vars > flags > config file","flags > env vars > config file","config file > flags > env vars"],a:2,
+ e:"Les **flags** gagnent, puis les **variables d'environnement**, puis le **profil du fichier de config**. C'est ce qui permet de scripter en CI sans fichier."},
+{m:"cli",q:"Quel flag attend la fin d'une opération asynchrone ?",
+ o:["`--sync`","`--block`","`-w` / `--wait`","`--poll`"],a:2,
+ e:"`--wait` (ou `-w`) bloque jusqu'à l'état final. Indispensable dans un script qui enchaîne création puis configuration."},
+{m:"cli",q:"Comment découvrir la requête HTTP réellement envoyée par le CLI ?",
+ o:["`scw --debug …`","`scw trace …`","`scw --verbose-api …`","`SCW_LOG=all scw …`"],a:0,
+ e:"`--debug` affiche méthode, URL et body. C'est la meilleure façon d'apprendre l'API à partir de commandes CLI connues."},
+{m:"cli",q:"Que fait `scw object config install type=aws-cli` ?",
+ o:["Installe le binaire aws-cli","Génère la configuration aws-cli pointant vers l'Object Storage Scaleway","Migre un bucket S3 vers Scaleway","Crée une API key S3 dédiée"],a:1,
+ e:"La commande écrit la configuration (endpoint, region, credentials) pour aws-cli, rclone, s3cmd ou mc à partir de ton profil scw."},
+{m:"cli",q:"Où se trouve la configuration du CLI sous Linux ?",
+ o:["/etc/scaleway/scw.conf","~/.scw/credentials","~/.config/scw/config.yaml","~/.aws/config"],a:2,
+ e:"`~/.config/scw/config.yaml`, surchargeable via `SCW_CONFIG_PATH`. Il contient la secret key en clair : droits 600, jamais commité."},
+{m:"api",q:"Quelle URL liste les Instances de `fr-par-1` ?",
+ o:["GET /instance/v1/regions/fr-par/servers","GET /instance/v1/zones/fr-par-1/servers","GET /compute/v1/fr-par-1/instances","GET /instance/servers?zone=fr-par-1"],a:1,
+ e:"Produit **zonal** : `/instance/v1/zones/<zone>/servers`. Les produits régionaux utilisent `/regions/<region>/…`."},
+{m:"api",q:"À quoi correspond `total_count` dans une réponse de liste ?",
+ o:["Au nombre d'éléments de la page courante","Au nombre total d'éléments, toutes pages confondues","Au quota maximum du project","Au nombre de pages restantes"],a:1,
+ e:"`total_count` donne le total côté serveur : c'est lui qui permet de calculer le nombre de pages avec `per_page`."},
+{m:"api",q:"Un `403 permissions_denied` signifie :",
+ o:["le token est invalide","tu es authentifié mais la policy IAM n'autorise pas l'action","la ressource n'existe pas","le quota est dépassé"],a:1,
+ e:"`401` = authentification en échec, `403` = authentifié mais **non autorisé** : il manque un permission set sur le bon scope."},
+{m:"api",q:"L'API renvoie `429`. Que fais-tu ?",
+ o:["Tu relances immédiatement en boucle","Tu appliques un backoff exponentiel avec jitter","Tu changes de region","Tu recrées une API key"],a:1,
+ e:"`429` = rate limit ou quota. La réponse attendue est un **retry avec backoff exponentiel et jitter**, éventuellement une demande d'augmentation de quota."},
+{m:"api",q:"Une création d'Instance renvoie 201 avec `state: starting`. Que signifie-t-il ?",
+ o:["L'opération a échoué silencieusement","La ressource est prête à être utilisée","L'API est asynchrone : il faut attendre l'état `running`","Il faut refaire la requête"],a:2,
+ e:"L'API Scaleway est **asynchrone**. On attend l'état cible via `--wait` en CLI ou un `wait_for_*` dans un SDK."},
+{m:"api",q:"Que signifie une version d'API en `v1alpha1` ?",
+ o:["Une version dépréciée","Une version en évolution, susceptible de changer","Une version réservée aux comptes entreprise","Une version en lecture seule"],a:1,
+ e:"Les suffixes `alpha`/`beta` signalent une API **non stabilisée** : à utiliser en connaissance de cause, avec un plan de migration."},
+{m:"api",q:"Sur quel outil s'appuient à la fois le CLI et le provider Terraform ?",
+ o:["Le SDK Python","Le SDK Go","Un binaire C++ interne","L'API GraphQL"],a:1,
+ e:"Le **SDK Go** (`scaleway-sdk-go`) est la base commune du CLI `scw` et du provider Terraform."},
+{m:"archi",q:"Quel est l'équivalent Scaleway d'AWS Lambda ?",
+ o:["Serverless Containers","Serverless Functions","Serverless Jobs","Kapsule"],a:1,
+ e:"**Serverless Functions** = Lambda. **Serverless Containers** est plus proche de Cloud Run / App Runner."},
+{m:"archi",q:"Quel est l'équivalent Scaleway de CloudTrail ?",
+ o:["Cockpit","Audit Trail","Secret Manager","IPAM"],a:1,
+ e:"**Audit Trail** journalise les actions sur l'Organization. **Cockpit** est l'équivalent de CloudWatch (métriques, logs, traces)."},
+{m:"archi",q:"Quel est l'équivalent Scaleway d'une NAT Gateway AWS ?",
+ o:["Load Balancer","Edge Services","Public Gateway","Flexible IP"],a:2,
+ e:"Le **Public Gateway** fournit le NAT sortant pour les ressources sans IP publique, plus du port forwarding et un bastion SSH."},
+{m:"archi",q:"Première action pour réduire une facture Scaleway ?",
+ o:["Migrer vers une autre region","Supprimer les volumes détachés et les IP réservées inutilisées","Passer toutes les Instances en GPU","Désactiver Cockpit"],a:1,
+ e:"Les **ressources orphelines** (volumes détachés, snapshots anciens, IP réservées non attachées) sont le gaspillage le plus fréquent et le plus facile à corriger."},
+{m:"entretien",q:"Un appel API renvoie 404 alors que la ressource existe. Quelle est la cause la plus probable ?",
+ o:["Le compte est suspendu","Une erreur de scope : mauvaise zone, region ou project","L'API est en maintenance","La ressource est en état `stopped`"],a:1,
+ e:"C'est presque toujours un problème de **scope** : URL zonale d'un produit régional, mauvaise AZ, ou clé scopée sur un autre project."}
+];
+/* ============================================================
+   3. Flashcards
+   ============================================================ */
+CARDS = [
+{c:"Organization",b:"La racine du compte : porte la facturation, les users, les groups et les policies IAM."},
+{c:"Project",b:"Conteneur logique de ressources et scope IAM. Ne crée pas de facture séparée. Un project `default` existe toujours."},
+{c:"Region vs AZ",b:"Region = site géographique (`fr-par`). AZ = data center isolé dans la region (`fr-par-1`, `fr-par-2`, `fr-par-3`)."},
+{c:"Produits zonaux",b:"Instances, Block Storage, Elastic Metal, Load Balancer zonal, snapshots. URL : `/zones/<zone>/`."},
+{c:"Produits régionaux",b:"Object Storage, VPC & Private Networks, Kapsule, Managed Databases, Registry, Serverless, Cockpit. URL : `/regions/<region>/`."},
+{c:"Produits globaux",b:"IAM, Account/Projects, Billing, Domains & DNS. Pas de zone ni de region dans l'URL."},
+{c:"X-Auth-Token",b:"Header d'authentification de l'API Scaleway. Il contient la **secret key**, jamais l'access key."},
+{c:"Access key",b:"Identifiant public d'une API key (`SCWXXXX…`). Sert surtout à la **signature S3** de l'Object Storage."},
+{c:"Application (IAM)",b:"Identité machine à utiliser pour une CI, un script ou un backend. Jamais une clé d'humain pour un service."},
+{c:"Policy IAM",b:"Un principal + des rules. Chaque rule = des **permission sets** appliqués à un scope (`project_ids` ou `organization_id`). Modèle allow-only."},
+{c:"Permission set",b:"Paquet de permissions prédéfini : `InstancesFullAccess`, `ObjectStorageReadOnly`, `KubernetesFullAccess`, `IAMManager`…"},
+{c:"Secret Manager",b:"Service managé de stockage et de versionnage de secrets, avec contrôle d'accès IAM."},
+{c:"Audit Trail",b:"Journal des actions réalisées sur l'Organization : qui a créé, modifié ou supprimé quoi, et quand."},
+{c:"Flexible IP",b:"IP publique réservable, détachable et réattachable à une autre Instance. Facturée même si elle n'est attachée à rien."},
+{c:"Placement group",b:"Contrainte de placement : `max_availability` (anti-affinity, hyperviseurs différents) ou `low_latency` (rapprochement)."},
+{c:"Local vs Block storage",b:"Local = SSD de l'hyperviseur, très rapide, non détachable. Block = volume réseau détachable, redimensionnable, snapshot-able."},
+{c:"cloud-init",b:"User data d'initialisation d'une Instance : `scw instance user-data set key=cloud-init content=@init.yaml`."},
+{c:"Elastic Metal",b:"Serveur bare metal à la demande, facturé à l'heure et piloté par API. Pour l'isolation totale ou les licences liées au CPU."},
+{c:"Serverless Functions",b:"Tu fournis le code + un handler, Scaleway builde et exécute. Équivalent AWS Lambda. Runtimes limités."},
+{c:"Serverless Containers",b:"Tu fournis une image OCI du Container Registry. Liberté totale sur la stack. Équivalent Cloud Run."},
+{c:"Serverless Jobs",b:"Traitement batch qui démarre, s'exécute et se termine. Cron possible. Pas de serveur HTTP."},
+{c:"min-scale / max-scale",b:"Bornes du scaling. `min-scale=0` = scale-to-zero (coût nul, cold start). `min-scale=1` = pas de cold start, mais facturation permanente."},
+{c:"Cold start",b:"Latence de la première requête après une période d'inactivité, le temps de démarrer une instance. Mitigé par `min-scale=1` et une image légère."},
+{c:"Kapsule",b:"Kubernetes managé : control plane géré par Scaleway, nodes = Instances Scaleway organisées en pools autoscalés."},
+{c:"Kosmos",b:"Kubernetes managé multi-cloud : control plane Scaleway, nodes possiblement chez un autre provider ou on-premise."},
+{c:"Container Registry",b:"Registry OCI privé. Endpoint `rg.<region>.scw.cloud`. Login Docker : user `nologin`, mot de passe = secret key."},
+{c:"CSI Scaleway",b:"Un PersistentVolumeClaim sur Kapsule provisionne automatiquement un **Block Storage volume**."},
+{c:"CCM Scaleway",b:"Un `Service type=LoadBalancer` provisionne un **Load Balancer Scaleway** facturé. D'où l'usage d'un Ingress Controller unique."},
+{c:"Endpoint Object Storage",b:"`https://s3.<region>.scw.cloud`, par exemple `https://s3.fr-par.scw.cloud`. Authentification par **signature AWS V4**."},
+{c:"Classes de stockage",b:"`STANDARD` (chaud, multi-AZ), `ONEZONE_IA` (froid, une seule AZ), `GLACIER` (archivage, restauration différée et facturée)."},
+{c:"Lifecycle rules",b:"Transition automatique entre classes et expiration des objets. Le premier levier d'optimisation de coût sur l'Object Storage."},
+{c:"Pre-signed URL",b:"URL signée à durée limitée qui donne accès à un objet privé sans partager de credentials."},
+{c:"VPC / Private Network",b:"VPC régional par project. Private Network **régional** (depuis VPC v2), adressage géré par **IPAM**."},
+{c:"Public Gateway",b:"NAT sortant, port forwarding et bastion SSH pour les ressources d'un Private Network sans IP publique."},
+{c:"Load Balancer multi-AZ",b:"LB régional réparti sur plusieurs AZ. Frontends, backends, health checks, ACL, certificat Let's Encrypt managé."},
+{c:"Edge Services",b:"CDN, domaine personnalisé et TLS managé devant un bucket Object Storage ou un Load Balancer."},
+{c:"Managed Database HA",b:"Node standby dans une autre AZ avec failover automatique. Protège d'une panne matérielle, **pas** d'un DROP TABLE."},
+{c:"ACL d'une base managée",b:"Vide par défaut : aucune connexion depuis l'endpoint public tant qu'aucun CIDR n'est autorisé. En production, endpoint privé uniquement."},
+{c:"Serverless SQL Database",b:"PostgreSQL compatible qui scale automatiquement et descend à zéro. Facturé à l'usage."},
+{c:"Messaging & Queuing",b:"Trois protocoles : **NATS** (pub/sub + JetStream), **SQS** (files, compatible AWS), **SNS** (topics, compatible AWS)."},
+{c:"Transactional Email",b:"Envoi par API ou SMTP après vérification du domaine via **SPF**, **DKIM** et **DMARC**."},
+{c:"Cockpit",b:"Observabilité managée : Grafana + Prometheus/Mimir (métriques) + Loki (logs) + Tempo (traces), avec alerting."},
+{c:"Generative APIs",b:"Inference serverless compatible OpenAI sur `https://api.scaleway.ai/v1`, authentifiée par `Authorization: Bearer <secret key>`."},
+{c:"Grammaire du CLI",b:"`scw <namespace> <resource> <verb>` avec des arguments en `cle=valeur` et des flags globaux en `--flag`."},
+{c:"Précédence de config scw",b:"Flags > variables d'environnement (`SCW_*`) > profil du fichier `~/.config/scw/config.yaml` > valeurs par défaut."},
+{c:"scw --debug",b:"Affiche la requête HTTP réellement envoyée (méthode, URL, body). La meilleure façon d'apprendre l'API depuis le CLI."},
+{c:"scw --wait",b:"Bloque jusqu'à la fin de l'opération asynchrone. Indispensable dans un script qui enchaîne les étapes."},
+{c:"Pagination API",b:"`?page=1&per_page=50` — `page` commence à 1, `per_page` est plafonné, et la réponse contient `total_count`."},
+{c:"Codes d'erreur",b:"400 arguments invalides, 401 non authentifié, 403 non autorisé, 404 souvent une erreur de scope, 409 conflit d'état, 429 rate limit, 5xx plateforme."},
+{c:"Asynchronisme API",b:"Les créations renvoient immédiatement un objet en `starting` / `creating`. Il faut attendre l'état cible (`--wait`, `wait_for_*`, polling avec backoff)."},
+{c:"IaC Scaleway",b:"Provider Terraform/OpenTofu `scaleway/scaleway`, Pulumi, collection Ansible, Crossplane. Le SDK Go est la base du CLI et du provider."}
+];
+
+/* ============================================================
+   4. API Explorer — catalogue d'endpoints
+   ============================================================ */
+API_PRODUCTS = [
+ {id:"instance", label:"Instances", scope:"zone", path:"instance/v1", res:"servers", key:"servers",
+  sample:'{\n  "servers": [\n    {\n      "id": "3f7a1b2c-…",\n      "name": "web-01",\n      "commercial_type": "DEV1-S",\n      "state": "running",\n      "zone": "fr-par-1",\n      "public_ip": { "address": "51.15.x.x", "dynamic": false },\n      "project": "33333333-…"\n    }\n  ],\n  "total_count": 12\n}'},
+ {id:"volume", label:"Block volumes", scope:"zone", path:"instance/v1", res:"volumes", key:"volumes",
+  sample:'{\n  "volumes": [\n    { "id": "a1…", "name": "web-01-root", "size": 20000000000, "volume_type": "b_ssd", "state": "available" }\n  ],\n  "total_count": 3\n}'},
+ {id:"lb", label:"Load Balancers", scope:"zone", path:"lb/v1", res:"lbs", key:"lbs",
+  sample:'{\n  "lbs": [\n    { "id": "b2…", "name": "front", "type": "LB-S", "status": "ready", "ip": [{ "ip_address": "51.15.x.x" }] }\n  ],\n  "total_count": 1\n}'},
+ {id:"rdb", label:"Managed Databases", scope:"region", path:"rdb/v1", res:"instances", key:"instances",
+  sample:'{\n  "instances": [\n    { "id": "c3…", "name": "orders-db", "engine": "PostgreSQL-15", "status": "ready", "is_ha_cluster": true, "node_type": "DB-GP-S" }\n  ],\n  "total_count": 2\n}'},
+ {id:"k8s", label:"Kubernetes Kapsule", scope:"region", path:"k8s/v1", res:"clusters", key:"clusters",
+  sample:'{\n  "clusters": [\n    { "id": "d4…", "name": "prod-cluster", "status": "ready", "version": "1.31.2", "cni": "cilium" }\n  ],\n  "total_count": 1\n}'},
+ {id:"vpc", label:"Private Networks", scope:"region", path:"vpc/v2", res:"private-networks", key:"private_networks",
+  sample:'{\n  "private_networks": [\n    { "id": "e5…", "name": "back-net", "vpc_id": "f6…", "subnets": [{ "subnet": "172.16.8.0/22" }] }\n  ],\n  "total_count": 1\n}'},
+ {id:"registry", label:"Container Registry", scope:"region", path:"registry/v1", res:"namespaces", key:"namespaces",
+  sample:'{\n  "namespaces": [\n    { "id": "g7…", "name": "api-prod", "endpoint": "rg.fr-par.scw.cloud/api-prod", "is_public": false }\n  ],\n  "total_count": 1\n}'},
+ {id:"container", label:"Serverless Containers", scope:"region", path:"containers/v1beta1", res:"containers", key:"containers",
+  sample:'{\n  "containers": [\n    { "id": "h8…", "name": "orders-api", "status": "ready", "min_scale": 0, "max_scale": 10, "memory_limit": 512,\n      "domain_name": "ordersapi-xyz.functions.fnc.fr-par.scw.cloud" }\n  ],\n  "total_count": 1\n}'},
+ {id:"iam", label:"IAM — applications", scope:"global", path:"iam/v1alpha1", res:"applications", key:"applications",
+  sample:'{\n  "applications": [\n    { "id": "i9…", "name": "ci-runner", "organization_id": "22222222-…", "editable": true }\n  ],\n  "total_count": 4\n}'},
+ {id:"account", label:"Account — projects", scope:"global", path:"account/v3", res:"projects", key:"projects",
+  sample:'{\n  "projects": [\n    { "id": "33333333-…", "name": "default", "organization_id": "22222222-…" },\n    { "id": "44444444-…", "name": "prod", "organization_id": "22222222-…" }\n  ],\n  "total_count": 2\n}'}
+];
+
+/* ============================================================
+   5. Missions du terminal
+   ============================================================ */
+MISSIONS = [
+ {id:"m1", t:"Se connecter", d:"Configure le CLI de façon interactive (access key, secret key, project, zone).", hint:"scw init", re:/^scw\s+init\b/},
+ {id:"m2", t:"Vérifier la configuration effective", d:"Affiche la configuration réellement utilisée par le CLI.", hint:"scw info", re:/^scw\s+(info|config\s+dump)\b/},
+ {id:"m3", t:"Lister les Instances en JSON", d:"Liste les Instances de fr-par-1 dans un format exploitable par jq.", hint:"scw instance server list zone=… -o json", re:/^scw\s+instance\s+server\s+list\b(?=.*-o\s*=?\s*json)/},
+ {id:"m4", t:"Créer une Instance", d:"Crée une Instance DEV1-S sous Ubuntu, nommée web-01, avec une IP publique.", hint:"scw instance server create type=… image=… name=… ip=new", re:/^scw\s+instance\s+server\s+create\b(?=.*type=)(?=.*image=)/},
+ {id:"m5", t:"Supprimer sans laisser de déchets", d:"Termine une Instance en supprimant aussi son IP et ses volumes.", hint:"… terminate <id> with-ip=true with-volumes=all", re:/^scw\s+instance\s+server\s+terminate\b(?=.*with-ip=true)(?=.*with-volumes=all)/},
+ {id:"m6", t:"Récupérer le kubeconfig", d:"Installe le kubeconfig d'un cluster Kapsule dans ~/.kube/config.", hint:"scw k8s kubeconfig install <cluster-id>", re:/^scw\s+k8s\s+kubeconfig\s+install\b/},
+ {id:"m7", t:"Créer une identité machine", d:"Crée une Application IAM pour ta CI/CD.", hint:"scw iam application create name=…", re:/^scw\s+iam\s+application\s+create\b(?=.*name=)/},
+ {id:"m8", t:"Configurer aws-cli", d:"Génère la configuration aws-cli pointant vers l'Object Storage Scaleway.", hint:"scw object config install type=aws-cli", re:/^scw\s+object\s+config\s+install\b(?=.*type=aws-cli)/},
+ {id:"m9", t:"Inspecter la requête HTTP", d:"Relance une commande de listing en affichant la requête HTTP envoyée.", hint:"scw … --debug", re:/^scw\s+\S+.*--debug\b/},
+ {id:"m10", t:"Appeler l'API à la main", d:"Liste les Instances de fr-par-1 avec curl et le bon header d'authentification.", hint:"curl -H \"X-Auth-Token: …\" https://api.scaleway.com/instance/v1/zones/fr-par-1/servers", re:/^curl\b(?=.*X-Auth-Token)(?=.*api\.scaleway\.com)(?=.*\/instance\/v1\/zones\/)/i}
+];
+TOOLS = [
+ {id:"lab",      icon:"💻", title:"Terminal scw (sandbox)"},
+ {id:"explorer", icon:"🧭", title:"API Explorer"},
+ {id:"quiz",     icon:"🎯", title:"Quiz mélangé"},
+ {id:"cards",    icon:"🃏", title:"Flashcards"},
+ {id:"cheat",    icon:"📋", title:"Cheat sheet"}
+];
+
+var BADGES = [
+ {id:"first", ic:"📘", t:"Premier module terminé"},
+ {id:"all",   ic:"🎓", t:"Tous les modules terminés"},
+ {id:"ops",   ic:"⌨️", t:"Toutes les missions du terminal"},
+ {id:"brain", ic:"🧠", t:"Quiz réussi à 80 % ou plus"},
+ {id:"perfect",ic:"💯", t:"Un quiz sans aucune faute"},
+ {id:"deck",  ic:"🃏", t:"20 flashcards révisées"},
+ {id:"probe", ic:"🔌", t:"API Explorer utilisé"},
+ {id:"lvl5",  ic:"🚀", t:"Niveau 5 atteint"}
+];
+
+/* ============================================================
+   6. State & persistance
+   ============================================================ */
+var KEY="scw-academy-v1";
+var state={xp:0,done:{},missions:{},badges:{},best:0,seen:0,page:"intro",theme:"dark"};
+function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);for(var k in o)state[k]=o[k];}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+load();
+document.documentElement.setAttribute("data-theme",state.theme||"dark");
+
+function toast(msg,ic){
+  var d=document.createElement("div");d.className="toast";
+  d.innerHTML='<span style="font-size:17px">'+(ic||"✨")+"</span><span>"+msg+"</span>";
+  document.getElementById("toast").appendChild(d);
+  setTimeout(function(){d.style.transition="opacity .4s";d.style.opacity="0";setTimeout(function(){d.remove();},420);},2600);
+}
+function addXp(n,why){
+  state.xp+=n;save();paintXp();
+  if(why)toast("+"+n+" XP — "+why,"⚡");
+  checkBadges();
+}
+function unlock(id){
+  if(state.badges[id])return;
+  state.badges[id]=1;save();
+  var b=BADGES.filter(function(x){return x.id===id;})[0];
+  if(b)toast("Badge débloqué : "+b.t,b.ic);
+  paintXp();
+}
+function checkBadges(){
+  var nd=Object.keys(state.done).length;
+  if(nd>=1)unlock("first");
+  if(nd>=MODULES.length)unlock("all");
+  if(Object.keys(state.missions).length>=MISSIONS.length)unlock("ops");
+  if(state.best>=80)unlock("brain");
+  if(state.best>=100)unlock("perfect");
+  if(state.seen>=20)unlock("deck");
+  if(Math.floor(state.xp/100)+1>=5)unlock("lvl5");
+}
+function paintXp(){
+  var lvl=Math.floor(state.xp/100)+1, into=state.xp%100;
+  document.getElementById("lvl").textContent=lvl;
+  document.getElementById("xptxt").textContent=state.xp+" XP · "+into+"/100";
+  document.getElementById("xpbar").style.width=into+"%";
+  document.getElementById("badges").innerHTML=BADGES.map(function(b){
+    return '<div class="bdg'+(state.badges[b.id]?" on":"")+'" title="'+esc(b.t)+'">'+b.ic+"</div>";
+  }).join("");
+}
+
+/* ============================================================
+   7. Rendu des blocs de cours
+   ============================================================ */
+function hl(code){
+  var s=esc(code);
+  return s.replace(
+    /(&[a-z]+;)|(^[ \t]*)(scw|curl|docker|kubectl|aws|brew|winget|choco|terraform|export|chmod)\b|(#[^\n]*)|(^|[ \t])(\/\/[^\n]*)|("[^"\n]*")|('[^'\n]*')|\b(GET|POST|PUT|PATCH|DELETE)\b|(^|[\s(])(--?[A-Za-z][\w-]*)|\b(\d+(?:\.\d+)?)\b/gm,
+    function(m,ent,ws,cmd,cmt,cpre,slash,dq,sq,verb,pre,flag,num){
+      if(ent)return ent;
+      if(cmd)return ws+'<span class="k-cmd">'+cmd+"</span>";
+      if(cmt)return '<span class="k-cmt">'+cmt+"</span>";
+      if(slash)return cpre+'<span class="k-cmt">'+slash+"</span>";
+      if(dq)return '<span class="k-str">'+dq+"</span>";
+      if(sq)return '<span class="k-str">'+sq+"</span>";
+      if(verb)return '<span class="k-http">'+verb+"</span>";
+      if(flag)return pre+'<span class="k-flag">'+flag+"</span>";
+      if(num)return '<span class="k-num">'+num+"</span>";
+      return m;
+    });
+}
+var CODEBANK=[];
+function codeBlock(code,lang,cap){
+  var i=CODEBANK.push(code)-1;
+  return '<div class="codeb"><div class="ch"><div class="dots"><i></i><i></i><i></i></div><span>'+
+    esc(cap||lang||"shell")+'</span><button data-copy="'+i+'">copier</button></div><pre>'+hl(code)+"</pre></div>";
+}
+var REGIONS=[
+ {n:"Paris",c:"fr-par",az:["fr-par-1","fr-par-2","fr-par-3"],f:"🇫🇷"},
+ {n:"Amsterdam",c:"nl-ams",az:["nl-ams-1","nl-ams-2","nl-ams-3"],f:"🇳🇱"},
+ {n:"Varsovie",c:"pl-waw",az:["pl-waw-1","pl-waw-2","pl-waw-3"],f:"🇵🇱"}
+];
+function renderBlocks(bs){
+  return bs.map(function(b){
+    switch(b.t){
+      case "p": return "<p>"+md(b.x)+"</p>";
+      case "h": return '<h3 class="sub">'+md(b.x)+"</h3>";
+      case "ul": return '<ul class="li">'+b.x.map(function(i){return "<li>"+md(i)+"</li>";}).join("")+"</ul>";
+      case "ol": return '<ol class="st">'+b.x.map(function(i){return "<li>"+md(i)+"</li>";}).join("")+"</ol>";
+      case "code": return codeBlock(b.x,b.lang,b.cap);
+      case "note": return '<div class="note '+b.k+'">'+(b.b?"<b>"+md(b.b)+"</b>":"")+md(b.x)+"</div>";
+      case "table": return '<div class="tw"><table><thead><tr>'+b.head.map(function(h){return "<th>"+md(h)+"</th>";}).join("")+
+        "</tr></thead><tbody>"+b.rows.map(function(r){return "<tr>"+r.map(function(c){return "<td>"+md(c)+"</td>";}).join("")+"</tr>";}).join("")+
+        "</tbody></table></div>";
+      case "cards": return '<div class="grid g2">'+b.x.map(function(c){
+        return '<div class="card"><span class="ci">'+c.i+"</span><h4>"+md(c.t)+"</h4><p>"+md(c.d)+"</p>"+
+          (c.tag?'<span class="tag '+(c.tc||"")+'">'+esc(c.tag)+"</span>":"")+"</div>";
+      }).join("")+"</div>";
+      case "regions": return '<div class="map">'+REGIONS.map(function(r){
+        return '<div class="reg"><h4>'+r.f+" "+r.n+'</h4><div class="code">'+r.c+'</div><div class="azs">'+
+          r.az.map(function(a){return '<span class="az">'+a+"</span>";}).join("")+"</div></div>";
+      }).join("")+"</div>";
+      default: return "";
+    }
+  }).join("");
+}
+
+/* ============================================================
+   8. Navigation
+   ============================================================ */
+function pages(){return MODULES.map(function(m){return m.id;}).concat(TOOLS.map(function(t){return t.id;}));}
+function buildNav(){
+  document.getElementById("nav-lessons").innerHTML=MODULES.map(function(m,i){
+    return '<button data-go="'+m.id+'"><span class="ic">'+m.icon+'</span><span class="tx">'+esc(m.title)+
+      '</span><span class="dot'+(state.done[m.id]?" done":"")+'"></span></button>';
+  }).join("");
+  document.getElementById("nav-tools").innerHTML=TOOLS.map(function(t){
+    return '<button data-go="'+t.id+'"><span class="ic">'+t.icon+'</span><span class="tx">'+esc(t.title)+"</span></button>";
+  }).join("");
+  markNav();
+}
+function markNav(){
+  Array.prototype.forEach.call(document.querySelectorAll("[data-go]"),function(b){
+    b.classList.toggle("active",b.getAttribute("data-go")===state.page);
+  });
+}
+function go(id){
+  state.page=id;save();markNav();render();
+  window.scrollTo({top:0,behavior:"smooth"});
+  document.getElementById("side").classList.remove("open");
+  document.getElementById("backdrop").classList.remove("on");
+}
+function pgnav(){
+  var p=pages(),i=p.indexOf(state.page);
+  var prev=i>0?p[i-1]:null, next=i<p.length-1?p[i+1]:null;
+  var titleOf=function(id){
+    var m=MODULES.filter(function(x){return x.id===id;})[0];if(m)return m.icon+"  "+m.title;
+    var t=TOOLS.filter(function(x){return x.id===id;})[0];return t?t.icon+"  "+t.title:"";
+  };
+  return '<div class="pgnav">'+
+    (prev?'<button class="btn ghost" data-go="'+prev+'">← '+esc(titleOf(prev))+"</button>":"<span></span>")+
+    (next?'<button class="btn" data-go="'+next+'">'+esc(titleOf(next))+" →</button>":"<span></span>")+
+    "</div>";
+}
+/* ============================================================
+   9. Pages
+   ============================================================ */
+function head(eyebrow,title,lead){
+  return '<div class="page-h"><span class="eyebrow">'+esc(eyebrow)+"</span><h2>"+esc(title)+"</h2>"+
+    (lead?'<p class="lead">'+md(lead)+"</p>":"")+"</div>";
+}
+function modulePage(m){
+  var i=MODULES.indexOf(m)+1;
+  var doneBtn=state.done[m.id]
+    ? '<button class="btn ghost" disabled>✓ Module terminé</button>'
+    : '<button class="btn" id="markdone">Marquer ce module comme terminé (+30 XP)</button>';
+  return head("Module "+i+" / "+MODULES.length,m.icon+"  "+m.title,m.lead)+
+    renderBlocks(m.blocks)+
+    '<div class="btnrow">'+doneBtn+'<button class="btn ghost" data-go="quiz">🎯 Tester mes connaissances</button></div>'+
+    pgnav();
+}
+
+/* ---------- Terminal sandbox ---------- */
+var TERMHIST=[],THIDX=-1;
+var FAKE={
+srvList:
+"ID                                    NAME    TYPE     STATE    ZONE       PUBLIC IP     PRIVATE IP\n"+
+"3f7a1b2c-11aa-4b0c-9d31-8e2f5c7a0011  web-01  DEV1-S   running  fr-par-1   51.15.42.10   10.68.4.11\n"+
+"7c2d9e40-22bb-4a13-9f02-1a3b4c5d6022  web-02  DEV1-S   running  fr-par-2   51.15.42.28   10.68.4.12\n"+
+"9a1f3c88-33cc-4c24-8e13-2b4c5d6e7033  bastion PLAY2-NANO stopped fr-par-1  -             10.68.4.5",
+srvJson:
+'[\n  {\n    "id": "3f7a1b2c-11aa-4b0c-9d31-8e2f5c7a0011",\n    "name": "web-01",\n    "commercial_type": "DEV1-S",\n    "state": "running",\n    "zone": "fr-par-1",\n    "public_ip": { "address": "51.15.42.10", "dynamic": false },\n    "project": "33333333-3333-3333-3333-333333333333"\n  },\n  {\n    "id": "7c2d9e40-22bb-4a13-9f02-1a3b4c5d6022",\n    "name": "web-02",\n    "commercial_type": "DEV1-S",\n    "state": "running",\n    "zone": "fr-par-2"\n  }\n]',
+types:
+"NAME          NCPUS  RAM     ARCH    LOCAL VOLUME  HOURLY PRICE\n"+
+"PLAY2-NANO    1      2 GB    x86_64  -             ~0.0088 EUR\n"+
+"DEV1-S        2      2 GB    x86_64  20 GB         ~0.0100 EUR\n"+
+"PRO2-XXS      2      8 GB    x86_64  -             ~0.0400 EUR\n"+
+"POP2-HC-4C-8G 4      8 GB    x86_64  -             ~0.0700 EUR\n"+
+"COPARM1-2C-8G 2      8 GB    arm64   -             ~0.0300 EUR\n"+
+"L4-1-24G      8      48 GB   x86_64  -             ~0.7500 EUR",
+k8s:
+"ID                                    NAME          STATUS  VERSION  CNI     REGION\n"+
+"d4e5f6a7-44dd-4d35-9a24-3c5d6e7f8044  prod-cluster  ready   1.31.2   cilium  fr-par",
+rdb:
+"ID                                    NAME       ENGINE          NODE TYPE  HA     STATUS\n"+
+"c3d4e5f6-55ee-4e46-8b35-4d6e7f8a9055  orders-db  PostgreSQL-15   DB-GP-S    true   ready",
+buckets:
+"NAME              REGION   SIZE      OBJECTS\n"+
+"assets-prod       fr-par   12.4 GB   38 214\n"+
+"backups-nightly   fr-par   410.2 GB  1 097\n"+
+"static-website    nl-ams   240 MB    512",
+projects:
+"ID                                    NAME     ORGANIZATION\n"+
+"33333333-3333-3333-3333-333333333333  default  22222222-2222-2222-2222-222222222222\n"+
+"44444444-4444-4444-4444-444444444444  prod     22222222-2222-2222-2222-222222222222\n"+
+"55555555-5555-5555-5555-555555555555  staging  22222222-2222-2222-2222-222222222222",
+registry:
+"ID                                    NAME      ENDPOINT                          PUBLIC\n"+
+"g7h8i9j0-66ff-4f57-9c46-5e7f8a9b0066  api-prod  rg.fr-par.scw.cloud/api-prod      false",
+containers:
+"ID                                    NAME        STATUS  MIN  MAX  MEMORY  ENDPOINT\n"+
+"h8i9j0k1-7700-4068-8d57-6f8a9b0c1177  orders-api  ready   0    10   512 MB  ordersapi-xyz.functions.fnc.fr-par.scw.cloud",
+lbs:
+"ID                                    NAME   TYPE   STATUS  IP\n"+
+"b2c3d4e5-8811-4179-9e68-7a9b0c1d2288  front  LB-S   ready   51.15.99.7",
+pns:
+"ID                                    NAME      VPC        SUBNET\n"+
+"e5f6a7b8-9922-428a-8f79-8b0c1d2e3399  back-net  vpc-prod   172.16.8.0/22",
+apps:
+"ID                                    NAME       DESCRIPTION\n"+
+"i9j0k1l2-aa33-439b-9081-9c1d2e3f44aa  ci-runner  GitHub Actions deploy\n"+
+"j0k1l2m3-bb44-44ac-8192-0d2e3f455bbb  terraform  IaC pipeline",
+perms:
+"NAME                             SCOPE TYPE     CATEGORIES\n"+
+"AllProductsFullAccess            projects      all\n"+
+"InstancesFullAccess              projects      compute\n"+
+"InstancesReadOnly                projects      compute\n"+
+"ObjectStorageFullAccess          projects      storage\n"+
+"ObjectStorageReadOnly            projects      storage\n"+
+"KubernetesFullAccess             projects      containers\n"+
+"IAMManager                       organization  identity\n"+
+"BillingReadOnly                  organization  billing"
+};
+function tl(t,c){return {t:t,c:c||""};}
+function runCmd(raw){
+  var line=raw.trim(), out=[];
+  if(!line)return out;
+  var low=line.toLowerCase();
+
+  if(low==="help"||low==="?"){
+    return [tl("Sandbox pédagogique — les commandes sont simulées, aucune ressource réelle n'est créée.","tdim"),tl(""),
+      tl("Essaie par exemple :","tacc"),
+      tl("  scw init                         scw info"),
+      tl("  scw instance server list         scw instance server list -o json"),
+      tl("  scw instance server-type list    scw instance server create type=DEV1-S image=ubuntu_jammy name=web-01 ip=new"),
+      tl("  scw instance server terminate 3f7a1b2c with-ip=true with-volumes=all"),
+      tl("  scw k8s cluster list             scw k8s kubeconfig install d4e5f6a7"),
+      tl("  scw rdb instance list            scw object bucket list"),
+      tl("  scw object config install type=aws-cli"),
+      tl("  scw registry namespace list      scw container container list"),
+      tl("  scw iam application create name=ci-runner    scw iam permission-set list"),
+      tl("  scw account project list         scw lb lb list      scw vpc private-network list"),
+      tl("  scw instance server list --debug             curl -H \"X-Auth-Token: $SCW_SECRET_KEY\" https://api.scaleway.com/instance/v1/zones/fr-par-1/servers"),
+      tl(""),tl("clear pour effacer, ↑ / ↓ pour l'historique.","tdim")];
+  }
+  if(low==="clear"){return "CLEAR";}
+  if(low==="ls"||low==="pwd"||low==="whoami"){
+    return [tl(low==="whoami"?"scaleway-candidate":(low==="pwd"?"/home/dev":"cloud-init.yaml  main.tf  Dockerfile"))];
+  }
+
+  /* ---- curl ---- */
+  if(/^curl\b/i.test(line)){
+    if(!/x-auth-token/i.test(line)&&!/authorization:\s*bearer/i.test(line)){
+      return [tl("HTTP/2 401","terr"),tl('{ "type": "unauthenticated", "message": "authentication is required" }',"terr"),
+        tl("→ Il manque le header X-Auth-Token (secret key).","tdim")];
+    }
+    if(/s3\..*scw\.cloud/i.test(line)){
+      return [tl("HTTP/2 403","terr"),tl("<Error><Code>SignatureDoesNotMatch</Code></Error>","terr"),
+        tl("→ L'Object Storage n'utilise pas X-Auth-Token mais la signature AWS V4 (access key + secret key).","twarn")];
+    }
+    if(/api\.scaleway\.ai/i.test(line)){
+      return [tl("HTTP/2 200","tok"),tl('{ "choices": [ { "message": { "role": "assistant", "content": "Le VPC Scaleway est regional..." } } ] }')];
+    }
+    if(/\/instance\/v1\/zones\//i.test(line)){
+      return [tl("HTTP/2 200","tok"),tl('{ "servers": [ ... 3 elements ... ], "total_count": 3 }'),tl(""),
+        tl("→ Produit zonal : /instance/v1/zones/<zone>/servers.","tdim")];
+    }
+    if(/\/instance\/v1\/regions\//i.test(line)){
+      return [tl("HTTP/2 404","terr"),tl('{ "type": "not_found", "message": "resource is not found" }',"terr"),
+        tl("→ Instances est un produit ZONAL : il faut /zones/fr-par-1/, pas /regions/fr-par/.","twarn")];
+    }
+    if(/api\.scaleway\.com/i.test(line)){
+      return [tl("HTTP/2 200","tok"),tl('{ "total_count": 2, "...": "reponse simulee" }')];
+    }
+    return [tl("curl: (6) Could not resolve host","terr")];
+  }
+
+  if(!/^scw\b/.test(low)){
+    return [tl(line.split(" ")[0]+": command not found","terr"),tl("Tape help pour la liste des commandes disponibles.","tdim")];
+  }
+
+  var dbg=/--debug\b/.test(line);
+  var pre=[];
+  if(dbg){
+    var m=/\b(instance|k8s|rdb|iam|lb|vpc|registry|container|account|object)\b/.exec(low);
+    var prod=m?m[1]:"instance";
+    var url={instance:"https://api.scaleway.com/instance/v1/zones/fr-par-1/servers?page=1&per_page=50",
+      k8s:"https://api.scaleway.com/k8s/v1/regions/fr-par/clusters?page=1&per_page=50",
+      rdb:"https://api.scaleway.com/rdb/v1/regions/fr-par/instances?page=1&per_page=50",
+      iam:"https://api.scaleway.com/iam/v1alpha1/applications?page=1&per_page=50",
+      lb:"https://api.scaleway.com/lb/v1/zones/fr-par-1/lbs?page=1&per_page=50",
+      vpc:"https://api.scaleway.com/vpc/v2/regions/fr-par/private-networks",
+      registry:"https://api.scaleway.com/registry/v1/regions/fr-par/namespaces",
+      container:"https://api.scaleway.com/containers/v1beta1/regions/fr-par/containers",
+      account:"https://api.scaleway.com/account/v3/projects",
+      object:"https://s3.fr-par.scw.cloud/"}[prod];
+    pre=[tl("[DEBUG] GET "+url,"tcy"),
+         tl("[DEBUG] User-Agent: scaleway-cli/2.x","tdim"),
+         tl("[DEBUG] X-Auth-Token: 1111****-****-****-****-********1111","tdim"),
+         tl("[DEBUG] 200 OK · 138 ms","tdim"),tl("")];
+  }
+  var body=(function(){
+    if(/^scw\s*$/.test(low))return [tl("Usage: scw <namespace> <resource> <verb> [args] [flags]","tacc"),
+      tl("Namespaces : instance, k8s, rdb, object, registry, container, function, jobs, lb, vpc, ipam, iam, account, billing, secret, cockpit…","tdim")];
+    if(/^scw\s+version/.test(low))return [tl("Version    2.34.0"),tl("BuildDate  2026-02-11"),tl("GoVersion  go1.23"),tl("GitBranch  master")];
+    if(/^scw\s+init/.test(low))return [
+      tl("? Enter a valid access key: SCWXXXXXXXXXXXXXXXXX"),
+      tl("? Enter a valid secret key: ********-****-****-****-************"),
+      tl("? Choose your default project: prod (44444444-…)"),
+      tl("? Choose your default zone: fr-par-1"),
+      tl("? Do you want to install autocomplete? Yes"),
+      tl(""),tl("✓ Configuration saved at ~/.config/scw/config.yaml","tok"),
+      tl("Attention : la secret key y est stockée en clair (chmod 600, jamais commité).","twarn")];
+    if(/^scw\s+(info|config\s+dump)/.test(low))return [
+      tl("KEY                       VALUE                                  ORIGIN"),
+      tl("access_key                SCWXXXXXXXXXXXXXXXXX                   config file"),
+      tl("secret_key                1111****-****-****-****-********1111   env (SCW_SECRET_KEY)"),
+      tl("default_organization_id   22222222-2222-2222-2222-222222222222   config file"),
+      tl("default_project_id        44444444-4444-4444-4444-444444444444   config file"),
+      tl("default_region            fr-par                                 default"),
+      tl("default_zone              fr-par-1                               flag"),
+      tl("profile                   default                                -"),
+      tl(""),tl("Précédence : flags > variables d'environnement > fichier de config > défauts.","tdim")];
+    if(/^scw\s+config\s+set/.test(low))return [tl("✓ configuration mise à jour","tok")];
+    if(/^scw\s+config\s+get/.test(low))return [tl("fr-par-1")];
+    if(/^scw\s+config\s+profile\s+activate/.test(low))return [tl("✓ profil actif : "+(line.split(/\s+/).pop()),"tok")];
+
+    if(/^scw\s+instance\s+server-type\s+list/.test(low))return [tl(FAKE.types)];
+    if(/^scw\s+instance\s+server\s+list/.test(low))
+      return /-o\s*=?\s*json/.test(low)?[tl(FAKE.srvJson)]:[tl(FAKE.srvList)];
+    if(/^scw\s+instance\s+server\s+create/.test(low)){
+      if(!/type=/.test(low)||!/image=/.test(low))
+        return [tl("error: missing required argument","terr"),
+          tl('{ "type": "invalid_arguments", "details": [ { "argument": "commercial_type", "reason": "required" } ] }',"terr"),
+          tl("→ Il faut au minimum type= et image=. Ex : scw instance server create type=DEV1-S image=ubuntu_jammy name=web-01 ip=new","tdim")];
+      return [tl("ID          e1f2a3b4-cc55-45bd-92a3-1e3f4a5b6ccc"),
+        tl("Name        "+((/name=([\w.-]+)/.exec(line)||[,"cli-srv-01"])[1])),
+        tl("Type        "+((/type=([\w.-]+)/.exec(line)||[,"DEV1-S"])[1])),
+        tl("State       starting","twarn"),
+        tl("Zone        "+((/zone=([\w-]+)/.exec(line)||[,"fr-par-1"])[1])),
+        tl(""),tl("L'API est asynchrone : l'Instance est en 'starting'. Ajoute --wait pour bloquer jusqu'à 'running'.","tdim")];
+    }
+    if(/^scw\s+instance\s+server\s+(start|reboot)/.test(low))return [tl("✓ server started (state: running)","tok")];
+    if(/^scw\s+instance\s+server\s+stop/.test(low))return [tl("✓ server stopped","tok"),
+      tl("Rappel : le volume et la flexible IP restent facturés.","twarn")];
+    if(/^scw\s+instance\s+server\s+terminate/.test(low)){
+      var w=/with-ip=true/.test(low), v=/with-volumes=(all|local|block)/.test(low);
+      var r=[tl("✓ server terminated","tok")];
+      r.push(w?tl("✓ flexible IP released","tok"):tl("⚠ la flexible IP reste réservée et facturée (with-ip=true)","twarn"));
+      r.push(v?tl("✓ volumes deleted","tok"):tl("⚠ les volumes restent et sont facturés (with-volumes=all)","twarn"));
+      return r;
+    }
+    if(/^scw\s+instance\s+(ip|image|security-group|snapshot)\s+list/.test(low))
+      return [tl("ID                                    NAME/ADDRESS      ZONE"),
+        tl("aa11bb22-cc33-4d44-9e55-6f77aa88bb99  51.15.42.10       fr-par-1"),
+        tl("bb22cc33-dd44-4e55-9f66-70aabb99cc00  51.15.42.28       fr-par-2")];
+
+    if(/^scw\s+k8s\s+cluster\s+list/.test(low))return [tl(FAKE.k8s)];
+    if(/^scw\s+k8s\s+kubeconfig\s+install/.test(low))return [
+      tl("✓ Kubeconfig for cluster d4e5f6a7 successfully written at ~/.kube/config","tok"),
+      tl("$ kubectl get nodes","tdim"),
+      tl("NAME                    STATUS   ROLES    AGE   VERSION"),
+      tl("scw-prod-default-1a2b   Ready    <none>   6d    v1.31.2"),
+      tl("scw-prod-default-3c4d   Ready    <none>   6d    v1.31.2"),
+      tl("scw-prod-default-5e6f   Ready    <none>   6d    v1.31.2")];
+    if(/^scw\s+k8s\s+(pool|version)\s+list/.test(low))return [
+      tl("NAME     NODE TYPE  SIZE  MIN  MAX  AUTOSCALING  AUTOHEALING  ZONE"),
+      tl("default  PRO2-XXS   3     3    8    true         true         fr-par-1")];
+
+    if(/^scw\s+rdb\s+instance\s+list/.test(low))return [tl(FAKE.rdb)];
+    if(/^scw\s+rdb\s+/.test(low))return [tl("✓ opération rdb simulée","tok")];
+
+    if(/^scw\s+object\s+bucket\s+list/.test(low))return [tl(FAKE.buckets)];
+    if(/^scw\s+object\s+config\s+install/.test(low)){
+      var ty=(/type=([\w-]+)/.exec(low)||[,"aws-cli"])[1];
+      return [tl("✓ Configuration "+ty+" écrite","tok"),
+        tl("[default]"),tl("region = fr-par"),
+        tl("s3 =\n    endpoint_url = https://s3.fr-par.scw.cloud"),
+        tl(""),tl("Tu peux maintenant utiliser aws s3 ls --endpoint-url https://s3.fr-par.scw.cloud","tdim")];
+    }
+    if(/^scw\s+registry\s+namespace\s+list/.test(low))return [tl(FAKE.registry)];
+    if(/^scw\s+registry\s+image\s+list/.test(low))return [
+      tl("NAME             TAGS               SIZE     VISIBILITY"),
+      tl("api-prod/orders  1.4.2, latest      118 MB   private")];
+    if(/^scw\s+(container|function)\s+/.test(low))return [tl(FAKE.containers)];
+    if(/^scw\s+jobs\s+/.test(low))return [
+      tl("ID                                    NAME         CRON        LAST RUN"),
+      tl("k1l2m3n4-cc55-45bd-82a3-1e3f4a5b6ccc  nightly-etl  0 3 * * *   succeeded")];
+    if(/^scw\s+lb\s+/.test(low))return [tl(FAKE.lbs)];
+    if(/^scw\s+(vpc|ipam)\s+/.test(low))return [tl(FAKE.pns)];
+
+    if(/^scw\s+iam\s+application\s+create/.test(low)){
+      if(!/name=/.test(low))return [tl("error: argument 'name' is required","terr")];
+      return [tl("ID           i9j0k1l2-aa33-439b-9081-9c1d2e3f44aa"),
+        tl("Name         "+((/name=([\w.-]+)/.exec(line)||[,"app"])[1])),
+        tl("Editable     true"),
+        tl(""),tl("Prochaine étape : une policy la plus étroite possible, puis une api-key.","tdim")];
+    }
+    if(/^scw\s+iam\s+api-key\s+create/.test(low))return [
+      tl("AccessKey    SCWZZZZZZZZZZZZZZZZZ"),
+      tl("SecretKey    9f3c1d20-77ee-4b41-9a12-5c6d7e8f9a0b","twarn"),
+      tl(""),tl("⚠ La secret key n'est affichée QUE MAINTENANT. Perdue = clé à révoquer et recréer.","twarn")];
+    if(/^scw\s+iam\s+permission-set\s+list/.test(low))return [tl(FAKE.perms)];
+    if(/^scw\s+iam\s+application\s+list/.test(low))return [tl(FAKE.apps)];
+    if(/^scw\s+iam\s+policy\s+/.test(low))return [
+      tl("ID                                    NAME                PRINCIPAL   SCOPE"),
+      tl("l2m3n4o5-dd66-46ce-93b4-2f4a5b6c7ddd  ci-runner-staging   application 55555555-… (staging)")];
+    if(/^scw\s+iam\s+user\s+list/.test(low))return [
+      tl("ID                                    EMAIL                     TYPE   MFA"),
+      tl("m3n4o5p6-ee77-47df-84c5-3a5b6c7d8eee  dev@exemple.fr            owner  true")];
+
+    if(/^scw\s+account\s+project\s+list/.test(low))return [tl(FAKE.projects)];
+    if(/^scw\s+billing\s+/.test(low))return [
+      tl("PRODUCT             AMOUNT (EUR)"),tl("Instances           41.28"),tl("Object Storage      12.90"),
+      tl("Kubernetes Kapsule  18.00"),tl("Load Balancer        8.99"),tl("TOTAL               81.17","tacc")];
+    if(/^scw\s+autocomplete/.test(low))return [tl("✓ autocomplete installé (relance ton shell)","tok")];
+    if(/^scw\s+help/.test(low)||/\s-h\b/.test(low))return [
+      tl("USAGE:  scw <namespace> <resource> <verb> [args] [flags]","tacc"),
+      tl(""),tl("FLAGS UTILES :"),
+      tl("  -o, --output   human | json | yaml | wide | template=…"),
+      tl("  -w, --wait     attendre la fin de l'opération asynchrone"),
+      tl("  -p, --profile  profil de configuration"),
+      tl("      --debug    afficher la requête HTTP envoyée")];
+    if(/^scw\s+secret\s+/.test(low))return [
+      tl("ID                                    NAME           VERSIONS"),
+      tl("n4o5p6q7-ff88-4801-95d6-4b6c7d8e9fff  db-password    3")];
+    if(/^scw\s+cockpit\s+/.test(low))return [
+      tl("GrafanaURL   https://xxxxxxxx.dashboard.obs.fr-par.scw.cloud"),
+      tl("Status       ready")];
+    return [tl("error: unknown command or resource","terr"),
+      tl("Vérifie la grammaire : scw <namespace> <resource> <verb>. Tape help pour des exemples.","tdim")];
+  })();
+  out=pre.concat(body);
+  if(/--wait\b|\s-w\b/.test(line))out.push(tl("… en attente de l'état final … ✓ terminé","tok"));
+  return out;
+}
+function labPage(){
+  var doneN=Object.keys(state.missions).length;
+  return head("Pratique","💻  Terminal scw (sandbox)",
+    "Un terminal simulé pour muscler tes réflexes CLI. Rien n'est réellement créé : les réponses sont des reproductions fidèles des sorties de `scw`. Tape `help` pour démarrer.")+
+   '<div class="term"><div class="th"><div class="dots"><i></i><i></i><i></i></div><span>dev@scaleway — scw sandbox</span></div>'+
+   '<div class="body" id="tbody"></div>'+
+   '<div class="inrow"><span>$</span><input id="tin" autocomplete="off" spellcheck="false" placeholder="scw instance server list -o json"></div></div>'+
+   '<div class="chips">'+
+     ["help","scw init","scw info","scw instance server list","scw instance server list -o json",
+      "scw instance server-type list","scw k8s cluster list","scw rdb instance list","scw object bucket list",
+      "scw iam permission-set list","scw account project list","scw instance server list --debug"]
+     .map(function(c){return '<button class="chip" data-run="'+esc(c)+'">'+esc(c)+"</button>";}).join("")+"</div>"+
+   '<h3 class="sub">Missions ('+doneN+" / "+MISSIONS.length+")</h3>"+
+   '<p style="color:var(--muted)">Chaque mission validée rapporte <b>15 XP</b>. Tape la commande dans le terminal ci-dessus.</p>'+
+   MISSIONS.map(function(m,i){
+     return '<div class="mission'+(state.missions[m.id]?" done":"")+'"><div class="mi">'+(state.missions[m.id]?"✓":(i+1))+
+       "</div><div><h4>"+esc(m.t)+"</h4><p>"+esc(m.d)+'</p><div class="hint">indice : '+esc(m.hint)+"</div></div></div>";
+   }).join("")+pgnav();
+}
+function termPrint(lines){
+  var b=document.getElementById("tbody");if(!b)return;
+  lines.forEach(function(l){
+    var d=document.createElement("div");d.className="ln "+(l.c||"");d.textContent=l.t;b.appendChild(d);
+  });
+  b.scrollTop=b.scrollHeight;
+}
+function termEcho(cmd){
+  var b=document.getElementById("tbody");if(!b)return;
+  var d=document.createElement("div");d.className="ln";
+  d.innerHTML='<span class="tok">$</span> '+esc(cmd);b.appendChild(d);
+}
+function termRun(cmd){
+  termEcho(cmd);
+  var r=runCmd(cmd);
+  if(r==="CLEAR"){document.getElementById("tbody").innerHTML="";return;}
+  termPrint(r);termPrint([tl("")]);
+  MISSIONS.forEach(function(m){
+    if(!state.missions[m.id]&&m.re.test(cmd.trim())){
+      state.missions[m.id]=1;save();
+      toast("Mission validée : "+m.t,"✅");addXp(15);
+      var el=document.querySelectorAll(".mission")[MISSIONS.indexOf(m)];
+      if(el){el.classList.add("done");el.querySelector(".mi").textContent="✓";}
+      var h=document.querySelector("h3.sub");
+      if(h)h.innerHTML="Missions ("+Object.keys(state.missions).length+" / "+MISSIONS.length+")";
+    }
+  });
+}
+/* ---------- API Explorer ---------- */
+function explorerPage(){
+  return head("Pratique","🧭  API Explorer",
+    "Construis une requête et vois immédiatement l'URL, le header d'authentification, la commande `curl`, l'équivalent CLI et une réponse type. C'est l'outil pour ancrer la règle **zonal / regional / global**.")+
+  '<div class="exp"><div class="card">'+
+    '<div class="fld"><label>Produit</label><select id="ex-p">'+
+      API_PRODUCTS.map(function(p,i){return '<option value="'+i+'">'+esc(p.label)+"</option>";}).join("")+
+    "</select></div>"+
+    '<div class="fld"><label>Scope géographique</label><div id="ex-scope"></div></div>'+
+    '<div class="fld"><label>Localisation</label><select id="ex-loc"></select></div>'+
+    '<div class="fld"><label>Pagination</label><input id="ex-pg" value="page=1&per_page=50"></div>'+
+    '<div class="fld"><label>Secret key (fictive)</label><input id="ex-k" value="$SCW_SECRET_KEY"></div>'+
+  '</div><div id="ex-out"></div></div>'+
+  '<div class="note info"><b>Le réflexe à garder</b>Avant de débugger un 404, vérifie le scope : un produit zonal utilise <code class="ic">/zones/&lt;zone&gt;/</code>, un produit régional <code class="ic">/regions/&lt;region&gt;/</code>, un produit global ni l\'un ni l\'autre.</div>'+
+  pgnav();
+}
+function explorerOut(){
+  var p=API_PRODUCTS[+document.getElementById("ex-p").value];
+  var loc=document.getElementById("ex-loc").value;
+  var pg=document.getElementById("ex-pg").value.trim();
+  var key=document.getElementById("ex-k").value.trim()||"$SCW_SECRET_KEY";
+  var seg=p.scope==="zone"?"/zones/"+loc:(p.scope==="region"?"/regions/"+loc:"");
+  var url="https://api.scaleway.com/"+p.path+seg+"/"+p.res+(pg?"?"+pg:"");
+  var scopeTxt={zone:['<span class="scopebadge sc-z">ZONAL</span>','La ressource vit dans une seule availability zone.'],
+                region:['<span class="scopebadge sc-r">REGIONAL</span>','La ressource est portée par la region entière.'],
+                global:['<span class="scopebadge sc-g">GLOBAL</span>','Ni zone ni region dans l\'URL.']}[p.scope];
+  document.getElementById("ex-scope").innerHTML=scopeTxt[0]+' <span style="color:var(--muted);font-size:12.5px">'+scopeTxt[1]+"</span>";
+  var cliMap={instance:"scw instance server list zone="+loc,volume:"scw instance volume list zone="+loc,
+    lb:"scw lb lb list zone="+loc,rdb:"scw rdb instance list region="+loc,k8s:"scw k8s cluster list region="+loc,
+    vpc:"scw vpc private-network list region="+loc,registry:"scw registry namespace list region="+loc,
+    container:"scw container container list region="+loc,iam:"scw iam application list",account:"scw account project list"};
+  document.getElementById("ex-out").innerHTML=
+    codeBlock("GET "+url,"http","requête")+
+    codeBlock('curl -s -H "X-Auth-Token: '+key+'" \\\n  "'+url+'"',"bash","curl")+
+    codeBlock(cliMap[p.id]+" -o json","bash","équivalent CLI")+
+    codeBlock(p.sample,"json","réponse (extrait)");
+  bindCopy();
+  if(!state.badges.probe)unlock("probe");
+}
+function explorerBind(){
+  var sel=document.getElementById("ex-p");
+  function locs(){
+    var p=API_PRODUCTS[+sel.value],l=document.getElementById("ex-loc"),opts=[];
+    if(p.scope==="zone")REGIONS.forEach(function(r){r.az.forEach(function(a){opts.push(a);});});
+    else if(p.scope==="region")REGIONS.forEach(function(r){opts.push(r.c);});
+    else opts=["(aucune)"];
+    l.innerHTML=opts.map(function(o){return "<option>"+o+"</option>";}).join("");
+    l.disabled=(p.scope==="global");
+  }
+  sel.addEventListener("change",function(){locs();explorerOut();});
+  ["ex-loc","ex-pg","ex-k"].forEach(function(id){
+    document.getElementById(id).addEventListener("input",explorerOut);
+    document.getElementById(id).addEventListener("change",explorerOut);
+  });
+  locs();explorerOut();
+}
+
+/* ---------- Quiz ---------- */
+var QZ={list:[],i:0,score:0,filter:"all",locked:false};
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function buildQuiz(filter,n){
+  var pool=QUIZ.filter(function(q){return filter==="all"||q.m===filter;});
+  pool=shuffle(pool.slice());
+  if(n&&pool.length>n)pool=pool.slice(0,n);
+  QZ.list=pool.map(function(q){
+    var opts=q.o.map(function(txt,i){return {txt:txt,ok:i===q.a};});
+    shuffle(opts);                       // <- mélange systématique des réponses
+    return {q:q.q,m:q.m,e:q.e,opts:opts};
+  });
+  QZ.i=0;QZ.score=0;QZ.locked=false;
+}
+function modTitle(id){var m=MODULES.filter(function(x){return x.id===id;})[0];return m?m.title:id;}
+function quizPage(){
+  if(!QZ.list.length)buildQuiz(QZ.filter,15);
+  return head("Pratique","🎯  Quiz mélangé",
+    "Les propositions sont **mélangées à chaque tirage** : impossible de repérer la bonne réponse à sa position. Bonne réponse = **10 XP**.")+
+   '<div class="qbar">'+
+     '<span class="pill">Score <b id="q-sc">'+QZ.score+"</b></span>"+
+     '<span class="pill">Meilleur <b>'+(state.best||0)+" %</b></span>"+
+     '<select class="sel" id="q-f"><option value="all">Tous les modules</option>'+
+       MODULES.map(function(m){return '<option value="'+m.id+'"'+(QZ.filter===m.id?" selected":"")+">"+esc(m.title)+"</option>";}).join("")+
+     "</select>"+
+     '<button class="btn ghost sm" id="q-new">Nouveau tirage</button>'+
+   "</div><div id='q-zone'></div>"+pgnav();
+}
+function renderQ(){
+  var z=document.getElementById("q-zone");if(!z)return;
+  if(QZ.i>=QZ.list.length){
+    var pct=Math.round(QZ.score/QZ.list.length*100);
+    if(pct>(state.best||0)){state.best=pct;save();}
+    checkBadges();
+    var msg=pct===100?"Sans faute. Tu es prêt.":pct>=80?"Très bon niveau, quelques détails à revoir.":
+            pct>=50?"Base correcte, il faut consolider.":"Reprends les modules concernés, puis relance un tirage.";
+    z.innerHTML='<div class="qcard score"><div class="big">'+pct+'%</div><p style="font-size:16px;margin-top:8px">'+
+      QZ.score+" / "+QZ.list.length+" bonnes réponses</p><p style=\"color:var(--muted)\">"+esc(msg)+"</p>"+
+      '<div class="btnrow" style="justify-content:center"><button class="btn" id="q-again">Relancer un tirage</button>'+
+      '<button class="btn ghost" data-go="cards">Réviser en flashcards</button></div></div>';
+    document.getElementById("q-again").onclick=function(){buildQuiz(QZ.filter,15);renderQ();};
+    bindGo();return;
+  }
+  var q=QZ.list[QZ.i];
+  var pct=Math.round(QZ.i/QZ.list.length*100);
+  z.innerHTML='<div class="qprog"><i style="width:'+pct+'%"></i></div>'+
+    '<div class="qcard"><div class="qmeta"><span>Question '+(QZ.i+1)+" / "+QZ.list.length+"</span><span>"+esc(modTitle(q.m))+"</span></div>"+
+    '<div class="qtext">'+md(q.q)+'</div><div class="opts">'+
+    q.opts.map(function(o,i){return '<button class="opt" data-o="'+i+'"><span class="ltr">'+"ABCD"[i]+"</span><span>"+md(o.txt)+"</span></button>";}).join("")+
+    '</div><div class="expl" id="q-ex"></div>'+
+    '<div class="btnrow" id="q-nav" style="display:none"><button class="btn" id="q-next">Question suivante →</button></div></div>';
+  QZ.locked=false;
+  Array.prototype.forEach.call(z.querySelectorAll(".opt"),function(b){
+    b.onclick=function(){answer(+b.getAttribute("data-o"));};
+  });
+}
+function answer(idx){
+  if(QZ.locked)return;QZ.locked=true;
+  var q=QZ.list[QZ.i],z=document.getElementById("q-zone");
+  var btns=z.querySelectorAll(".opt");
+  Array.prototype.forEach.call(btns,function(b,i){
+    b.disabled=true;
+    if(q.opts[i].ok)b.classList.add("good");
+    else if(i===idx)b.classList.add("bad");
+  });
+  var ok=q.opts[idx].ok;
+  if(ok){QZ.score++;addXp(10);}
+  document.getElementById("q-sc").textContent=QZ.score;
+  var ex=document.getElementById("q-ex");
+  ex.innerHTML="<b>"+(ok?"✅ Correct":"❌ Incorrect")+"</b> — "+md(q.e);
+  ex.classList.add("on");
+  document.getElementById("q-nav").style.display="flex";
+  document.getElementById("q-next").onclick=function(){QZ.i++;renderQ();};
+}
+
+/* ---------- Flashcards ---------- */
+var FC={list:[],i:0,flip:false};
+function cardsPage(){
+  if(!FC.list.length){FC.list=shuffle(CARDS.slice());FC.i=0;}
+  return head("Pratique","🃏  Flashcards",
+    "Le terme au recto, la définition au verso. Clique la carte pour la retourner, ou utilise la barre d'espace. **"+CARDS.length+"** notions à réciter à voix haute.")+
+   '<div class="qbar"><span class="pill">Carte <b id="fc-n">'+(FC.i+1)+"</b> / "+FC.list.length+"</span>"+
+   '<span class="pill">Révisées <b>'+(state.seen||0)+"</b></span>"+
+   '<button class="btn ghost sm" id="fc-sh">Mélanger</button></div>'+
+   '<div class="fcwrap"><div class="fc" id="fc"></div></div>'+
+   '<div class="btnrow"><button class="btn ghost" id="fc-prev">← Précédente</button>'+
+   '<button class="btn ghost" id="fc-flip">Retourner</button>'+
+   '<button class="btn" id="fc-next">Suivante →</button></div>'+pgnav();
+}
+function renderFC(){
+  var el=document.getElementById("fc");if(!el)return;
+  var c=FC.list[FC.i];
+  el.className="fc"+(FC.flip?" flip":"");
+  el.innerHTML='<div class="f"><h4>'+md(c.c)+"</h4><small>clique pour retourner</small></div>"+
+               '<div class="b"><p>'+md(c.b)+"</p><small>"+(FC.i+1)+" / "+FC.list.length+"</small></div>";
+  var n=document.getElementById("fc-n");if(n)n.textContent=FC.i+1;
+}
+function fcFlip(){
+  FC.flip=!FC.flip;renderFC();
+  if(FC.flip){state.seen=(state.seen||0)+1;save();checkBadges();}
+}
+
+/* ---------- Cheat sheet ---------- */
+function cheatPage(){
+  return head("Référence","📋  Cheat sheet",
+    "La page à relire dans le train, juste avant l'entretien.")+
+  '<h3 class="sub">Les 12 réflexes</h3>'+
+  '<div class="grid g3">'+[
+   ["🧭","Scope d'abord","zonal /zones/, regional /regions/, global rien. Un 404 est souvent un scope."],
+   ["🔑","X-Auth-Token","= secret key. Object Storage = signature AWS V4."],
+   ["🤖","Application","Une identité machine par service, jamais une clé humaine."],
+   ["🧱","Org > Project","Le project est un scope IAM, pas une facture séparée."],
+   ["⌨️","cle=valeur","Arguments scw sans tirets, flags globaux avec."],
+   ["⏳","--wait","L'API est asynchrone : attendre l'état final."],
+   ["🐞","--debug","Voir la requête HTTP réelle et apprendre l'API."],
+   ["🧹","terminate","with-ip=true with-volumes=all sinon ça facture."],
+   ["🗺️","Multi-AZ","LB regional + Instances sur 2 AZ + base en HA."],
+   ["🔒","Endpoint privé","Base et services internes sur Private Network."],
+   ["📉","Lifecycle rules","Le premier levier de coût sur l'Object Storage."],
+   ["👁️","Cockpit","Grafana + Mimir + Loki + Tempo, managé."]
+  ].map(function(c){return '<div class="card"><span class="ci">'+c[0]+"</span><h4>"+c[1]+"</h4><p>"+esc(c[2])+"</p></div>";}).join("")+"</div>"+
+  '<h3 class="sub">CLI — les commandes à connaître par cœur</h3>'+
+  codeBlock("scw init                       # configuration interactive\n"+
+"scw info                       # config effective + origine des valeurs\n"+
+"scw --profile staging <cmd>    # changer d environnement\n"+
+"scw <ns> <res> <verb> -o json  # sortie exploitable par jq\n"+
+"scw <cmd> --wait               # attendre la fin de l operation\n"+
+"scw <cmd> --debug              # voir la requete HTTP envoyee\n\n"+
+"scw instance server list zone=fr-par-1\n"+
+"scw instance server create type=DEV1-S image=ubuntu_jammy name=web-01 ip=new\n"+
+"scw instance server terminate $ID with-ip=true with-volumes=all\n"+
+"scw k8s kubeconfig install $CLUSTER_ID\n"+
+"scw object config install type=aws-cli\n"+
+"scw iam application create name=ci-runner\n"+
+"scw iam api-key create application-id=$APP_ID\n"+
+"scw iam permission-set list\n"+
+"scw account project list","bash","scw")+
+  '<h3 class="sub">API — la carte mentale</h3>'+
+  codeBlock("BASE      https://api.scaleway.com\n"+
+"AUTH      X-Auth-Token: <secret_key>        (S3 : signature AWS V4)\n"+
+"ZONAL     /<produit>/<v>/zones/<zone>/<res>\n"+
+"REGIONAL  /<produit>/<v>/regions/<region>/<res>\n"+
+"GLOBAL    /<produit>/<v>/<res>\n"+
+"PAGES     ?page=1&per_page=50   ->  total_count dans la reponse\n"+
+"ERREURS   400 args | 401 auth | 403 droits | 404 scope | 409 conflit | 429 rate | 5xx plateforme\n"+
+"ASYNC     state: starting/creating -> attendre running/ready\n"+
+"S3        https://s3.<region>.scw.cloud","http","API")+
+  '<h3 class="sub">Glossaire express</h3>'+
+  '<div class="tw"><table><thead><tr><th>Terme</th><th>Définition en une ligne</th></tr></thead><tbody>'+
+  CARDS.slice(0,28).map(function(c){return "<tr><td><b>"+md(c.c)+"</b></td><td>"+md(c.b)+"</td></tr>";}).join("")+
+  "</tbody></table></div>"+
+  '<div class="note exam"><b>Dernière minute</b>Si tu ne dois retenir que trois choses : <b>Organization → Project → Resource</b>, <b>zonal / regional / global</b>, et <b>X-Auth-Token = secret key (sauf S3 qui utilise SigV4)</b>.</div>'+
+  pgnav();
+}
+/* ============================================================
+   10. Render & bindings
+   ============================================================ */
+function bindCopy(){
+  Array.prototype.forEach.call(document.querySelectorAll("[data-copy]"),function(b){
+    b.onclick=function(){
+      var code=CODEBANK[+b.getAttribute("data-copy")];
+      var done=function(){b.textContent="copié ✓";setTimeout(function(){b.textContent="copier";},1400);};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(done,done);}
+      else{
+        var ta=document.createElement("textarea");ta.value=code;document.body.appendChild(ta);
+        ta.select();try{document.execCommand("copy");}catch(e){}ta.remove();done();
+      }
+    };
+  });
+}
+function bindGo(){
+  Array.prototype.forEach.call(document.querySelectorAll("[data-go]"),function(b){
+    b.onclick=function(){go(b.getAttribute("data-go"));};
+  });
+}
+function render(){
+  var v=document.getElementById("view"),id=state.page;
+  CODEBANK=[];
+  var mod=MODULES.filter(function(m){return m.id===id;})[0];
+  if(mod)v.innerHTML=modulePage(mod);
+  else if(id==="lab")v.innerHTML=labPage();
+  else if(id==="explorer")v.innerHTML=explorerPage();
+  else if(id==="quiz")v.innerHTML=quizPage();
+  else if(id==="cards")v.innerHTML=cardsPage();
+  else if(id==="cheat")v.innerHTML=cheatPage();
+  else{state.page="intro";return render();}
+
+  bindCopy();bindGo();
+
+  if(mod){
+    var md2=document.getElementById("markdone");
+    if(md2)md2.onclick=function(){
+      state.done[mod.id]=1;save();buildNav();addXp(30,"module terminé");render();
+    };
+  }
+  if(id==="lab"){
+    termPrint([tl("Scaleway CLI sandbox — version pédagogique","tacc"),
+      tl("Tape help pour voir les commandes disponibles.","tdim"),tl("")]);
+    var inp=document.getElementById("tin");
+    inp.addEventListener("keydown",function(e){
+      if(e.key==="Enter"){
+        var c=inp.value;if(!c.trim())return;
+        TERMHIST.push(c);THIDX=TERMHIST.length;termRun(c);inp.value="";
+      }else if(e.key==="ArrowUp"){
+        if(THIDX>0){THIDX--;inp.value=TERMHIST[THIDX];}e.preventDefault();
+      }else if(e.key==="ArrowDown"){
+        if(THIDX<TERMHIST.length-1){THIDX++;inp.value=TERMHIST[THIDX];}else{THIDX=TERMHIST.length;inp.value="";}
+        e.preventDefault();
+      }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-run]"),function(b){
+      b.onclick=function(){var c=b.getAttribute("data-run");document.getElementById("tin").value=c;
+        TERMHIST.push(c);THIDX=TERMHIST.length;termRun(c);document.getElementById("tin").value="";
+        document.getElementById("tin").focus();};
+    });
+    inp.focus();
+  }
+  if(id==="explorer")explorerBind();
+  if(id==="quiz"){
+    renderQ();
+    document.getElementById("q-f").onchange=function(){QZ.filter=this.value;buildQuiz(QZ.filter,15);document.getElementById("q-sc").textContent=0;renderQ();};
+    document.getElementById("q-new").onclick=function(){buildQuiz(QZ.filter,15);document.getElementById("q-sc").textContent=0;renderQ();};
+  }
+  if(id==="cards"){
+    renderFC();
+    document.getElementById("fc").onclick=fcFlip;
+    document.getElementById("fc-flip").onclick=fcFlip;
+    document.getElementById("fc-next").onclick=function(){FC.i=(FC.i+1)%FC.list.length;FC.flip=false;renderFC();};
+    document.getElementById("fc-prev").onclick=function(){FC.i=(FC.i-1+FC.list.length)%FC.list.length;FC.flip=false;renderFC();};
+    document.getElementById("fc-sh").onclick=function(){FC.list=shuffle(FC.list.slice());FC.i=0;FC.flip=false;renderFC();};
+  }
+  paintXp();
+}
+
+/* ---------- Recherche ---------- */
+var INDEX=[];
+(function(){
+  MODULES.forEach(function(m){
+    INDEX.push({id:m.id,t:m.title,s:"Module",txt:(m.title+" "+m.lead).toLowerCase()});
+    m.blocks.forEach(function(b){
+      var txt="";
+      if(b.t==="h")txt=b.x;
+      else if(b.t==="p"||b.t==="note")txt=(b.b||"")+" "+b.x;
+      else if(b.t==="ul"||b.t==="ol")txt=b.x.join(" ");
+      else if(b.t==="code")txt=b.x;
+      else if(b.t==="cards")txt=b.x.map(function(c){return c.t+" "+c.d;}).join(" ");
+      else if(b.t==="table")txt=b.head.join(" ")+" "+b.rows.map(function(r){return r.join(" ");}).join(" ");
+      if(txt.trim())INDEX.push({id:m.id,t:(b.t==="h"?b.x:(b.b||m.title)),s:m.icon+" "+m.title,txt:txt.toLowerCase()});
+    });
+  });
+  CARDS.forEach(function(c){INDEX.push({id:"cards",t:c.c,s:"🃏 Flashcard",txt:(c.c+" "+c.b).toLowerCase()});});
+  TOOLS.forEach(function(t){INDEX.push({id:t.id,t:t.title,s:"Outil",txt:t.title.toLowerCase()});});
+})();
+function doSearch(q){
+  var box=document.getElementById("sres");
+  q=q.trim().toLowerCase();
+  if(q.length<2){box.classList.remove("on");box.innerHTML="";return;}
+  var seen={},res=[];
+  INDEX.forEach(function(it){
+    if(res.length>=12)return;
+    if(it.txt.indexOf(q)>=0){
+      var k=it.id+"|"+it.t;if(seen[k])return;seen[k]=1;res.push(it);
+    }
+  });
+  if(!res.length){box.innerHTML='<div style="cursor:default;color:var(--muted)">Aucun résultat</div>';box.classList.add("on");return;}
+  box.innerHTML=res.map(function(r){
+    return '<div data-sgo="'+r.id+'">'+esc(r.t.length>72?r.t.slice(0,72)+"…":r.t)+"<small>"+esc(r.s)+"</small></div>";
+  }).join("");
+  box.classList.add("on");
+  Array.prototype.forEach.call(box.querySelectorAll("[data-sgo]"),function(d){
+    d.onclick=function(){
+      document.getElementById("q").value="";box.classList.remove("on");go(d.getAttribute("data-sgo"));
+    };
+  });
+}
+
+/* ---------- Événements globaux ---------- */
+document.getElementById("q").addEventListener("input",function(){doSearch(this.value);});
+document.getElementById("q").addEventListener("blur",function(){setTimeout(function(){document.getElementById("sres").classList.remove("on");},180);});
+document.getElementById("theme").onclick=function(){
+  state.theme=(state.theme==="dark")?"light":"dark";save();
+  document.documentElement.setAttribute("data-theme",state.theme);
+  this.textContent=state.theme==="dark"?"🌙":"☀️";
+};
+document.getElementById("theme").textContent=state.theme==="dark"?"🌙":"☀️";
+document.getElementById("reset").onclick=function(){
+  if(!confirm("Réinitialiser toute la progression (XP, badges, modules, missions) ?"))return;
+  state={xp:0,done:{},missions:{},badges:{},best:0,seen:0,page:"intro",theme:state.theme};
+  save();buildNav();render();toast("Progression réinitialisée","↺");
+};
+document.getElementById("burger").onclick=function(){
+  document.getElementById("side").classList.toggle("open");
+  document.getElementById("backdrop").classList.toggle("on");
+};
+document.getElementById("backdrop").onclick=function(){
+  document.getElementById("side").classList.remove("open");
+  this.classList.remove("on");
+};
+document.addEventListener("keydown",function(e){
+  if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA"||e.target.tagName==="SELECT")return;
+  if(state.page==="cards"){
+    if(e.code==="Space"){e.preventDefault();fcFlip();}
+    if(e.key==="ArrowRight"){FC.i=(FC.i+1)%FC.list.length;FC.flip=false;renderFC();}
+    if(e.key==="ArrowLeft"){FC.i=(FC.i-1+FC.list.length)%FC.list.length;FC.flip=false;renderFC();}
+  }
+  if(state.page==="quiz"&&!QZ.locked&&QZ.i<QZ.list.length){
+    var n="1234".indexOf(e.key);
+    if(n>=0){var b=document.querySelectorAll(".opt")[n];if(b)b.click();}
+  }
+  if(state.page==="quiz"&&QZ.locked&&e.key==="Enter"){
+    var nx=document.getElementById("q-next");if(nx)nx.click();
+  }
+  if(e.key==="/"&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.getElementById("q").focus();}
+});
+
+/* ---------- Démarrage ---------- */
+buildNav();paintXp();checkBadges();render();
+
+</script>
+</body>
+</html>
