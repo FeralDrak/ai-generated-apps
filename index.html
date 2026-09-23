@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Generated Apps</title>
+<meta name="description" content="Galerie de petits projets générés par différents modèles d'IA, classés par modèle et par type.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f5f1;
+    --bg-2: #eeece6;
+    --card: #ffffff;
+    --card-hover: #fbfaf7;
+    --border: #e2dfd6;
+    --border-strong: #cfcbbf;
+    --text: #1d1c19;
+    --muted: #6d6a61;
+    --faint: #9a968b;
+    --accent: #5b4bd6;
+    --accent-soft: rgba(91, 75, 214, .10);
+    --shadow: 0 1px 2px rgba(20, 18, 10, .04), 0 4px 16px rgba(20, 18, 10, .05);
+
+    --f-claude: #c8663e;
+    --f-openai: #10a37f;
+    --f-google: #3b7be8;
+    --f-xai: #57534e;
+    --f-deepseek: #4d6bfe;
+    --f-qwen: #7c4ddb;
+    --f-zhipu: #0f9aa8;
+    --f-moonshot: #d9468f;
+    --f-other: #8a8578;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111114;
+      --bg-2: #18181c;
+      --card: #1a1a1f;
+      --card-hover: #202027;
+      --border: #2a2a31;
+      --border-strong: #3a3a44;
+      --text: #ecebf0;
+      --muted: #a09fab;
+      --faint: #6c6b76;
+      --accent: #9b8cff;
+      --accent-soft: rgba(155, 140, 255, .14);
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+      --f-claude: #e08a62;
+      --f-openai: #3ec9a0;
+      --f-google: #6ea2ff;
+      --f-xai: #c4c0b8;
+      --f-deepseek: #7d93ff;
+      --f-qwen: #a987f5;
+      --f-zhipu: #3cc3cf;
+      --f-moonshot: #ee79b1;
+      --f-other: #a8a397;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111114;
+    --bg-2: #18181c;
+    --card: #1a1a1f;
+    --card-hover: #202027;
+    --border: #2a2a31;
+    --border-strong: #3a3a44;
+    --text: #ecebf0;
+    --muted: #a09fab;
+    --faint: #6c6b76;
+    --accent: #9b8cff;
+    --accent-soft: rgba(155, 140, 255, .14);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+    --f-claude: #e08a62;
+    --f-openai: #3ec9a0;
+    --f-google: #6ea2ff;
+    --f-xai: #c4c0b8;
+    --f-deepseek: #7d93ff;
+    --f-qwen: #a987f5;
+    --f-zhipu: #3cc3cf;
+    --f-moonshot: #ee79b1;
+    --f-other: #a8a397;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+  /* En-tête */
+  header.hero { padding-block: 56px 28px; }
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  h1 { font-size: clamp(28px, 4.2vw, 42px); line-height: 1.1; letter-spacing: -.025em; margin: 0 0 10px; font-weight: 700; }
+  h1 .dim { color: var(--faint); font-weight: 600; }
+  .lede { color: var(--muted); margin: 0; max-width: 620px; font-size: 16px; }
+  .stats { display: flex; gap: 28px; margin-top: 24px; flex-wrap: wrap; }
+  .stat b { display: block; font-size: 24px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--muted); font-size: 13px; }
+  .icon-btn {
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    width: 38px; height: 38px; border-radius: 10px; cursor: pointer; display: grid; place-items: center; flex: none;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--border-strong); }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  /* Barre de filtres */
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+  }
+  .toolbar-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .search {
+    flex: 1 1 280px; position: relative;
+  }
+  .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--faint); pointer-events: none; }
+  .search input {
+    width: 100%; height: 40px; padding: 0 44px 0 36px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text);
+    font: inherit; outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .search kbd {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    font: 500 11px "JetBrains Mono", monospace; color: var(--faint);
+    border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; background: var(--bg-2);
+  }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; background: var(--card); padding: 3px; }
+  .seg button {
+    border: 0; background: none; color: var(--muted); font: 500 13px Inter, sans-serif;
+    padding: 0 12px; height: 32px; border-radius: 7px; cursor: pointer; white-space: nowrap;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+  .seg-label { color: var(--faint); font-size: 12px; margin-right: 2px; }
+
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    border-radius: 999px; padding: 4px 11px 4px 9px; font: 500 13px Inter, sans-serif; cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  .chip:hover { border-color: var(--border-strong); color: var(--text); }
+  .chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+  .chip .n { color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chip-row-label { color: var(--faint); font-size: 12px; align-self: center; margin-right: 4px; min-width: 56px; }
+  .chip.reset { border-style: dashed; }
+
+  /* Groupes */
+  main { padding-block: 20px 80px; }
+  .result-line { color: var(--muted); font-size: 13px; margin: 6px 0 8px; min-height: 20px; }
+  .group { margin-top: 30px; scroll-margin-top: 150px; }
+  .group-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .group-head h2 { margin: 0; font-size: 18px; letter-spacing: -.01em; font-weight: 650; display: flex; align-items: center; gap: 9px; }
+  .group-head .count { color: var(--faint); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .group-head .sub { color: var(--faint); font-size: 13px; margin-left: auto; }
+  .fam-bar { width: 4px; height: 18px; border-radius: 2px; align-self: center; }
+  .family-title { margin: 44px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--faint); font-weight: 600; }
+  .family-title:first-child { margin-top: 12px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .card {
+    position: relative; display: flex; flex-direction: column; gap: 10px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 15px 16px 14px;
+    text-decoration: none; transition: transform .15s ease, border-color .15s, box-shadow .15s, background .15s;
+    min-height: 124px;
+  }
+  .card::before {
+    content: ""; position: absolute; left: -1px; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0;
+    background: var(--fam); opacity: .85;
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--border-strong); box-shadow: var(--shadow); background: var(--card-hover); }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .card-top { display: flex; align-items: center; gap: 8px; }
+  .type-badge { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; }
+  .type-badge .emo { font-size: 14px; }
+  .card-top .date { margin-left: auto; color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .card h3 { margin: 0; font-size: 15px; line-height: 1.35; font-weight: 600; letter-spacing: -.005em; overflow-wrap: anywhere; }
+  .card-bottom { margin-top: auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .model-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; color: var(--text); white-space: nowrap; }
+  .model-tag .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--fam); flex: none; }
+  .path { font: 11.5px "JetBrains Mono", monospace; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .card-bottom .path { margin-left: auto; }
+  .src-note {
+    font-size: 11px; font-weight: 600; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 5px; padding: 1px 6px; white-space: nowrap;
+  }
+  .card.unplayable { opacity: .72; }
+  .card.unplayable:hover { opacity: 1; }
+  .arrow { width: 14px; height: 14px; color: var(--faint); flex: none; transition: transform .15s, color .15s; }
+  .card:hover .arrow { color: var(--accent); transform: translate(2px, -2px); }
+
+  mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+  .empty { text-align: center; padding: 80px 20px; color: var(--muted); }
+  .empty .big { font-size: 40px; margin-bottom: 8px; }
+  .empty button { margin-top: 14px; }
+  .btn {
+    border: 1px solid var(--border); background: var(--card); color: var(--text);
+    font: 500 13px Inter, sans-serif; border-radius: 9px; padding: 8px 14px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--border-strong); }
+
+  footer { color: var(--faint); font-size: 13px; padding-block: 30px 50px; border-top: 1px solid var(--border); }
+  footer code { font-family: "JetBrains Mono", monospace; font-size: 12px; background: var(--bg-2); padding: 2px 6px; border-radius: 5px; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    header.hero { padding-block: 32px 20px; }
+    .stats { gap: 20px; }
+    .chip-row-label { display: none; }
+    .toolbar { position: static; }
+    .chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; margin-right: -16px; padding-right: 16px; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: none; }
+    .search kbd { display: none; }
+    .group-head .sub { display: none; }
+    .grid { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero wrap">
+  <div class="hero-top">
+    <div>
+      <h1>AI Generated Apps <span class="dim">— la galerie</span></h1>
+      <p class="lede">Des jeux, simulations et petits outils générés par différents modèles d'IA, souvent à partir du même prompt. Idéal pour comparer les modèles entre eux.</p>
+    </div>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Changer de thème" title="Changer de thème">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </button>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="toolbar">
+  <div class="wrap">
+    <div class="toolbar-row">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Rechercher un projet, un modèle, un fichier…" autocomplete="off" aria-label="Rechercher">
+        <kbd>/</kbd>
+      </label>
+      <div class="seg" role="group" aria-label="Regrouper par">
+        <button type="button" data-group="model">Par modèle</button>
+        <button type="button" data-group="type">Par type</button>
+        <button type="button" data-group="date">Récents</button>
+      </div>
+    </div>
+    <div class="chips" id="typeChips" aria-label="Filtrer par type"></div>
+    <div class="chips" id="famChips" aria-label="Filtrer par éditeur"></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="result-line" id="resultLine" aria-live="polite"></div>
+  <div id="list"></div>
+</main>
+
+<footer class="wrap">
+  Chaque dossier correspond à un modèle. Les projets marqués <b>source</b> sont des apps React non buildées : le lien mène au code sur GitHub.<br>
+  Pour mettre à jour cette page après avoir ajouté des projets : <code>node scripts/build-index.mjs</code>
+</footer>
+
+<script src="projects.js"></script>
+<script>
+(() => {
+  const PROJECTS = window.PROJECTS || [];
+
+  const TYPES = {
+    pachinko:   { label: 'Pachinko roguelike', emo: '🎰' },
+    platformer: { label: 'Platform shooter',   emo: '🔫' },
+    idle:       { label: 'Idle game',          emo: '⏳' },
+    city:       { label: 'City builder',       emo: '🏙️' },
+    solar:      { label: 'Système solaire',    emo: '🪐' },
+    simulation: { label: 'Simulation',         emo: '🧬' },
+    weather:    { label: 'Météo',              emo: '🌦️' },
+    landing:    { label: 'Landing page',       emo: '🚀' },
+    learning:   { label: 'Apprentissage',      emo: '📚' },
+    tool:       { label: 'Outil',              emo: '🛠️' },
+    luck:       { label: 'Jeu de hasard',      emo: '🎡' },
+    svg:        { label: 'Dessin SVG',         emo: '🎨' },
+    other:      { label: 'Autre',              emo: '✨' },
+  };
+  const FAMILIES = {
+    claude:   'Anthropic · Claude',
+    openai:   'OpenAI · GPT & Codex',
+    google:   'Google · Gemini & Gemma',
+    xai:      'xAI · Grok',
+    deepseek: 'DeepSeek',
+    qwen:     'Alibaba · Qwen',
+    zhipu:    'Zhipu · GLM',
+    moonshot: 'Moonshot · Kimi',
+    other:    'Autres',
+  };
+  const FAMILY_SHORT = { claude: 'Claude', openai: 'OpenAI', google: 'Google', xai: 'Grok', deepseek: 'DeepSeek', qwen: 'Qwen', zhipu: 'GLM', moonshot: 'Kimi', other: 'Autres' };
+  const famOrder = Object.keys(FAMILIES);
+  const typeOrder = Object.keys(TYPES);
+
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+
+  PROJECTS.forEach((p) => {
+    if (!TYPES[p.type]) p.type = 'other';
+    if (!FAMILIES[p.family]) p.family = 'other';
+    p._hay = norm([p.title, p.slug, p.modelName, p.model, p.source, TYPES[p.type].label, FAMILIES[p.family]].join(' '));
+  });
+
+  // Date la plus récente par modèle, pour trier les modèles d'une même famille.
+  const modelLatest = {};
+  PROJECTS.forEach((p) => { if (!modelLatest[p.model] || p.date > modelLatest[p.model]) modelLatest[p.model] = p.date; });
+
+  // --- État (persisté dans l'URL pour pouvoir partager un filtre) ---
+  const state = { q: '', types: new Set(), fams: new Set(), group: 'model' };
+  function readHash() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    state.q = h.get('q') || '';
+    state.types = new Set((h.get('type') || '').split(',').filter((t) => TYPES[t]));
+    state.fams = new Set((h.get('fam') || '').split(',').filter((f) => FAMILIES[f]));
+    let g = h.get('group');
+    if (!g) { try { g = localStorage.getItem('aga-group'); } catch (e) {} }
+    state.group = ['model', 'type', 'date'].includes(g) ? g : 'model';
+  }
+  function writeHash() {
+    const h = new URLSearchParams();
+    if (state.q) h.set('q', state.q);
+    if (state.types.size) h.set('type', [...state.types].join(','));
+    if (state.fams.size) h.set('fam', [...state.fams].join(','));
+    if (state.group !== 'model') h.set('group', state.group);
+    const s = h.toString();
+    history.replaceState(null, '', s ? '#' + s : location.pathname + location.search);
+  }
+
+  // --- Filtrage ---
+  function matches(p, { ignoreType = false, ignoreFam = false } = {}) {
+    if (!ignoreType && state.types.size && !state.types.has(p.type)) return false;
+    if (!ignoreFam && state.fams.size && !state.fams.has(p.family)) return false;
+    if (state.q) {
+      const terms = norm(state.q).split(/\s+/).filter(Boolean);
+      if (!terms.every((t) => p._hay.includes(t))) return false;
+    }
+    return true;
+  }
+
+  function highlight(text) {
+    const safe = esc(text);
+    if (!state.q.trim()) return safe;
+    const terms = state.q.trim().split(/\s+/).filter((t) => t.length > 1).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    if (!terms.length) return safe;
+    return safe.replace(new RegExp('(' + terms.map(esc).join('|') + ')', 'gi'), '<mark>$1</mark>');
+  }
+
+  // --- Rendu ---
+  function renderStats() {
+    const models = new Set(PROJECTS.map((p) => p.model)).size;
+    const types = new Set(PROJECTS.map((p) => p.type)).size;
+    const pach = PROJECTS.filter((p) => p.type === 'pachinko').length;
+    $('#stats').innerHTML = [
+      [PROJECTS.length, 'projets'], [models, 'modèles'], [types, 'types de projets'], [pach, 'pachinkos à comparer'],
+    ].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+  }
+
+  function renderChips() {
+    const typeCounts = {}, famCounts = {};
+    PROJECTS.forEach((p) => {
+      if (matches(p, { ignoreType: true })) typeCounts[p.type] = (typeCounts[p.type] || 0) + 1;
+      if (matches(p, { ignoreFam: true })) famCounts[p.family] = (famCounts[p.family] || 0) + 1;
+    });
+    const present = (key) => PROJECTS.some((p) => p.type === key || p.family === key);
+
+    $('#typeChips').innerHTML = '<span class="chip-row-label">Type</span>' + typeOrder.filter((t) => PROJECTS.some((p) => p.type === t)).map((t) =>
+      `<button type="button" class="chip" data-type="${t}" aria-pressed="${state.types.has(t)}"><span>${TYPES[t].emo}</span>${TYPES[t].label}<span class="n">${typeCounts[t] || 0}</span></button>`
+    ).join('');
+
+    const hasFilters = state.types.size || state.fams.size || state.q;
+    $('#famChips').innerHTML = '<span class="chip-row-label">Éditeur</span>' + famOrder.filter((f) => PROJECTS.some((p) => p.family === f)).map((f) =>
+      `<button type="button" class="chip" data-fam="${f}" aria-pressed="${state.fams.has(f)}"><span class="dot" style="background:var(--f-${f})"></span>${FAMILY_SHORT[f]}<span class="n">${famCounts[f] || 0}</span></button>`
+    ).join('') + (hasFilters ? '<button type="button" class="chip reset" data-reset>Tout effacer</button>' : '');
+
+    document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.group === state.group));
+  }
+
+  const ARROW = '<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+
+  function card(p, showModel) {
+    const t = TYPES[p.type];
+    const ext = !p.playable;
+    const bottom = showModel
+      ? `<span class="model-tag"><span class="dot"></span>${highlight(p.modelName)}</span><span class="path">${highlight(p.source.split('/').slice(1).join('/'))}</span>`
+      : `<span class="path" style="margin-left:0">${highlight(p.source.split('/').slice(1).join('/'))}</span>`;
+    return `<a class="card${ext ? ' unplayable' : ''}" href="${esc(p.url)}" style="--fam:var(--f-${p.family})"${ext ? ' target="_blank" rel="noopener"' : ''} title="${esc(ext ? 'Code source sur GitHub (app React non buildée)' : p.title)}">
+      <div class="card-top">
+        <span class="type-badge"><span class="emo">${t.emo}</span>${t.label}</span>
+        ${ext ? '<span class="src-note">source</span>' : ''}
+        <span class="date">${fmtDate(p.date)}</span>
+        ${ARROW}
+      </div>
+      <h3>${highlight(p.title)}</h3>
+      <div class="card-bottom">${bottom}</div>
+    </a>`;
+  }
+
+  function renderList() {
+    const items = PROJECTS.filter((p) => matches(p));
+    const nModels = new Set(items.map((p) => p.model)).size;
+    $('#resultLine').textContent = items.length === PROJECTS.length
+      ? ''
+      : `${items.length} projet${items.length > 1 ? 's' : ''} · ${nModels} modèle${nModels > 1 ? 's' : ''}`;
+
+    if (!items.length) {
+      $('#list').innerHTML = `<div class="empty"><div class="big">🔭</div>Aucun projet ne correspond à ces filtres.<br><button class="btn" type="button" data-reset>Réinitialiser</button></div>`;
+      return;
+    }
+
+    let html = '';
+    if (state.group === 'model') {
+      for (const fam of famOrder) {
+        const famItems = items.filter((p) => p.family === fam);
+        if (!famItems.length) continue;
+        html += `<h2 class="family-title">${FAMILIES[fam]}</h2>`;
+        const models = [...new Set(famItems.map((p) => p.model))]
+          .sort((a, b) => (modelLatest[b] || '').localeCompare(modelLatest[a] || '') || a.localeCompare(b));
+        for (const m of models) {
+          const list = famItems.filter((p) => p.model === m)
+            .sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type) || a.title.localeCompare(b.title));
+          html += `<section class="group" id="m-${m}">
+            <div class="group-head"><span class="fam-bar" style="background:var(--f-${fam})"></span><h2>${highlight(list[0].modelName)}</h2><span class="count">${list.length}</span><span class="sub">${esc(m)}/</span></div>
+            <div class="grid">${list.map((p) => card(p, false)).join('')}</div></section>`;
+        }
+      }
+    } else if (state.group === 'type') {
+      for (const t of typeOrder) {
+        const list = items.filter((p) => p.type === t)
+          .sort((a, b) => famOrder.indexOf(a.family) - famOrder.indexOf(b.family) || (b.date || '').localeCompare(a.date || ''));
+        if (!list.length) continue;
+        const nm = new Set(list.map((p) => p.model)).size;
+        html += `<section class="group" id="t-${t}">
+          <div class="group-head"><h2><span>${TYPES[t].emo}</span>${TYPES[t].label}</h2><span class="count">${list.length}</span><span class="sub">${nm} modèle${nm > 1 ? 's' : ''}</span></div>
+          <div class="grid">${list.map((p) => card(p, true)).join('')}</div></section>`;
+      }
+    } else {
+      const byMonth = new Map();
+      [...items].sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.title.localeCompare(b.title)).forEach((p) => {
+        const key = (p.date || '').slice(0, 7);
+        if (!byMonth.has(key)) byMonth.set(key, []);
+        byMonth.get(key).push(p);
+      });
+      for (const [key, list] of byMonth) {
+        const label = key ? new Date(key + '-01T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : 'Date inconnue';
+        html += `<section class="group">
+          <div class="group-head"><h2 style="text-transform:capitalize">${label}</h2><span class="count">${list.length}</span></div>
+          <div class="grid">${list.map((p) => card(p, true)).join('')}</div></section>`;
+      }
+    }
+    $('#list').innerHTML = html;
+  }
+
+  function render() { renderChips(); renderList(); writeHash(); }
+
+  // --- Événements ---
+  const q = $('#q');
+  q.addEventListener('input', () => { state.q = q.value; render(); });
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-type]');
+    const f = e.target.closest('[data-fam]');
+    const g = e.target.closest('[data-group]');
+    if (t) { const k = t.dataset.type; state.types.has(k) ? state.types.delete(k) : state.types.add(k); render(); }
+    else if (f) { const k = f.dataset.fam; state.fams.has(k) ? state.fams.delete(k) : state.fams.add(k); render(); }
+    else if (g) {
+      state.group = g.dataset.group;
+      try { localStorage.setItem('aga-group', state.group); } catch (err) {}
+      render();
+    }
+    else if (e.target.closest('[data-reset]')) { state.q = ''; q.value = ''; state.types.clear(); state.fams.clear(); render(); }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement !== q && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); q.focus(); q.select(); }
+    else if (e.key === 'Escape' && document.activeElement === q) { if (q.value) { q.value = ''; state.q = ''; render(); } else q.blur(); }
+  });
+
+  // Thème : auto → sombre → clair
+  const themeBtn = $('#themeBtn');
+  function applyTheme(t) { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; }
+  let theme = null;
+  try { theme = localStorage.getItem('aga-theme'); } catch (e) {}
+  applyTheme(theme);
+  themeBtn.addEventListener('click', () => {
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const current = document.documentElement.dataset.theme || (dark ? 'dark' : 'light');
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem('aga-theme', next); } catch (e) {}
+  });
+
+  window.addEventListener('hashchange', () => { readHash(); q.value = state.q; renderChips(); renderList(); });
+
+  readHash();
+  q.value = state.q;
+  renderStats();
+  render();
+})();
+</script>
+</body>
+</html>
