@@ -368,6 +368,19 @@ window.PROJECTS = [
   "model": "claude-opus-55-extra",
   "modelName": "Claude Opus 5.5 · extra",
   "family": "claude",
+  "type": "other",
+  "title": "Déménageurs du Dimanche",
+  "slug": "friendslop",
+  "url": "claude-opus-55-extra/friendslop.html",
+  "source": "claude-opus-55-extra/friendslop.html",
+  "playable": true,
+  "react": false,
+  "date": "2026-09-23"
+ },
+ {
+  "model": "claude-opus-55-extra",
+  "modelName": "Claude Opus 5.5 · extra",
+  "family": "claude",
   "type": "simulation",
   "title": "Jardin Génétique",
   "slug": "genetic-garden",
@@ -376,6 +389,32 @@ window.PROJECTS = [
   "playable": true,
   "react": false,
   "date": "2026-09-23"
+ },
+ {
+  "model": "claude-opus-55-extra",
+  "modelName": "Claude Opus 5.5 · extra",
+  "family": "claude",
+  "type": "other",
+  "title": "Hurlelune — Chroniques d’une meute",
+  "slug": "incremental",
+  "url": "claude-opus-55-extra/incremental.html",
+  "source": "claude-opus-55-extra/incremental.html",
+  "playable": true,
+  "react": false,
+  "date": "2026-09-24"
+ },
+ {
+  "model": "claude-opus-55-extra",
+  "modelName": "Claude Opus 5.5 · extra",
+  "family": "claude",
+  "type": "other",
+  "title": "Haute Mise — Casino incrémental",
+  "slug": "incremental-casino",
+  "url": "claude-opus-55-extra/incremental-casino.html",
+  "source": "claude-opus-55-extra/incremental-casino.html",
+  "playable": true,
+  "react": false,
+  "date": "2026-09-24"
  },
  {
   "model": "claude-opus-55-extra",
