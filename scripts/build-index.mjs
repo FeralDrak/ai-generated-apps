@@ -21,6 +21,7 @@ const MODELS = {
   'claude-opus-5-extra': ['Claude Opus 5 · extra', 'claude'],
   'claude-opus-5-max': ['Claude Opus 5 · max', 'claude'],
   'claude-opus-55-extra': ['Claude Opus 5.5 · extra', 'claude'],
+  'claude-opus-55-max': ['Claude Opus 5.5 · max', 'claude'],
   'claude-sonnet-5-extra': ['Claude Sonnet 5 · extra', 'claude'],
   'claude-fable-5-extra': ['Claude Fable 5 · extra', 'claude'],
   'claude-fable-5-max': ['Claude Fable 5 · max', 'claude'],
@@ -84,7 +85,7 @@ const TYPES = [
   [/animator/, 'tool'],
   [/loto|wheel/, 'luck'],
   [/wolf|loup|licorne|\.svg$/, 'svg'],
-  [/learning|javascript_|architecture|solid|complexity|distributed|listes|messages|php|scaleway/, 'learning'],
+  [/learning|javascript_|architecture|solid|complexity|distributed|listes|messages|php|scaleway|auto_ds/, 'learning'],
 ];
 
 function guessType(path, title) {

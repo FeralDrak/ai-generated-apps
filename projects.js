@@ -414,7 +414,7 @@ window.PROJECTS = [
   "source": "claude-opus-55-extra/incremental-casino.html",
   "playable": true,
   "react": false,
-  "date": "2026-09-24"
+  "date": "2026-09-25"
  },
  {
   "model": "claude-opus-55-extra",
@@ -428,6 +428,58 @@ window.PROJECTS = [
   "playable": true,
   "react": false,
   "date": "2026-09-23"
+ },
+ {
+  "model": "claude-opus-55-extra",
+  "modelName": "Claude Opus 5.5 · extra",
+  "family": "claude",
+  "type": "other",
+  "title": "Instinct Sauvage — Musique de prédateur",
+  "slug": "wild-music",
+  "url": "claude-opus-55-extra/wild-music.html",
+  "source": "claude-opus-55-extra/wild-music.html",
+  "playable": true,
+  "react": false,
+  "date": "2026-09-25"
+ },
+ {
+  "model": "claude-opus-55-max",
+  "modelName": "Claude Opus 5.5 · max",
+  "family": "claude",
+  "type": "learning",
+  "title": "Mission AutoDS — prépa entretien",
+  "slug": "auto_ds",
+  "url": "claude-opus-55-max/auto_ds.html",
+  "source": "claude-opus-55-max/auto_ds.html",
+  "playable": true,
+  "react": false,
+  "date": "2026-10-15"
+ },
+ {
+  "model": "claude-opus-55-max",
+  "modelName": "Claude Opus 5.5 · max",
+  "family": "claude",
+  "type": "other",
+  "title": "Ignaroth — Le Dragon Rouge",
+  "slug": "red-dragon",
+  "url": "claude-opus-55-max/red-dragon.html",
+  "source": "claude-opus-55-max/red-dragon.html",
+  "playable": true,
+  "react": false,
+  "date": "2026-10-13"
+ },
+ {
+  "model": "claude-opus-55-max",
+  "modelName": "Claude Opus 5.5 · max",
+  "family": "claude",
+  "type": "other",
+  "title": "Veya — vidéo motion design 15 s",
+  "slug": "veya",
+  "url": "claude-opus-55-max/veya.html",
+  "source": "claude-opus-55-max/veya.html",
+  "playable": true,
+  "react": false,
+  "date": "2026-09-25"
  },
  {
   "model": "claude-sonnet-5-extra",
